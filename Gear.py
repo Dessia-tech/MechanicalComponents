@@ -6,6 +6,7 @@ import volmdlr.primitives2D as primitives2D
 import math
 from scipy.linalg import norm,solve,LinAlgError
 from scipy.optimize import *
+from scipy.interpolate import splprep, splev
 
 import pyDOE
 
@@ -41,7 +42,7 @@ class Rack:
             self.PressureAngleR=self.PressureAngleT
         if FiletRadiusR==None:
             self.FiletRadiusR=self.FiletRadiusT
-        self.tooth_space=CircularPitch-self.ChordalThickness
+        self.ToothSpace=CircularPitch-self.ChordalThickness
         
     def Update(self,PressureAngleT,CircularPitch,ChordalThickness=None,GearAddendum=None,
                GearDedendum=None,FiletRadiusT=None,FiletRadiusR=None,PressureAngleR=None):
@@ -55,7 +56,7 @@ class Rack:
         p4=p1.Translation((self.ChordalThickness,0))
         p3=p4.Translation((-self.GearAddendum*npy.tan(self.PressureAngleT),self.GearAddendum))
         p5=p4.Translation((self.GearDedendum*npy.tan(self.PressureAngleT),-self.GearDedendum))
-        p7=p4.Translation((self.tooth_space,0))
+        p7=p4.Translation((self.ToothSpace,0))
         p6=p7.Translation((-self.GearDedendum*npy.tan(self.PressureAngleR),-self.GearDedendum))
         L=primitives2D.RoundedLines2D([p1,p2,p3,p4,p5,p6,p7],{4:self.FiletRadiusT,5:self.FiletRadiusR},False)
         Rack_Elem=[L]
@@ -73,6 +74,7 @@ class Rack:
         -npy.tan(self.PressureAngleT)*self.FiletRadiusT*(1-npy.sin(self.PressureAngleT)))
         -(self.FiletRadiusR*npy.cos(self.PressureAngleR)-npy.tan(self.PressureAngleR)
         *self.FiletRadiusR*(1-npy.sin(self.PressureAngleR)))]
+        crit.append(self.ChordalThickness-(self.GearAddendum*npy.tan(self.PressureAngleT)+self.GearAddendum*npy.tan(self.PressureAngleR)))
         return crit
         
     def Mass(self):
@@ -82,75 +84,96 @@ class Rack:
         pass
     
 class Gear:
-    def __init__(self,tooth_number,rack_data):
+    def __init__(self,ToothNumber,rack_data):
         
-        self.GearParam(tooth_number,rack_data)
+        self.GearParam(ToothNumber,rack_data)
         self.rack=rack_data
         
-    def GearParam(self,tooth_number,rack_data):
+    def GearParam(self,ToothNumber,rack_data):
         
-        self.tooth_number=tooth_number
-        self.pitch_diameter_factory=rack_data.CircularPitch*tooth_number/npy.pi
+        self.ToothNumber=ToothNumber
+        self.pitch_diameter_factory=rack_data.CircularPitch*ToothNumber/npy.pi
         self.external_diameter=self.pitch_diameter_factory+2*rack_data.GearAddendum
         self.internal_diameter=self.pitch_diameter_factory-2*rack_data.GearDedendum
         self.ChordalThickness=rack_data.ChordalThickness
-        self.tooth_space=rack_data.tooth_space
+        self.ToothSpace=rack_data.ToothSpace
         self.PressureAngleT_factory=rack_data.PressureAngleT
         ChordalThickness_angle=self.ChordalThickness/(self.pitch_diameter_factory/2)
-        tooth_space_angle=self.tooth_space/(self.pitch_diameter_factory/2)
-        self.base_diameter=self.pitch_diameter_factory*npy.cos(self.PressureAngleT_factory)
+        ToothSpace_angle=self.ToothSpace/(self.pitch_diameter_factory/2)
+        self.BaseDiameter=self.pitch_diameter_factory*npy.cos(self.PressureAngleT_factory)
         temp=self.pitch_diameter_factory-2*rack_data.GearDedendum+2*rack_data.FiletRadiusT-2*rack_data.FiletRadiusT*npy.sin(rack_data.PressureAngleT)
-        theta_int=fsolve( (lambda theta:self.base_diameter/2*npy.cos(theta)+self.base_diameter/2*theta*npy.sin(theta)-temp/2) ,0)[0]
+        theta_int=fsolve( (lambda theta:self.BaseDiameter/2*npy.cos(theta)+self.BaseDiameter/2*theta*npy.sin(theta)-temp/2) ,0)[0]
+        theta2=fsolve( (lambda theta:self.BaseDiameter/2*npy.cos(rack_data.PressureAngleT-theta)/npy.cos(theta)-temp/2) ,0)[0]
+        #print(11,self.BaseDiameter/2*npy.cos(theta_int)+self.BaseDiameter/2*theta_int*npy.sin(theta_int)-temp/2)
         self.internal_diameter_active=(temp/npy.cos(theta_int-npy.arctan(theta_int)))
-        alpha_internal_diameter_active=npy.arccos(self.base_diameter/self.internal_diameter_active)
+        self.internal_diameter_active=self.BaseDiameter/npy.cos(theta2)
+        self.alt_internal_contact=self.internal_diameter_active/2*npy.sin(rack_data.PressureAngleT-theta2)
+        self.theta0=npy.tan(theta2)-rack_data.PressureAngleT
+        self.theta2=theta2
+        alpha_internal_diameter_active=npy.arccos(self.BaseDiameter/self.internal_diameter_active)
         self.tan_alpha_internal_diameter_active=npy.tan(alpha_internal_diameter_active)
         self.alpha_internal_diameter_active=alpha_internal_diameter_active
-        self.alpha_external_diameter=npy.arccos(self.base_diameter/self.external_diameter)
-        alpha_pitch_diameter=npy.arccos(self.base_diameter/self.pitch_diameter_factory)
+        self.alpha_external_diameter=npy.arccos(self.BaseDiameter/self.external_diameter)
+        alpha_pitch_diameter=npy.arccos(self.BaseDiameter/self.pitch_diameter_factory)
         self.inv_alpha_pitch_diameter=npy.tan(alpha_pitch_diameter)-alpha_pitch_diameter
-        self.base_ChordalThickness=self.base_diameter/2*(2*self.ChordalThickness/self.pitch_diameter_factory+2*self.inv_alpha_pitch_diameter)
+        self.BaseChordalThickness=self.BaseDiameter/2*(2*self.ChordalThickness/self.pitch_diameter_factory+2*self.inv_alpha_pitch_diameter)
         self.BasePitch=rack_data.CircularPitch*npy.cos(rack_data.PressureAngleT)
         
-    def Update(self,tooth_number,rack_data):
+    def Update(self,ToothNumber,rack_data):
         
-        self.GearParam(tooth_number,rack_data)
+        self.GearParam(ToothNumber,rack_data)
         
     def CriteriaIneq(self):
-        crit=[self.internal_diameter_active-self.base_diameter-0.3*self.BasePitch]
+        crit=[self.internal_diameter_active-self.BaseDiameter-0.3*self.BasePitch]
         crit.append(self.external_diameter-self.internal_diameter-0.3*self.BasePitch)
+        #Distance top of the rack
+        #DistRI=self.DistRackInvolute()
+        #crit.append(DistRI)
+        #Top of the gear must be positive
+        crit.append(self.BaseChordalThickness*2/self.BaseDiameter-2*(npy.tan(self.alpha_external_diameter)-self.alpha_external_diameter))
         return crit
         
     def CriteriaEq(self):
         crit=[0]
         return crit
         
-    def InvoluteOptimize(self,discret=10):
+    def InvoluteContours(self,discret=10,number=None):
         #Analytical involute profil
+        if number==None:
+            number=int(self.ToothNumber)
+        L=[self.InvoluteTrace(discret,0,'T')]
+        L.append(self.InvoluteTrace(discret,0,'R'))
+        for i in range(1,number):
+            L.append(self.InvoluteTrace(discret,i,'T'))
+            L.append(self.InvoluteTrace(discret,i,'R'))
+        return L
+        
+    def InvoluteTrace(self,discret,number,ind='T'):
+        
+        if ind=='T':
+            drap=1
+        else:
+            drap=-1
         theta=npy.linspace(self.tan_alpha_internal_diameter_active,npy.tan(self.alpha_external_diameter),discret)
-        sol=self.Involute(theta)
-        xT=sol[0]
-        yT=sol[1]
-        sol=self.Involute(-theta)
-        xR=sol[0]
-        yR=sol[1]
-        pT=[vm.Point2D((xT[0],yT[0]))]
-        pR=[vm.Point2D((xR[0],yR[0]))]
+        theta=npy.linspace(0,npy.tan(self.alpha_external_diameter),discret)
+        sol=self.Involute(drap*theta)
+        x=sol[0]
+        y=sol[1]
+        p=[vm.Point2D((x[0],y[0]))]
         for i in range(1,discret):
-            pT.append(vm.Point2D((xT[i],yT[i])))
-            pR.append(vm.Point2D((xR[i],yR[i])))
-        refT=primitives2D.RoundedLines2D(pT,{},False)
-        refR=primitives2D.RoundedLines2D(pR,{},False)
-        refR=refR.Rotation(vm.Point2D((0,0)),self.base_ChordalThickness*2/self.base_diameter)
-        L=[refT,refR]
-        for i in range(1,int(self.tooth_number)):
-            L.append(refT.Rotation(vm.Point2D((0,0)),i*2*npy.pi/self.tooth_number))
-            L.append(refR.Rotation(vm.Point2D((0,0)),i*2*npy.pi/self.tooth_number))
+            p.append(vm.Point2D((x[i],y[i])))
+        ref=primitives2D.RoundedLines2D(p,{},False)
+        if ind=='T':
+            L=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.ToothNumber)
+        else:
+            L=ref.Rotation(vm.Point2D((0,0)),self.BaseChordalThickness*2/self.BaseDiameter)
+            L=L.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.ToothNumber)
         return L
         
     def Involute(self,alpha):
         
-        sol=(self.base_diameter/2*npy.cos(alpha)+self.base_diameter/2*alpha*npy.sin(alpha),
-             self.base_diameter/2*npy.sin(alpha)-self.base_diameter/2*alpha*npy.cos(alpha))
+        sol=(self.BaseDiameter/2*npy.cos(alpha)+self.BaseDiameter/2*alpha*npy.sin(alpha),
+             self.BaseDiameter/2*npy.sin(alpha)-self.BaseDiameter/2*alpha*npy.cos(alpha))
         return sol
         
     def UpdateProfilRack(self):
@@ -162,42 +185,6 @@ class Gear:
         L.append(self.rack_profil0)
         return L
         
-    def IntersecContours(self,liste1,liste2,prec=1e-1):
-        jm=liste1[0]
-        arret=0
-        liste11=[]
-        liste12=[]
-        liste21=[]
-        liste22=[]
-        for j in liste1[1::]:
-            km=liste2[0]
-            incr=0
-            for k in liste2[1::]:
-                if arret==0:
-                    l1=vm.Line2D(jm,j)
-                    l2=vm.Line2D(km,k)
-                    pt,bl1,bl2=vm.Point2D.LinesIntersection(l1,l2,True)
-                if bl1>-prec and bl1<1+prec and bl2>-prec and bl2<1+prec and arret==0:
-                    arret=1
-                    incr_fin=incr
-                if arret==0:
-                    incr+=1
-                km=k
-            if arret!=1 and arret!=2:
-                liste11.append(jm)
-            if arret==1:
-                liste11.append(jm)
-                liste11.append(pt)
-                liste12=[pt]
-                liste12.extend(liste1[npy.size(liste11)::])
-                liste21=liste2[0:incr_fin+1]
-                liste21.append(pt)
-                liste22=[pt]
-                liste22.extend(liste2[npy.size(liste21)-1::])
-                arret=2
-            jm=j
-        return liste11,liste12,liste21,liste22
-        
     def PosRack(self,alpha):
         
         angle=npy.tan(alpha)-self.rack.PressureAngleT
@@ -205,7 +192,7 @@ class Gear:
         repere=[pt0,pt0.Translation((1,0)),pt0.Translation((0,1))]
         for i in range(3):
             repere[i]=repere[i].Rotation(vm.Point2D((0,0)),angle)
-        ptT=vm.Point2D(self.Involute(alpha))
+        ptT=vm.Point2D(self.Involute(npy.tan(alpha)))
         DistY=npy.dot(ptT.vector-repere[0].vector,repere[2].vector-repere[0].vector)
         DistX=npy.dot(ptT.vector-repere[0].vector,repere[1].vector-repere[0].vector)
         decal=DistY+self.rack.ChordalThickness-npy.tan(self.rack.PressureAngleT)*DistX
@@ -226,36 +213,42 @@ class Gear:
         temp=temp.Translation((deltaU))
         rack_profil=temp.Rotation(vm.Point2D((0,0)),alpha)
         return repere,rack_profil 
+    
+    def DistRackInvolute(self):
         
-    def TrochoidalRackEstimation(self):
+        repere,rack_profil=self.PosRack(self.alpha_internal_diameter_active)
         
-        #Initialisation rack position
-        alpha=self.alpha_external_diameter
-        repere,rack_profil=self.PosRack(alpha)
-        alpha=2*npy.pi/self.tooth_number
-        repere,rack_profil=self.EvolRack(alpha,repere[:],rack_profil)
+        l1=rack_profil.primitives[5]
+        p1=l1.points[0]
+        p2=l1.points[1]
+        p3=p2.Translation((p2.vector-p1.vector))
+        l1=vm.Line2D(p1,p3)
         
-        #Primary trochoide
-        nb=20
-        TrochoideT=[rack_profil.primitives[-2].center]
-        TrochoideR=[rack_profil.primitives[-1].center]
-        Dist=[]
-        for i in range(2*nb-1):
-            Alpha=(-4*npy.pi/self.tooth_number)/nb
-            repere,rack_profil=self.EvolRack(Alpha,repere[:],rack_profil)
-            TrochoideT.append(rack_profil.primitives[-2].center)
-            TrochoideR.append(rack_profil.primitives[-1].center)
-            Dist.append(norm(TrochoideT[-1].vector-TrochoideR[-1].vector))
-            
-        return TrochoideT,TrochoideR
+        L=self.InvoluteTrace(10,1,'R')
+        PT=[]
+        for i in L.primitives:
+            PT.append(i.points[0])
+
+        tck1,pt1=self.BSpline(PT)
+        p8=vm.Point2D.MiddlePoint(p1,p2)
+        p9=vm.Point2D.MiddlePoint(p2,p3)
+        tck2,pt2=self.BSpline([p1,p8,p2,p9,p3])        
+        fun = (lambda t : norm(npy.array([splev(t[0],tck1)[0],splev(t[0],tck1)[1]])-npy.array([splev(t[1],tck2)[0],splev(t[1],tck2)[1]]))**2)
+        bnds = ((0, 1), (0,1))
+        sol=minimize(fun,[0,0], bounds=bnds)
+        xsol=sol.x
+        dist=fun(xsol)
         
-    def GearContoursRack(self,discret=10):
-        
-#        TrochoideT,TrochoideR=self.TrochoidalRackEstimation()
-#        L=TrochoideT
-#        L.extend(TrochoideR)
+#        L=[primitives2D.RoundedLines2D(PT,{},False)]
+#        L.append(l1)
+#        L.append(vm.Point2D(splev(xsol[0],tck1)))
+#        L.append(vm.Point2D(splev(xsol[1],tck2)))
 #        G2=vm.Contour2D(L)
 #        G2.MPLPlot()
+        
+        return dist
+        
+    def TrochoidalRackEstimation(self,discret=10):
         
         #Initialisation rack position
         alpha=self.alpha_internal_diameter_active
@@ -263,7 +256,7 @@ class Gear:
         alpha=self.alpha_external_diameter
         repere,self.rack_profil0=self.PosRack(alpha)
         
-        alpha=2*npy.pi/self.tooth_number
+        alpha=2.5*npy.pi/self.ToothNumber
         repere,rack_profil=self.EvolRack(alpha,repere[:],self.rack_profil0)
         
         #Primary trochoide
@@ -274,9 +267,9 @@ class Gear:
         liste_pointR=[liste_ligneR[0].points[0]]
         liste_circleT=[rack_profil.primitives[-2]]
         liste_circleR=[rack_profil.primitives[-1]]
-        Ltrajet=[rack_profil]
+        Ltrajet=[rack_profil,rack_profil.Translation(-(self.ChordalThickness+self.ToothSpace)*(repere[2].vector-repere[0].vector))]
         for i in range(nb-1):
-            Alpha=(-4*alpha)/nb
+            Alpha=(-5*alpha)/nb
             repere,rack_profil=self.EvolRack(Alpha,repere[:],rack_profil)
             ligne_temp=rack_profil.primitives[2]
             liste_pointT.append(vm.Point2D.LinesIntersection(liste_ligneT[-1],ligne_temp))
@@ -286,11 +279,17 @@ class Gear:
             liste_pointR.append(vm.Point2D.LinesIntersection(liste_ligneR[-1],ligne_temp))
             liste_ligneR.append(ligne_temp)
             liste_circleR.append(rack_profil.primitives[-1])
-        primary_trochoide=[]
+            Ltrajet.append(rack_profil)
+            Ltrajet.append(rack_profil.Translation(-(self.ChordalThickness+self.ToothSpace)*(repere[2].vector-repere[0].vector)))
+        TrochoidalPrimaryT=[]
+        TrochoidalPrimaryR=[]
         for i in liste_circleT:
-            primary_trochoide.append(i.center)
+            TrochoidalPrimaryT.append(i.center)
         for i in liste_circleR:
-            primary_trochoide.append(i.center)
+            TrochoidalPrimaryR.append(i.center)
+        self.TrochoidalPrimaryControlT,pt1=self.BSpline(TrochoidalPrimaryT)
+        self.TrochoidalPrimaryControlR,pt1=self.BSpline(TrochoidalPrimaryR)
+        self.Ltrajet=Ltrajet
         
         #Secondary trochoide of the drive coast 
         cm=liste_circleT[-1].center
@@ -306,6 +305,7 @@ class Gear:
             liste_ptT.append(vm.Point2D(cm.vector+v*self.rack.FiletRadiusT))
             liste_ptT.append(vm.Point2D(cp.vector+v*self.rack.FiletRadiusT))
             cm=cp
+        self.TrochoidalSecondaryControlT,pt1=self.BSpline(liste_ptT[2::])
         
         #Secondary trochoide of the rear coast 
         cm=liste_circleR[-1].center
@@ -321,74 +321,183 @@ class Gear:
             liste_ptR.append(vm.Point2D(cm.vector+v*self.rack.FiletRadiusT))
             liste_ptR.append(vm.Point2D(cp.vector+v*self.rack.FiletRadiusT))
             cm=cp
-            
+        self.TrochoidalSecondaryControlR,pt1=self.BSpline(liste_ptR[2::])
+        
         #Construction arc cercle pied et tete de dent
-        angle=self.base_ChordalThickness*2/self.base_diameter-(npy.tan(self.alpha_external_diameter)-self.alpha_external_diameter)
+        angle=self.BaseChordalThickness*2/self.BaseDiameter-(npy.tan(self.alpha_external_diameter)-self.alpha_external_diameter)
         liste_pointDE=[vm.Point2D((self.external_diameter/2*npy.cos(angle),self.external_diameter/2*npy.sin(angle)))]
         nb=discret
         for i in range(nb):
             liste_pointDE.append(liste_pointDE[-1].Rotation(vm.Point2D((0,0)),-angle/nb))
-        angle=npy.pi/self.tooth_number
+        self.DEControl,pt1=self.BSpline(liste_pointDE)
+        
         #Estimation new internal radius
-        self.internal_diameter_factory=self.external_diameter
-        for i in liste_ptT:
-            if norm(i.vector)<self.internal_diameter_factory/2:
-                self.internal_diameter_factory=2*norm(i.vector)
+        angle=npy.pi/self.ToothNumber
+        Control1=self.TrochoidalSecondaryControlT
+        fun = (lambda t : norm(npy.array([splev(t,Control1)[0],splev(t,Control1)[1]])))
+        sol=minimize(fun,0)
+        self.internal_diameter_factory=2*fun(sol.x)
         liste_pointDI=[vm.Point2D((self.internal_diameter_factory/2*npy.cos(angle),self.internal_diameter_factory/2*npy.sin(angle)))]
-        delta_angle=angle+(2*npy.pi/self.tooth_number)
+        delta_angle=angle+(2*npy.pi/self.ToothNumber)
         for i in range(nb):
             liste_pointDI.append(liste_pointDI[-1].Rotation(vm.Point2D((0,0)),-delta_angle/nb))
+        self.DIControl,pt1=self.BSpline(liste_pointDI)
         
-        #Reconstruction du profil complet
-        prec=10/nb
-        listeA,liste12,liste21,liste22=self.IntersecContours(liste_pointDE,liste_pointT[1::],prec)
-        liste_int=[]
-        liste_int.extend(listeA)
+        return liste_ptT
         
-        liste31,liste32,liste41,liste42=self.IntersecContours(liste22,liste_ptT,prec)
-        liste51,liste52,liste61,liste62=self.IntersecContours(liste22,liste_ptR,prec)
-        if npy.size(liste31)>npy.size(liste51):
-            listeB=liste51
-            liste6=liste62
-            liste7=liste_ptT
-        else:
-            listeB=liste31
-            liste6=liste42
-            liste7=liste_ptR
-        liste_int.extend(listeB)
-
-        listeC,liste72,liste81,liste82=self.IntersecContours(liste6,liste_pointDI,prec)
-        liste_int.extend(listeC)
+    def BSpline(self,pt):
+        x=[]
+        y=[]
+        for i in pt:
+            x.append(i.vector[0])
+            y.append(i.vector[1])
+        tck, u=splprep([x, y], s=0)
+        pas=0.01
+        NewPT=splev(npy.arange(0,1+pas,pas), tck)
+        pt=[]
+        for i,j in zip(NewPT[0],NewPT[1]):
+            pt.append(vm.Point2D((i,j)))
+        return tck,pt
         
-        liste91,liste92,listeD,liste102=self.IntersecContours(liste7,liste82,prec)
-        liste_int.extend(listeD)
+    def GearContoursRack(self,discret=10):
         
-        angle=2*npy.pi/self.tooth_number-2*self.base_ChordalThickness/self.base_diameter+(npy.tan(self.alpha_external_diameter)-self.alpha_external_diameter)
-        ind1=[vm.Point2D((self.external_diameter/2*npy.cos(-angle),self.external_diameter/2*npy.sin(-angle)))]
-        ind1.append(ind1[-1].Rotation(vm.Point2D((0,0)),0.01))
-        listeF,liste132,liste141,liste142=self.IntersecContours(liste_pointR[1::],ind1,prec)
-        listeF,liste152,listeE,liste162=self.IntersecContours(listeF[-1::-1],liste92,prec)
-        listeF=listeF[-1::-1]
-        liste_int.extend(listeE)
-        liste_int.extend(listeF)
+        discret=50
+        post=self.TrochoidalRackEstimation(discret)
         
-        L=[primitives2D.RoundedLines2D(liste_int,{},False)]
-        for i in range(int(self.tooth_number)):
-            angle=2*npy.pi/self.tooth_number
-            L.append(L[-1].Rotation(vm.Point2D((0,0)),angle))
+        L=self.InvoluteTrace(10,0,'T')
+        InvoluteL=L
+        PT=[]
+        for i in L.primitives:
+            PT.append(i.points[0])
+        PT.append(i.points[1])
+        temp=PT
+        self.InvoluteControlT,InvolutePT=self.BSpline(PT)
+        L=self.InvoluteTrace(10,1,'R')
+        PT=[]
+        for i in L.primitives:
+            PT.append(i.points[0])
+        PT.append(i.points[1])
+        self.InvoluteControlR,InvolutePR=self.BSpline(PT)
+        
+        Control1=self.TrochoidalSecondaryControlT
+        Control2=self.DIControl
+        fun = (lambda t : norm(npy.array([splev(t[0],Control1)[0],splev(t[0],Control1)[1]])-npy.array([splev(t[1],Control2)[0],splev(t[1],Control2)[1]])))
+        bnds = ((0, 1), (0,1))
+        sol=minimize(fun,[0,0], bounds=bnds, method='SLSQP', tol=1e-20)
+        xsolI1=sol.x
+        print(fun(xsolI1),xsolI1)
+        Control1=self.TrochoidalSecondaryControlR
+        Control2=self.DIControl
+        fun = (lambda t : norm(npy.array([splev(t[0],Control1)[0],splev(t[0],Control1)[1]])-npy.array([splev(t[1],Control2)[0],splev(t[1],Control2)[1]])))
+        bnds = ((0, 1), (0,1))
+        sol=minimize(fun,[0,1], bounds=bnds, method='SLSQP', tol=1e-20)
+        xsolI2=sol.x
+        print(fun(xsolI2),xsolI2)
+        
+        Control1=self.TrochoidalSecondaryControlT
+        Control2=self.InvoluteControlT
+        fun = (lambda t : norm(npy.array([splev(t[0],Control1)[0],splev(t[0],Control1)[1]])-npy.array([splev(t[1],Control2)[0],splev(t[1],Control2)[1]]))**2)
+        bnds = ((-0.1,xsolI1[0]), (0,1))
+        sol=minimize(fun,[0,0.5],bounds=bnds, method='SLSQP', tol=1e-20)
+        xsolT=sol.x
+        print(fun(xsolT))
+        Control1=self.TrochoidalSecondaryControlR
+        Control2=self.InvoluteControlR
+        fun = (lambda t : norm(npy.array([splev(t[0],Control1)[0],splev(t[0],Control1)[1]])-npy.array([splev(t[1],Control2)[0],splev(t[1],Control2)[1]]))**2)
+        bnds = ((xsolI2[0],1.1), (0,1))
+        sol=minimize(fun,[1,0.5], bounds=bnds, method='SLSQP', tol=1e-20)
+        xsolR=sol.x
+        print(fun(xsolR))
+        
+        Control1=self.DEControl
+        Control2=self.InvoluteControlT
+        fun = (lambda t : norm(npy.array([splev(t[0],Control1)[0],splev(t[0],Control1)[1]])-npy.array([splev(t[1],Control2)[0],splev(t[1],Control2)[1]]))**2)
+        bnds = ((0,1), (0,1))
+        sol=minimize(fun,[0,1],bounds=bnds, method='SLSQP', tol=1e-20)
+        xsolE1=sol.x
+        
+        PT=[]
+        dis=20
+        pas=(xsolT[0]-xsolI1[0])/dis
+        for j in range(dis+1):
+            i=xsolI1[0]+j*pas
+            PT.append(vm.Point2D((splev(i,self.TrochoidalSecondaryControlT))))
+        L=[primitives2D.RoundedLines2D(PT,{},False)]
+        PT=[]
+        pas=(xsolE1[1]-xsolT[1])/dis
+        for j in range(dis+1):
+            i=xsolT[1]+j*pas
+            PT.append(vm.Point2D((splev(i,self.InvoluteControlT))))
+        L.append(primitives2D.RoundedLines2D(PT,{},False))
+#        PT=[]
+#        for i in npy.arange(0,1+pas,pas):
+#            PT.append(vm.Point2D((splev(i,self.TrochoidalPrimaryControlT))))
+#        L.append(primitives2D.RoundedLines2D(PT,{},False))
+        PT=[]
+        pas=(xsolI2[0]-xsolR[0])/dis
+        for j in range(dis+1):
+            i=xsolR[0]+j*pas
+            PT.append(vm.Point2D((splev(i,self.TrochoidalSecondaryControlR))))
+        L.append(primitives2D.RoundedLines2D(PT,{},False))
+        PT=[]
+        pas=(1-xsolR[1])/dis
+        for j in range(dis+1):
+            i=xsolR[1]+j*pas
+            PT.append(vm.Point2D((splev(i,self.InvoluteControlR))))
+        L.append(primitives2D.RoundedLines2D(PT,{},False))
+#        PT=[]
+#        for i in npy.arange(0,1+pas,pas):
+#            PT.append(vm.Point2D((splev(i,self.TrochoidalPrimaryControlR))))
+#        L.append(primitives2D.RoundedLines2D(PT,{},False))
+        PT=[]
+        pas=(xsolI2[1]-xsolI1[1])/dis
+        for j in range(dis+1):
+            i=xsolI1[1]+j*pas
+            PT.append(vm.Point2D((splev(i,self.DIControl))))
+        L.append(primitives2D.RoundedLines2D(PT,{},False))
+        PT=[]
+        pas=(xsolE1[0])/dis
+        for j in range(dis+1):
+            i=j*pas
+            PT.append(vm.Point2D((splev(i,self.DEControl))))
+        L.append(primitives2D.RoundedLines2D(PT,{},False))
+        
+        Lintersect=[vm.Point2D(splev(xsolT[0],self.TrochoidalSecondaryControlT))]
+        Lintersect.append(vm.Point2D(splev(xsolT[1],self.InvoluteControlT)))
+        Lintersect.append(vm.Point2D(splev(xsolR[0],self.TrochoidalSecondaryControlR)))
+        Lintersect.append(vm.Point2D(splev(xsolR[1],self.InvoluteControlR)))
+        Lintersect.append(vm.Point2D(splev(xsolI1[0],self.TrochoidalSecondaryControlT)))
+        Lintersect.append(vm.Point2D(splev(xsolI1[1],self.DIControl)))
+        Lintersect.append(vm.Point2D(splev(xsolI2[0],self.TrochoidalSecondaryControlR)))
+        Lintersect.append(vm.Point2D(splev(xsolI2[1],self.DIControl)))
+        Lintersect.append(vm.Point2D(splev(xsolE1[1],self.InvoluteControlT)))
+        Lintersect.append(vm.Point2D(splev(xsolE1[0],self.DEControl)))
+        Lintersect.extend(L)
+        
+        G2=vm.Contour2D(Lintersect)
+        G2.MPLPlot()
+        
+        Lint=[]
+        for i in range(int(self.ToothNumber)):
+            angle=i*2*npy.pi/self.ToothNumber
+            temp=[]
+            for j in L:
+                Lint.append(j.Rotation(vm.Point2D((0,0)),angle))
         
         #Definition tools path
-        Loutil=[primitives2D.RoundedLines2D(liste_int,{},False)]
-        Loutil.extend(liste_ptT)
-        Loutil.extend(liste_ptR)
-        Loutil.extend(primary_trochoide)
-        
-        #Definition construction line
-        Lconst=[vm.Circle2D(vm.Point2D((0,0)),self.base_diameter/2)]
-        Lconst.append(vm.Circle2D(vm.Point2D((0,0)),self.internal_diameter/2))
-        Lconst.append(vm.Circle2D(vm.Point2D((0,0)),self.pitch_diameter_factory/2))
-        
-        return L,Loutil,Lconst,Ltrajet
+        #Loutil=[primitives2D.RoundedLines2D(liste_int,{},False)]
+#        Loutil=Ltrajet
+#        Loutil.extend(liste_ptT)
+#        Loutil.extend(liste_ptR)
+#        Loutil.extend(primary_trochoide)
+#        
+#        #Definition construction line
+#        Lconst=[vm.Circle2D(vm.Point2D((0,0)),self.BaseDiameter/2)]
+#        Lconst.append(vm.Circle2D(vm.Point2D((0,0)),self.internal_diameter/2))
+#        Lconst.append(vm.Circle2D(vm.Point2D((0,0)),self.pitch_diameter_factory/2))
+#        
+#        return Loutil,Lconst,Ltrajet
+        return Lint
     
     def WheelContours(self):
         pass
@@ -474,10 +583,14 @@ class AssemblyGear:
     def CriteriaEq(self):
         
         crit=[
-              self.Gear1.tooth_number-int(self.Gear1.tooth_number),
-              self.Gear2.tooth_number-int(self.Gear2.tooth_number)
+              self.Gear1.ToothNumber-int(self.Gear1.ToothNumber),
+              self.Gear2.ToothNumber-int(self.Gear2.ToothNumber)
               ]
         return crit
+        
+    def InitialPosition(self,):
+        
+        
         
 class AssemblyGearOptimize1:
     def __init__(self,x=None):
@@ -505,14 +618,14 @@ class AssemblyGearOptimize1:
         bounds.append((15/180*npy.pi,30/180*npy.pi))
         bounds.append((1,10))
         bounds.append((1,10))
-        bounds.append((1,10))
-        bounds.append((1,10))
-        bounds.append((1,10))
-        bounds.append((1,10))
-        bounds.append((0.1,5))
-        bounds.append((0.1,5))
-        bounds.append((0.1,5))
-        bounds.append((0.1,5))
+        bounds.append((3,10))
+        bounds.append((3,10))
+        bounds.append((3,10))
+        bounds.append((3,10))
+        bounds.append((0.3,5))
+        bounds.append((0.3,5))
+        bounds.append((0.3,5))
+        bounds.append((0.3,5))
         bounds.append((15/180*npy.pi,30/180*npy.pi))
         bounds.append((15/180*npy.pi,30/180*npy.pi))
         self.bounds=npy.array(bounds)
@@ -632,57 +745,91 @@ class Optimization:
                 print('erreur de nom')
             i=i+1
             
-    def MPLPlot(self,x):
+    def MPLPlot(self,x,args):
 
-        self.AssemblyGear.Update(x)
-        #TG1=self.AssemblyGear.AssemblyGear.Gear1.InvoluteOptimize()
-        #TG2=self.AssemblyGear.AssemblyGear.Gear2.InvoluteOptimize()
-        TG1,Loutil1,Lconst1,Ltrajet1=self.AssemblyGear.AssemblyGear.Gear1.GearContoursRack(100)
-        TG2,Loutil2,Lconst2,Ltrajet2=self.AssemblyGear.AssemblyGear.Gear2.GearContoursRack(100)
-        TG=[]
-        for i in TG2:
-            TG.append(i.Translation((self.AssemblyGear.CenterDistance,0)))
-        TG.extend(TG1)
-        c1=vm.Contour2D(TG)
-        c1.MPLPlot()
+        if args==0:
+            #Trochoidal primary with two teeth
+            self.AssemblyGear.Update(x)
+            TG1=self.AssemblyGear.AssemblyGear.Gear1.InvoluteContours(10,2)
+            TG2=self.AssemblyGear.AssemblyGear.Gear2.InvoluteContours(10,2)
+            TrochoideT1,TrochoideR1=self.AssemblyGear.AssemblyGear.Gear1.TrochoidalRackEstimation()
+            TrochoideT2,TrochoideR2=self.AssemblyGear.AssemblyGear.Gear2.TrochoidalRackEstimation()
+            L=TrochoideT1
+            L.extend(TrochoideR1)
+            L.extend(TG1)
+            L.append(self.AssemblyGear.AssemblyGear.Gear1.rack_profil0)
+            L.append(self.AssemblyGear.AssemblyGear.Gear1.rack_profili)
+            L.append(self.AssemblyGear.AssemblyGear.Gear1.rack_profilj)
+            L.append(self.AssemblyGear.AssemblyGear.Gear1.rack_profilf)
+            L.append(self.AssemblyGear.AssemblyGear.Gear1.pti)
+            L.append(self.AssemblyGear.AssemblyGear.Gear1.ptj)
+            G2=vm.Contour2D(L)
+            G2.MPLPlot()
+            
+        if args==1:
         
-        G2=Loutil1
-        G2.append(self.AssemblyGear.AssemblyGear.Gear1.rack_profil0)
-        G2.append(self.AssemblyGear.AssemblyGear.Gear1.rack_profilf)
-        G2=vm.Contour2D(G2)
-        G2.MPLPlot()
-        
-        G2=Loutil2
-        G2.append(self.AssemblyGear.AssemblyGear.Gear2.rack_profil0)
-        G2.append(self.AssemblyGear.AssemblyGear.Gear2.rack_profilf)
-        G2=vm.Contour2D(G2)
-        G2.MPLPlot()
-        
-        LR=self.AssemblyGear.AssemblyGear.Rack1.RackContours(10)
-        R1=vm.Contour2D(LR)
-        R1.MPLPlot()
-        
-        LR=self.AssemblyGear.AssemblyGear.Rack2.RackContours(10)
-        R1=vm.Contour2D(LR)
-        R1.MPLPlot()
+#            Loutil1,Lconst1,Ltrajet1=self.AssemblyGear.AssemblyGear.Gear1.GearContoursRack(10)
+#            Loutil2,Lconst2,Ltrajet2=self.AssemblyGear.AssemblyGear.Gear2.GearContoursRack(10)
+            L1=self.AssemblyGear.AssemblyGear.Gear1.GearContoursRack(30)
+            L2=self.AssemblyGear.AssemblyGear.Gear2.GearContoursRack(30)
+            TG1=self.AssemblyGear.AssemblyGear.Gear1.InvoluteContours(10,2)
+            TG2=self.AssemblyGear.AssemblyGear.Gear2.InvoluteContours(10,2)
+            TG=[]
+            for i in L2:
+                TG.append(i.Translation((self.AssemblyGear.CenterDistance,0)))
+            TG.extend(L1)
+            c1=vm.Contour2D(TG)
+            c1.MPLPlot()
+            
+            G2=[self.AssemblyGear.AssemblyGear.Gear1.rack_profil0]
+            G2.append(self.AssemblyGear.AssemblyGear.Gear1.rack_profilf)
+            G2.extend(TG1)
+            G2.extend(self.AssemblyGear.AssemblyGear.Gear1.Ltrajet)
+            G2=vm.Contour2D(G2)
+            G2.MPLPlot()
+            
+            G2=[self.AssemblyGear.AssemblyGear.Gear2.rack_profil0]
+            G2.append(self.AssemblyGear.AssemblyGear.Gear2.rack_profilf)
+            G2.extend(TG2)
+            G2.extend(self.AssemblyGear.AssemblyGear.Gear2.Ltrajet)
+            G2=vm.Contour2D(G2)
+            G2.MPLPlot()
+            
+            LR=self.AssemblyGear.AssemblyGear.Rack1.RackContours(10)
+            R1=vm.Contour2D(LR)
+            R1.MPLPlot()
+            
+            LR=self.AssemblyGear.AssemblyGear.Rack2.RackContours(10)
+            R1=vm.Contour2D(LR)
+            R1.MPLPlot()
+            
+            DistRI=self.AssemblyGear.AssemblyGear.Gear1.DistRackInvolute()
     
         
-#Initialisation
-A1=AssemblyGearOptimize1()
+##Initialisation
+#A1=AssemblyGearOptimize1()
+#O1=Optimization(A1)
+#O1.Optimize()
+#print('calcul finalisé')
+#O1.MPLPlot(O1.solution[-1],1)
+    
+sol=npy.array([ 20.        ,  49.        ,  70.55799373,   6.20167685,
+         0.34906585,   0.26179939,   0.33565841,   3.17991653,
+         2.5373728 ,   3.00000002,   3.        ,   3.00000008,
+         3.00000001,   0.30000001,   1.08524723,   0.30000001,
+         1.08524723,   0.26179939,   0.33565841])
+A1=AssemblyGearOptimize1(sol)
 O1=Optimization(A1)
-O1.Optimize()
-print('calcul finalisé')
-O1.MPLPlot(O1.solution[-1])
-    
+O1.MPLPlot(sol,1)
 
 #CenterDistance=100
-#Z1=13
+#Z1=20
 #Z2=46
-#CircularPitch=10 #circular pitch on the pitch circle
-#PressureAngle=20/180*npy.pi #real presure angle
+#CircularPitch=6 #circular pitch on the pitch circle
+#PressureAngle=18/180*npy.pi #real presure angle
 #
 #BasePitch=CircularPitch*npy.cos(PressureAngle)
-#DF1=2*CenterDistancea*Z1/Z2/(1+Z1/Z2)
+#DF1=2*CenterDistance*Z1/Z2/(1+Z1/Z2)
 #DF2=2*CenterDistance-DF1
 #DB1=DF1*npy.cos(PressureAngle)
 #DB2=DF2*npy.cos(PressureAngle)
@@ -690,11 +837,11 @@ O1.MPLPlot(O1.solution[-1])
 ##BaseDiameter=RackPitchDiameter*npy.cos(RackPressureAngle)       
 #        
 ##Rack definition
-#PressureAngleRackT1=20/180*npy.pi
-#PressureAngleRackT2=19/180*npy.pi
+#PressureAngleRackT1=21/180*npy.pi
+#PressureAngleRackT2=20/180*npy.pi
 #CircularPitchRack1=BasePitch/npy.cos(PressureAngleRackT1)
 #CircularPitchRack2=BasePitch/npy.cos(PressureAngleRackT2)
-#Rack1=Rack(PressureAngleRackT1,CircularPitchRack1,CircularPitchRack1*0.55)
+#Rack1=Rack(PressureAngleRackT1,CircularPitchRack1,CircularPitchRack1*0.6,1*CircularPitchRack1/npy.pi,0.5*CircularPitchRack1/npy.pi)
 #Rack2=Rack(PressureAngleRackT2,CircularPitchRack2)
 #LR=Rack1.RackContours(10)
 #R1=vm.Contour2D(LR)
@@ -702,42 +849,5 @@ O1.MPLPlot(O1.solution[-1])
 #
 #Gear1=Gear(Z1,Rack1)
 #Gear2=Gear(Z2,Rack2)
-#
-#TG1=Gear1.InvoluteOptimize()
-#TG2=Gear2.InvoluteOptimize()
-#TG=[]
-#for i in TG2:
-#    TG.append(i.Translation((CenterDistance,0)))
-#TG.extend(TG1)
-#cg=vm.Contour2D(TG)
-#cg.MPLPlot()
+#Gear1.GearContoursRack(40)
 
-
-#LG1,Loutil1,Lconst1,Ltrajet1=Gear1.GearContoursRack(50)
-#LG2,Loutil2,Lconst2,Ltrajet2=Gear2.GearContoursRack(50)
-#LG=[]
-#for i in LG2:
-#    LG.append(i.Translation((CenterDistance,0)))
-
-
-#LG.extend(LG1)
-#G1=vm.Contour2D(LG)
-#G1.MPLPlot()
-#G2=Loutil1
-#G2.extend(Ltrajet1)
-#G2=vm.Contour2D(G2)
-#G2.MPLPlot()
-#G2=Loutil2
-#G2.extend(Ltrajet2)
-#G2=vm.Contour2D(G2)
-#G2.MPLPlot()
-#
-#G=Gear1.UpdateProfilRack()
-#G1=vm.Contour2D(G)
-#G1.MPLPlot()
-
-#LG1,Loutil1,Lconst1,Ltrajet1=Gear1.GearContoursRack(50)
-#G2=Loutil1
-#G2.append(Gear1.rack_profil0)
-#G2=vm.Contour2D(G2)
-#G2.MPLPlot()
