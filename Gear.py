@@ -9,6 +9,8 @@ from scipy.interpolate import splprep, splev
 from sympy import *
 import itertools
 
+from LibSvg import *
+
 #import pyDOE
 
 class Rack:
@@ -850,353 +852,93 @@ class Optimization:
                 print('erreur de nom')
             i=i+1
     
-class SVGTrace:
-    def __init__(self,scale=1,swift=0,angle=0,decal_x=0,decal_y=0):
-        
-        self.scale=scale
-        self.swift=swift
-        self.angle=angle
-        self.decal_x=decal_x
-        self.decal_y=decal_y
-        self.data=[]
-        self.box=[]
-        self.zpd=[]
-        self.begin=[]
-        self.end=[]
-        self.list_name={}
-        self.indice=1
-        self.InitBorne()
-        
-    def InitBorne(self):
-        
-        self.boxX_min=[npy.inf]
-        self.boxX_max=[-npy.inf]
-        self.boxY_min=[npy.inf]
-        self.boxY_max=[-npy.inf]
-        
-    def UpdateBox(self,x1,y1,r1=None):
-        
-        X1=x1
-        Y1=y1
-        if not r1==None:
-            print(x1,y1,r1)
-            X1=[x1[0]-r1,x1[0],x1[0]+r1,x1[0]]
-            Y1=[y1[0],y1[0]+r1,y1[0],y1[0]-r1]
-            print(x1,y1,r1)
-        self.boxX_min=min(self.boxX_min,[min(X1)])
-        self.boxX_max=max(self.boxX_max,[max(X1)])
-        self.boxY_min=min(self.boxY_min,[min(Y1)])
-        self.boxY_max=max(self.boxY_max,[max(Y1)])
-        
-    def CreateBegin(self):
-        
-        scale_html=100-100/(1500/(1000/(self.boxX_max[0]-self.boxX_min[0])*(self.boxY_max[0]-self.boxY_min[0])))
-        self.begin.append('''<html>
-<head>
-<meta charset="UTF-8"> 
-<script src="snap.svg-min.js"></script>
-    <script src="snap.svg.zpd.js"></script>
-
-</script>
-</head>
-
-<body>
-<svg id="Gear" width="100%" height="100%">
-
-</svg>
-
-<script>''')
-        
-    def CreateEnd(self,animate):
-        
-        if not animate==None:
-            master=list(animate.keys())[0]
-            i=0
-            Temp=[]
-            for (j,k) in animate.items():
-                self.end.append('var myMatrix'+str(int(i))+' = new Snap.Matrix();')
-                self.end.append('myMatrix'+str(int(i))+'.add(1,0,0,1,'+str(k['R'][1])+', '+str(k['R'][2])+');')
-                self.end.append(j+'.transform(myMatrix'+str(int(i))+');')
-                Temp.append(j+'.attr({ transform: myMatrix'+str(int(i))+'});')
-                i+=1
-                self.end.append('var myMatrix'+str(int(i))+' = new Snap.Matrix();')
-                self.end.append('myMatrix'+str(int(i))+'.add('+str(npy.cos(k['R'][0]))+','+str(npy.sin(k['R'][0]))+','+str(-npy.sin(k['R'][0]))+','+str(npy.cos(k['R'][0]))+','+str(k['R'][1])+', '+str(k['R'][2])+');')
-                i+=1
-                
-            Temp2=[]
-            i=0
-            for (j,k) in animate.items():
-                if not j==master:
-                    Temp2.append(str(j)+'''.animate(
-			{ transform: myMatrix'''+str(int(i+1))+'''}, 
-			1000)''')
-                if j==master:
-                    indice=i
-                i+=2
-                
-            self.end.append('''function anim(){
-		'''+str(master)+'''.animate(
-			{ transform: myMatrix'''+str(int(indice+1))+'''}, 
-			1000,
-			function(){ 
-				'''+Temp[0]+'''
-                  '''+Temp[1]+'''
-				anim();
-			});
-             '''+Temp2[0]+'''
-	}''')
+class Trace:
     
-            self.end.append('s.click( anim);') 
-        self.end.append('</script></body></html>')
+    def __init__(self):
+        self.init=1
         
-    def CreateBox(self):
+    def Rack(self,rack,number,name):
         
-        self.view_x=(self.boxX_max[0]-self.boxX_min[0])
-        self.view_y=(self.boxY_max[0]-self.boxY_min[0])
-        self.box.append('var s = Snap("#Gear");')
-#        self.box.append('var s = Snap('+str(self.view_x)+','+str(self.view_y)+');')
-#        self.box.append('s.attr({ viewBox: "'+str(self.boxX_min[0]+self.decal_x)+' '+str(self.boxY_min[0]+self.decal_y)+' '+str(self.boxX_max[0]-self.boxX_min[0]+selfe.decal_x)+' '+str(self.boxY_max[0]-self.boxY_min[0]+self.decal_y)+'" });')
+        R1=rack.RackComplete(npy.arange(number))
+        Ref=[vm.Line2D(vm.Point2D((-rack.transverse_radial_pitch,0)),vm.Point2D(((number+1)*rack.transverse_radial_pitch,0)))]
+        Ref.append(vm.Line2D(vm.Point2D((-rack.transverse_radial_pitch,rack.gear_addendum)),vm.Point2D(((number+1)*rack.transverse_radial_pitch,rack.gear_addendum))))
+        Ref.append(vm.Line2D(vm.Point2D((-rack.transverse_radial_pitch,-rack.gear_dedendum)),vm.Point2D(((number+1)*rack.transverse_radial_pitch,-rack.gear_dedendum))))
+        SVG1=SVGTrace(700,0)
+        SVG1.Convert(R1,'R1','black',0.02,0)
+        SVG1.Convert(Ref,'Ref','black',0.01,1,'0.01px, 0.08px')
+        SVG1.Export(name)
+        
+    def RackGenere(self,gear,Z,name):
 
-    def Transform(self,data,init=None):
+        L1=gear.GearContours(20,[int(Z)-1,0,1])
+        L2=[]
+        for i in npy.linspace(gear.alpha_root_diameter_active,gear.alpha_outside_diameter,5):
+            L=gear.PosRack(i,[-1,0,1])
+            L2.extend(L[1])
+        L3=gear.TrochoideSecondary([0,Z-1],'T',0.8,1000)
+        Temp=gear.TrochoideSecondary([0,Z-1],'R',0.8,1000)
+        L3.extend(Temp)
+        #G1=vm.Contour2D(L1)
+        #G1.MPLPlot()
+        SVG1=SVGTrace(700,0,-npy.pi/2)
+        SVG1.Convert(L1,'Rack','black',0.02,0)
+        SVG1.Convert(L2,'Rack','black',0.01,0,'0.01px, 0.08px')
+        SVG1.Convert(L3,'Rack','blue',0.03,0)
+        SVG1.Export(name)
         
-        alpha=self.angle
-        MatRot=npy.array([[npy.cos(alpha),-npy.sin(alpha),0],[npy.sin(alpha),npy.cos(alpha),0],[0,0,1]])
-        if self.swift==1:
-            MatPermut=npy.array([[0,1,0],[1,0,0],[0,0,1]])
-            Mat=npy.matmul(MatRot,MatPermut)
-        else:
-            Mat=MatRot
-        dataS=npy.matmul(Mat,data)
+    def DetailDent(self,assembly,dent,diam_base,diam_fonct,name):
+        Ldev=[dent.InvoluteTrace(20,0,'T')]
+        Ltroc=[dent.TrochoideTrace(40,0,'T')[0]]
+        Lpied=[dent.TrochoideTrace(40,0,'T')[1]]
+        Lout=[dent.OutsideTrace(0)]
+        Lcomplet=dent.GearContours(10,[-1,0,1])
+        sol=dent.Involute(npy.linspace(0,npy.tan(dent.alpha_outside_diameter),20))
+        Lconst=[dent.Trace(sol[0],sol[1])]
+        Lconst.extend(dent.TrochoideSecondary([0],'T',0.8,1000))
+        L2=[vm.Circle2D(vm.Point2D((0,0)),diam_base/2)]
+        L2.append(vm.Circle2D(vm.Point2D((0,0)),diam_fonct/2))
+        L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.root_diameter_active/2))
+        L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.root_diameter/2))
+        L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.outside_diameter/2))
+        L3=[vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.outside_diameter/2,0)))]
+        L4=[vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2),dent.root_diameter/2*npy.sin(-dent.root_angle/2))))]
+        L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2-dent.phi0),dent.root_diameter/2*npy.sin(-dent.root_angle/2-dent.phi0)))))
+        L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.outside_diameter/2*npy.cos(-dent.root_angle/2-dent.phi_trochoide),dent.outside_diameter/2*npy.sin(-dent.root_angle/2-dent.phi_trochoide)))))
+        SVG1=SVGTrace(700,1,-npy.pi/2)
+        SVG1.Convert(Ldev,'Ldev','black',0.02,0)
+        SVG1.Convert(Ltroc,'Ltroc','blue',0.02,0)
+        SVG1.Convert(Lpied,'Lpied','red',0.02,0)
+        SVG1.Convert(Lout,'Lout','green',0.02,0)
+        SVG1.Convert(Lcomplet,'Lcomplet','black',0.01,1,'0.01px, 0.08px')
+        SVG1.Convert(Lconst,'Gc','blue',0.01,1,'0.01px, 0.08px')
+        SVG1.Convert(L2,'L2','black',0.01,1,'0.01px, 0.08px')
+        SVG1.Convert(L3,'L3','black',0.03,1)
+        SVG1.Convert(L4,'L4','black',0.01,1)
+        SVG1.Export(name)
         
-        if not init==None:
-            self.InitBorne()
-        self.UpdateBox(list(dataS[0,:]),list(dataS[1,:]))
+    def GearAssembly(self,gear1,gear2,assembly,df1,df2,tuple1,tuple2,name):
         
-        scaleX=self.scale/(self.boxX_max[0]-self.boxX_min[0])
-        scaleY=self.scale/(self.boxY_max[0]-self.boxY_min[0])
-        scaleZPD=min(scaleX,scaleY)
-        MatScale=npy.array([[scaleZPD,0,-scaleZPD*self.boxX_min[0]],[0,scaleZPD,-scaleZPD*self.boxY_min[0]],[0,0,1]])
-        
-#        Mat=npy.matmul(Mat1,npy.array([[1,0,-self.boxX_min[0]],[0,1,-5],[0,0,1]]))
-        Mat=npy.matmul(MatScale,Mat)
-        return Mat
-    
-    def CreateZPD(self):
-        
-        data=npy.array([[self.boxX_min[0],self.boxX_max[0],self.boxX_max[0],self.boxX_min[0]],[self.boxY_max[0],self.boxY_max[0],self.boxY_min[0],self.boxY_min[0]],[1,1,1,1]])
-        Mat=self.Transform(data,'ok')
-        
-#        self.zpd.append('s.zpd({ load: {a:'+str(scaleZPD)+',b:0,c:0,d:'+str(scaleZPD)+',e:'+str(-scaleZPD*self.boxX_min[0])+',f:'+str(-scaleZPD*self.boxY_min[0])+'}});')
-        
-        for n,m in self.list_name.items():
-            Temp='var '+n+' = s.group('
-            for i in m:
-                Temp+=i+','
-            self.zpd.append(Temp[0:-1]+');')
-            
-        self.zpd.append('s.zpd({ load: {a:'+str(Mat[0,0])+',b:'+str(Mat[1,0])+',c:'+str(Mat[0,1])+',d:'+str(Mat[1,1])+',e:'+str(Mat[0,2])+',f:'+str(Mat[1,2])+'}});')
-        self.zpd.append('s.zpd({ drag: false}, function (err, paper) {console.log(paper)});')
-                
-    def ConvertPrimitive2D(self,L,group_name,stroke,strokeWidth,impact_box,strokeDasharray="none"):
-        
-        for i,j in enumerate(L):
-            if 'primitives2D' in str(j.__class__):
-                for n,m in enumerate(j.primitives):
-                    if 'Line2D' in str(m.__class__):
-                        temp='var primitive2D'+str(self.indice)+' = s.polyline(['
-                        self.list_name[group_name].append('primitive2D'+str(self.indice))
-                        self.indice+=1
-                        for k in m.points[0:-1]:
-                            if impact_box==0:
-                                self.UpdateBox([k.vector[0]],[k.vector[1]])
-                            temp+=str(k.vector[0])+','+str(k.vector[1])+','
-                        temp+=str(m.points[-1].vector[0])+','+str(m.points[-1].vector[1])
-                        temp+=']).attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'"});'
-                        self.data.append(temp)
-                    if 'Arc2D' in str(m.__class__):
-                        temp='var path'+str(self.indice)+' = s.path('
-                        self.list_name[group_name].append('path'+str(self.indice))
-                        self.indice+=1
-                        temp+='\'M '+str(m.start.vector[0])+','+str(m.start.vector[1])
-                        temp+=' A '+str(m.radius)+','+str(m.radius)+' '+str((m.angle1+m.angle2)/2/npy.pi*180+90)+' 0 '+' 1 '+str(m.end.vector[0])+' '+str(m.end.vector[1])
-                        temp+='\').attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'"});'
-                        self.data.append(temp)
-                        
-            
-    def ConvertCircle2D(self,L,group_name,stroke,strokeWidth,impact_box,strokeDasharray="none"):
-        
-        for i,j in enumerate(L):
-            if 'Circle2D' in str(j.__class__):
-                if impact_box==0:
-                    self.UpdateBox([j.center.vector[0]],[j.center.vector[1]],j.radius)
-                temp='var circle2D'+str(self.indice)+' = s.circle('
-                self.list_name[group_name].append('circle2D'+str(self.indice))
-                self.indice+=1
-                temp+=str(j.center.vector[0])+','+str(j.center.vector[1])+','
-                temp+=str(j.radius)
-                temp+=').attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'"});'
-                self.data.append(temp)
-                
-    def ConvertLine2D(self,L,group_name,stroke,strokeWidth,impact_box,strokeDasharray="none"):
-        
-        for i,j in enumerate(L):
-            if 'Line2D' in str(j.__class__):
-                temp='var primitive2D'+str(self.indice)+' = s.polyline(['
-                self.list_name[group_name].append('primitive2D'+str(self.indice))
-                self.indice+=1
-                if impact_box==0:
-                    self.UpdateBox([j.center.vector[0]],[j.center.vector[1]])
-                for k in j.points[0:-1]:
-                    if impact_box==0:
-                        self.UpdateBox([k.vector[0]],[k.vector[1]])
-                    temp+=str(k.vector[0])+','+str(k.vector[1])+','
-                temp+=str(j.points[-1].vector[0])+','+str(j.points[-1].vector[1])
-                temp+=']).attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'"});'
-                self.data.append(temp)
-    
-    def Convert(self,L,group_name,stroke,strokeWidth,impact_box=0,strokeDasharray="none"):
-        
-        self.list_name[group_name]=[]
-        self.ConvertPrimitive2D(L,group_name,stroke,strokeWidth,impact_box,strokeDasharray)
-        self.ConvertCircle2D(L,group_name,stroke,strokeWidth,impact_box,strokeDasharray)
-        self.ConvertLine2D(L,group_name,stroke,strokeWidth,impact_box,strokeDasharray)
-    
-    def Export(self,name='export.html',animate=None):
-        fichier=open(name,'w')
-        self.CreateBegin()
-        for i in self.begin:
-            fichier.write(i+'\n')
-        self.CreateZPD()
-        self.CreateBox()
-        for i in self.box:
-            fichier.write(i+'\n')
-        for i in self.data:
-            fichier.write(i+'\n')
-        for i in self.zpd:
-            fichier.write(i+'\n')
-        self.CreateEnd(animate)
-        for i in self.end:
-            fichier.write(i+'\n')
-        fichier.close()
-
-##Initialisation
-#list_bounds=[(30,30),(56,56),(60,70),(0.01,0.5),(0.3,0.3),(-1,1),(-1,1),(20,20),(200,200)]
-#A1=AssemblyGearOptimize1(list_bounds)
-#O1=Optimization(A1)
-#O1.Optimize()
-##O1.Optimize2(list(O1.solution[-1]))
-
-xsol=list(npy.array([30.,50.,115.41878235,0.38523225,-0.94639435,0.26922009,0.,20.]))
-#xsol=list(npy.array([3.00000000e+01,5.10000000e+01,9.74954025e+01,4.25119842e-01,3.00000000e-01,9.95153575e-01,7.35600926e-02,2.00000000e+01,2.00000000e+02]))
-#AG1=AssemblyGear(*list(O1.solution[-1]))
-AG1=AssemblyGear(*xsol)
-
-### Pied de dent
-L=AG1.Gear1.TrochoideTrace(500,1,'T')
-L.extend(AG1.Gear1.GearContours(10,[1]))
-#G1=vm.Contour2D(L)
-#G1.MPLPlot()
-print(AG1.Gear1.root_diameter_active)
-
-LL=AG1.Rack1.RackComplete([1])
-SVG1=SVGTrace(700,0)
-SVG1.Convert(LL,'G1','black',0.02,0)
-SVG1.Export('Essai2.html')
-
-### Trace cremaillere Gear1
-L1=AG1.Gear1.GearContours(20,[int(AG1.Z1)-1,0,1])
-L2=[]
-for i in npy.linspace(AG1.Gear1.alpha_root_diameter_active,AG1.Gear1.alpha_outside_diameter,5):
-    L=AG1.Gear1.PosRack(i,[-1,0,1])
-    L2.extend(L[1])
-L3=AG1.Gear1.TrochoideSecondary([0,AG1.Z1-1],'T',0.8,1000)
-Temp=AG1.Gear1.TrochoideSecondary([0,AG1.Z1-1],'R',0.8,1000)
-L3.extend(Temp)
-#G1=vm.Contour2D(L1)
-#G1.MPLPlot()
-SVG1=SVGTrace(700,0,-npy.pi/2)
-SVG1.Convert(L1,'Rack','black',0.02,0)
-SVG1.Convert(L2,'Rack','black',0.01,0,'0.01px, 0.08px')
-SVG1.Convert(L3,'Rack','blue',0.03,0)
-SVG1.Export('Cremaillere_Z1.html')
-
-### Détail dent 1
-def DetailDent(assembly,dent,diam_base,diam_fonct,nom_html):
-    Ldev=[dent.InvoluteTrace(20,0,'T')]
-    Ltroc=[dent.TrochoideTrace(40,0,'T')[0]]
-    Lpied=[dent.TrochoideTrace(40,0,'T')[1]]
-    Lout=[dent.OutsideTrace(0)]
-    Lcomplet=dent.GearContours(10,[-1,0,1])
-    sol=dent.Involute(npy.linspace(0,npy.tan(dent.alpha_outside_diameter),20))
-    Lconst=[dent.Trace(sol[0],sol[1])]
-    Lconst.extend(dent.TrochoideSecondary([0],'T',0.8,1000))
-    L2=[vm.Circle2D(vm.Point2D((0,0)),diam_base/2)]
-    L2.append(vm.Circle2D(vm.Point2D((0,0)),diam_fonct/2))
-    L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.root_diameter_active/2))
-    L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.root_diameter/2))
-    L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.outside_diameter/2))
-    L3=[vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.outside_diameter/2,0)))]
-    L4=[vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2),dent.root_diameter/2*npy.sin(-dent.root_angle/2))))]
-    L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2-AG1.Gear1.phi0),dent.root_diameter/2*npy.sin(-dent.root_angle/2-dent.phi0)))))
-    L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.outside_diameter/2*npy.cos(-dent.root_angle/2-dent.phi_trochoide),dent.outside_diameter/2*npy.sin(-dent.root_angle/2-dent.phi_trochoide)))))
-    SVG1=SVGTrace(700,1,-npy.pi/2)
-    SVG1.Convert(Ldev,'Ldev','black',0.02,0)
-    SVG1.Convert(Ltroc,'Ltroc','blue',0.02,0)
-    SVG1.Convert(Lpied,'Lpied','red',0.02,0)
-    SVG1.Convert(Lout,'Lout','green',0.02,0)
-    SVG1.Convert(Lcomplet,'Lcomplet','black',0.01,1,'0.01px, 0.08px')
-    SVG1.Convert(Lconst,'Gc','blue',0.01,1,'0.01px, 0.08px')
-    SVG1.Convert(L2,'L2','black',0.01,1,'0.01px, 0.08px')
-    SVG1.Convert(L3,'L3','black',0.03,1)
-    SVG1.Convert(L4,'L4','black',0.01,1)
-    SVG1.Export(nom_html)
-
-DetailDent(AG1,AG1.Gear1,AG1.DB1,AG1.DF1,'Creation_Dent1.html')
-DetailDent(AG1,AG1.Gear2,AG1.DB2,AG1.DF2,'Creation_Dent2.html')
-
-### Trace cremaillere Gear2
-L1=AG1.Gear2.GearContours(20,[int(AG1.Z2)-1,0,1])
-L2=[]
-for i in npy.linspace(AG1.Gear2.alpha_root_diameter_active,AG1.Gear2.alpha_outside_diameter,5):
-    L=AG1.Gear2.PosRack(i,[-1,0,1])
-    L2.extend(L[1])
-L3=AG1.Gear2.TrochoideSecondary([0,AG1.Z2-1],'T',0.8,1000)
-Temp=AG1.Gear2.TrochoideSecondary([0,AG1.Z2-1],'R',0.8,1000)
-L3.extend(Temp)
-#G1=vm.Contour2D(L1)
-#G1.MPLPlot()
-SVG1=SVGTrace(700,0,-npy.pi/2)
-SVG1.Convert(L1,'Rack','black',0.02,0)
-SVG1.Convert(L2,'Rack','black',0.01,0,'0.01px, 0.08px')
-SVG1.Convert(L3,'Rack','blue',0.03,0)
-SVG1.Export('Cremaillere_Z2.html')
-
-######################
-### Trace engrenenemnt
-#xsol=list(O1.solution[-1])
-TG1=AG1.Gear1.GearContours(10)
-TG2=AG1.Gear2.GearContours(10)
-list_rot=AG1.InitialPosition()
-L1=AG1.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
-L2=[]
-L2.append(vm.Circle2D(vm.Point2D((0,0)),AG1.DF1/2))
-L2.append(vm.Circle2D(vm.Point2D((AG1.center_distance,0)),AG1.DF2/2))
-L2.append(vm.Circle2D(vm.Point2D((0,0)),AG1.DB1/2))
-L2.append(vm.Circle2D(vm.Point2D((AG1.center_distance,0)),AG1.DB2/2))
-L2.append(vm.Circle2D(vm.Point2D((0,0)),AG1.pitch_diameter_factory1/2))
-L2.append(vm.Circle2D(vm.Point2D((AG1.center_distance,0)),AG1.pitch_diameter_factory2/2))
-L3=[]
-L3.append(vm.Circle2D(vm.Point2D((0,0)),AG1.Gear1.root_diameter_active/2))
-L3.append(vm.Circle2D(vm.Point2D((AG1.center_distance,0)),AG1.Gear2.root_diameter_active/2))
-#G1=vm.Contour2D(LR)
-#G1.MPLPlot()
-SVG1=SVGTrace(700)
-SVG1.Convert(L1[0],'G1','black',0.04,0)
-SVG1.Convert(L1[1],'G2','red',0.04,0)
-SVG1.Convert(L2,'Construction','blue',0.06,0,'0.1px, 0.3px')
-SVG1.Convert(L3,'Construction','red',0.03,0,'0.1px, 0.4px')
-data=npy.array([[0,0],[0,AG1.center_distance],[1,1]])
-SVG2=SVG1
-dataP=npy.matmul(SVG2.Transform(data),data)
-SVG1.Export('Gear.html',{'G1':{'R':[2*npy.pi/AG1.Z1,0,0]},'G2':{'R':[-2*npy.pi/AG1.Z2,AG1.center_distance,0]}})
+        #tuple1 et 2 correspondent a la position des centres
+        TG1=gear1.GearContours(10)
+        TG2=gear2.GearContours(10)
+        list_rot=assembly.InitialPosition()
+        L1=assembly.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
+        L2=[]
+        L2.append(vm.Circle2D(vm.Point2D(tuple1),df1/2))
+        L2.append(vm.Circle2D(vm.Point2D(tuple2),df2/2))
+        L2.append(vm.Circle2D(vm.Point2D(tuple1),gear1.base_diameter/2))
+        L2.append(vm.Circle2D(vm.Point2D(tuple2),gear2.base_diameter/2))
+        L2.append(vm.Circle2D(vm.Point2D(tuple1),assembly.pitch_diameter_factory1/2))
+        L2.append(vm.Circle2D(vm.Point2D(tuple2),assembly.pitch_diameter_factory2/2))
+        L3=[]
+        L3.append(vm.Circle2D(vm.Point2D(tuple1),gear1.root_diameter_active/2))
+        L3.append(vm.Circle2D(vm.Point2D(tuple2),gear2.root_diameter_active/2))
+        #G1=vm.Contour2D(LR)
+        #G1.MPLPlot()
+        SVG1=SVGTrace(700)
+        SVG1.Convert(L1[0],'G1','black',0.04,0)
+        SVG1.Convert(L1[1],'G2','red',0.04,0)
+        SVG1.Convert(L2,'Construction','blue',0.06,0,'0.1px, 0.3px')
+        SVG1.Convert(L3,'Construction','red',0.03,0,'0.1px, 0.4px')
+        SVG1.Export(name,{'G1':{'R':[2*npy.pi/gear1.tooth_number,0,0]},'G2':{'R':[-2*npy.pi/gear2.tooth_number,assembly.center_distance,0]}})
 
