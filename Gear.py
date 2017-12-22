@@ -586,7 +586,7 @@ class AssemblyGear:
               self.Gear2.outside_diameter-self.DF2,
               self.DF1-self.DB1,
               self.DF2-self.DB2,
-              self.radial_contact_ratio-1.2,
+#              self.radial_contact_ratio-1,
               ]
         return crit
         
@@ -649,45 +649,170 @@ class AssemblyGear:
         self.sigma_lewis_maximum1=6*self.tangential_load*self.gear_height_lewis1/(self.gear_width*self.Gear1.root_gear_length**2)
         self.sigma_lewis_maximum2=6*self.tangential_load*self.gear_height_lewis2/(self.gear_width*self.Gear2.root_gear_length**2)
         
-#class MasterAssemblyGear:
-#    def __init__(self,dico_bounds):
-#            
-#        self.ratio=dico_bounds['ratio']
-#        self.Z1=dico_bounds['Z1']
-#        self.Z2=dico_bounds['Z2']
-#        self.center_distance=dico_bounds['center_distance']
-#        self.transverse_pressure_angle=dico_bounds['transverse_pressure_angle']
-#        self.helix_angle=dico_bounds['helix_angle']
-#        self.coefficient_profile_shift1=dico_bounds['coefficient_profile_shift1']
-#        self.coefficient_profile_shift2=dico_bounds['coefficient_profile_shift2']
-#        self.gear_width=dico_bounds['gear_width']
-#        self.maximum_torque=dico_bounds['maximum_torque']
-#        
-#    def AnalyzeCombination(self):
-#        
-#        case=[]
-#        for i in [self.ratio,self.Z1,self.Z2]:
-#            if i==None:
-#                case.append(0)
-#            if type(i)==int:
-#                case.append(1)
-#            if type(i)==tuple:
-#                case.append(2)
-#                
-#        if case in [[0,1,2],[0,2,1],[0,2,2]]]:
-#            itertool.product
-#        if case in [[0,1,1]]:
-#            
-#        if case in [[2,2,2],[2,2,1],[2,1,2]]
-#        
-#    def Optimize(self):
-#        
-#        list_bounds=[(30,30),(56,56),(60,70),(0.01,0.5),(0.3,0.3),(-1,1),(-1,1),(20,20),(200,200)]
-#        A1=AssemblyGearOptimize1(list_bounds)
-#        O1=Optimization(A1)
-#        O1.Optimize()
-#        
-#    def Storage(self):
+class MasterAssemblyGear:
+    def __init__(self,ratio,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width,maximum_torque):
+        
+        
+#        dico_ref={'ratio':{'nom':None,'min':None,'max':None,'err':0.05,'prog':None,'prem':None,'pgcd':None},
+#                     'Z1':{'nom':None,'min':None,'max':None},
+#                     'Z2':{'nom':None,'min':None,'max':None},
+#                     'center_distance':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
+#                     'transverse_pressure_angle':{'nom':None,'min':0.2,'max':0.3,'err':None,'prog':None},
+#                     'helix_angle':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
+#                     'coefficient_profile_shift1':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
+#                     'coefficient_profile_shift2':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
+#                     'gear_width':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
+#                     'maximum_torque':{'nom':None,'min':None,'max':None,'err':None,'prog':None}
+#                     }
+        
+        self.ratio=ratio
+        self.Z1=Z1
+        self.Z2=Z2
+        self.center_distance=center_distance
+        self.transverse_pressure_angle=transverse_pressure_angle
+        self.helix_angle=helix_angle
+        self.coefficient_profile_shift1=coefficient_profile_shift1
+        self.coefficient_profile_shift2=coefficient_profile_shift2
+        self.gear_width=gear_width
+        self.maximum_torque=maximum_torque
+        
+        self.error=self.AnalyzeDataSet()
+        if self.error==True:
+            self.DefaultDataSet()
+            self.AnalyzeCombination()
+            self.solution=[]
+        
+    def AnalyzeDataSet(self):
+        
+        if self.ratio['nom']==None:
+            if self.ratio['min']==None:
+                if self.Z1['nom']==None:
+                    if self.Z1['min']==None:
+                        return False
+                    elif self.Z1['max']==None:
+                        return False
+                elif self.Z2['nom']==None:
+                    if self.Z2['min']==None:
+                        return False
+                    elif self.Z2['max']==None:
+                        return False
+            elif self.ratio['max']==None:
+                if self.Z1['nom']==None:
+                    if self.Z1['min']==None:
+                        return False
+                    elif self.Z1['max']==None:
+                        return False
+                elif self.Z2['nom']==None:
+                    if self.Z2['min']==None:
+                        return False
+                    elif self.Z2['max']==None:
+                        return False
+        else:
+            if not self.ratio['min']==None:
+                return False
+            elif not self.ratio['max']==None:
+                return False
+                    
+        data=[self.Z1,self.Z2,self.center_distance,self.transverse_pressure_angle,self.helix_angle,self.coefficient_profile_shift1,self.coefficient_profile_shift2,self.gear_width,self.maximum_torque]
+        for i in data:
+            if not i['nom']==None:
+                if not i['min']==None:
+                    return False
+                elif not i['max']==None:
+                    return False
+            
+        return True
+        
+    def DefaultDataSet(self):
+        
+        self.bounds={}
+        if not self.ratio['nom']==None:
+            if self.ratio['err']==None:
+                self.ratio['err']=0.05
+            self.ratio['min']=self.ratio['nom']*(1-self.ratio['err'])
+            self.ratio['max']=self.ratio['nom']*(1+self.ratio['err'])
+            
+        if self.Z1['nom']==None:
+            if self.Z1['min']==None:
+                self.Z1['min']=10
+            if self.Z1['max']==None:
+                self.Z1['max']=100
+        else:
+            self.Z1['min']=self.Z1['nom']
+            self.Z1['max']=self.Z1['nom']
+            
+        if self.Z2['nom']==None:
+            if self.Z2['min']==None:
+                self.Z2['min']=10
+            if self.Z2['max']==None:
+                self.Z2['max']=100
+        else:
+            self.Z2['min']=self.Z2['nom']
+            self.Z2['max']=self.Z2['nom']
+
+        def analyze(i,err,mini,maxi):
+            if not i['nom']==None:
+                if i['err']==None:
+                    i['err']=err
+                i['min']=i['nom']*(1-i['err'])
+                i['max']=i['nom']*(1+i['err'])
+            elif i['min']==None:
+                i['min']=mini
+                if i['max']==None:
+                    i['max']=maxi
+            elif i['max']==None:
+                i['max']=maxi
+                
+        analyze(self.helix_angle,0.05,0.25,0.4)
+        analyze(self.transverse_pressure_angle,0.05,0.25,0.4)
+        analyze(self.center_distance,0.05,40,100)
+        analyze(self.coefficient_profile_shift1,0.05,-1,1)
+        analyze(self.coefficient_profile_shift2,0.05,-1,1)
+        analyze(self.gear_width,0.05,15,25)
+        analyze(self.maximum_torque,0.05,100,150)
+
+    def AnalyzeCombination(self):
+        
+        mat1=list(npy.arange(self.Z1['min'],self.Z1['max']+1))
+        mat2=list(npy.arange(self.Z2['min'],self.Z2['max']+1))
+        plex=itertools.product(mat1,mat2)
+        self.plex_calcul=[]
+        for i in plex:
+            drap=0
+            ratio=i[0]/i[1]
+            if self.ratio['min']==None:
+                if not self.ratio['max']==None:
+                    if ratio<=self.ratio['max']:
+                        drap=1
+                else:
+                    drap=1
+            else:
+                if self.ratio['max']==None:
+                    if ratio>=self.ratio['min']:
+                        drap=1
+                else:
+                    if ratio>=self.ratio['min']:
+                        if ratio<=self.ratio['max']:
+                            drap=1
+            if drap==1:
+                Temp=[(i[0],i[0])]
+                Temp.append((i[1],i[1]))
+                data=[self.center_distance,self.transverse_pressure_angle,self.helix_angle,self.coefficient_profile_shift1,self.coefficient_profile_shift2,self.gear_width,self.maximum_torque]
+                for j in data:
+                    Temp.append((j['min'],j['max']))
+                self.plex_calcul.append(Temp)
+                
+        
+    def Optimize(self):
+        
+        for i in self.plex_calcul:
+            A1=AssemblyGearOptimize1(i)
+            O1=Optimization(A1)
+            O1.Optimize()
+            try:
+                self.solution.append(list(O1.solution[-1]))
+            except:
+                pass
         
         
 #class ComplexeAssemblyGear:
@@ -773,6 +898,7 @@ class AssemblyGearOptimize1:
 #              self.AssemblyGear.Rack2.transverse_pressure_angle_T-self.AssemblyGear.Rack2.transverse_pressure_angle_R,
 #              self.AssemblyGear.Rack2.root_radius_T-self.AssemblyGear.Rack2.root_radius_R]
         crit=[self.transverse_radial_pitch_rack1-self.transverse_radial_pitch_rack2]
+        crit=[0]
         return crit
         
     def CriteriaIneq(self):
@@ -796,6 +922,7 @@ class Optimization:
         obj=0
         for i in FEQ:
             obj=obj+(i**2)
+            obj=obj+((self.AssemblyGear.AssemblyGear.radial_contact_ratio-1.15)**2)
 
         return obj
              
@@ -823,7 +950,7 @@ class Optimization:
         
     def Optimize(self):
         
-        boucle=100
+        boucle=20
         i=0
         arret=0
         while i<boucle and arret==0:
@@ -834,7 +961,7 @@ class Optimization:
 #            self.AssemblyGear.Update(x0)
             self.AssemblyGear.Update(x0)
             cons = ({'type': 'eq','fun' : self.feq},{'type': 'ineq','fun' : self.fineq})
-            opt = {'maxiter':1000}
+            opt = {'maxiter':10000}
             try:
                 #[x, _, _, imode,_] = fmin_slsqp(objective, x0,bounds=bounds, ieqcons=[const2], full_output=1,args=(p0,dR),iter=1000,iprint=0,acc=1e-1)
                 #[x, _, imode,_] = root(const1, x0, method='lm')
