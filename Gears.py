@@ -1,15 +1,15 @@
 import numpy as npy
 import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
+#import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
-import math
-from scipy.linalg import norm,solve,LinAlgError
-from scipy.optimize import *
+#import math
+from scipy.linalg import norm
+from scipy.optimize import minimize,fsolve
 from scipy.interpolate import splprep, splev
-from sympy import *
+#from sympy import *
 import itertools
 
-from LibSvg import *
+import LibSvg
 
 #import pyDOE
 
@@ -442,7 +442,7 @@ class Gear:
         lever3D=vm.primitives3D.ExtrudedProfile(p,x,y,self.WheelContours(),z)
         return vm.VolumeModel([wheel3D,lever3D])
         
-class AssemblyGear:
+class GearAssembly:
     def __init__(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle=0,coefficient_profile_shift1=0,
                  coefficient_profile_shift2=0,gear_width=20,maximum_torque=100,
                  transverse_pressure_angle_rack_T1=None,
@@ -601,12 +601,12 @@ class AssemblyGear:
     def InitialPosition(self):
         
         fun = (lambda tan_alpha : (norm(self.Gear1.Involute(tan_alpha))-(self.center_distance-self.DF2/2))**2)
-        bnds = (0,1)
+#        bnds = (0,1)
         sol=minimize(fun,[0.1], method='SLSQP', tol=1e-20)
         xsol=sol.x
         Angle1=xsol[0]-npy.arctan(xsol[0])
         fun = (lambda tan_alpha : (norm(self.Gear2.Involute(tan_alpha))-(self.DF2/2))**2)
-        bnds = (0,1)
+#        bnds = (0,1)
         sol=minimize(fun,[0.1], method='SLSQP', tol=1e-20)
         xsol=sol.x
         Angle2=xsol[0]-npy.arctan(xsol[0])
@@ -651,19 +651,6 @@ class AssemblyGear:
         
 class MasterAssemblyGear:
     def __init__(self,ratio,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width,maximum_torque):
-        
-        
-#        dico_ref={'ratio':{'nom':None,'min':None,'max':None,'err':0.05,'prog':None,'prem':None,'pgcd':None},
-#                     'Z1':{'nom':None,'min':None,'max':None},
-#                     'Z2':{'nom':None,'min':None,'max':None},
-#                     'center_distance':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
-#                     'transverse_pressure_angle':{'nom':None,'min':0.2,'max':0.3,'err':None,'prog':None},
-#                     'helix_angle':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
-#                     'coefficient_profile_shift1':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
-#                     'coefficient_profile_shift2':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
-#                     'gear_width':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
-#                     'maximum_torque':{'nom':None,'min':None,'max':None,'err':None,'prog':None}
-#                     }
         
         self.ratio=ratio
         self.Z1=Z1
@@ -806,8 +793,8 @@ class MasterAssemblyGear:
     def Optimize(self):
         
         for i in self.plex_calcul:
-            A1=AssemblyGearOptimize1(i)
-            O1=Optimization(A1)
+            A1=GearAssemblyOptimizer(i)
+            O1=Optimizer(A1)
             O1.Optimize()
             try:
                 self.solution.append(list(O1.solution[-1]))
@@ -815,16 +802,8 @@ class MasterAssemblyGear:
                 pass
         
         
-#class ComplexeAssemblyGear:
-#    def __init__(self):
-#        list_gear=[(13,(0,0.3)),(56,(-0.4,0.3)),((30,35),(0,0.3)),(82,(-0.5,0.3))]
-#        list_assembly=[(0,1),(1,2),(2,3)]
-#        list_axis=[{0:[(0,0),(0,0)]},{1:[(0,100),(0,100)]},{2:[(0,100),(0,100)]},{3:[(150,150),(150,150)]}]
-#        list_entraxe=[(40,100),(40,100),(40,100)]
-#        list_pression=[()]
         
-        
-class AssemblyGearOptimize1:
+class GearAssemblyOptimizer:
     def __init__(self,list_bounds,x=None):
         
         self.bounds=npy.array(list_bounds)
@@ -907,7 +886,7 @@ class AssemblyGearOptimize1:
         crit=[0]
         return crit
         
-class Optimization:
+class Optimizer:
     def __init__(self,Assembly):
         
         self.AssemblyGear=Assembly
@@ -954,7 +933,7 @@ class Optimization:
         i=0
         arret=0
         while i<boucle and arret==0:
-            print(i)
+#            print(i)
             dim=npy.shape(self.AssemblyGear.save)[0]
             sol=npy.random.random(dim)
             x0=(self.AssemblyGear.bounds[:,1]-self.AssemblyGear.bounds[:,0])*sol+self.AssemblyGear.bounds[:,0]
@@ -976,6 +955,7 @@ class Optimization:
                     print(self.AssemblyGear.AssemblyGear.Gear1.root_diameter_active,22)
                     print(FINEQ)
             except:
+#                pass
                 print('erreur de nom')
             i=i+1
     
@@ -990,7 +970,7 @@ class Trace:
         Ref=[vm.Line2D(vm.Point2D((-rack.transverse_radial_pitch,0)),vm.Point2D(((number+1)*rack.transverse_radial_pitch,0)))]
         Ref.append(vm.Line2D(vm.Point2D((-rack.transverse_radial_pitch,rack.gear_addendum)),vm.Point2D(((number+1)*rack.transverse_radial_pitch,rack.gear_addendum))))
         Ref.append(vm.Line2D(vm.Point2D((-rack.transverse_radial_pitch,-rack.gear_dedendum)),vm.Point2D(((number+1)*rack.transverse_radial_pitch,-rack.gear_dedendum))))
-        SVG1=SVGTrace(700,0)
+        SVG1=LibSvg.SVGTrace(700,0)
         SVG1.Convert(R1,'R1','black',0.02,0)
         SVG1.Convert(Ref,'Ref','black',0.01,1,'0.01px, 0.08px')
         SVG1.Export(name)
@@ -1007,7 +987,7 @@ class Trace:
         L3.extend(Temp)
         #G1=vm.Contour2D(L1)
         #G1.MPLPlot()
-        SVG1=SVGTrace(700,0,-npy.pi/2)
+        SVG1=LibSvg.SVGTrace(700,0,-npy.pi/2)
         SVG1.Convert(L1,'Rack','black',0.02,0)
         SVG1.Convert(L2,'Rack','black',0.01,0,'0.01px, 0.08px')
         SVG1.Convert(L3,'Rack','blue',0.03,0)
@@ -1031,7 +1011,7 @@ class Trace:
         L4=[vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2),dent.root_diameter/2*npy.sin(-dent.root_angle/2))))]
         L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2-dent.phi0),dent.root_diameter/2*npy.sin(-dent.root_angle/2-dent.phi0)))))
         L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.outside_diameter/2*npy.cos(-dent.root_angle/2-dent.phi_trochoide),dent.outside_diameter/2*npy.sin(-dent.root_angle/2-dent.phi_trochoide)))))
-        SVG1=SVGTrace(700,1,-npy.pi/2)
+        SVG1=LibSvg.SVGTrace(700,1,-npy.pi/2)
         SVG1.Convert(Ldev,'Ldev','black',0.02,0)
         SVG1.Convert(Ltroc,'Ltroc','blue',0.02,0)
         SVG1.Convert(Lpied,'Lpied','red',0.02,0)
@@ -1062,7 +1042,7 @@ class Trace:
         L3.append(vm.Circle2D(vm.Point2D(tuple2),gear2.root_diameter_active/2))
         #G1=vm.Contour2D(LR)
         #G1.MPLPlot()
-        SVG1=SVGTrace(700)
+        SVG1=LibSvg.SVGTrace(700)
         SVG1.Convert(L1[0],'G1','black',0.04,0)
         SVG1.Convert(L1[1],'G2','red',0.04,0)
         SVG1.Convert(L2,'Construction','blue',0.06,0,'0.1px, 0.3px')
