@@ -1,30 +1,30 @@
-import numpy as npy
-import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
-import math
-from scipy.linalg import norm,solve,LinAlgError
-from scipy.optimize import *
-from scipy.interpolate import splprep, splev
-from sympy import *
-import itertools
+#import numpy as npy
+#import volmdlr as vm
+#import volmdlr.primitives3D as primitives3D
+#import volmdlr.primitives2D as primitives2D
+#import math
+#from scipy.linalg import norm,solve,LinAlgError
+#from scipy.optimize import *
+#from scipy.interpolate import splprep, splev
+#from sympy import *
+#import itertools
 
-from LibSvg import *
-from Gear import *
+#import LibSvg
+import Gears
 
 dico_ref={'ratio':{'nom':0.23,'min':None,'max':None,'err':0.05,'prog':None,'prem':None,'pgcd':None},
-                     'Z1':{'nom':None,'min':13,'max':20},
-                     'Z2':{'nom':None,'min':45,'max':70},
-                     'center_distance':{'nom':None,'min':60,'max':70,'err':None,'prog':None},
-                     'transverse_pressure_angle':{'nom':None,'min':0.1,'max':0.5,'err':None,'prog':None},
-                     'helix_angle':{'nom':None,'min':0.3,'max':0.3,'err':None,'prog':None},
-                     'coefficient_profile_shift1':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
-                     'coefficient_profile_shift2':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
-                     'gear_width':{'nom':None,'min':20,'max':20,'err':None,'prog':None},
-                     'maximum_torque':{'nom':None,'min':200,'max':200,'err':None,'prog':None}
+          'Z1':{'nom':None,'min':13,'max':20},
+          'Z2':{'nom':None,'min':45,'max':70},
+          'center_distance':{'nom':None,'min':60,'max':70,'err':None,'prog':None},
+          'transverse_pressure_angle':{'nom':None,'min':0.1,'max':0.5,'err':None,'prog':None},
+          'helix_angle':{'nom':None,'min':0.3,'max':0.3,'err':None,'prog':None},
+          'coefficient_profile_shift1':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
+          'coefficient_profile_shift2':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
+          'gear_width':{'nom':None,'min':20,'max':20,'err':None,'prog':None},
+          'maximum_torque':{'nom':None,'min':200,'max':200,'err':None,'prog':None}
                      }
 
-M1=MasterAssemblyGear(**dico_ref)
+M1=Gears.MasterAssemblyGear(**dico_ref)
 M1.Optimize()
 
 ####Initialisation
