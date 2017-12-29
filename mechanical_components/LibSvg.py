@@ -53,8 +53,8 @@ class SVGTrace:
         self.begin.append('''<html>
 <head>
 <meta charset="UTF-8"> 
-<script src="snap.svg-min.js"></script>
-    <script src="snap.svg.zpd.js"></script>
+<script src="https://cdn.dessia.tech/snap.svg/v0.5.1/snap.svg-min.js"></script>
+    <script src="https://cdn.dessia.tech/snap.svg.zpd/v0.0.11/snap.svg.zpd.js"></script>
 
 </script>
 </head>
