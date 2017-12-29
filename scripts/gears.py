@@ -1,4 +1,4 @@
-from mechanical_components import Gears
+from mechanical_components import gears
 
 input_dict={'ratio':{'nom':0.23,'min':None,'max':None,'err':0.05,'prog':None,'prem':None,'pgcd':None},
           'Z1':{'nom':None,'min':13,'max':20},
@@ -12,7 +12,7 @@ input_dict={'ratio':{'nom':0.23,'min':None,'max':None,'err':0.05,'prog':None,'pr
           'maximum_torque':{'nom':None,'min':200,'max':200,'err':None,'prog':None}
                      }
 
-M1=Gears.MasterGearAssembly(**input_dict)
+M1=gears.MasterGearAssembly(**input_dict)
 M1.Optimize()
 
 ### Developpement perso

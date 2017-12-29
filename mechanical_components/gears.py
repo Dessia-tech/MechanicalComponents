@@ -597,7 +597,7 @@ class GearAssembly:
               self.gear2.outside_diameter-self.DF2,
               self.DF1-self.DB1,
               self.DF2-self.DB2,
-#              self.radial_contact_ratio-1,
+              self.radial_contact_ratio-1,
               ]
         return crit
         
@@ -672,49 +672,6 @@ class GearAssembly:
         
         return d
         
-
-#        dico_export['s'+str(i)]['axial_contact_ratio']=AG1.axial_contact_ratio
-#        dico_export['s'+str(i)]['axial_pitch']=AG1.axial_pitch
-#        dico_export['s'+str(i)]['center_distance']=AG1.center_distance
-#        dico_export['s'+str(i)]['circular_tooth_thickness1']=AG1.circular_tooth_thickness1
-#        dico_export['s'+str(i)]['circular_tooth_thickness2']=AG1.circular_tooth_thickness2
-#        dico_export['s'+str(i)]['coefficient_profile_shift1']=AG1.coefficient_profile_shift1
-#        dico_export['s'+str(i)]['coefficient_profile_shift2']=AG1.coefficient_profile_shift2
-#        dico_export['s'+str(i)]['DB1']=AG1.DB1
-#        dico_export['s'+str(i)]['DB2']=AG1.DB2
-#        dico_export['s'+str(i)]['DF1']=AG1.DF1
-#        dico_export['s'+str(i)]['DF2']=AG1.DF2
-#        dico_export['s'+str(i)]['gear_width']=AG1.gear_width
-#        dico_export['s'+str(i)]['helix_angle']=AG1.helix_angle
-#        dico_export['s'+str(i)]['maximum_torque']=AG1.maximum_torque
-#        dico_export['s'+str(i)]['normal_circular_pitch']=AG1.normal_circular_pitch
-#        dico_export['s'+str(i)]['normal_load']=AG1.normal_load
-#        dico_export['s'+str(i)]['normal_pressure_angle']=AG1.normal_pressure_angle
-#        dico_export['s'+str(i)]['pitch_diameter_factory1']=AG1.pitch_diameter_factory1
-#        dico_export['s'+str(i)]['pitch_diameter_factory2']=AG1.pitch_diameter_factory2
-#        dico_export['s'+str(i)]['radial_contact_ratio']=AG1.radial_contact_ratio
-#        dico_export['s'+str(i)]['radial_load']=AG1.radial_load
-#        dico_export['s'+str(i)]['sigma_lewis_maximum1']=AG1.sigma_lewis_maximum1
-#        dico_export['s'+str(i)]['sigma_lewis_maximum2']=AG1.sigma_lewis_maximum2
-#        dico_export['s'+str(i)]['space_width1']=AG1.space_width1
-#        dico_export['s'+str(i)]['space_width2']=AG1.space_width2
-#        dico_export['s'+str(i)]['tangential_load']=AG1.tangential_load
-#        dico_export['s'+str(i)]['total_contact_ratio']=AG1.total_contact_ratio
-#        dico_export['s'+str(i)]['transverse_base_pitch']=AG1.transverse_base_pitch
-#        dico_export['s'+str(i)]['transverse_pressure_angle']=AG1.transverse_pressure_angle
-#        dico_export['s'+str(i)]['transverse_pressure_angle_rack_T1']=AG1.transverse_pressure_angle_rack_T1
-#        dico_export['s'+str(i)]['transverse_pressure_angle_rack_T2']=AG1.transverse_pressure_angle_rack_T2
-#        dico_export['s'+str(i)]['transverse_radial_pitch']=AG1.transverse_radial_pitch
-#        dico_export['s'+str(i)]['transverse_radial_pitch_rack1']=AG1.transverse_radial_pitch_rack1
-#        dico_export['s'+str(i)]['transverse_radial_pitch_rack2']=AG1.transverse_radial_pitch_rack2
-#        dico_export['s'+str(i)]['Z1']=AG1.Z1
-#        dico_export['s'+str(i)]['Z2']=AG1.Z2
-#        dico_export['s'+str(i)]['outside_diameter1']=AG1.Gear1.outside_diameter
-#        dico_export['s'+str(i)]['outside_diameter2']=AG1.Gear2.outside_diameter
-#        dico_export['s'+str(i)]['root_diameter_active1']=AG1.Gear1.root_diameter_active
-#        dico_export['s'+str(i)]['root_diameter_active2']=AG1.Gear2.root_diameter_active
-#        dico_export['s'+str(i)]['root_diameter1']=AG1.Gear1.root_diameter
-#        dico_export['s'+str(i)]['root_diameter2']=AG1.Gear2.root_diameter
     
     def SVGExport(self,name,position1,position2):
         #tuple1 et 2 correspondent a la position des centres
@@ -986,17 +943,14 @@ class Optimizer:
         
         self.GearAssembly=Assembly
         self.solutions=[]
-#        self.solution2=[]
         
     def Objective(self,x):
 
         self.GearAssembly.Update(x)
         FEQ=self.feq(x)
         FINEQ=self.fineq(x)
-        obj=0
-        for i in FEQ:
-            obj=obj+(i**2)
-            obj=obj+((self.GearAssembly.GearAssembly.radial_contact_ratio-1.15)**2)
+#        obj=0
+        obj=100*((self.GearAssembly.GearAssembly.radial_contact_ratio-1.2)**2)
 
         return obj
              
@@ -1016,9 +970,9 @@ class Optimizer:
     def feq(self,x):
         
         self.GearAssembly.Update(x)
-        eq=[]
+        eq=[0]
 #        eq.extend(self.GearAssembly.CriteriaEq())
-        eq.extend(self.GearAssembly.GearAssembly.CriteriaEq())
+#        eq.extend(self.GearAssembly.GearAssembly.CriteriaEq())
         
         return eq
         
@@ -1028,14 +982,13 @@ class Optimizer:
         i=0
         arret=0
         while i<boucle and arret==0:
-#            print(i)
             dim=npy.shape(self.GearAssembly.save)[0]
             sol=npy.random.random(dim)
             x0=(self.GearAssembly.bounds[:,1]-self.GearAssembly.bounds[:,0])*sol+self.GearAssembly.bounds[:,0]
 #            self.GearAssembly.Update(x0)
             self.GearAssembly.Update(x0)
             cons = ({'type': 'eq','fun' : self.feq},{'type': 'ineq','fun' : self.fineq})
-            opt = {'maxiter':10000}
+            opt = {'maxiter':20000}
             try:
                 
                 #[x, _, _, imode,_] = fmin_slsqp(objective, x0,bounds=bounds, ieqcons=[const2], full_output=1,args=(p0,dR),iter=1000,iprint=0,acc=1e-1)
@@ -1055,9 +1008,10 @@ class Optimizer:
                 print('erreur de valeur')
             i=i+1
     
-class Trace:
+class TraceGears:
     
     def __init__(self):
+        
         self.init=1
         
     def Rack(self,rack,number,name):
