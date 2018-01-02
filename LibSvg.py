@@ -38,10 +38,8 @@ class SVGTrace:
         X1=x1
         Y1=y1
         if not r1==None:
-            print(x1,y1,r1)
             X1=[x1[0]-r1,x1[0],x1[0]+r1,x1[0]]
             Y1=[y1[0],y1[0]+r1,y1[0],y1[0]-r1]
-            print(x1,y1,r1)
         self.boxX_min=min(self.boxX_min,[min(X1)])
         self.boxX_max=max(self.boxX_max,[max(X1)])
         self.boxY_min=min(self.boxY_min,[min(Y1)])

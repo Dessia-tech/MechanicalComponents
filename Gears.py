@@ -169,6 +169,12 @@ class Gear:
         if not self.save==[self.rack.transverse_radial_pitch,self.tooth_number,self.coefficient_profile_shift]:
             self.RootDiameterActive()
 #            print(save,self.root_diameter_active)
+            
+        b=self.rack.b-self.rack.module*self.coefficient_profile_shift
+        r=self.pitch_diameter_factory/2
+        rho=self.rack.root_radius_T
+        self.root_diameter_active_bis=2*(rho+b**2/(r+b))
+        
         self.save=save[:]
         
         
@@ -195,6 +201,13 @@ class Gear:
         crit=[0]
         return crit
         
+    def GearSection(self,diameter):
+        #epaisseur de la dent au diameter
+        alpha_diameter=npy.arccos(self.base_diameter/diameter)
+        theta1=(npy.tan(self.alpha_outside_diameter)-self.alpha_outside_diameter)-(npy.tan(alpha_diameter)-alpha_diameter)
+        return diameter/2*(2*theta1+self.outside_active_angle)
+        
+
     def GearContours(self,discret=10,list_number=[None]):
         #Analytical involute profil
         self.RootDiameterActive()
@@ -393,7 +406,6 @@ class Gear:
         ptT=vm.Point2D(self.Involute(npy.tan(alpha)))
         DistY=npy.dot(ptT.vector-repere[0].vector,repere[2].vector-repere[0].vector)
         DistX=npy.dot(ptT.vector-repere[0].vector,repere[1].vector-repere[0].vector)
-        print(DistX,DistY,angle)
         decal=DistY+self.rack.circular_tooth_thickness-npy.tan(self.rack.transverse_pressure_angle_T)*DistX+npy.tan(self.rack.transverse_pressure_angle_T)*(self.rack.module*self.coefficient_profile_shift)
         temp=self.rack.RackComplete(list_number)
         for (i,j) in enumerate(temp):
@@ -534,10 +546,15 @@ class GearAssembly:
         #self.transverse_radial_pitch_rack1=self.transverse_base_pitch/npy.cos(self.transverse_pressure_angle_rack_T1)
         #self.transverse_radial_pitch_rack2=self.transverse_base_pitch/npy.cos(self.transverse_pressure_angle_rack_T2)
         self.circular_tooth_thickness1=self.Rack1.circular_tooth_thickness*npy.cos(self.transverse_pressure_angle_rack_T1)/npy.cos(self.transverse_pressure_angle)
-        self.circular_tooth_thickness2=self.Rack1.circular_tooth_thickness*npy.cos(self.transverse_pressure_angle_rack_T2)/npy.cos(self.transverse_pressure_angle)
+        self.circular_tooth_thickness1=self.Gear1.GearSection(self.DF1)
+        self.circular_tooth_thickness2=self.Rack2.circular_tooth_thickness*npy.cos(self.transverse_pressure_angle_rack_T2)/npy.cos(self.transverse_pressure_angle)
+        self.circular_tooth_thickness2=self.Gear2.GearSection(self.DF2)
         self.space_width1=self.transverse_radial_pitch-self.circular_tooth_thickness1
         self.space_width2=self.transverse_radial_pitch-self.circular_tooth_thickness2
-
+        
+        self.linear_backlash=self.space_width1-self.circular_tooth_thickness2
+        self.linear_backlash2=self.space_width2-self.circular_tooth_thickness1
+        
         #formule spur gear
         self.radial_contact_ratio=1/2*(npy.sqrt(self.Gear1.outside_diameter**2-self.DB1**2)+npy.sqrt(self.Gear2.outside_diameter**2-self.DB2**2)-2*self.center_distance*npy.sin(self.transverse_pressure_angle))/(self.transverse_radial_pitch*npy.cos(self.transverse_pressure_angle))
         self.axial_contact_ratio=self.gear_width*npy.sin(self.helix_angle)/self.normal_circular_pitch
@@ -587,6 +604,8 @@ class GearAssembly:
               self.DF1-self.DB1,
               self.DF2-self.DB2,
               self.radial_contact_ratio-1,
+              self.linear_backlash-0.05,
+              0.3-self.linear_backlash
               ]
         return crit
         
@@ -783,92 +802,185 @@ class MasterGearAssembly:
                             drap=1
             if drap==1:
                 Temp=[(i[0],i[0])]
+                Temp1={}
+                Temp1['Z1']=i[0]
                 Temp.append((i[1],i[1]))
+                Temp1['Z2']=i[1]
                 data=[self.center_distance,self.transverse_pressure_angle,self.helix_angle,self.coefficient_profile_shift1,self.coefficient_profile_shift2,self.gear_width,self.maximum_torque]
                 for j in data:
                     Temp.append((j['min'],j['max']))
-                self.plex_calcul.append(Temp)
+                Temp1['center_distance']=(self.center_distance['min'],self.center_distance['max'])
+                Temp1['transverse_pressure_angle']=(self.transverse_pressure_angle['min'],self.transverse_pressure_angle['max'])
+                Temp1['helix_angle']=(self.helix_angle['min'],self.helix_angle['max'])
+                Temp1['coefficient_profile_shift1']=(self.coefficient_profile_shift1['min'],self.coefficient_profile_shift1['max'])
+                Temp1['coefficient_profile_shift2']=(self.coefficient_profile_shift2['min'],self.coefficient_profile_shift2['max'])
+                Temp1['gear_width']=(self.gear_width['min'],self.gear_width['max'])
+                Temp1['maximum_torque']=self.maximum_torque['nom']
+                self.plex_calcul.append(Temp1)
                 
         
     def Optimize(self):
         
         for i in self.plex_calcul:
-            A1=GearAssemblyOptimizer(i)
+            A1=GearAssemblyOptimizer(**i)
             O1=Optimizer(A1)
             O1.Optimize()
             try:
-                self.solution.append(list(O1.solution[-1]))
+                xsol=npy.transpose([O1.solution[-1]])
+                O1.GearAssembly.DefXU(xsol)
+                xt=dict(list(O1.GearAssembly.xk.items())+list(O1.GearAssembly.xu.items())+list(O1.GearAssembly.xo.items()))
+                self.solution.append(xt)
             except:
                 pass
         
         
         
 class GearAssemblyOptimizer:
-    def __init__(self,list_bounds,x=None):
+    def __init__(self,Z1,Z2,center_distance,transverse_pressure_angle,
+           helix_angle,coefficient_profile_shift1,
+           coefficient_profile_shift2,gear_width,maximum_torque,
+           transverse_pressure_angle_rack_T1=None,
+           transverse_pressure_angle_rack_T2=None,
+           circular_tooth_thickness_rack1=None,circular_tooth_thickness_rack2=None,
+           gear_addendum_rack1=None,
+           gear_addendum_rack2=None,gear_dedendum_rack1=None,gear_dedendum_rack2=None,
+           root_radius_T1=None,root_radius_T2=None,root_radius_R1=None,
+           root_radius_R2=None,transverse_pressure_angle_rack_R1=None,transverse_pressure_angle_rack_R2=None):
         
-        self.bounds=npy.array(list_bounds)
-        if x==None:
-            x=self.InitX0()
-        self.GearAssemblyParam(x)
-        self.save=x[:]
-        self.GearAssembly=GearAssembly(self.Z1,self.Z2,self.center_distance,self.transverse_pressure_angle,
-                                       self.helix_angle,self.coefficient_profile_shift1,
-                                       self.coefficient_profile_shift2,self.gear_width,self.maximum_torque,
-                                       self.transverse_pressure_angle_rack_T1,
-                                       self.transverse_pressure_angle_rack_T2,
-                                       self.circular_tooth_thickness_rack1,self.circular_tooth_thickness_rack2,
-                                       self.gear_addendum_rack1,
-                                       self.gear_addendum_rack2,self.gear_dedendum_rack1,self.gear_dedendum_rack2,
-                                       self.root_radius_T1,self.root_radius_T2,self.root_radius_R1,
-                                       self.root_radius_R2,self.transverse_pressure_angle_rack_R1,self.transverse_pressure_angle_rack_R2)
+        self.GearAssemblyParam(Z1,Z2,center_distance,transverse_pressure_angle,
+           helix_angle,coefficient_profile_shift1,
+           coefficient_profile_shift2,gear_width,maximum_torque,
+           transverse_pressure_angle_rack_T1,
+           transverse_pressure_angle_rack_T2,
+           circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
+           gear_addendum_rack1,
+           gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
+           root_radius_T1,root_radius_T2,root_radius_R1,
+           root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
+        
+#        self.Z1=Z1
+#        self.Z2=Z2
+#        self.maximum_torque=maximum_torque
+#        self.center_distance=[]
+#        self.transverse_pressure_angle=[]
+#        self.helix_angle=[]
+#        self.coefficient_profile_shift1=[]
+#        self.coefficient_profile_shift2=[]
+#        self.gear_width=[]
+        self.bounds={'center_distance':center_distance,
+                 'transverse_pressure_angle':transverse_pressure_angle,
+                 'helix_angle':helix_angle,
+                 'coefficient_profile_shift1':coefficient_profile_shift1,
+                 'coefficient_profile_shift2':coefficient_profile_shift2,
+                 'gear_width':gear_width}
+        self.Bounds=npy.array([center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width])
+        
+        self.xk={'Z1':self.Z1,'Z2':self.Z2,'maximum_torque':self.maximum_torque}
+        self.xo={'transverse_pressure_angle_rack_T1':transverse_pressure_angle_rack_T1,
+                 'transverse_pressure_angle_rack_T2':transverse_pressure_angle_rack_T2,
+                 'circular_tooth_thickness_rack1':circular_tooth_thickness_rack1,
+                 'circular_tooth_thickness_rack2':circular_tooth_thickness_rack2,
+                 'gear_addendum_rack1':gear_addendum_rack1,
+                 'gear_addendum_rack2':gear_addendum_rack2,
+                 'gear_dedendum_rack1':gear_dedendum_rack1,
+                 'gear_dedendum_rack2':gear_dedendum_rack2,
+                 'root_radius_T1':root_radius_T1,
+                 'root_radius_T2':root_radius_T2,
+                 'root_radius_R1':root_radius_R1,
+                 'root_radius_R2':root_radius_R2,
+                 'transverse_pressure_angle_rack_R1':transverse_pressure_angle_rack_R1,
+                 'transverse_pressure_angle_rack_R2':transverse_pressure_angle_rack_R2}
+        
+        self.InitX0()
+        self.save=self.Xu[:]
+        
+        self.DefXU()
+        self.xt=dict(list(self.xk.items())+list(self.xu.items())+list(self.xo.items()))
+        self.GearAssembly=GearAssembly(**self.xt)
+        
+    def DefVar(self,Z1=None,Z2=None,center_distance=None,transverse_pressure_angle=None,
+           helix_angle=None,coefficient_profile_shift1=None,
+           coefficient_profile_shift2=None,gear_width=None,maximum_torque=None,
+           transverse_pressure_angle_rack_T1=None,
+           transverse_pressure_angle_rack_T2=None,
+           circular_tooth_thickness_rack1=None,circular_tooth_thickness_rack2=None,
+           gear_addendum_rack1=None,
+           gear_addendum_rack2=None,gear_dedendum_rack1=None,gear_dedendum_rack2=None,
+           root_radius_T1=None,root_radius_T2=None,root_radius_R1=None,
+           root_radius_R2=None,transverse_pressure_angle_rack_R1=None,transverse_pressure_angle_rack_R2=None):
+        self.Z1=Z1
+        self.Z2=Z2
+        self.maximum_torque=maximum_torque
+        self.center_distance=center_distance
+        self.transverse_pressure_angle=transverse_pressure_angle
+        self.helix_angle=helix_angle
+        self.coefficient_profile_shift1=coefficient_profile_shift1
+        self.coefficient_profile_shift2=coefficient_profile_shift2
+        self.gear_width=gear_width
     
+    def DefXU(self,Xu=None):
+        #Définition des inconnues utilisées dans l'optimiseur
+        if type(Xu)==type(npy.array(())):
+            self.center_distance=Xu[0,0]
+            self.transverse_pressure_angle=Xu[1,0]
+            self.helix_angle=Xu[2,0]
+            self.coefficient_profile_shift1=Xu[3,0]
+            self.coefficient_profile_shift2=Xu[4,0]
+            self.gear_width=Xu[5,0]
+            
+        self.xu={'center_distance':self.center_distance,
+                 'transverse_pressure_angle':self.transverse_pressure_angle,
+                 'helix_angle':self.helix_angle,
+                 'coefficient_profile_shift1':self.coefficient_profile_shift1,
+                 'coefficient_profile_shift2':self.coefficient_profile_shift2,
+                 'gear_width':self.gear_width}
+        self.Xu=npy.array([[(self.center_distance),
+                 (self.transverse_pressure_angle),
+                 (self.helix_angle),
+                 (self.coefficient_profile_shift1),
+                 (self.coefficient_profile_shift2),
+                 (self.gear_width)]])
+        self.Xu=npy.transpose(self.Xu)
+        
     def InitX0(self):
         
-        dim=npy.shape(self.bounds)[0]
-        sol=npy.random.random(dim)
-        x0=(self.bounds[:,1]-self.bounds[:,0])*sol+self.bounds[:,0]
-        return x0
+        self.DefXU()
+        for i in self.bounds:
+            self.i=((self.bounds[i][1]-self.bounds[i][0])*npy.random.random(1)+self.bounds[i][0])[0]
+            self.xu[i]=self.i
+        self.xt=dict(list(self.xk.items())+list(self.xu.items())+list(self.xo.items()))
+        self.DefVar(**self.xt)
+        self.DefXU()
         
-    def GearAssemblyParam(self,x):
+    def GearAssemblyParam(self,Z1,Z2,center_distance,transverse_pressure_angle,
+           helix_angle,coefficient_profile_shift1,
+           coefficient_profile_shift2,gear_width,maximum_torque,
+           transverse_pressure_angle_rack_T1,
+           transverse_pressure_angle_rack_T2,
+           circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
+           gear_addendum_rack1,
+           gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
+           root_radius_T1,root_radius_T2,root_radius_R1,
+           root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2):
         
-        self.Z1=x[0]
-        self.Z2=x[1]
-        self.center_distance=x[2]
-        self.transverse_pressure_angle=x[3]
-        self.helix_angle=x[4]
-        self.coefficient_profile_shift1=x[5]
-        self.coefficient_profile_shift2=x[6]
-        self.gear_width=x[7]
-        self.maximum_torque=x[8]
-        self.transverse_pressure_angle_rack_T1=None
-        self.transverse_pressure_angle_rack_T2=None
-        self.circular_tooth_thickness_rack1=None
-        self.circular_tooth_thickness_rack2=None
-        self.gear_addendum_rack1=None
-        self.gear_addendum_rack2=None
-        self.gear_dedendum_rack1=None
-        self.gear_dedendum_rack2=None
-        self.root_radius_T1=None
-        self.root_radius_T2=None
-        self.root_radius_R1=None
-        self.root_radius_R2=None
-        self.transverse_pressure_angle_rack_R1=None
-        self.transverse_pressure_angle_rack_R2=None
+        self.Z1=Z1
+        self.Z2=Z2
+        self.maximum_torque=maximum_torque
+        self.center_distance=[]
+        self.transverse_pressure_angle=[]
+        self.helix_angle=[]
+        self.coefficient_profile_shift1=[]
+        self.coefficient_profile_shift2=[]
+        self.gear_width=[]
         
-    def Update(self,x):
         
-        self.GearAssemblyParam(x)
-        self.GearAssembly.Update(self.Z1,self.Z2,self.center_distance,self.transverse_pressure_angle,
-                                       self.helix_angle,self.coefficient_profile_shift1,
-                                       self.coefficient_profile_shift2,self.gear_width,self.maximum_torque,
-                                       self.transverse_pressure_angle_rack_T1,
-                                       self.transverse_pressure_angle_rack_T2,
-                                       self.circular_tooth_thickness_rack1,self.circular_tooth_thickness_rack2,
-                                       self.gear_addendum_rack1,
-                                       self.gear_addendum_rack2,self.gear_dedendum_rack1,self.gear_dedendum_rack2,
-                                       self.root_radius_T1,self.root_radius_T2,self.root_radius_R1,
-                                       self.root_radius_R2,self.transverse_pressure_angle_rack_R1,self.transverse_pressure_angle_rack_R2)
-        self.save=x[:]
+    def Update(self,Xu):
+        
+        self.DefXU(Xu)
+        self.xt=dict(list(self.xk.items())+list(self.xu.items())+list(self.xo.items()))
+        self.GearAssemblyParam(**self.xt)
+        self.GearAssembly.Update(**self.xt)
+        self.save=Xu[:]
 
     def CriteriaEq(self):
         
@@ -876,7 +988,7 @@ class GearAssemblyOptimizer:
 #              self.GearAssembly.Rack1.root_radius_T-self.GearAssembly.Rack1.root_radius_R,
 #              self.GearAssembly.Rack2.transverse_pressure_angle_T-self.GearAssembly.Rack2.transverse_pressure_angle_R,
 #              self.GearAssembly.Rack2.root_radius_T-self.GearAssembly.Rack2.root_radius_R]
-        crit=[self.transverse_radial_pitch_rack1-self.transverse_radial_pitch_rack2]
+#        crit=[self.transverse_radial_pitch_rack1-self.transverse_radial_pitch_rack2]
         crit=[0]
         return crit
         
@@ -891,40 +1003,50 @@ class Optimizer:
         
         self.GearAssembly=Assembly
         self.solution=[]
-        self.xb=[]
+        self.save=self.GearAssembly.Xu[:]
         
     def Objective(self,x):
 
-        self.GearAssembly.Update(x)
         FEQ=self.feq(x)
         FINEQ=self.fineq(x)
         obj=0
 #        for i in FINEQ:
 #            obj=obj+(i**2)
-        obj+=100*((self.GearAssembly.GearAssembly.radial_contact_ratio-1.2)**2)
-
+        obj+=0.1*((self.GearAssembly.GearAssembly.radial_contact_ratio-1.2)**2)
+        obj+=0.1*((self.GearAssembly.GearAssembly.linear_backlash-0.1)**2)
+        for i in FINEQ:
+            if i < 0:
+                obj+=-100*i
+            else:
+                obj+=0.0001*i
+        
         return obj
              
     def fineq(self,x):
         
-        self.GearAssembly.Update(x)
+#        x=npy.transpose([x])
+#        self.GearAssembly.Update(x)
+        if False in (npy.transpose([x])==self.save):
+            x=npy.transpose([x])
+            self.GearAssembly.Update(x)
+        self.save=self.GearAssembly.Xu[:]
+        
         ineq=[]
         #ineq.extend(self.GearAssembly.GearAssembly.Gear1.CriteriaIneq())
         #ineq.extend(self.GearAssembly.GearAssembly.Gear2.CriteriaIneq())
-        ineq.extend(self.GearAssembly.CriteriaIneq())
+#        ineq.extend(self.GearAssembly.CriteriaIneq())
         ineq.extend(self.GearAssembly.GearAssembly.CriteriaIneq())
         #ineq.extend(self.GearAssembly.GearAssembly.Rack1.CriteriaIneq())
         #ineq.extend(self.GearAssembly.GearAssembly.Rack2.CriteriaIneq())
+        
         return ineq
     
         
     def feq(self,x):
         
-        self.GearAssembly.Update(x)
         eq=[0]
 #        eq.extend(self.GearAssembly.CriteriaEq())
 #        eq.extend(self.GearAssembly.GearAssembly.CriteriaEq())
-        
         return eq
         
     def Optimize(self):
@@ -933,27 +1055,32 @@ class Optimizer:
         i=0
         arret=0
         while i<boucle and arret==0:
-            print(i)
+            print('Boucle d\'itération locale {}'.format(i))
             dim=npy.shape(self.GearAssembly.save)[0]
             sol=npy.random.random(dim)
-            x0=(self.GearAssembly.bounds[:,1]-self.GearAssembly.bounds[:,0])*sol+self.GearAssembly.bounds[:,0]
+#            x0=(self.GearAssembly.bounds[:,1]-self.GearAssembly.bounds[:,0])*sol+self.GearAssembly.bounds[:,0]
+            self.GearAssembly.InitX0()
+            x0=npy.array(self.GearAssembly.Xu[:])
 #            self.GearAssembly.Update(x0)
             self.GearAssembly.Update(x0)
+
             cons = ({'type': 'eq','fun' : self.feq},{'type': 'ineq','fun' : self.fineq})
-            opt = {'maxiter':20000}
+            cons = {'type': 'ineq','fun' : self.fineq}
+            opt = {'maxiter':10000,'xtol': 1e-8, 'disp': False}
             try:
                 #[x, _, _, imode,_] = fmin_slsqp(objective, x0,bounds=bounds, ieqcons=[const2], full_output=1,args=(p0,dR),iter=1000,iprint=0,acc=1e-1)
                 #[x, _, imode,_] = root(const1, x0, method='lm')
-                cx = minimize(self.Objective, x0, bounds=self.GearAssembly.bounds,constraints=cons,options=opt)
+#                cx = minimize(self.Objective, x0, bounds=self.GearAssembly.Bounds,constraints=cons,options=opt)
+                cx = minimize(self.Objective, x0, bounds=self.GearAssembly.Bounds, options=opt)
                 FEQ=self.feq(cx.x)
                 FINEQ=self.fineq(cx.x)
-                #print(FEQ,FINEQ)
-                if max(FEQ)<1e-6 and min(FEQ)>-1e-6 and min(FINEQ)>-1e-6:
+                print('Status de convergence {}, Valeur de la fonctionnelle {}'.format(cx.status,cx.fun))
+#                print(cx)
+                if cx.fun<1 and min(FINEQ)>-1e-4:
                     xsol=cx.x
                     self.solution.append(xsol)
                     arret=1
-                    print(self.GearAssembly.GearAssembly.Gear1.root_diameter_active,22)
-                    print(FINEQ)
+                    print('Convergence atteinte avec le status {}, Valeur de la fonctionnelle {}'.format(cx.status,cx.fun))
             except:
 #                pass
                 print('erreur de nom')
@@ -1034,8 +1161,8 @@ class TraceGears:
         L2=[]
         L2.append(vm.Circle2D(vm.Point2D(tuple1),df1/2))
         L2.append(vm.Circle2D(vm.Point2D(tuple2),df2/2))
-        L2.append(vm.Circle2D(vm.Point2D(tuple1),gear1.base_diameter/2))
-        L2.append(vm.Circle2D(vm.Point2D(tuple2),gear2.base_diameter/2))
+        L4=[vm.Circle2D(vm.Point2D(tuple1),gear1.base_diameter/2)]
+        L4.append(vm.Circle2D(vm.Point2D(tuple2),gear2.base_diameter/2))
         L2.append(vm.Circle2D(vm.Point2D(tuple1),assembly.pitch_diameter_factory1/2))
         L2.append(vm.Circle2D(vm.Point2D(tuple2),assembly.pitch_diameter_factory2/2))
         L3=[]
@@ -1048,5 +1175,6 @@ class TraceGears:
         SVG1.Convert(L1[1],'G2','red',0.04,0)
         SVG1.Convert(L2,'Construction','blue',0.06,0,'0.1px, 0.3px')
         SVG1.Convert(L3,'Construction','red',0.03,0,'0.1px, 0.4px')
+        SVG1.Convert(L4,'Construction','green',0.03,0,'0.1px, 0.4px')
         SVG1.Export(name,{'G1':{'R':[2*npy.pi/gear1.tooth_number,0,0]},'G2':{'R':[-2*npy.pi/gear2.tooth_number,assembly.center_distance,0]}})
 

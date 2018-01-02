@@ -21,18 +21,23 @@ dico_ref={'ratio':{'nom':0.23,'min':None,'max':None,'err':0.05,'prog':None,'prem
           'coefficient_profile_shift1':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
           'coefficient_profile_shift2':{'nom':None,'min':None,'max':None,'err':None,'prog':None},
           'gear_width':{'nom':None,'min':20,'max':20,'err':None,'prog':None},
-          'maximum_torque':{'nom':None,'min':200,'max':200,'err':None,'prog':None}
+          'maximum_torque':{'nom':200,'min':None,'max':None,'err':None,'prog':None}
                      }
 
 M1=Gears.MasterGearAssembly(**dico_ref)
 M1.Optimize()
 
 ### Developpement perso
-#list_bounds=[(13,13),(54,54),(40,80),(0.01,0.5),(0.1,0.3),(-1,1),(-1,1),(20,20),(200,200)]
-#A1=Gears.GearAssemblyOptimizer(list_bounds)
+#list_bounds={'Z1':13,'Z2':54,'center_distance':(40,80),'transverse_pressure_angle':(0.2,0.5),'helix_angle':(0.3,0.3),'coefficient_profile_shift1':(-1,1),'coefficient_profile_shift2':(-1,1),'gear_width':(20,20),'maximum_torque':200}
+##[(13,13),(54,54),(40,80),(0.01,0.5),(0.1,0.3),(-1,1),(-1,1),(20,20),(200,200)]
+#A1=Gears.GearAssemblyOptimizer(**list_bounds)
 #O1=Gears.Optimizer(A1)
 #O1.Optimize()
-#AG1=Gears.GearAssembly(*list(O1.solution[-1]))
+#xsol=npy.transpose([O1.solution[-1]])
+##xsol=O1.GearAssembly.Xu
+#O1.GearAssembly.DefXU(xsol)
+#xt=dict(list(O1.GearAssembly.xk.items())+list(O1.GearAssembly.xu.items())+list(O1.GearAssembly.xo.items()))
+#AG1=Gears.GearAssembly(**xt)
 #i=0
 #T1=Gears.TraceGears()
 #T1.Rack(AG1.Rack1,5,'rack1-s{}.html'.format(str(i)))
@@ -46,10 +51,10 @@ M1.Optimize()
 ##xsol=list(npy.array([3.00000000e+01,5.10000000e+01,9.74954025e+01,4.25119842e-01,3.00000000e-01,9.95153575e-01,7.35600926e-02,2.00000000e+01,2.00000000e+02]))
 ##AG1=GearAssembly(*xsol)
 
-### Sorties graphiques SVG
+## Sorties graphiques SVG
 for i,j in enumerate(M1.solution):
-    AG1=GearAssembly(*j)
-    T1=Trace()
+    AG1=Gears.GearAssembly(**j)
+    T1=Gears.TraceGears()
     T1.Rack(AG1.Rack1,5,'rack1-s{}.html'.format(str(i)))
     T1.Rack(AG1.Rack2,5,'rack2-s{}.html'.format(str(i)))
     T1.RackGenere(AG1.Gear1,AG1.Z1,'Cremaillere_Z1-s{}.html'.format(str(i)))
@@ -62,7 +67,7 @@ for i,j in enumerate(M1.solution):
 dico_export={}
 for i,j in enumerate(M1.solution):
     dico_export['s'+str(i)]={}
-    AG1=GearAssembly(*j)
+    AG1=Gears.GearAssembly(**j)
     dico_export['s'+str(i)]['axial_contact_ratio']=AG1.axial_contact_ratio
     dico_export['s'+str(i)]['axial_pitch']=AG1.axial_pitch
     dico_export['s'+str(i)]['center_distance']=AG1.center_distance
