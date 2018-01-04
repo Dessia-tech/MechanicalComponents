@@ -112,6 +112,25 @@ class Rack:
     def VolumeModel(self):
         pass
     
+    def SVGExportRack(self,number,name):
+        
+        R1=self.RackComplete(npy.arange(number))
+        Ref=[vm.Line2D(vm.Point2D((-self.transverse_radial_pitch,0)),vm.Point2D(((number+1)*self.transverse_radial_pitch,0)))]
+        Ref.append(vm.Line2D(vm.Point2D((-self.transverse_radial_pitch,self.gear_addendum)),vm.Point2D(((number+1)*self.transverse_radial_pitch,self.gear_addendum))))
+        Ref.append(vm.Line2D(vm.Point2D((-self.transverse_radial_pitch,-self.gear_dedendum)),vm.Point2D(((number+1)*self.transverse_radial_pitch,-self.gear_dedendum))))
+        SVG1=LibSvg.SVGTrace(700,0)
+        SVG1.Convert(R1,'R1','black',0.02,0)
+        SVG1.Convert(Ref,'Ref','black',0.01,1,'0.01px, 0.08px')
+        SVG1.Export(name)
+        
+    def Dict(self):
+        d=self.__dict__.copy()
+        return d
+    
+    def ExportCSV(self):
+        d=self.__dict__.copy()
+        return list(d.keys()),list(d.values())
+    
 class Gear:
     def __init__(self,tooth_number,rack_data,coefficient_profile_shift=0):
         
@@ -453,6 +472,36 @@ class Gear:
         wheel3D=vm.primitives3D.ExtrudedProfile(p,x,y,self.WheelContours(),z)
         lever3D=vm.primitives3D.ExtrudedProfile(p,x,y,self.WheelContours(),z)
         return vm.VolumeModel([wheel3D,lever3D])
+    
+    def SVGExportRackGenere(self,name):
+
+        L1=self.GearContours(20,[int(self.tooth_number)-1,0,1])
+        L2=[]
+        for i in npy.linspace(self.alpha_root_diameter_active,self.alpha_outside_diameter,5):
+            L=self.PosRack(i,[-1,0,1])
+            L2.extend(L[1])
+        L3=self.TrochoideSecondary([0,self.tooth_number-1],'T',0.8,1000)
+        Temp=self.TrochoideSecondary([0,self.tooth_number-1],'R',0.8,1000)
+        L3.extend(Temp)
+        #G1=vm.Contour2D(L1)
+        #G1.MPLPlot()
+        SVG1=LibSvg.SVGTrace(700,0,-npy.pi/2)
+        SVG1.Convert(L1,'Rack','black',0.02,0)
+        SVG1.Convert(L2,'Rack','black',0.01,0,'0.01px, 0.08px')
+        SVG1.Convert(L3,'Rack','blue',0.03,0)
+        SVG1.Export(name)
+    
+    def Dict(self):
+        d=self.__dict__.copy()
+        d['rack']=self.rack.Dict()
+        return d
+    
+    def ExportCSV(self):
+        d=self.__dict__.copy()
+        (d1,d2)=self.rack.ExportCSV()
+        del d['rack']
+        del d['save']
+        return list(d.keys())+d1,list(d.values())+d2
         
 class GearAssembly:
     def __init__(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle=0,coefficient_profile_shift1=0,
@@ -668,26 +717,154 @@ class GearAssembly:
         self.sigma_lewis_maximum1=6*self.tangential_load*self.gear_height_lewis1/(self.gear_width*self.Gear1.root_gear_length**2)
         self.sigma_lewis_maximum2=6*self.tangential_load*self.gear_height_lewis2/(self.gear_width*self.Gear2.root_gear_length**2)
         
-class MasterGearAssembly:
-    def __init__(self,ratio,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width,maximum_torque):
+    def Dict(self):
+        self.SigmaLewis()
+
+        d=self.__dict__.copy()
+        del d['Rack1']
+        del d['Rack2']
         
-        self.ratio=ratio
-        self.Z1=Z1
-        self.Z2=Z2
-        self.center_distance=center_distance
-        self.transverse_pressure_angle=transverse_pressure_angle
-        self.helix_angle=helix_angle
-        self.coefficient_profile_shift1=coefficient_profile_shift1
-        self.coefficient_profile_shift2=coefficient_profile_shift2
-        self.gear_width=gear_width
-        self.maximum_torque=maximum_torque
+        d['Gear1']=self.Gear1.Dict()
+        d['Gear2']=self.Gear2.Dict()
+
+        return d
+    
+    def ExportCSV(self):
+        self.SigmaLewis()
+        d=self.__dict__.copy()
+        (d1,d2)=self.Gear1.ExportCSV()
+        d1=['gear1_'+i for i in d1]
+        (d3,d4)=self.Gear2.ExportCSV()
+        d3=['gear2_'+i for i in d3]
+        return list(d.keys())+d1+d3,list(d.values())+d2+d4
+    
+    def SVGExportGearAssembly(self,name,position1,position2):
+        #tuple1 et 2 correspondent a la position des centres
+        TG1=self.Gear1.GearContours(10)
+        TG2=self.Gear2.GearContours(10)
+        list_rot=self.InitialPosition()
+        L1=self.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
+        L2=[]
+        L2.append(vm.Circle2D(vm.Point2D(position1),self.DF1/2))
+        L2.append(vm.Circle2D(vm.Point2D(position2),self.DF2/2))
+        L2.append(vm.Circle2D(vm.Point2D(position1),self.Gear1.base_diameter/2))
+        L2.append(vm.Circle2D(vm.Point2D(position2),self.Gear2.base_diameter/2))
+        L2.append(vm.Circle2D(vm.Point2D(position1),self.pitch_diameter_factory1/2))
+        L2.append(vm.Circle2D(vm.Point2D(position2),self.pitch_diameter_factory2/2))
+        L3=[]
+        L3.append(vm.Circle2D(vm.Point2D(position1),self.Gear1.root_diameter_active/2))
+        L3.append(vm.Circle2D(vm.Point2D(position2),self.Gear2.root_diameter_active/2))
+        #G1=vm.Contour2D(LR)
+        #G1.MPLPlot()
+        SVG1=LibSvg.SVGTrace(700)
+        SVG1.Convert(L1[0],'G1','black',0.04,0)
+        SVG1.Convert(L1[1],'G2','red',0.04,0)
+        SVG1.Convert(L2,'Construction','blue',0.06,0,'0.1px, 0.3px')
+        SVG1.Convert(L3,'Construction','red',0.03,0,'0.1px, 0.4px')
+        SVG1.Export(name,{'G1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'G2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
         
+    def SVGExportDetailDent(self,name,gear):
+        if gear=='Z1':
+            dent=self.Gear1
+            diam_fonct=self.DF1
+        elif gear=='Z2':
+            dent=self.Gear2
+            diam_fonct=self.DF2
+        Ldev=[dent.InvoluteTrace(20,0,'T')]
+        Ltroc=[dent.TrochoideTrace(40,0,'T')[0]]
+        Lpied=[dent.TrochoideTrace(40,0,'T')[1]]
+        Lout=[dent.OutsideTrace(0)]
+        Lcomplet=dent.GearContours(10,[-1,0,1])
+        sol=dent.Involute(npy.linspace(0,npy.tan(dent.alpha_outside_diameter),20))
+        Lconst=[dent.Trace(sol[0],sol[1])]
+        Lconst.extend(dent.TrochoideSecondary([0],'T',0.8,1000))
+        L2=[vm.Circle2D(vm.Point2D((0,0)),dent.base_diameter/2)]
+        L2.append(vm.Circle2D(vm.Point2D((0,0)),diam_fonct/2))
+        L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.root_diameter_active/2))
+        L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.root_diameter/2))
+        L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.outside_diameter/2))
+        L3=[vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.outside_diameter/2,0)))]
+        L4=[vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2),dent.root_diameter/2*npy.sin(-dent.root_angle/2))))]
+        L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2-dent.phi0),dent.root_diameter/2*npy.sin(-dent.root_angle/2-dent.phi0)))))
+        L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.outside_diameter/2*npy.cos(-dent.root_angle/2-dent.phi_trochoide),dent.outside_diameter/2*npy.sin(-dent.root_angle/2-dent.phi_trochoide)))))
+        SVG1=LibSvg.SVGTrace(700,1,-npy.pi/2)
+        SVG1.Convert(Ldev,'Ldev','black',0.02,0)
+        SVG1.Convert(Ltroc,'Ltroc','blue',0.02,0)
+        SVG1.Convert(Lpied,'Lpied','red',0.02,0)
+        SVG1.Convert(Lout,'Lout','green',0.02,0)
+        SVG1.Convert(Lcomplet,'Lcomplet','black',0.01,1,'0.01px, 0.08px')
+        SVG1.Convert(Lconst,'Gc','blue',0.01,1,'0.01px, 0.08px')
+        SVG1.Convert(L2,'L2','black',0.01,1,'0.01px, 0.08px')
+        SVG1.Convert(L3,'L3','black',0.03,1)
+        SVG1.Convert(L4,'L4','black',0.01,1)
+        SVG1.Export(name)
+
+class FrontGearAssembly:
+    
+    def __init__(self,data):
+        
+        def DefZ(type,nom=None,min=None,max=None):
+            if type=='Z1':
+                self.Z1={'nom':nom,'min':min,'max':max}
+            elif type=='Z2':
+                self.Z2={'nom':nom,'min':min,'max':max}
+                
+        def DefRatio(type,nom=None,min=None,max=None,err=None,prog=None,prem=None,pgcd=None):
+            self.ratio={'nom':nom,'min':min,'max':max,'err':err,'prog':prog,'prem':prem,'pgcd':pgcd}
+            
+        def DefGeneral(type,nom=None,min=None,max=None,err=None,prog=None,prem=None,pgcd=None):
+            if type=='center_distance':
+                self.center_distance={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
+            elif type=='transverse_pressure_angle':
+                self.transverse_pressure_angle={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
+            elif type=='helix_angle':
+                self.helix_angle={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
+            elif type=='coefficient_profile_shift1':
+                self.coefficient_profile_shift1={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
+            elif type=='coefficient_profile_shift2':
+                self.coefficient_profile_shift2={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
+            elif type=='gear_width':
+                self.gear_width={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
+            elif type=='maximum_torque':
+                self.maximum_torque={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
+                
+        #Initialisation des dictionnaires (passage à None l'ensemble des arg)
+        DefZ('Z1')
+        DefZ('Z2')
+        DefRatio('ratio')
+        DefGeneral('center_distance')
+        DefGeneral('transverse_pressure_angle')
+        DefGeneral('helix_angle')
+        DefGeneral('coefficient_profile_shift1')
+        DefGeneral('coefficient_profile_shift2')
+        DefGeneral('gear_width')
+        DefGeneral('maximum_torque')
+        #Prise en compte des datas renseignees par la variable d'entree
+        for i in data:
+            if i['type'] in ['Z1','Z2']:
+                DefZ(**i)
+            elif i['type'] in ['ratio']:
+                DefRatio(**i)
+            else:
+                DefGeneral(**i)
+        
+        #Analyse conformite des datas et lancement des calculs
         self.error=self.AnalyzeDataSet()
         if self.error==True:
             self.DefaultDataSet()
-            self.AnalyzeCombination()
-            self.solution=[]
-        
+            M1=MasterGearAssembly({'min':self.ratio['min'],'max':self.ratio['max']},
+                                   {'min':self.Z1['min'],'max':self.Z1['max']},
+                                   {'min':self.Z2['min'],'max':self.Z2['max']},
+                                   {'min':self.center_distance['min'],'max':self.center_distance['max']},
+                                   {'min':self.transverse_pressure_angle['min'],'max':self.transverse_pressure_angle['max']},
+                                   {'min':self.helix_angle['min'],'max':self.helix_angle['max']},
+                                   {'min':self.coefficient_profile_shift1['min'],'max':self.coefficient_profile_shift1['max']},
+                                   {'min':self.coefficient_profile_shift2['min'],'max':self.coefficient_profile_shift2['max']},
+                                   {'min':self.gear_width['min'],'max':self.gear_width['max']},
+                                   {'min':self.maximum_torque['min'],'max':self.maximum_torque['max']})
+            M1.Optimize()
+            self.solutions=M1.solutions
+            
     def AnalyzeDataSet(self):
         
         if self.ratio['nom']==None:
@@ -776,7 +953,24 @@ class MasterGearAssembly:
         analyze(self.coefficient_profile_shift2,0.05,-1,1)
         analyze(self.gear_width,0.05,15,25)
         analyze(self.maximum_torque,0.05,100,150)
-
+        
+class MasterGearAssembly:
+    def __init__(self,ratio,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width,maximum_torque):
+        
+        self.ratio=ratio
+        self.Z1=Z1
+        self.Z2=Z2
+        self.center_distance=center_distance
+        self.transverse_pressure_angle=transverse_pressure_angle
+        self.helix_angle=helix_angle
+        self.coefficient_profile_shift1=coefficient_profile_shift1
+        self.coefficient_profile_shift2=coefficient_profile_shift2
+        self.gear_width=gear_width
+        self.maximum_torque=maximum_torque
+        
+        self.AnalyzeCombination()
+        self.solutions=[]
+        
     def AnalyzeCombination(self):
         
         mat1=list(npy.arange(self.Z1['min'],self.Z1['max']+1))
@@ -815,7 +1009,7 @@ class MasterGearAssembly:
                 Temp1['coefficient_profile_shift1']=(self.coefficient_profile_shift1['min'],self.coefficient_profile_shift1['max'])
                 Temp1['coefficient_profile_shift2']=(self.coefficient_profile_shift2['min'],self.coefficient_profile_shift2['max'])
                 Temp1['gear_width']=(self.gear_width['min'],self.gear_width['max'])
-                Temp1['maximum_torque']=self.maximum_torque['nom']
+                Temp1['maximum_torque']=self.maximum_torque['min']
                 self.plex_calcul.append(Temp1)
                 
         
@@ -823,18 +1017,15 @@ class MasterGearAssembly:
         
         for i in self.plex_calcul:
             A1=GearAssemblyOptimizer(**i)
-            O1=Optimizer(A1)
-            O1.Optimize()
+            A1.Optimize()
             try:
-                xsol=npy.transpose([O1.solution[-1]])
-                O1.GearAssembly.DefXU(xsol)
-                xt=dict(list(O1.GearAssembly.xk.items())+list(O1.GearAssembly.xu.items())+list(O1.GearAssembly.xo.items()))
-                self.solution.append(xt)
+                xsol=npy.transpose([A1.solutions[-1]])
+                A1.DefXU(xsol)
+                xt=dict(list(A1.xk.items())+list(A1.xu.items())+list(A1.xo.items()))
+                self.solutions.append(GearAssembly(**xt))
             except:
-                pass
-        
-        
-        
+                pass     
+
 class GearAssemblyOptimizer:
     def __init__(self,Z1,Z2,center_distance,transverse_pressure_angle,
            helix_angle,coefficient_profile_shift1,
@@ -857,16 +1048,7 @@ class GearAssemblyOptimizer:
            gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
            root_radius_T1,root_radius_T2,root_radius_R1,
            root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
-        
-#        self.Z1=Z1
-#        self.Z2=Z2
-#        self.maximum_torque=maximum_torque
-#        self.center_distance=[]
-#        self.transverse_pressure_angle=[]
-#        self.helix_angle=[]
-#        self.coefficient_profile_shift1=[]
-#        self.coefficient_profile_shift2=[]
-#        self.gear_width=[]
+
         self.bounds={'center_distance':center_distance,
                  'transverse_pressure_angle':transverse_pressure_angle,
                  'helix_angle':helix_angle,
@@ -893,10 +1075,40 @@ class GearAssemblyOptimizer:
         
         self.InitX0()
         self.save=self.Xu[:]
+        self.solutions=[]
         
         self.DefXU()
         self.xt=dict(list(self.xk.items())+list(self.xu.items())+list(self.xo.items()))
         self.GearAssembly=GearAssembly(**self.xt)
+        
+    def Update(self,Xu):
+        
+        self.DefXU(Xu)
+        self.xt=dict(list(self.xk.items())+list(self.xu.items())+list(self.xo.items()))
+        self.DefVar(**self.xt)
+        self.GearAssembly.Update(**self.xt)
+        self.save=Xu[:]
+        
+    def GearAssemblyParam(self,Z1,Z2,center_distance,transverse_pressure_angle,
+           helix_angle,coefficient_profile_shift1,
+           coefficient_profile_shift2,gear_width,maximum_torque,
+           transverse_pressure_angle_rack_T1,
+           transverse_pressure_angle_rack_T2,
+           circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
+           gear_addendum_rack1,
+           gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
+           root_radius_T1,root_radius_T2,root_radius_R1,
+           root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2):
+        
+        self.Z1=Z1
+        self.Z2=Z2
+        self.maximum_torque=maximum_torque
+        self.center_distance=[]
+        self.transverse_pressure_angle=[]
+        self.helix_angle=[]
+        self.coefficient_profile_shift1=[]
+        self.coefficient_profile_shift2=[]
+        self.gear_width=[]
         
     def DefVar(self,Z1=None,Z2=None,center_distance=None,transverse_pressure_angle=None,
            helix_angle=None,coefficient_profile_shift1=None,
@@ -952,36 +1164,6 @@ class GearAssemblyOptimizer:
         self.DefVar(**self.xt)
         self.DefXU()
         
-    def GearAssemblyParam(self,Z1,Z2,center_distance,transverse_pressure_angle,
-           helix_angle,coefficient_profile_shift1,
-           coefficient_profile_shift2,gear_width,maximum_torque,
-           transverse_pressure_angle_rack_T1,
-           transverse_pressure_angle_rack_T2,
-           circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
-           gear_addendum_rack1,
-           gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
-           root_radius_T1,root_radius_T2,root_radius_R1,
-           root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2):
-        
-        self.Z1=Z1
-        self.Z2=Z2
-        self.maximum_torque=maximum_torque
-        self.center_distance=[]
-        self.transverse_pressure_angle=[]
-        self.helix_angle=[]
-        self.coefficient_profile_shift1=[]
-        self.coefficient_profile_shift2=[]
-        self.gear_width=[]
-        
-        
-    def Update(self,Xu):
-        
-        self.DefXU(Xu)
-        self.xt=dict(list(self.xk.items())+list(self.xu.items())+list(self.xo.items()))
-        self.GearAssemblyParam(**self.xt)
-        self.GearAssembly.Update(**self.xt)
-        self.save=Xu[:]
-
     def CriteriaEq(self):
         
 #        crit=[self.GearAssembly.Rack1.transverse_pressure_angle_T-self.GearAssembly.Rack1.transverse_pressure_angle_R,
@@ -994,16 +1176,8 @@ class GearAssemblyOptimizer:
         
     def CriteriaIneq(self):
         
-        #crit=[self.GearAssembly.radial_contact_ratio-0.6]
         crit=[0]
         return crit
-        
-class Optimizer:
-    def __init__(self,Assembly):
-        
-        self.GearAssembly=Assembly
-        self.solution=[]
-        self.save=self.GearAssembly.Xu[:]
         
     def Objective(self,x):
 
@@ -1012,8 +1186,8 @@ class Optimizer:
         obj=0
 #        for i in FINEQ:
 #            obj=obj+(i**2)
-        obj+=0.1*((self.GearAssembly.GearAssembly.radial_contact_ratio-1.2)**2)
-        obj+=0.1*((self.GearAssembly.GearAssembly.linear_backlash-0.1)**2)
+        obj+=0.01*((self.GearAssembly.radial_contact_ratio-1.2)**2)
+        obj+=0.01*((self.GearAssembly.linear_backlash-0.1)**2)
         for i in FINEQ:
             if i < 0:
                 obj+=-100*i
@@ -1028,16 +1202,16 @@ class Optimizer:
 #        self.GearAssembly.Update(x)
         if False in (npy.transpose([x])==self.save):
             x=npy.transpose([x])
-            self.GearAssembly.Update(x)
-        self.save=self.GearAssembly.Xu[:]
+            self.Update(x)
+        self.save=self.Xu[:]
         
         ineq=[]
-        #ineq.extend(self.GearAssembly.GearAssembly.Gear1.CriteriaIneq())
-        #ineq.extend(self.GearAssembly.GearAssembly.Gear2.CriteriaIneq())
-#        ineq.extend(self.GearAssembly.CriteriaIneq())
-        ineq.extend(self.GearAssembly.GearAssembly.CriteriaIneq())
-        #ineq.extend(self.GearAssembly.GearAssembly.Rack1.CriteriaIneq())
-        #ineq.extend(self.GearAssembly.GearAssembly.Rack2.CriteriaIneq())
+        #ineq.extend(self.GearAssembly.Gear1.CriteriaIneq())
+        #ineq.extend(self.GearAssembly.Gear2.CriteriaIneq())
+#        ineq.extend(self.CriteriaIneq())
+        ineq.extend(self.GearAssembly.CriteriaIneq())
+        #ineq.extend(self.GearAssembly.Rack1.CriteriaIneq())
+        #ineq.extend(self.GearAssembly.Rack2.CriteriaIneq())
         
         return ineq
     
@@ -1045,8 +1219,8 @@ class Optimizer:
     def feq(self,x):
         
         eq=[0]
+#        eq.extend(self.CriteriaEq())
 #        eq.extend(self.GearAssembly.CriteriaEq())
-#        eq.extend(self.GearAssembly.GearAssembly.CriteriaEq())
         return eq
         
     def Optimize(self):
@@ -1056,125 +1230,64 @@ class Optimizer:
         arret=0
         while i<boucle and arret==0:
             print('Boucle d\'itération locale {}'.format(i))
-            dim=npy.shape(self.GearAssembly.save)[0]
+            dim=npy.shape(self.save)[0]
             sol=npy.random.random(dim)
 #            x0=(self.GearAssembly.bounds[:,1]-self.GearAssembly.bounds[:,0])*sol+self.GearAssembly.bounds[:,0]
-            self.GearAssembly.InitX0()
-            x0=npy.array(self.GearAssembly.Xu[:])
+            self.InitX0()
+            x0=npy.array(self.Xu[:])
 #            self.GearAssembly.Update(x0)
-            self.GearAssembly.Update(x0)
+            self.Update(x0)
 
             cons = ({'type': 'eq','fun' : self.feq},{'type': 'ineq','fun' : self.fineq})
             cons = {'type': 'ineq','fun' : self.fineq}
             opt = {'maxiter':10000,'xtol': 1e-8, 'disp': False}
-            try:
-                #[x, _, _, imode,_] = fmin_slsqp(objective, x0,bounds=bounds, ieqcons=[const2], full_output=1,args=(p0,dR),iter=1000,iprint=0,acc=1e-1)
-                #[x, _, imode,_] = root(const1, x0, method='lm')
+            #[x, _, _, imode,_] = fmin_slsqp(objective, x0,bounds=bounds, ieqcons=[const2], full_output=1,args=(p0,dR),iter=1000,iprint=0,acc=1e-1)
+            #[x, _, imode,_] = root(const1, x0, method='lm')
 #                cx = minimize(self.Objective, x0, bounds=self.GearAssembly.Bounds,constraints=cons,options=opt)
-                cx = minimize(self.Objective, x0, bounds=self.GearAssembly.Bounds, options=opt)
-                FEQ=self.feq(cx.x)
-                FINEQ=self.fineq(cx.x)
-                print('Status de convergence {}, Valeur de la fonctionnelle {}'.format(cx.status,cx.fun))
+            cx = minimize(self.Objective, x0, bounds=self.Bounds, options=opt)
+            FEQ=self.feq(cx.x)
+            FINEQ=self.fineq(cx.x)
+            print('Status de convergence {}, Valeur de la fonctionnelle {}'.format(cx.status,cx.fun))
 #                print(cx)
-                if cx.fun<1 and min(FINEQ)>-1e-4:
-                    xsol=cx.x
-                    self.solution.append(xsol)
-                    arret=1
-                    print('Convergence atteinte avec le status {}, Valeur de la fonctionnelle {}'.format(cx.status,cx.fun))
-            except:
-#                pass
-                print('erreur de nom')
+            if cx.fun<1 and min(FINEQ)>-1e-4:
+                xsol=cx.x
+                self.solutions.append(xsol)
+                arret=1
+                print('Convergence atteinte avec le status {}, Valeur de la fonctionnelle {}'.format(cx.status,cx.fun))
             i=i+1
     
-class TraceGears:
+class ExportGearAssembly:
     
-    def __init__(self):
+    def __init__(self,list_solutions,bounds,family):
         
-        self.init=1
+        self.solutions={}
+        self.solutions[family]={}
+        self.solutions[family]['obj']=[]
+        self.solutions[family]['bnds']=[]
+        self.Add(list_solutions,bounds,family)
+            
+    def Add(self,list_solutions,bounds,family):
         
-    def Rack(self,rack,number,name):
+        for i in list_solutions:
+            self.solutions[family]['obj'].append(i)
+            self.solutions[family]['bnds'].append(bounds)
+    
+    def CSVExport(self,name,family):
         
-        R1=rack.RackComplete(npy.arange(number))
-        Ref=[vm.Line2D(vm.Point2D((-rack.transverse_radial_pitch,0)),vm.Point2D(((number+1)*rack.transverse_radial_pitch,0)))]
-        Ref.append(vm.Line2D(vm.Point2D((-rack.transverse_radial_pitch,rack.gear_addendum)),vm.Point2D(((number+1)*rack.transverse_radial_pitch,rack.gear_addendum))))
-        Ref.append(vm.Line2D(vm.Point2D((-rack.transverse_radial_pitch,-rack.gear_dedendum)),vm.Point2D(((number+1)*rack.transverse_radial_pitch,-rack.gear_dedendum))))
-        SVG1=LibSvg.SVGTrace(700,0)
-        SVG1.Convert(R1,'R1','black',0.02,0)
-        SVG1.Convert(Ref,'Ref','black',0.01,1,'0.01px, 0.08px')
-        SVG1.Export(name)
-        
-    def RackGenere(self,gear,Z,name):
-
-        L1=gear.GearContours(20,[int(Z)-1,0,1])
-        L2=[]
-        for i in npy.linspace(gear.alpha_root_diameter_active,gear.alpha_outside_diameter,5):
-            L=gear.PosRack(i,[-1,0,1])
-            L2.extend(L[1])
-        L3=gear.TrochoideSecondary([0,Z-1],'T',0.8,1000)
-        Temp=gear.TrochoideSecondary([0,Z-1],'R',0.8,1000)
-        L3.extend(Temp)
-        #G1=vm.Contour2D(L1)
-        #G1.MPLPlot()
-        SVG1=LibSvg.SVGTrace(700,0,-npy.pi/2)
-        SVG1.Convert(L1,'Rack','black',0.02,0)
-        SVG1.Convert(L2,'Rack','black',0.01,0,'0.01px, 0.08px')
-        SVG1.Convert(L3,'Rack','blue',0.03,0)
-        SVG1.Export(name)
-        
-    def DetailDent(self,assembly,dent,diam_base,diam_fonct,name):
-        Ldev=[dent.InvoluteTrace(20,0,'T')]
-        Ltroc=[dent.TrochoideTrace(40,0,'T')[0]]
-        Lpied=[dent.TrochoideTrace(40,0,'T')[1]]
-        Lout=[dent.OutsideTrace(0)]
-        Lcomplet=dent.GearContours(10,[-1,0,1])
-        sol=dent.Involute(npy.linspace(0,npy.tan(dent.alpha_outside_diameter),20))
-        Lconst=[dent.Trace(sol[0],sol[1])]
-        Lconst.extend(dent.TrochoideSecondary([0],'T',0.8,1000))
-        L2=[vm.Circle2D(vm.Point2D((0,0)),diam_base/2)]
-        L2.append(vm.Circle2D(vm.Point2D((0,0)),diam_fonct/2))
-        L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.root_diameter_active/2))
-        L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.root_diameter/2))
-        L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.outside_diameter/2))
-        L3=[vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.outside_diameter/2,0)))]
-        L4=[vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2),dent.root_diameter/2*npy.sin(-dent.root_angle/2))))]
-        L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2-dent.phi0),dent.root_diameter/2*npy.sin(-dent.root_angle/2-dent.phi0)))))
-        L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.outside_diameter/2*npy.cos(-dent.root_angle/2-dent.phi_trochoide),dent.outside_diameter/2*npy.sin(-dent.root_angle/2-dent.phi_trochoide)))))
-        SVG1=LibSvg.SVGTrace(700,1,-npy.pi/2)
-        SVG1.Convert(Ldev,'Ldev','black',0.02,0)
-        SVG1.Convert(Ltroc,'Ltroc','blue',0.02,0)
-        SVG1.Convert(Lpied,'Lpied','red',0.02,0)
-        SVG1.Convert(Lout,'Lout','green',0.02,0)
-        SVG1.Convert(Lcomplet,'Lcomplet','black',0.01,1,'0.01px, 0.08px')
-        SVG1.Convert(Lconst,'Gc','blue',0.01,1,'0.01px, 0.08px')
-        SVG1.Convert(L2,'L2','black',0.01,1,'0.01px, 0.08px')
-        SVG1.Convert(L3,'L3','black',0.03,1)
-        SVG1.Convert(L4,'L4','black',0.01,1)
-        SVG1.Export(name)
-        
-    def GearAssembly(self,gear1,gear2,assembly,df1,df2,tuple1,tuple2,name):
-        
-        #tuple1 et 2 correspondent a la position des centres
-        TG1=gear1.GearContours(10)
-        TG2=gear2.GearContours(10)
-        list_rot=assembly.InitialPosition()
-        L1=assembly.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
-        L2=[]
-        L2.append(vm.Circle2D(vm.Point2D(tuple1),df1/2))
-        L2.append(vm.Circle2D(vm.Point2D(tuple2),df2/2))
-        L4=[vm.Circle2D(vm.Point2D(tuple1),gear1.base_diameter/2)]
-        L4.append(vm.Circle2D(vm.Point2D(tuple2),gear2.base_diameter/2))
-        L2.append(vm.Circle2D(vm.Point2D(tuple1),assembly.pitch_diameter_factory1/2))
-        L2.append(vm.Circle2D(vm.Point2D(tuple2),assembly.pitch_diameter_factory2/2))
-        L3=[]
-        L3.append(vm.Circle2D(vm.Point2D(tuple1),gear1.root_diameter_active/2))
-        L3.append(vm.Circle2D(vm.Point2D(tuple2),gear2.root_diameter_active/2))
-        #G1=vm.Contour2D(LR)
-        #G1.MPLPlot()
-        SVG1=LibSvg.SVGTrace(700)
-        SVG1.Convert(L1[0],'G1','black',0.04,0)
-        SVG1.Convert(L1[1],'G2','red',0.04,0)
-        SVG1.Convert(L2,'Construction','blue',0.06,0,'0.1px, 0.3px')
-        SVG1.Convert(L3,'Construction','red',0.03,0,'0.1px, 0.4px')
-        SVG1.Convert(L4,'Construction','green',0.03,0,'0.1px, 0.4px')
-        SVG1.Export(name,{'G1':{'R':[2*npy.pi/gear1.tooth_number,0,0]},'G2':{'R':[-2*npy.pi/gear2.tooth_number,assembly.center_distance,0]}})
-
+        (temp1,temp2)=self.solutions[family]['obj'][0].ExportCSV()
+        temp=temp1[0]
+        for i in temp1[1::]:
+            temp+=','+i
+        fichier=open(name,'w')
+        fichier.write(temp+'\n')
+        for GA in self.solutions[family]['obj']:
+            (temp3,temp4)=GA.ExportCSV()
+            temp=''
+            for i in temp1:
+                add=temp3.index(i)
+                if type(temp4[add])==npy.int64 or type(temp4[add])==npy.float64:
+                    temp+=str(temp4[add])+','
+                else:
+                    temp+=','
+            fichier.write(temp[0:-1]+'\n')
+        fichier.close()
