@@ -9,8 +9,8 @@ from scipy.interpolate import splprep, splev
 from sympy import *
 import itertools
 
-import LibSvg
-import Gears
+import mechanical_components.LibSvg as LibSvg
+import mechanical_components.Gears as Gears
 
 dico_ref=({'type':'ratio'},
           {'type':'Z1','min':30,'max':30},
