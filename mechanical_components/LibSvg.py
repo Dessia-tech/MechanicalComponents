@@ -1,13 +1,4 @@
 import numpy as npy
-import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
-import math
-from scipy.linalg import norm,solve,LinAlgError
-from scipy.optimize import *
-from scipy.interpolate import splprep, splev
-from sympy import *
-import itertools
 
 class SVGTrace:
     def __init__(self,scale=1,swift=0,angle=0,decal_x=0,decal_y=0):
@@ -51,8 +42,8 @@ class SVGTrace:
         self.begin.append('''<html>
 <head>
 <meta charset="UTF-8"> 
-<script src="snap.svg-min.js"></script>
-    <script src="snap.svg.zpd.js"></script>
+<script src="https://cdn.dessia.tech/snap.svg/v0.5.1/snap.svg-min.js"></script>
+    <script src="https://cdn.dessia.tech/snap.svg.zpd/v0.0.11/snap.svg.zpd.js"></script>
 
 </script>
 </head>
