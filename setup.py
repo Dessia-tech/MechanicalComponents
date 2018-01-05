@@ -26,5 +26,5 @@ setup(name='mechanical_components',
       author='Steven Masfaraud',
       author_email='masfaraud@dessia.tech',
       packages=['mechanical_components'],
-      install_requires=['numpy','scipy','volmdlr'])
+      install_requires=['numpy','scipy','volmdlr','persistent'])
 

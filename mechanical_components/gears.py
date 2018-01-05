@@ -12,7 +12,7 @@ import itertools
 import mechanical_components.LibSvg as LibSvg
 
 import persistent
-from dessia_common import ResultsDBClient
+#from dessia_common import ResultsDBClient
 #import pyDOE
 
 class Rack(persistent.Persistent):
@@ -1161,18 +1161,21 @@ class GearAssemblyOptimizerWizard:
         self.error=self.AnalyzeDataSet()
         if self.error==True:
             self.DefaultDataSet()
-            M1=GearAssemblyOptimizer({'min':self.ratio['min'],'max':self.ratio['max']},
-                                   {'min':self.Z1['min'],'max':self.Z1['max']},
-                                   {'min':self.Z2['min'],'max':self.Z2['max']},
-                                   {'min':self.center_distance['min'],'max':self.center_distance['max']},
-                                   {'min':self.transverse_pressure_angle['min'],'max':self.transverse_pressure_angle['max']},
-                                   {'min':self.helix_angle['min'],'max':self.helix_angle['max']},
-                                   {'min':self.coefficient_profile_shift1['min'],'max':self.coefficient_profile_shift1['max']},
-                                   {'min':self.coefficient_profile_shift2['min'],'max':self.coefficient_profile_shift2['max']},
-                                   {'min':self.gear_width['min'],'max':self.gear_width['max']},
-                                   {'min':self.maximum_torque['min'],'max':self.maximum_torque['max']})
-            M1.Optimize()
-            self.solutions=M1.solutions
+            
+            
+    def Optimize(self):
+        M1=GearAssemblyOptimizer({'min':self.ratio['min'],'max':self.ratio['max']},
+           {'min':self.Z1['min'],'max':self.Z1['max']},
+           {'min':self.Z2['min'],'max':self.Z2['max']},
+           {'min':self.center_distance['min'],'max':self.center_distance['max']},
+           {'min':self.transverse_pressure_angle['min'],'max':self.transverse_pressure_angle['max']},
+           {'min':self.helix_angle['min'],'max':self.helix_angle['max']},
+           {'min':self.coefficient_profile_shift1['min'],'max':self.coefficient_profile_shift1['max']},
+           {'min':self.coefficient_profile_shift2['min'],'max':self.coefficient_profile_shift2['max']},
+           {'min':self.gear_width['min'],'max':self.gear_width['max']},
+           {'min':self.maximum_torque['min'],'max':self.maximum_torque['max']})
+        M1.Optimize()
+        self.solutions=M1.solutions
             
     def AnalyzeDataSet(self):
         
@@ -1301,6 +1304,6 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
                 fichier.write(temp[0:-1]+'\n')
             fichier.close()
             
-class GearAssemblyDBClient(ResultsDBClient):
-    def __init__(self,address):
-        ResultsDBClient.__init__(address,'mc_gear_assembly')
+#class GearAssemblyDBClient(ResultsDBClient):
+#    def __init__(self,address):
+#        ResultsDBClient.__init__(address,'mc_gear_assembly')
