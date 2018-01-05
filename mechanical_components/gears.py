@@ -1278,7 +1278,7 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
         self.solutions[family]['obj']=[]
         self.solutions[family]['bnds']=[]
         self.Add(list_solutions,bounds,family)
-        self.type='mc-gears_assembly'
+        self.type='mc_gears_assembly'
             
     def Add(self,list_solutions,bounds,family):
         
