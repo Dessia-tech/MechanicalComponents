@@ -1176,6 +1176,7 @@ class GearAssemblyOptimizerWizard:
            {'min':self.maximum_torque['min'],'max':self.maximum_torque['max']})
         M1.Optimize()
         self.solutions=M1.solutions
+        
             
     def AnalyzeDataSet(self):
         
@@ -1277,6 +1278,7 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
         self.solutions[family]['obj']=[]
         self.solutions[family]['bnds']=[]
         self.Add(list_solutions,bounds,family)
+        self.type='mc-gears_assembly'
             
     def Add(self,list_solutions,bounds,family):
         
