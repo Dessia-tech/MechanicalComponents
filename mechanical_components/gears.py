@@ -1093,7 +1093,7 @@ class GearAssemblyOptimizer:
                 self.plex_calcul.append(Temp1)
                 
         
-    def Optimize(self,callback):
+    def Optimize(self,callback:lambda x:x):
         lpx=len(self.plex_calcul)
         for ii,i in enumerate(self.plex_calcul):
             print('{}%'.format(ii/lpx))
