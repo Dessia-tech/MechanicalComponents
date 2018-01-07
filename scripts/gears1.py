@@ -1,6 +1,6 @@
 import mechanical_components.gears as gears
 
-input_dict=({'type':'ratio','nom':0.27},
+input_data=({'type':'ratio','nom':0.27},
           {'type':'Z1','min':20,'max':30},
           {'type':'Z2','min':45,'max':80},
           {'type':'center_distance','min':60,'max':70},
@@ -10,7 +10,7 @@ input_dict=({'type':'ratio','nom':0.27},
 
 from dessia_api_client import Client
 client=Client()
-r=client.SubmitJob('mc_gear_assembly',input_dict)
+r=client.SubmitJob('mc_gear_assembly',input_data)
 print(r)
 
 #F1=gears.GearAssemblyOptimizerWizard(input_dict)
