@@ -1093,12 +1093,13 @@ class GearAssemblyOptimizer:
                 self.plex_calcul.append(Temp1)
                 
         
-    def Optimize(self):
+    def Optimize(self,callback):
         lpx=len(self.plex_calcul)
         for ii,i in enumerate(self.plex_calcul):
-            print('{}%'.format(ii/lpx*100))
+            print('{}%'.format(ii/lpx))
+            callback(ii/lpx)
             A1=ContinuousGearAssemblyOptimizer(**i)
-            A1.Optimize()
+            A1.Optimize(callback=callback)
             try:
                 xsol=npy.transpose([A1.solutions[-1]])
                 A1.DefXU(xsol)
@@ -1163,7 +1164,7 @@ class GearAssemblyOptimizerWizard:
             self.DefaultDataSet()
             
             
-    def Optimize(self):
+    def Optimize(self,callback=lambda x:x):
         M1=GearAssemblyOptimizer({'min':self.ratio['min'],'max':self.ratio['max']},
            {'min':self.Z1['min'],'max':self.Z1['max']},
            {'min':self.Z2['min'],'max':self.Z2['max']},
@@ -1174,7 +1175,7 @@ class GearAssemblyOptimizerWizard:
            {'min':self.coefficient_profile_shift2['min'],'max':self.coefficient_profile_shift2['max']},
            {'min':self.gear_width['min'],'max':self.gear_width['max']},
            {'min':self.maximum_torque['min'],'max':self.maximum_torque['max']})
-        M1.Optimize()
+        M1.Optimize(callback=callback)
         self.solutions=M1.solutions
         
             
