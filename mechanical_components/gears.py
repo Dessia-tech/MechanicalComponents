@@ -1093,13 +1093,13 @@ class GearAssemblyOptimizer:
                 self.plex_calcul.append(Temp1)
                 
         
-    def Optimize(self,callback:lambda x:x):
+    def Optimize(self,callback=lambda x:x):
         lpx=len(self.plex_calcul)
         for ii,i in enumerate(self.plex_calcul):
-            print('{}%'.format(ii/lpx))
+            print('{}%'.format(ii/lpx*100))
             callback(ii/lpx)
             A1=ContinuousGearAssemblyOptimizer(**i)
-            A1.Optimize(callback=callback)
+            A1.Optimize()
             try:
                 xsol=npy.transpose([A1.solutions[-1]])
                 A1.DefXU(xsol)
