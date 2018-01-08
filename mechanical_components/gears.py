@@ -1287,23 +1287,27 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
 #            self.solutions[family]['obj'].append(i)
 #            self.solutions[family]['bnds'].append(bounds)
     
-    def CSVExport(self,name,family):
+    def CSVExport(self,name,opt='w',family='Famille_A'):
         if self.solutions!=[]:
             (temp1,temp2)=self.solutions[family]['obj'][0].CSVExport()
             temp=temp1[0]
             for i in temp1[1::]:
                 temp+=','+i
-            fichier=open(name,'w')
-            fichier.write(temp+'\n')
+            if opt=='a':
+                fichier=open(name,'r')
+                temp1=fichier.read()
+                temp1=temp1.split('\n')[0]
+                temp1=temp1.split(',')
+                fichier.close()
+            fichier=open(name,opt)
+            if not opt=='a':
+                fichier.write(temp+'\n')
             for GA in self.solutions[family]['obj']:
                 (temp3,temp4)=GA.CSVExport()
                 temp=''
                 for i in temp1:
                     add=temp3.index(i)
-                    if type(temp4[add])==npy.int64 or type(temp4[add])==npy.float64:
-                        temp+=str(temp4[add])+','
-                    else:
-                        temp+=','
+                    temp+=str(temp4[add])+','
                 fichier.write(temp[0:-1]+'\n')
             fichier.close()
             
