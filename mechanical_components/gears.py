@@ -1271,20 +1271,21 @@ class GearAssemblyOptimizerWizard:
     
 class GearAssemblyOptimizationResults(persistent.Persistent):
     
-    def __init__(self,list_solutions,bounds,family):
+    def __init__(self,list_solutions,bounds):
         
-        self.solutions={}
-        self.solutions[family]={}
-        self.solutions[family]['obj']=[]
-        self.solutions[family]['bnds']=[]
-        self.Add(list_solutions,bounds,family)
-        self.type='mc_gears_assembly'
-            
-    def Add(self,list_solutions,bounds,family):
-        
-        for i in list_solutions:
-            self.solutions[family]['obj'].append(i)
-            self.solutions[family]['bnds'].append(bounds)
+        self.solutions=list_solutions
+        self.input_data=bounds
+#        self.solutions[family]={}
+#        self.solutions[family]['obj']=[]
+#        self.solutions[family]['bnds']=[]
+#        self.Add(list_solutions,bounds,family)
+#        self.type='mc_gears_assembly'
+#            
+#    def Add(self,list_solutions,bounds,family):
+#        
+#        for i in list_solutions:
+#            self.solutions[family]['obj'].append(i)
+#            self.solutions[family]['bnds'].append(bounds)
     
     def CSVExport(self,name,family):
         if self.solutions!=[]:
@@ -1306,6 +1307,12 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
                 fichier.write(temp[0:-1]+'\n')
             fichier.close()
             
+    def Dict(self):
+        d=[]
+        for ga in self.solutions:
+            d.append(ga.Dict())
+        return d
+        
 #class GearAssemblyDBClient(ResultsDBClient):
 #    def __init__(self,address):
 #        ResultsDBClient.__init__(address,'mc_gear_assembly')
