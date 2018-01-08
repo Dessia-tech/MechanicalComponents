@@ -126,7 +126,15 @@ class Rack(persistent.Persistent):
         SVG1.Export(name)
         
     def Dict(self):
-        d=self.__dict__.copy()
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
         return d
     
     def CSVExport(self):
@@ -494,7 +502,16 @@ class Gear(persistent.Persistent):
         SVG1.Export(name)
     
     def Dict(self):
-        d=self.__dict__.copy()
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
+
         d['rack']=self.rack.Dict()
         return d
     
@@ -722,7 +739,15 @@ class GearAssembly(persistent.Persistent):
     def Dict(self):
         self.SigmaLewis()
 
-        d=self.__dict__.copy()
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
         del d['Rack1']
         del d['Rack2']
         
@@ -1093,10 +1118,11 @@ class GearAssemblyOptimizer:
                 self.plex_calcul.append(Temp1)
                 
         
-    def Optimize(self):
+    def Optimize(self,callback=lambda x:x):
         lpx=len(self.plex_calcul)
         for ii,i in enumerate(self.plex_calcul):
             print('{}%'.format(ii/lpx*100))
+            callback(ii/lpx)
             A1=ContinuousGearAssemblyOptimizer(**i)
             A1.Optimize()
             try:
@@ -1163,7 +1189,7 @@ class GearAssemblyOptimizerWizard:
             self.DefaultDataSet()
             
             
-    def Optimize(self):
+    def Optimize(self,callback=lambda x:x):
         M1=GearAssemblyOptimizer({'min':self.ratio['min'],'max':self.ratio['max']},
            {'min':self.Z1['min'],'max':self.Z1['max']},
            {'min':self.Z2['min'],'max':self.Z2['max']},
@@ -1174,7 +1200,7 @@ class GearAssemblyOptimizerWizard:
            {'min':self.coefficient_profile_shift2['min'],'max':self.coefficient_profile_shift2['max']},
            {'min':self.gear_width['min'],'max':self.gear_width['max']},
            {'min':self.maximum_torque['min'],'max':self.maximum_torque['max']})
-        M1.Optimize()
+        M1.Optimize(callback)
         self.solutions=M1.solutions
         
             
@@ -1279,7 +1305,7 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
 #        self.solutions[family]['obj']=[]
 #        self.solutions[family]['bnds']=[]
 #        self.Add(list_solutions,bounds,family)
-#        self.type='mc_gears_assembly'
+        self.type='mc_gear_assembly'
 #            
 #    def Add(self,list_solutions,bounds,family):
 #        
