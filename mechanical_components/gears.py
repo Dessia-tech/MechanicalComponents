@@ -512,6 +512,7 @@ class Gear(persistent.Persistent):
             else:
                 d[k]=v
 
+        del d['save']
         d['rack']=self.rack.Dict()
         return d
     
@@ -748,6 +749,7 @@ class GearAssembly(persistent.Persistent):
                 d[k]=float(v)
             else:
                 d[k]=v
+
         del d['Rack1']
         del d['Rack2']
         
