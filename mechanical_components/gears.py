@@ -309,19 +309,32 @@ class Gear(persistent.Persistent):
     
     def RootDiameterActive(self):
         
-        fun = (lambda t : (norm(npy.array(self.Involute(t[0]))-npy.dot(npy.array([[npy.cos(-self.root_angle/2),-npy.sin(-self.root_angle/2)],[npy.sin(-self.root_angle/2),npy.cos(-self.root_angle/2)]]),(self.Trochoide(t[1])))))**2)
-        bnds = ((0, 1), (-1,1))
-        sol=minimize(fun,[1,-1], bounds=bnds, method='SLSQP', tol=1e-10)
+#        fun = (lambda t : (norm(npy.array(self.Involute(t[0]))-npy.dot(npy.array([[npy.cos(-self.root_angle/2),-npy.sin(-self.root_angle/2)],[npy.sin(-self.root_angle/2),npy.cos(-self.root_angle/2)]]),(self.Trochoide(t[1])))))**2)
+#        bnds = ((0, 1), (-1,1))
+#        sol=minimize(fun,[1,-1], bounds=bnds, method='SLSQP', tol=1e-10)
+#        
+#        self.alpha_root_diameter_active=npy.arctan(sol.x[0])
+#        self.root_diameter_active=norm(npy.array(self.Involute(sol.x[0])))*2
+#        self.tan_alpha_root_diameter_active=npy.tan(self.alpha_root_diameter_active)
+#        self.phi_trochoide=sol.x[1]
+#        
+#        #corde de la dent au diam de pied actif
+#        self.root_gear_length=npy.sin((self.root_gear_angle-2*(npy.tan(self.alpha_root_diameter_active)-self.alpha_root_diameter_active))/2)*(self.root_diameter_active/2)*2
         
-        self.alpha_root_diameter_active=npy.arctan(sol.x[0])
-        self.root_diameter_active=norm(npy.array(self.Involute(sol.x[0])))*2
+        #Analyse diam pied de dent actif
+        drap=1
+        a=drap*self.rack.a
+        b=self.rack.b-self.rack.module*self.coefficient_profile_shift
+        r=self.pitch_diameter_factory/2
+        rho=self.rack.root_radius_T
+        phi=-(a+b*npy.tan(npy.pi/2-self.transverse_pressure_angle_T_factory))/r
+        data=2*norm(self.Trochoide(phi))
+        self.root_diameter_active=data
+        self.alpha_root_diameter_active=npy.arccos(self.base_diameter/self.root_diameter_active)
         self.tan_alpha_root_diameter_active=npy.tan(self.alpha_root_diameter_active)
-        self.phi_trochoide=sol.x[1]
-#        print(fun(sol.x),sol.x)
-        
+        self.phi_trochoide=phi
         #corde de la dent au diam de pied actif
         self.root_gear_length=npy.sin((self.root_gear_angle-2*(npy.tan(self.alpha_root_diameter_active)-self.alpha_root_diameter_active))/2)*(self.root_diameter_active/2)*2
-        
     
     def RootTrace(self,discret,number,ind='T'):
         #trace simplifie de pied de dent
@@ -672,9 +685,9 @@ class GearAssembly(persistent.Persistent):
               self.Gear2.outside_diameter-self.DF2,
               self.DF1-self.DB1,
               self.DF2-self.DB2,
-              self.radial_contact_ratio-1,
+              self.radial_contact_ratio-1.2,
               self.linear_backlash-0.05,
-              0.3-self.linear_backlash
+              0.1-self.linear_backlash
               ]
         return crit
         
@@ -990,8 +1003,8 @@ class ContinuousGearAssemblyOptimizer:
         obj=0
 #        for i in FINEQ:
 #            obj=obj+(i**2)
-        obj+=0.01*((self.GearAssembly.radial_contact_ratio-1.2)**2)
-        obj+=0.01*((self.GearAssembly.linear_backlash-0.1)**2)
+        obj+=0.01*((self.GearAssembly.radial_contact_ratio-2)**2)
+        obj+=0.01*((self.GearAssembly.linear_backlash-0.07)**2)
         for i in FINEQ:
             if i < 0:
                 obj+=-10*i
@@ -1033,7 +1046,7 @@ class ContinuousGearAssemblyOptimizer:
         i=0
         arret=0
         while i<boucle and arret==0:
-#            print('Boucle d\'itération locale {}'.format(i))
+            print('Boucle d\'itération locale {}'.format(i))
 #            dim=npy.shape(self.save)[0]
 #            sol=npy.random.random(dim)
 #            x0=(self.GearAssembly.bounds[:,1]-self.GearAssembly.bounds[:,0])*sol+self.GearAssembly.bounds[:,0]
@@ -1317,7 +1330,7 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
     
     def CSVExport(self,name,opt='w',family='Famille_A'):
         if self.solutions!=[]:
-            (temp1,temp2)=self.solutions[family]['obj'][0].CSVExport()
+            (temp1,temp2)=self.solutions[0].CSVExport()
             temp=temp1[0]
             for i in temp1[1::]:
                 temp+=','+i
@@ -1330,7 +1343,7 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
             fichier=open(name,opt)
             if not opt=='a':
                 fichier.write(temp+'\n')
-            for GA in self.solutions[family]['obj']:
+            for GA in self.solutions:
                 (temp3,temp4)=GA.CSVExport()
                 temp=''
                 for i in temp1:

@@ -1,9 +1,9 @@
 import mechanical_components.gears as gears
 
-input_dict=({'type':'ratio','nom':0.275},
-          {'type':'Z1','min':20,'max':30},
-          {'type':'Z2','min':45,'max':70},
-          {'type':'center_distance','min':60,'max':70},
+input_dict=({'type':'ratio'},
+          {'type':'Z1','min':30,'max':30},
+          {'type':'Z2','min':52,'max':52},
+          {'type':'center_distance','min':30,'max':70},
           {'type':'helix_angle','nom':0.3},
           {'type':'gear_width','nom':20})
 
@@ -17,13 +17,11 @@ F1=gears.GearAssemblyOptimizerWizard(input_dict)
 if F1.error:
     F1.Optimize()
     
-
-    
 # API submission
 
 ### Sorties Obj et CSV
-E1=gears.GearAssemblyOptimizationResults(F1.solutions,input_dict,'Famille_A')
-E1.CSVExport('data.csv','w','Famille_A')
+E1=gears.GearAssemblyOptimizationResults(F1.solutions,input_dict)
+E1.CSVExport('data.csv','w')
 
 #r=client.AddResult(E1,'','')
 #print(r)
