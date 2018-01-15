@@ -1,6 +1,6 @@
 import numpy as npy
 import volmdlr as vm
-#import volmdlr.primitives3D as primitives3D
+import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 #import math
 from scipy.linalg import norm
@@ -780,6 +780,20 @@ class GearAssembly(persistent.Persistent):
         d3=['gear2_'+i for i in d3]
         return list(d.keys())+d1+d3,list(d.values())+d2+d4
     
+    def FreeCADExport(self,name,position1,position2):
+        TG1=self.Gear1.GearContours(10)
+        TG2=self.Gear2.GearContours(10)
+        list_rot=self.InitialPosition()
+        L1=self.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
+        C1=vm.Contour2D(L1[0])
+        C2=vm.Contour2D(L1[1])
+        print(C1)
+        
+        R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector2D((1,0,0)),vm.Vector2D((0,1,0)),[C1],vm.Vector3D((0,0,0.2)),name='R1')
+        model=vm.VolumeModel([R1])
+        model.FreeCADExport('python','sol8','/usr/lib/freecad/lib')
+        return C1
+    
     def SVGExport(self,name,position1,position2):
         #tuple1 et 2 correspondent a la position des centres
         TG1=self.Gear1.GearContours(10)
@@ -804,6 +818,8 @@ class GearAssembly(persistent.Persistent):
         SVG1.Convert(L2,'Construction','blue',0.06,0,'0.1px, 0.3px')
         SVG1.Convert(L3,'Construction','red',0.03,0,'0.1px, 0.4px')
         SVG1.Export(name,{'G1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'G2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
+        
+    
         
     def MeshingSVGExport(self,name,gear):
         if gear=='Z1':
