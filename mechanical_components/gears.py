@@ -817,8 +817,8 @@ class GearAssembly(persistent.Persistent):
         return list(d.keys())+d1+d3,list(d.values())+d2+d4
     
     def FreeCADExport(self,name,position1,position2):
-        TG1=self.Gear1.GearContours(10)
-        TG2=self.Gear2.GearContours(10)
+        TG1=self.Gear1.GearContours(5)
+        TG2=self.Gear2.GearContours(5)
         list_rot=self.InitialPosition()
         L1=self.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
         C1=vm.Contour2D(L1[0])
@@ -848,10 +848,10 @@ class GearAssembly(persistent.Persistent):
         #G1=vm.Contour2D(LR)
         #G1.MPLPlot()
         SVG1=LibSvg.SVGTrace(700)
-        SVG1.Convert(L1[0],'G1','black',0.04,0)
-        SVG1.Convert(L1[1],'G2','red',0.04,0)
-        SVG1.Convert(L2,'Construction','blue',0.06,0,'0.1px, 0.3px')
-        SVG1.Convert(L3,'Construction','red',0.03,0,'0.1px, 0.4px')
+        SVG1.Convert(L1[0],'G1','black',0.02,0)
+        SVG1.Convert(L1[1],'G2','red',0.02,0)
+        SVG1.Convert(L2,'Construction','blue',0.03,0,'0.1px, 0.3px')
+        SVG1.Convert(L3,'Construction','red',0.02,0,'0.1px, 0.4px')
         SVG1.Export(name,{'G1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'G2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
         
     
