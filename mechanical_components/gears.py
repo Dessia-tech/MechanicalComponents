@@ -242,27 +242,38 @@ class Gear(persistent.Persistent):
         self.RootDiameterActive()
         if list_number==[None]:
             list_number=npy.arange(int(self.tooth_number))
-        L=[self.InvoluteTrace(discret,0,'T')]
-        L.extend(self.TrochoideTrace(2*discret,0,'T'))
+        L=[self.OutsideTrace(0)]
+        L.append(self.InvoluteTrace(discret,0,'T'))
+        L.append(self.TrochoideTrace(2*discret,0,'T'))
+        L.append(self.RootCircleTrace(0))
+        L.append(self.TrochoideTrace(2*discret,0,'R'))
         L.append(self.InvoluteTrace(discret,0,'R'))
-        L.extend(self.TrochoideTrace(2*discret,0,'R'))
-        L.append(self.OutsideTrace(0))
+        
+#        L=[self.InvoluteTrace(discret,0,'T')]
+#        L.extend(self.TrochoideTrace(2*discret,0,'T'))
+#        L.append(self.InvoluteTrace(discret,0,'R'))
+#        L.extend(self.TrochoideTrace(2*discret,0,'R'))
+#        L.append(self.OutsideTrace(0))
         #print(L)
         for i in list_number:
-            L.append(self.InvoluteTrace(discret,i,'T'))
-            L.extend(self.TrochoideTrace(2*discret,i,'T'))
-            L.append(self.InvoluteTrace(discret,i,'R'))
-            L.extend(self.TrochoideTrace(2*discret,i,'R'))
             L.append(self.OutsideTrace(i))
+            L.append(self.InvoluteTrace(discret,i,'T'))
+            L.append(self.TrochoideTrace(2*discret,i,'T'))
+            L.append(self.RootCircleTrace(i))
+            L.append(self.TrochoideTrace(2*discret,i,'R'))
+            L.append(self.InvoluteTrace(discret,i,'R'))
+
         return L
         
     def InvoluteTrace(self,discret,number,ind='T'):
         
         if ind=='T':
             drap=1
+            theta=npy.linspace(npy.tan(self.alpha_outside_diameter),self.tan_alpha_root_diameter_active,discret)
         else:
             drap=-1
-        theta=npy.linspace(self.tan_alpha_root_diameter_active,npy.tan(self.alpha_outside_diameter),discret)
+            theta=npy.linspace(self.tan_alpha_root_diameter_active,npy.tan(self.alpha_outside_diameter),discret)
+        
 #        theta=npy.linspace(0,npy.tan(self.alpha_outside_diameter),discret)
         sol=self.Involute(drap*theta)
         x=sol[0]
@@ -392,7 +403,12 @@ class Gear(persistent.Persistent):
         
         ref=[]
         self.RootDiameterActive()
-        for t in npy.linspace(self.phi0,drap*self.phi_trochoide,discret):
+        
+        if ind=='R':
+            theta=npy.linspace(self.phi0,drap*self.phi_trochoide,discret)
+        else:
+            theta=npy.linspace(drap*self.phi_trochoide,self.phi0,discret)
+        for t in theta:
             ref.append(vm.Point2D((self.Trochoide(t,ind))))
         ref=primitives2D.RoundedLines2D(ref,{},False)
         ref=ref.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
@@ -416,7 +432,27 @@ class Gear(persistent.Persistent):
         #ref=vm.Arc2D(p1,p2,p3)
         L=[L1,L2]
 
-        return L
+        return L1
+    
+    def RootCircleTrace(self,number):
+        
+        theta4=-self.root_angle/2
+        
+        drap=1
+        a=drap*self.rack.a
+        self.phi0=a/(self.pitch_diameter_factory/2)
+        p1=vm.Point2D((self.Trochoide(self.phi0,'T')))
+        p1=p1.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
+        
+        drap=-1
+        a=drap*self.rack.a
+        self.phi0=a/(self.pitch_diameter_factory/2)
+        p2=vm.Point2D((self.Trochoide(self.phi0,'R')))
+        p2=p2.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
+        
+        ref=primitives2D.RoundedLines2D([p1,p2],{},False)
+        L2=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
+        return L2
     
     def OutsideTrace(self,number):
         #trace du sommet des dents en arc de cercle
@@ -425,7 +461,7 @@ class Gear(persistent.Persistent):
         p2=p1.Rotation(vm.Point2D((0,0)),self.outside_active_angle/2)
         p3=p2.Rotation(vm.Point2D((0,0)),self.outside_active_angle/2)
         #ref=vm.Arc2D(p1,p2,p3)
-        ref=primitives2D.RoundedLines2D([p1,p2,p3],{},False)
+        ref=primitives2D.RoundedLines2D([p3,p2,p1],{},False)
         L=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
         return L
         
@@ -787,10 +823,9 @@ class GearAssembly(persistent.Persistent):
         L1=self.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
         C1=vm.Contour2D(L1[0])
         C2=vm.Contour2D(L1[1])
-        print(C1)
-        
-        R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector2D((1,0,0)),vm.Vector2D((0,1,0)),[C1],vm.Vector3D((0,0,0.2)),name='R1')
+        R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C1],(0,0,0.2),name='R1')
         model=vm.VolumeModel([R1])
+        model.MPLPlot()
         model.FreeCADExport('python','sol8','/usr/lib/freecad/lib')
         return C1
     
@@ -829,8 +864,8 @@ class GearAssembly(persistent.Persistent):
             dent=self.Gear2
             diam_fonct=self.DF2
         Ldev=[dent.InvoluteTrace(20,0,'T')]
-        Ltroc=[dent.TrochoideTrace(40,0,'T')[0]]
-        Lpied=[dent.TrochoideTrace(40,0,'T')[1]]
+        Ltroc=[dent.TrochoideTrace(40,0,'T')]
+        Lpied=[dent.RootCircleTrace(0)]
         Lout=[dent.OutsideTrace(0)]
         Lcomplet=dent.GearContours(10,[-1,0,1])
         sol=dent.Involute(npy.linspace(0,npy.tan(dent.alpha_outside_diameter),20))
