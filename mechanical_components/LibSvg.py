@@ -159,7 +159,7 @@ class SVGTrace:
                                 self.UpdateBox([k.vector[0]],[k.vector[1]])
                             temp+=str(k.vector[0])+','+str(k.vector[1])+','
                         temp+=str(m.points[-1].vector[0])+','+str(m.points[-1].vector[1])
-                        temp+=']).attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'",vectoreffect:"non-scaling-stroke"});'
+                        temp+=']).attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'"}).addClass("the-class");'
                         self.data.append(temp)
                     if 'Arc2D' in str(m.__class__):
                         temp='var path'+str(self.indice)+' = s.path('
@@ -167,7 +167,7 @@ class SVGTrace:
                         self.indice+=1
                         temp+='\'M '+str(m.start.vector[0])+','+str(m.start.vector[1])
                         temp+=' A '+str(m.radius)+','+str(m.radius)+' '+str((m.angle1+m.angle2)/2/npy.pi*180+90)+' 0 '+' 1 '+str(m.end.vector[0])+' '+str(m.end.vector[1])
-                        temp+='\').attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'",vectoreffect:"non-scaling-stroke"});'
+                        temp+='\').attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'"}).addClass("the-class");'
                         self.data.append(temp)
                         
             
@@ -182,7 +182,7 @@ class SVGTrace:
                 self.indice+=1
                 temp+=str(j.center.vector[0])+','+str(j.center.vector[1])+','
                 temp+=str(j.radius)
-                temp+=').attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'",vectoreffect:"non-scaling-stroke"});'
+                temp+=').attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'"}).addClass("the-class");'
                 self.data.append(temp)
                 
     def ConvertLine2D(self,L,group_name,stroke,strokeWidth,impact_box,strokeDasharray="none"):
@@ -199,7 +199,7 @@ class SVGTrace:
                         self.UpdateBox([k.vector[0]],[k.vector[1]])
                     temp+=str(k.vector[0])+','+str(k.vector[1])+','
                 temp+=str(j.points[-1].vector[0])+','+str(j.points[-1].vector[1])
-                temp+=']).attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'",vectoreffect:"non-scaling-stroke"});'
+                temp+=']).attr({stroke: \''+stroke+'\',strokeWidth: '+str(strokeWidth)+',fill:"none" , strokeDasharray: "'+strokeDasharray+'"}).addClass("the-class");'
                 self.data.append(temp)
     
     def Convert(self,L,group_name,stroke,strokeWidth,impact_box=0,strokeDasharray="none"):
