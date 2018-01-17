@@ -826,14 +826,14 @@ class GearAssembly(persistent.Persistent):
         return list(d.keys())+d1+d3,list(d.values())+d2+d4
     
     def FreeCADExport(self,name,position1,position2):
-        TG1=self.Gear1.GearContours(5)
-        TG2=self.Gear2.GearContours(5)
+        TG1=self.Gear1.GearContours(10)
+        TG2=self.Gear2.GearContours(10)
         list_rot=self.InitialPosition()
-        L1=self.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
+        L1=self.GearAssemblyTrace([TG1,TG2],[position1,position2],list_rot)
         C1=vm.Contour2D(L1[0])
         C2=vm.Contour2D(L1[1])
-        R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C1],(0,0,0.2),name='R1')
-        R2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C2],(0,0,0.2),name='R2')
+        R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C1],(0,0,10),name='R1')
+        R2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C2],(0,0,10),name='R2')
         model=vm.VolumeModel([R1,R2])
         model.FreeCADExport('python',name,'/usr/lib/freecad/lib')
     
