@@ -7,39 +7,30 @@ input_dict=({'type':'ratio'},
           {'type':'helix_angle','nom':0.3},
           {'type':'gear_width','nom':20})
 
-#
-#from dessia_api_client import Client
-#client=Client()
-#r=client.SubmitJob('mc_gear_assembly',input_dict)
-#print(r)
 
-F1=gears.GearAssemblyOptimizerWizard(input_dict)
-if F1.error:
-    F1.Optimize()
-    
-# API submission
+
+GA_wizard=gears.GearAssemblyOptimizerWizard(input_dict)
+if GA_wizard.error:
+    GA_wizard.Optimize()
+
 
 ### Sorties Obj et CSV
-E1=gears.GearAssemblyOptimizationResults(F1.solutions,input_dict)
-E1.CSVExport('data.csv','w')
+results=gears.GearAssemblyOptimizationResults(GA_wizard.solutions,input_dict)
+results.CSVExport('data.csv','w')
 
-#r=client.AddResult(E1,'','')
-#print(r)
+
 
 ### Sorties graphiques SVG
-print('Nb solutions:',len(F1.solutions))
-for i,AG1 in enumerate(F1.solutions):
-    AG1.SVGExport('Assembly_{}.html'.format(i),(0,0),(AG1.center_distance,0))
-    AG1.Gear1.rack.SVGExport(5,'rack1-s{}.html'.format(str(i)))
-    AG1.Gear2.rack.SVGExport(5,'rack2-s{}.html'.format(str(i)))
-    AG1.Gear1.GearGenerationSVGExport('Cremaillere_Z1-s{}.html'.format(str(i)))
-    AG1.Gear2.GearGenerationSVGExport('Cremaillere_Z2-s{}.html'.format(str(i)))
-    AG1.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
-    AG1.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
-    AG1.FreeCADExport('Assembly_{}.fem'.format(i),(0,0),(AG1.center_distance,0))
+print('Nb solutions:',len(results.solutions))
+for i,ga in enumerate(results.solutions):
+#    AG1.SVGExport('Assembly_{}.html'.format(i),(0,0),(AG1.center_distance,0))
+#    AG1.Gear1.rack.SVGExport(5,'rack1-s{}.html'.format(str(i)))
+#    AG1.Gear2.rack.SVGExport(5,'rack2-s{}.html'.format(str(i)))
+#    AG1.Gear1.GearGenerationSVGExport('Cremaillere_Z1-s{}.html'.format(str(i)))
+#    AG1.Gear2.GearGenerationSVGExport('Cremaillere_Z2-s{}.html'.format(str(i)))
+#    AG1.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
+#    AG1.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
+    ga.FreeCADExport('Assembly_{}'.format(i),(0,0),(ga.center_distance,0))
     
-### Sorties data
-results=[]
-for GA in F1.solutions:
-    results.append(GA.Dict())
+print(results.Dict())
 
