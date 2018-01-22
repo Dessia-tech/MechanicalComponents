@@ -4,6 +4,7 @@
 """
 
 from setuptools import setup
+
 import re
 
 def readme():
@@ -14,6 +15,8 @@ with open('mechanical_components/__init__.py','r') as f:
     metadata = dict(re.findall("__([a-z]+)__\s*=\s*'([^']+)'", f.read()))
 
 #print(metadata)
+    
+
 
 #import powertransmission
 setup(name='mechanical_components',
@@ -26,5 +29,6 @@ setup(name='mechanical_components',
       author='Steven Masfaraud',
       author_email='masfaraud@dessia.tech',
       packages=['mechanical_components'],
-      install_requires=['numpy','scipy','volmdlr','persistent'])
+      setup_requires=['numpy'],
+      install_requires=['scipy','volmdlr','persistent'])
 
