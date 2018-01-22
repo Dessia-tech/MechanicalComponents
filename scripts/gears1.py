@@ -36,6 +36,7 @@ for i,AG1 in enumerate(F1.solutions):
     AG1.Gear2.GearGenerationSVGExport('Cremaillere_Z2-s{}.html'.format(str(i)))
     AG1.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
     AG1.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
+    AG1.SVGCoeffYBIso('AbaqueCoeffYBIso.html')
     AG1.FreeCADExport('Assembly_{}.fem'.format(i),(0,0),(AG1.center_distance,0))
     
 ### Sorties data

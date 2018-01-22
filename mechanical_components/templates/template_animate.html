@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style type="text/css">
+
+svg {
+  font-family: "Helvetica Neue", Helvetica;
+}
+
+.line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 2px;
+}
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var width = {{width}};
+var height = {{height}};
+var transform = d3.zoomIdentity;
+
+var svg = d3.select('body').append('svg')
+
+function Genere(aa){
+
+    var svg = d3.select("svg")
+        .attr('width', width)
+        .attr('height', height)
+        .attr('viewBox',"{{vb1}} {{vb2}} {{vb3}} {{vb4}}")
+        .append("g")
+        .attr("id","box1")
+        .attr("transform","translate(0,0)rotate(0)")
+        .append("g")
+        .attr("id","box2")
+       
+    var anime = [
+        { "group_a":"gear1_a","group": "gear1", "rot": {{rot1}},"name":"#gear1","TX":{{pos1_x}},"TY":{{pos1_y}} },
+        { "group_a":"gear2_a","group": "gear2", "rot": {{rot2}},"name":"#gear2","TX":{{pos2_x}},"TY":{{pos2_y}} },
+        { "group_a":"Construction_a","group": "Construction", "rot": 0,"name":"#Construction","TX":0,"TY":0}];
+        
+    var Ganime = svg.selectAll("svg")
+        .data(anime)
+        .enter()
+        .append("g")
+        .attr("id","GROUP")
+        .attr("transform", function(d){return "translate("+d.TX+" , "+d.TY+")"})
+        .append("g")
+        .attr("id",function(d){return d.group})
+    
+        
+    function G2anime(){ 
+        d3.selectAll("svg").on("click",Init)
+        Ganime
+        .transition()
+        .ease(d3.easeLinear)
+        .duration(1000)
+        .attrTween("transform", function(d) { return d3.interpolateString("rotate(0)", "rotate("+d.rot+")") })
+        .on("end",G2anime)
+        
+    }
+        
+    Constr()
+    d3.selectAll("svg").on("click",G2anime)
+        
+    function Init(){
+        d3.selectAll("#box1").remove()    
+        Genere(aa)
+    }
+}
+    
+Genere(1)
+
+    
+function Constr(){
+{% for s in list_polyline %}
+		{{s|safe}}
+  	{% endfor %}	
+}
+
+svg.select("#box2")
+    .call(d3.drag()
+);
+        
+svg.call(d3.zoom()
+    .scaleExtent([1 / 2, 50])
+    .on("zoom", zoomed));
+
+function zoomed() {
+  svg.select("#box2").attr("transform", d3.event.transform);
+  svg.selectAll("path").attr("stroke-width", 1/(50*d3.event.transform.k))
+  svg.selectAll("circle").attr("stroke-width", 1/(50*d3.event.transform.k))
+  console.log(d3.event.transform.k)
+}
+
+
+
+
+</script>

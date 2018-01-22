@@ -9,7 +9,7 @@ from scipy.interpolate import splprep, splev
 #from sympy import *
 import itertools
 
-import mechanical_components.LibSvg as LibSvg
+import mechanical_components.LibSvgD3 as LibSvg
 
 import persistent
 #from dessia_common import ResultsDBClient
@@ -120,10 +120,10 @@ class Rack(persistent.Persistent):
         Ref=[vm.Line2D(vm.Point2D((-self.transverse_radial_pitch,0)),vm.Point2D(((number+1)*self.transverse_radial_pitch,0)))]
         Ref.append(vm.Line2D(vm.Point2D((-self.transverse_radial_pitch,self.gear_addendum)),vm.Point2D(((number+1)*self.transverse_radial_pitch,self.gear_addendum))))
         Ref.append(vm.Line2D(vm.Point2D((-self.transverse_radial_pitch,-self.gear_dedendum)),vm.Point2D(((number+1)*self.transverse_radial_pitch,-self.gear_dedendum))))
-        SVG1=LibSvg.SVGTrace(700,0)
+        SVG1=LibSvg.SVGTrace(700)
         SVG1.Convert(R1,'R1','black',0.02,0)
         SVG1.Convert(Ref,'Ref','black',0.01,1,'0.01px, 0.08px')
-        SVG1.Export(name)
+        SVG1.Show(name)
         
     def Dict(self):
         d={}
@@ -149,7 +149,9 @@ class Gear(persistent.Persistent):
         save=[self.rack.transverse_radial_pitch,tooth_number,coefficient_profile_shift]
         self.save=save[:]
         self.GearParam(tooth_number,rack_data,coefficient_profile_shift)
-        self.RootDiameterActive()
+        self._RootDiameterActive()
+        
+    ### Data geometry
         
     def GearParam(self,tooth_number,rack_data,coefficient_profile_shift):
         
@@ -192,13 +194,13 @@ class Gear(persistent.Persistent):
         
 #        self.root_diameter_active=self.base_diameter/npy.cos(theta2)
 #        self.alt_internal_contact=self.root_diameter_active/2*npy.sin(rack_data.transverse_pressure_angle_T-theta2)
-#        self.RootDiameterActive()
+#        self._RootDiameterActive()
         
         save=[self.rack.transverse_radial_pitch,self.tooth_number,
               self.coefficient_profile_shift]
         if not self.save==[self.rack.transverse_radial_pitch,self.tooth_number,
                            self.coefficient_profile_shift]:
-            self.RootDiameterActive()
+            self._RootDiameterActive()
 #            print(save,self.root_diameter_active)
             
         b=self.rack.b-self.rack.module*self.coefficient_profile_shift
@@ -214,9 +216,52 @@ class Gear(persistent.Persistent):
         self.GearParam(tooth_number,rack_data,coefficient_profile_shift)
         save=[self.rack.transverse_radial_pitch,self.tooth_number,self.coefficient_profile_shift]
         if not self.save==[self.rack.transverse_radial_pitch,self.tooth_number,self.coefficient_profile_shift]:
-            self.RootDiameterActive()
+            self._RootDiameterActive()
 #            print(save,self.root_diameter_active)
         self.save=save[:]
+    
+    def GearSection(self,diameter):
+        #epaisseur de la dent au diameter
+        alpha_diameter=npy.arccos(self.base_diameter/diameter)
+        theta1=(npy.tan(self.alpha_outside_diameter)-self.alpha_outside_diameter)-(npy.tan(alpha_diameter)-alpha_diameter)
+        return diameter/2*(2*theta1+self.outside_active_angle)
+    
+    def GearSectionISO(self,angle):
+        
+        drap=1
+        a=drap*self.rack.a
+        b=self.rack.b-self.rack.module*self.coefficient_profile_shift
+        r=self.pitch_diameter_factory/2
+        rho=self.rack.root_radius_T
+        
+        theta0=fsolve((lambda theta:a + b*npy.tan(theta) + r*(-angle - self.root_angle/2 - theta + npy.pi/2)) ,0)[0]
+        phi0=(a-b*npy.tan(theta0))/r
+        pt_iso=self._Trochoide(phi0)
+        angle0=npy.arctan(pt_iso[1]/pt_iso[0])-self.root_angle/2
+        self.angle_iso=self.root_gear_angle-2*angle0
+        self.diameter_iso=2*norm(pt_iso)
+        self.s_thickness_iso=self.diameter_iso*npy.sin(self.angle_iso/2)
+        self.h_height_iso=(self.s_thickness_iso/2)/npy.tan(angle)
+        self.angle_iso=angle
+        
+    def _RootDiameterActive(self):
+        
+        #Analyse diam pied de dent actif
+        drap=1
+        a=drap*self.rack.a
+        b=self.rack.b-self.rack.module*self.coefficient_profile_shift
+        r=self.pitch_diameter_factory/2
+        rho=self.rack.root_radius_T
+        phi=-(a+b*npy.tan(npy.pi/2-self.transverse_pressure_angle_T_factory))/r
+        data=2*norm(self._Trochoide(phi))
+        self.root_diameter_active=data
+        self.alpha_root_diameter_active=npy.arccos(self.base_diameter/self.root_diameter_active)
+        self.tan_alpha_root_diameter_active=npy.tan(self.alpha_root_diameter_active)
+        self.phi_trochoide=phi
+        #corde de la dent au diam de pied actif
+        self.root_gear_length=npy.sin((self.root_gear_angle-2*(npy.tan(self.alpha_root_diameter_active)-self.alpha_root_diameter_active))/2)*(self.root_diameter_active/2)*2
+        
+    ### Contrainte
         
     def CriteriaIneq(self):
         crit=[self.root_diameter_active-self.base_diameter-0.3*self.transverse_base_pitch]
@@ -231,43 +276,30 @@ class Gear(persistent.Persistent):
     def CriteriaEq(self):
         crit=[0]
         return crit
+    
+    ### Trace
         
-    def GearSection(self,diameter):
-        #epaisseur de la dent au diameter
-        alpha_diameter=npy.arccos(self.base_diameter/diameter)
-        theta1=(npy.tan(self.alpha_outside_diameter)-self.alpha_outside_diameter)-(npy.tan(alpha_diameter)-alpha_diameter)
-        return diameter/2*(2*theta1+self.outside_active_angle)
-        
-
     def GearContours(self,discret=10,list_number=[None]):
-        #Analytical involute profil
-        self.RootDiameterActive()
+        #Analytical tooth profil
+        self._RootDiameterActive()
         if list_number==[None]:
             list_number=npy.arange(int(self.tooth_number))
-        L=[self.OutsideTrace(0)]
-        L.append(self.InvoluteTrace(discret,0,'T'))
-        L.append(self.TrochoideTrace(2*discret,0,'T'))
-        L.append(self.RootCircleTrace(0))
-        L.append(self.TrochoideTrace(2*discret,0,'R'))
-        L.append(self.InvoluteTrace(discret,1,'R'))
-        
-#        L=[self.InvoluteTrace(discret,0,'T')]
-#        L.extend(self.TrochoideTrace(2*discret,0,'T'))
-#        L.append(self.InvoluteTrace(discret,0,'R'))
-#        L.extend(self.TrochoideTrace(2*discret,0,'R'))
-#        L.append(self.OutsideTrace(0))
-        #print(L)
+        L=[self._OutsideTrace(0)]
+        L.append(self._InvoluteTrace(discret,0,'T'))
+        L.append(self._TrochoideTrace(2*discret,0,'T'))
+        L.append(self._RootCircleTrace(0))
+        L.append(self._TrochoideTrace(2*discret,0,'R'))
+        L.append(self._InvoluteTrace(discret,1,'R'))
         for i in list_number:
-            L.append(self.OutsideTrace(i))
-            L.append(self.InvoluteTrace(discret,i,'T'))
-            L.append(self.TrochoideTrace(2*discret,i,'T'))
-            L.append(self.RootCircleTrace(i))
-            L.append(self.TrochoideTrace(2*discret,i,'R'))
-            L.append(self.InvoluteTrace(discret,i+1,'R'))
-
+            L.append(self._OutsideTrace(i))
+            L.append(self._InvoluteTrace(discret,i,'T'))
+            L.append(self._TrochoideTrace(2*discret,i,'T'))
+            L.append(self._RootCircleTrace(i))
+            L.append(self._TrochoideTrace(2*discret,i,'R'))
+            L.append(self._InvoluteTrace(discret,i+1,'R'))
         return L
         
-    def InvoluteTrace(self,discret,number,ind='T'):
+    def _InvoluteTrace(self,discret,number,ind='T'):
         
         if ind=='T':
             drap=1
@@ -279,7 +311,7 @@ class Gear(persistent.Persistent):
                                npy.tan(self.alpha_outside_diameter),discret)
         
 #        theta=npy.linspace(0,npy.tan(self.alpha_outside_diameter),discret)
-        sol=self.Involute(drap*theta)
+        sol=self._Involute(drap*theta)
         x=sol[0]
         y=sol[1]
         p=[vm.Point2D((x[0],y[0]))]
@@ -295,21 +327,49 @@ class Gear(persistent.Persistent):
             L=L.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
             L.points[0]=self.rac
         return L
-    
-    def Trace(self,x,y):
-        p=[vm.Point2D((x[0],y[0]))]
-        for i in range(1,len(x)):
-            p.append(vm.Point2D((x[i],y[i])))
-        ref=primitives2D.RoundedLines2D(p,{},False)
-        return ref
         
-    def Involute(self,tan_alpha):
+    def _Involute(self,tan_alpha):
         
         sol=(self.base_diameter/2*npy.cos(tan_alpha)+self.base_diameter/2*tan_alpha*npy.sin(tan_alpha),
              self.base_diameter/2*npy.sin(tan_alpha)-self.base_diameter/2*tan_alpha*npy.cos(tan_alpha))
         return sol
     
-    def Trochoide(self,phi,ind='T'):
+    def _TrochoideTrace(self,discret,number,ind='T'):
+        if ind=='T':
+            drap=1
+        else:
+            drap=-1
+        
+        a=drap*self.rack.a
+        b=self.rack.b-self.rack.module*self.coefficient_profile_shift
+        r=self.pitch_diameter_factory/2
+        rho=self.rack.root_radius_T
+        self.phi0=npy.arctan((a)/(self.pitch_diameter_factory-b))
+        self.phi0=a/(self.pitch_diameter_factory/2)
+        
+        ref=[]
+        self._RootDiameterActive()
+        
+        if ind=='R':
+            theta=npy.linspace(self.phi0,drap*self.phi_trochoide,discret)
+        else:
+            theta=npy.linspace(drap*self.phi_trochoide,self.phi0,discret)
+        for t in theta:
+            ref.append(vm.Point2D((self._Trochoide(t,ind))))
+        ref=primitives2D.RoundedLines2D(ref,{},False)
+        ref=ref.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
+        
+        if ind=='T':
+            L1=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
+            L1.points[0]=self.rac
+        else:
+#            L=ref.Rotation(vm.Point2D((0,0)),self.base_circular_tooth_thickness*2/self.base_diameter)
+            L1=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
+            self.rac=L1.points[-1]
+
+        return L1
+    
+    def _Trochoide(self,phi,ind='T'):
         
         if ind=='T':
             drap=1
@@ -325,145 +385,27 @@ class Gear(persistent.Persistent):
         sol=(y2,x2)
         return sol
     
-    def RootDiameterActive(self):
-        
-#        fun = (lambda t : (norm(npy.array(self.Involute(t[0]))-npy.dot(npy.array([[npy.cos(-self.root_angle/2),-npy.sin(-self.root_angle/2)],[npy.sin(-self.root_angle/2),npy.cos(-self.root_angle/2)]]),(self.Trochoide(t[1])))))**2)
-#        bnds = ((0, 1), (-1,1))
-#        sol=minimize(fun,[1,-1], bounds=bnds, method='SLSQP', tol=1e-10)
-#        
-#        self.alpha_root_diameter_active=npy.arctan(sol.x[0])
-#        self.root_diameter_active=norm(npy.array(self.Involute(sol.x[0])))*2
-#        self.tan_alpha_root_diameter_active=npy.tan(self.alpha_root_diameter_active)
-#        self.phi_trochoide=sol.x[1]
-#        
-#        #corde de la dent au diam de pied actif
-#        self.root_gear_length=npy.sin((self.root_gear_angle-2*(npy.tan(self.alpha_root_diameter_active)-self.alpha_root_diameter_active))/2)*(self.root_diameter_active/2)*2
-        
-        #Analyse diam pied de dent actif
-        drap=1
-        a=drap*self.rack.a
-        b=self.rack.b-self.rack.module*self.coefficient_profile_shift
-        r=self.pitch_diameter_factory/2
-        rho=self.rack.root_radius_T
-        phi=-(a+b*npy.tan(npy.pi/2-self.transverse_pressure_angle_T_factory))/r
-        data=2*norm(self.Trochoide(phi))
-        self.root_diameter_active=data
-        self.alpha_root_diameter_active=npy.arccos(self.base_diameter/self.root_diameter_active)
-        self.tan_alpha_root_diameter_active=npy.tan(self.alpha_root_diameter_active)
-        self.phi_trochoide=phi
-        #corde de la dent au diam de pied actif
-        self.root_gear_length=npy.sin((self.root_gear_angle-2*(npy.tan(self.alpha_root_diameter_active)-self.alpha_root_diameter_active))/2)*(self.root_diameter_active/2)*2
-    
-    def RootTrace(self,discret,number,ind='T'):
-        #trace simplifie de pied de dent
-        if ind=='T':
-            drap=1
-        else:
-            drap=-1
-        theta=npy.linspace(self.tan_alpha_root_diameter_active,npy.tan(self.alpha_root_diameter_active+0.0001),2)
-        sol=self.Involute(drap*theta)
-        p1=vm.Point2D((sol[0][0],sol[1][0]))
-        pt=vm.Point2D((sol[0][1],sol[1][1]))
-        p2=p1+p1-pt
-        theta3=self.root_active_angle/2-(npy.tan(self.alpha_root_diameter_active)-self.alpha_root_diameter_active)
-        p4=vm.Point2D((self.root_diameter/2*npy.cos(theta3),-drap*self.root_diameter/2*npy.sin(theta3)))
-        p3=p4.Rotation(vm.Point2D((0,0)),drap*0.0001)
-        
-        tck,ptx=self.BSpline([p1,p2,p3,p4])   
-        a=[]
-        for t in npy.linspace(0,1,discret):
-            a.append(vm.Point2D((splev(t,tck)[0],splev(t,tck)[1])))
-        
-        ref=primitives2D.RoundedLines2D(a,{},False)
-        if ind=='T':
-            L=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
-        else:
-            L=ref.Rotation(vm.Point2D((0,0)),self.base_circular_tooth_thickness*2/self.base_diameter)
-            L=L.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
-        #L1=[L]+[vm.CompositePrimitive2D([p1,p3,p4])]
-        return L
-    
-    def TrochoideSecondary(self,list_number,ind,angle,number=10):
-        
-        ref=[]
-        for t in npy.linspace(-angle,angle,number):
-            ref.append(vm.Point2D((self.Trochoide(t,ind))))
-        ref=primitives2D.RoundedLines2D(ref,{},False)
-        ref=ref.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
-        L=[]
-        for i in list_number:
-            L.append(ref.Rotation(vm.Point2D((0,0)),-i*2*npy.pi/self.tooth_number))
-        return L
-    
-    def TrochoideTrace(self,discret,number,ind='T'):
-        if ind=='T':
-            drap=1
-        else:
-            drap=-1
-        
-        a=drap*self.rack.a
-        b=self.rack.b-self.rack.module*self.coefficient_profile_shift
-        r=self.pitch_diameter_factory/2
-        rho=self.rack.root_radius_T
-        self.phi0=npy.arctan((a)/(self.pitch_diameter_factory-b))
-        self.phi0=a/(self.pitch_diameter_factory/2)
-        
-        ref=[]
-        self.RootDiameterActive()
-        
-        if ind=='R':
-            theta=npy.linspace(self.phi0,drap*self.phi_trochoide,discret)
-        else:
-            theta=npy.linspace(drap*self.phi_trochoide,self.phi0,discret)
-        for t in theta:
-            ref.append(vm.Point2D((self.Trochoide(t,ind))))
-        ref=primitives2D.RoundedLines2D(ref,{},False)
-        ref=ref.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
-        
-        if ind=='T':
-            L1=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
-            L1.points[0]=self.rac
-        else:
-#            L=ref.Rotation(vm.Point2D((0,0)),self.base_circular_tooth_thickness*2/self.base_diameter)
-            L1=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
-            self.rac=L1.points[-1]
-            
-        theta4=-self.root_angle/2
-        p1=vm.Point2D((self.root_diameter/2*npy.cos(theta4),self.root_diameter/2*npy.sin(theta4)))
-        p2=vm.Point2D((self.Trochoide(self.phi0,ind)))
-        p2=p2.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
-        ref=primitives2D.RoundedLines2D([p1,p2],{},False)
-        if ind=='T':
-            L2=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
-        else:
-#            L=ref.Rotation(vm.Point2D((0,0)),self.base_circular_tooth_thickness*2/self.base_diameter)
-            L2=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
-        #ref=vm.Arc2D(p1,p2,p3)
-        L=[L1,L2]
-
-        return L1
-    
-    def RootCircleTrace(self,number):
+    def _RootCircleTrace(self,number):
         
         theta4=-self.root_angle/2
         
         drap=1
         a=drap*self.rack.a
         self.phi0=a/(self.pitch_diameter_factory/2)
-        p1=vm.Point2D((self.Trochoide(self.phi0,'T')))
+        p1=vm.Point2D((self._Trochoide(self.phi0,'T')))
         p1=p1.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
         
         drap=-1
         a=drap*self.rack.a
         self.phi0=a/(self.pitch_diameter_factory/2)
-        p2=vm.Point2D((self.Trochoide(self.phi0,'R')))
+        p2=vm.Point2D((self._Trochoide(self.phi0,'R')))
         p2=p2.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
         
         ref=primitives2D.RoundedLines2D([p1,p2],{},False)
         L2=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
         return L2
     
-    def OutsideTrace(self,number):
+    def _OutsideTrace(self,number):
         #trace du sommet des dents en arc de cercle
         theta4=npy.tan(self.alpha_outside_diameter)-self.alpha_outside_diameter
         p1=vm.Point2D((self.outside_diameter/2*npy.cos(theta4),self.outside_diameter/2*npy.sin(theta4)))
@@ -473,24 +415,27 @@ class Gear(persistent.Persistent):
         ref=primitives2D.RoundedLines2D([p3,p2,p1],{},False)
         L=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.tooth_number)
         return L
+    
+    def _TrochoideSecondary(self,list_number,ind,angle,number=10):
         
-    def UpdateProfilRack(self):
-        
-        #Initialisation rack position
-        repere=self.PosInitRack()
-        
-        L=self.InvoluteOptimize()
-        L.append(self.rack_profil0)
+        ref=[]
+        for t in npy.linspace(-angle,angle,number):
+            ref.append(vm.Point2D((self._Trochoide(t,ind))))
+        ref=primitives2D.RoundedLines2D(ref,{},False)
+        ref=ref.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
+        L=[]
+        for i in list_number:
+            L.append(ref.Rotation(vm.Point2D((0,0)),-i*2*npy.pi/self.tooth_number))
         return L
         
-    def PosRack(self,alpha,list_number=[1]):
+    def _PosRack(self,alpha,list_number=[1]):
         
         angle=npy.tan(alpha)-self.rack.transverse_pressure_angle_T
         pt0=vm.Point2D((self.pitch_diameter_factory/2,0))
         repere=[pt0,pt0.Translation((1,0)),pt0.Translation((0,1))]
         for i in range(3):
             repere[i]=repere[i].Rotation(vm.Point2D((0,0)),angle)
-        ptT=vm.Point2D(self.Involute(npy.tan(alpha)))
+        ptT=vm.Point2D(self._Involute(npy.tan(alpha)))
         DistY=npy.dot(ptT.vector-repere[0].vector,repere[2].vector-repere[0].vector)
         DistX=npy.dot(ptT.vector-repere[0].vector,repere[1].vector-repere[0].vector)
         decal=DistY+self.rack.circular_tooth_thickness-npy.tan(self.rack.transverse_pressure_angle_T)*DistX+npy.tan(self.rack.transverse_pressure_angle_T)*(self.rack.module*self.coefficient_profile_shift)
@@ -502,20 +447,17 @@ class Gear(persistent.Persistent):
             temp[i]=j
         rack_profil=temp
         return repere,rack_profil
-        
-    def EvolRack(self,alpha,repere,rack_profil):
-        
-        #Angular evolution of the rack
-        delta=alpha*self.pitch_diameter_factory/2
-        deltaU=-(repere[2].vector-repere[0].vector)*delta
-        for j in range(3):
-            repere[j]=repere[j].Rotation(vm.Point2D((0,0)),alpha)
-        temp=rack_profil
-        temp=temp.Translation((deltaU))
-        rack_profil=temp.Rotation(vm.Point2D((0,0)),alpha)
-        return repere,rack_profil 
+    
+    ### Stress
+    
+    def _CoeffYSIso(self):
+        #facteur de concentration de contrainte en pied de dent
+        rho_f=self.rack.root_radius_T+self.rack.b**2/(self.pitch_diameter_factory/2+self.rack.b)
+        self.coeff_ys_iso=1+0.15*self.s_thickness_iso/rho_f
+    
+    ### Generique
 
-    def BSpline(self,pt):
+    def _BSpline(self,pt):
         x=[]
         y=[]
         for i in pt:
@@ -528,6 +470,13 @@ class Gear(persistent.Persistent):
         for i,j in zip(NewPT[0],NewPT[1]):
             pt.append(vm.Point2D((i,j)))
         return tck,pt
+    
+    def _Trace(self,x,y):
+        p=[vm.Point2D((x[0],y[0]))]
+        for i in range(1,len(x)):
+            p.append(vm.Point2D((x[i],y[i])))
+        ref=primitives2D.RoundedLines2D(p,{},False)
+        return ref
         
     def Mass(self):
         return self.VolumeModel().Mass()
@@ -540,24 +489,6 @@ class Gear(persistent.Persistent):
         wheel3D=vm.primitives3D.ExtrudedProfile(p,x,y,self.WheelContours(),z)
         lever3D=vm.primitives3D.ExtrudedProfile(p,x,y,self.WheelContours(),z)
         return vm.VolumeModel([wheel3D,lever3D])
-    
-    def GearGenerationSVGExport(self,name):
-
-        L1=self.GearContours(20,[int(self.tooth_number)-1,0,1])
-        L2=[]
-        for i in npy.linspace(self.alpha_root_diameter_active,self.alpha_outside_diameter,5):
-            L=self.PosRack(i,[-1,0,1])
-            L2.extend(L[1])
-        L3=self.TrochoideSecondary([0,self.tooth_number-1],'T',0.8,1000)
-        Temp=self.TrochoideSecondary([0,self.tooth_number-1],'R',0.8,1000)
-        L3.extend(Temp)
-        #G1=vm.Contour2D(L1)
-        #G1.MPLPlot()
-        SVG1=LibSvg.SVGTrace(700,0,-npy.pi/2)
-        SVG1.Convert(L1,'Rack','black',0.02,0)
-        SVG1.Convert(L2,'Rack','black',0.01,0,'0.01px, 0.08px')
-        SVG1.Convert(L3,'Rack','blue',0.03,0)
-        SVG1.Export(name)
     
     def Dict(self):
         d={}
@@ -573,6 +504,26 @@ class Gear(persistent.Persistent):
         del d['save']
         d['rack']=self.rack.Dict()
         return d
+    
+    ### Export
+    
+    def GearGenerationSVGExport(self,name):
+
+        L1=self.GearContours(20,[int(self.tooth_number)-1,0,1])
+        L2=[]
+        for i in npy.linspace(self.alpha_root_diameter_active,self.alpha_outside_diameter,5):
+            L=self._PosRack(i,[-1,0,1])
+            L2.extend(L[1])
+        L3=self._TrochoideSecondary([0,self.tooth_number-1],'T',0.8,100)
+        Temp=self._TrochoideSecondary([0,self.tooth_number-1],'R',0.8,100)
+        L3.extend(Temp)
+        #G1=vm.Contour2D(L1)
+        #G1.MPLPlot()
+        SVG1=LibSvg.SVGTrace(700)
+        SVG1.Convert(L1,'Rack','black',0.005,0)
+        SVG1.Convert(L2,'Rack','black',0.005,0,'0.01px, 0.08px')
+        SVG1.Convert(L3,'Rack','blue',0.005,0)
+        SVG1.Show(name)
     
     def CSVExport(self):
         d=self.__dict__.copy()
@@ -612,6 +563,26 @@ class GearAssembly(persistent.Persistent):
                        gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
                        root_radius_T1,root_radius_T2,root_radius_R1,
                        root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
+        
+        #chargement des abaques
+        fichier=open('coeff_yb_iso.txt','r')
+        lines=fichier.readlines()
+        fichier.close()
+        tab_coeff_yb_iso={}
+        list_col=[]
+        for i in lines[0].split('\n')[0].split(','):
+            tab_coeff_yb_iso[i]=[]
+            list_col.append(i)
+        self.list_coeff_yb_iso=[]
+        for i in lines[1::]:
+            temp=i.split('\n')[0].split(',')
+            tab_coeff_yb_iso[list_col[0]].append(float(temp[0]))
+            tab_coeff_yb_iso[list_col[1]].append(float(temp[1]))
+            self.list_coeff_yb_iso.append(vm.Point2D((float(temp[0]),float(temp[1]))))
+        control,pt=self.Gear1._BSpline(self.list_coeff_yb_iso)        
+        self.fun_coeff_yb_iso = (lambda t : splev(t,control))
+            
+    ### Data Geometry
         
     def GearAssemblyParam(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
                        coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
@@ -719,6 +690,8 @@ class GearAssembly(persistent.Persistent):
                        root_radius_T1,root_radius_T2,root_radius_R1,
                        root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
         
+    ### Contraintes
+        
     def CriteriaIneq(self):
 #        print(self.radial_contact_ratio,self.transverse_radial_pitch,self.transverse_pressure_angle)
         crit=[
@@ -743,15 +716,29 @@ class GearAssembly(persistent.Persistent):
               self.Gear2.tooth_number-int(self.Gear2.tooth_number),
               ]
         return crit
+    
+    ### Trace
+    
+    def GearAssemblyTrace(self,list_gear,list_center,list_rot):
+        
+        TG=[]
+        for (i,j,k) in zip(list_gear,list_center,list_rot):
+            temp=[]
+            for m in i:
+                temp1=m.Translation(j)
+                temp2=temp1.Rotation(vm.Point2D(j),k)
+                temp.append(temp2)
+            TG.append(temp)
+        return TG
         
     def InitialPosition(self):
         
-        fun = (lambda tan_alpha : (norm(self.Gear1.Involute(tan_alpha))-(self.center_distance-self.DF2/2))**2)
+        fun = (lambda tan_alpha : (norm(self.Gear1._Involute(tan_alpha))-(self.center_distance-self.DF2/2))**2)
 #        bnds = (0,1)
         sol=minimize(fun,[0.1], method='SLSQP', tol=1e-20)
         xsol=sol.x
         Angle1=xsol[0]-npy.arctan(xsol[0])
-        fun = (lambda tan_alpha : (norm(self.Gear2.Involute(tan_alpha))-(self.DF2/2))**2)
+        fun = (lambda tan_alpha : (norm(self.Gear2._Involute(tan_alpha))-(self.DF2/2))**2)
 #        bnds = (0,1)
         sol=minimize(fun,[0.1], method='SLSQP', tol=1e-20)
         xsol=sol.x
@@ -767,33 +754,33 @@ class GearAssembly(persistent.Persistent):
         
         return [Gear1Angle,Gear2Angle]
         
-    def WheelAssembly(self):
-        
-        Gear2Angle=self.InitialPosition()
-        L1=self.Gear1.WheelContours(0,[-2,-1,0,1,2])
-        L2=self.Gear2.WheelContours(Gear2Angle,[-2,-1,0,1,2])
-        TG=[]
-        for i in L2:
-            TG.append(i.Translation((self.center_distance,0)))
-        TG.extend(L1)
-        return TG
-        
-    def GearAssemblyTrace(self,list_gear,list_center,list_rot):
-        
-        TG=[]
-        for (i,j,k) in zip(list_gear,list_center,list_rot):
-            temp=[]
-            for m in i:
-                temp1=m.Translation(j)
-                temp2=temp1.Rotation(vm.Point2D(j),k)
-                temp.append(temp2)
-            TG.append(temp)
-        return TG
+    ### Stress
     
     def SigmaLewis(self):
         
         self.sigma_lewis_maximum1=6*self.tangential_load*self.gear_height_lewis1/(self.gear_width*self.Gear1.root_gear_length**2)
         self.sigma_lewis_maximum2=6*self.tangential_load*self.gear_height_lewis2/(self.gear_width*self.Gear2.root_gear_length**2)
+        
+    def _CoeffYFIso(self):
+        #facteur de forme pour la contrainte ISO
+        angle=30/180*npy.pi
+        self.Gear1.GearSectionISO(angle)
+        self.Gear2.GearSectionISO(angle)
+        self.coeff_yf_iso1=(6*(self.Gear1.h_height_iso/self.Gear1.rack.module)*npy.cos(self.transverse_pressure_angle))/((self.Gear1.s_thickness_iso/self.Gear1.rack.module)**2*npy.cos(self.Gear1.rack.transverse_pressure_angle_T))
+        self.coeff_yf_iso2=(6*(self.Gear2.h_height_iso/self.Gear2.rack.module)*npy.cos(self.transverse_pressure_angle))/((self.Gear2.s_thickness_iso/self.Gear2.rack.module)**2*npy.cos(self.Gear2.rack.transverse_pressure_angle_T))
+        
+    def _CoeffYEIso(self):
+        #facteur de conduite pour la contrainte ISO
+        self.coeff_ye_iso=1/self.radial_contact_ratio
+        
+    def _CoeffYBIso(self):
+        #facteur de contrefort pour la contrainte ISO
+        self.coeff_yb_iso=float(self.fun_coeff_yb_iso(self.helix_angle)[1])
+        
+    
+        
+        
+    ### Generique
         
     def Dict(self):
         self.SigmaLewis()
@@ -816,14 +803,7 @@ class GearAssembly(persistent.Persistent):
 
         return d
     
-    def CSVExport(self):
-        self.SigmaLewis()
-        d=self.__dict__.copy()
-        (d1,d2)=self.Gear1.CSVExport()
-        d1=['gear1_'+i for i in d1]
-        (d3,d4)=self.Gear2.CSVExport()
-        d3=['gear2_'+i for i in d3]
-        return list(d.keys())+d1+d3,list(d.values())+d2+d4
+    ### Export
     
     def FreeCADExport(self,name,position1,position2):
         TG1=self.Gear1.GearContours(10)
@@ -837,6 +817,21 @@ class GearAssembly(persistent.Persistent):
         model=vm.VolumeModel([R1,R2])
         model.FreeCADExport('python',name,'/usr/lib/freecad/lib')
     
+    def CSVExport(self):
+        self.SigmaLewis()
+        d=self.__dict__.copy()
+        (d1,d2)=self.Gear1.CSVExport()
+        d1=['gear1_'+i for i in d1]
+        (d3,d4)=self.Gear2.CSVExport()
+        d3=['gear2_'+i for i in d3]
+        return list(d.keys())+d1+d3,list(d.values())+d2+d4
+    
+    def SVGCoeffYBIso(self,name):
+        L=[primitives2D.RoundedLines2D(self.list_coeff_yb_iso,{},False)]
+        SVG1=LibSvg.SVGTrace(700)
+        SVG1.Convert(L,'G','black',0.02,0)
+        SVG1.Export(name)
+        
     def SVGExport(self,name,position1,position2):
         #tuple1 et 2 correspondent a la position des centres
         TG1=self.Gear1.GearContours(5)
@@ -856,13 +851,11 @@ class GearAssembly(persistent.Persistent):
         #G1=vm.Contour2D(LR)
         #G1.MPLPlot()
         SVG1=LibSvg.SVGTrace(700)
-        SVG1.Convert(L1[0],'G1','black',0.02,0)
-        SVG1.Convert(L1[1],'G2','red',0.02,0)
-        SVG1.Convert(L2,'Construction','blue',0.03,0,'0.1px, 0.3px')
-        SVG1.Convert(L3,'Construction','red',0.02,0,'0.1px, 0.4px')
-        SVG1.Export(name,{'G1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'G2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
-        
-    
+        SVG1.Convert(L1[0],'gear1','black',0.02,0)
+        SVG1.Convert(L1[1],'gear2','red',0.02,0)
+        SVG1.Convert(L2,'Construction','blue',0.03,0,'0.1px, 0.1px')
+        SVG1.Convert(L3,'Construction','red',0.02,0,'0.1px, 0.1px')
+        SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
         
     def MeshingSVGExport(self,name,gear):
         if gear=='Z1':
@@ -871,14 +864,14 @@ class GearAssembly(persistent.Persistent):
         elif gear=='Z2':
             dent=self.Gear2
             diam_fonct=self.DF2
-        Ldev=[dent.InvoluteTrace(5,0,'T')]
-        Ltroc=[dent.TrochoideTrace(10,0,'T')]
-        Lpied=[dent.RootCircleTrace(0)]
-        Lout=[dent.OutsideTrace(0)]
+        Ldev=[dent._InvoluteTrace(10,0,'T')]
+        Ltroc=[dent._TrochoideTrace(20,0,'T')]
+        Lpied=[dent._RootCircleTrace(0)]
+        Lout=[dent._OutsideTrace(0)]
         Lcomplet=dent.GearContours(3,[-1,0,1])
-        sol=dent.Involute(npy.linspace(0,npy.tan(dent.alpha_outside_diameter),20))
-        Lconst=[dent.Trace(sol[0],sol[1])]
-        Lconst.extend(dent.TrochoideSecondary([0],'T',0.8,20))
+        sol=dent._Involute(npy.linspace(0,npy.tan(dent.alpha_outside_diameter),20))
+        Lconst=[dent._Trace(sol[0],sol[1])]
+        Lconst.extend(dent._TrochoideSecondary([0],'T',0.8,40))
         L2=[vm.Circle2D(vm.Point2D((0,0)),dent.base_diameter/2)]
         L2.append(vm.Circle2D(vm.Point2D((0,0)),diam_fonct/2))
         L2.append(vm.Circle2D(vm.Point2D((0,0)),dent.root_diameter_active/2))
@@ -888,17 +881,17 @@ class GearAssembly(persistent.Persistent):
         L4=[vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2),dent.root_diameter/2*npy.sin(-dent.root_angle/2))))]
         L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.root_diameter/2*npy.cos(-dent.root_angle/2-dent.phi0),dent.root_diameter/2*npy.sin(-dent.root_angle/2-dent.phi0)))))
         L2.append(vm.Line2D(vm.Point2D((0,0)),vm.Point2D((dent.outside_diameter/2*npy.cos(-dent.root_angle/2-dent.phi_trochoide),dent.outside_diameter/2*npy.sin(-dent.root_angle/2-dent.phi_trochoide)))))
-        SVG1=LibSvg.SVGTrace(700,1,-npy.pi/2)
-        SVG1.Convert(Ldev,'Ldev','black',0.02,0)
-        SVG1.Convert(Ltroc,'Ltroc','blue',0.02,0)
-        SVG1.Convert(Lpied,'Lpied','red',0.02,0)
-        SVG1.Convert(Lout,'Lout','green',0.02,0)
-        SVG1.Convert(Lcomplet,'Lcomplet','black',0.01,1,'0.01px, 0.08px')
-        SVG1.Convert(Lconst,'Gc','blue',0.01,1,'0.01px, 0.08px')
-        SVG1.Convert(L2,'L2','black',0.01,1,'0.01px, 0.08px')
-        SVG1.Convert(L3,'L3','black',0.03,1)
-        SVG1.Convert(L4,'L4','black',0.01,1)
-        SVG1.Export(name)
+        SVG1=LibSvg.SVGTrace(700)
+        SVG1.Convert(Ldev,'Ldev','black',0.005,0)
+        SVG1.Convert(Ltroc,'Ltroc','blue',0.005,0)
+        SVG1.Convert(Lpied,'Lpied','red',0.005,0)
+        SVG1.Convert(Lout,'Lout','green',0.005,0)
+        SVG1.Convert(Lcomplet,'Lcomplet','black',0.005,1,'0.01px, 0.08px')
+        SVG1.Convert(Lconst,'Gc','blue',0.005,1,'0.01px, 0.08px')
+        SVG1.Convert(L2,'L2','black',0.005,1,'0.01px, 0.08px')
+        SVG1.Convert(L3,'L3','black',0.005,1)
+        SVG1.Convert(L4,'L4','black',0.005,1)
+        SVG1.Show(name)
 
 
 

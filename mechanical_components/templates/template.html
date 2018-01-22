@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style type="text/css">
+
+svg {
+  font-family: "Helvetica Neue", Helvetica;
+}
+
+.line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 2px;
+}
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var width = {{width}};
+var height = {{height}};
+var transform = d3.zoomIdentity;
+
+var svg = d3.select('body').append('svg')
+
+function Genere(aa){
+
+    var svg = d3.select("svg")
+        .attr('width', width)
+        .attr('height', height)
+        .attr('viewBox',"{{vb1}} {{vb2}} {{vb3}} {{vb4}}")
+        .append("g")
+        .attr("id","box1")
+        .attr("transform","translate(0,0)rotate(0)")
+        .append("g")
+        .attr("id","box2")
+       
+    var anime = [
+        {% for s in list_name %}
+        		{{s|safe}}
+          	{% endfor %}	
+        ];
+        
+    var Ganime = svg.selectAll("svg")
+        .data(anime)
+        .enter()
+        .append("g")
+        .attr("id",function(d){return d.group})
+        
+    Constr()
+    d3.selectAll("svg").on("click",Init)
+        
+    function Init(){
+        d3.selectAll("#box1").remove()    
+        Genere(aa)
+    }
+}
+    
+Genere(1)
+
+    
+function Constr(){
+{% for s in list_polyline %}
+		{{s|safe}}
+  	{% endfor %}	
+}
+
+svg.select("#box2")
+    .call(d3.drag()
+);
+        
+svg.call(d3.zoom()
+    .scaleExtent([0.1, 50])
+    .on("zoom", zoomed));
+
+function zoomed() {
+  svg.select("#box2").attr("transform", d3.event.transform);
+  svg.selectAll("path").attr("stroke-width", 1/(200*d3.event.transform.k))
+  svg.selectAll("circle").attr("stroke-width", 1/(200*d3.event.transform.k))
+  svg.selectAll("line").attr("stroke-width", 1/(200*d3.event.transform.k))
+  console.log(d3.event.stroke-width)
+}
+
+
+
+
+</script>
