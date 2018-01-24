@@ -121,8 +121,8 @@ class Rack(persistent.Persistent):
         Ref.append(vm.Line2D(vm.Point2D((-self.transverse_radial_pitch,self.gear_addendum)),vm.Point2D(((number+1)*self.transverse_radial_pitch,self.gear_addendum))))
         Ref.append(vm.Line2D(vm.Point2D((-self.transverse_radial_pitch,-self.gear_dedendum)),vm.Point2D(((number+1)*self.transverse_radial_pitch,-self.gear_dedendum))))
         SVG1=LibSvg.SVGTrace(700)
-        SVG1.Convert(R1,'R1','black',0.02,0)
-        SVG1.Convert(Ref,'Ref','black',0.01,1,'0.01px, 0.08px')
+        SVG1.Convert(R1,'R1','black',0.0002,0)
+        SVG1.Convert(Ref,'Ref','black',0.0001,1,'0.001px, 0.008px')
         SVG1.Show(name)
         
     def Dict(self):
@@ -533,8 +533,8 @@ class Gear(persistent.Persistent):
         return list(d.keys())+d1,list(d.values())+d2
         
 class GearAssembly(persistent.Persistent):
-    def __init__(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle=0,coefficient_profile_shift1=0,
-                 coefficient_profile_shift2=0,gear_width=20,maximum_torque=100,
+    def __init__(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
+                 coefficient_profile_shift2,gear_width,maximum_torque,
                  transverse_pressure_angle_rack_T1=None,
                  transverse_pressure_angle_rack_T2=None,circular_tooth_thickness_rack1=None,
                  circular_tooth_thickness_rack2=None,
@@ -704,8 +704,8 @@ class GearAssembly(persistent.Persistent):
               self.DF1-self.DB1,
               self.DF2-self.DB2,
               self.radial_contact_ratio-1.2,
-              self.linear_backlash-0.05,
-              0.1-self.linear_backlash
+              self.linear_backlash-0.05*10**(-3),
+              0.1*10**(-3)-self.linear_backlash
               ]
         return crit
         
@@ -840,21 +840,22 @@ class GearAssembly(persistent.Persistent):
         L1=self.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
         L2=[]
         L2.append(vm.Circle2D(vm.Point2D(position1),self.DF1/2))
-        L2.append(vm.Circle2D(vm.Point2D(position2),self.DF2/2))
+        L2.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.DF2/2))
         L2.append(vm.Circle2D(vm.Point2D(position1),self.Gear1.base_diameter/2))
-        L2.append(vm.Circle2D(vm.Point2D(position2),self.Gear2.base_diameter/2))
+        L2.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.Gear2.base_diameter/2))
         L2.append(vm.Circle2D(vm.Point2D(position1),self.pitch_diameter_factory1/2))
-        L2.append(vm.Circle2D(vm.Point2D(position2),self.pitch_diameter_factory2/2))
+        L2.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.pitch_diameter_factory2/2))
         L3=[]
         L3.append(vm.Circle2D(vm.Point2D(position1),self.Gear1.root_diameter_active/2))
-        L3.append(vm.Circle2D(vm.Point2D(position2),self.Gear2.root_diameter_active/2))
+        L3.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.Gear2.root_diameter_active/2))
         #G1=vm.Contour2D(LR)
         #G1.MPLPlot()
-        SVG1=LibSvg.SVGTrace(700)
-        SVG1.Convert(L1[0],'gear1','black',0.02,0)
-        SVG1.Convert(L1[1],'gear2','red',0.02,0)
-        SVG1.Convert(L2,'Construction','blue',0.03,0,'0.1px, 0.1px')
-        SVG1.Convert(L3,'Construction','red',0.02,0,'0.1px, 0.1px')
+        print(self.center_distance)
+        SVG1=LibSvg.SVGTrace(1000)
+        SVG1.Convert(L1[0],'gear1','black',1/50,0)
+        SVG1.Convert(L1[1],'gear2','red',1/50,0)
+        SVG1.Convert(L2,'Construction','blue',1/50,0,'0.001px, 0.001px')
+        SVG1.Convert(L3,'Construction','red',1/50,0,'0.001px, 0.001px')
         SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
         
     def MeshingSVGExport(self,name,gear):
@@ -1056,7 +1057,7 @@ class ContinuousGearAssemblyOptimizer:
 #        for i in FINEQ:
 #            obj=obj+(i**2)
         obj+=0.01*((self.GearAssembly.radial_contact_ratio-2)**2)
-        obj+=0.01*((self.GearAssembly.linear_backlash-0.07)**2)
+        obj+=0.01*((self.GearAssembly.linear_backlash-0.07*10**(-3))**2)
         for i in FINEQ:
             if i < 0:
                 obj+=-10*i
@@ -1251,8 +1252,8 @@ class GearAssemblyOptimizerWizard:
                 DefGeneral(**i)
         
         #Analyse conformite des datas et lancement des calculs
-        self.error=self.AnalyzeDataSet()
-        if self.error==True:
+        self.ok=self.AnalyzeDataSet()
+        if self.ok==True:
             self.DefaultDataSet()
             
             
@@ -1260,12 +1261,12 @@ class GearAssemblyOptimizerWizard:
         M1=GearAssemblyOptimizer({'min':self.ratio['min'],'max':self.ratio['max']},
            {'min':self.Z1['min'],'max':self.Z1['max']},
            {'min':self.Z2['min'],'max':self.Z2['max']},
-           {'min':self.center_distance['min'],'max':self.center_distance['max']},
-           {'min':self.transverse_pressure_angle['min'],'max':self.transverse_pressure_angle['max']},
-           {'min':self.helix_angle['min'],'max':self.helix_angle['max']},
+           {'min':self.center_distance['min']/1000,'max':self.center_distance['max']/1000},
+           {'min':self.transverse_pressure_angle['min']/180*npy.pi,'max':self.transverse_pressure_angle['max']/180*npy.pi},
+           {'min':self.helix_angle['min']/180*npy.pi,'max':self.helix_angle['max']/180*npy.pi},
            {'min':self.coefficient_profile_shift1['min'],'max':self.coefficient_profile_shift1['max']},
            {'min':self.coefficient_profile_shift2['min'],'max':self.coefficient_profile_shift2['max']},
-           {'min':self.gear_width['min'],'max':self.gear_width['max']},
+           {'min':self.gear_width['min']/1000,'max':self.gear_width['max']/1000},
            {'min':self.maximum_torque['min'],'max':self.maximum_torque['max']})
         M1.Optimize(callback)
         self.solutions=M1.solutions
@@ -1352,8 +1353,9 @@ class GearAssemblyOptimizerWizard:
             elif i['max']==None:
                 i['max']=maxi
                 
-        analyze(self.helix_angle,0.05,0.25,0.4)
-        analyze(self.transverse_pressure_angle,0.05,0.25,0.4)
+        #Data par defaut en mm,deg et Nm
+        analyze(self.helix_angle,2,15,25)
+        analyze(self.transverse_pressure_angle,2,15,25)
         analyze(self.center_distance,0.05,40,100)
         analyze(self.coefficient_profile_shift1,0.05,-1,1)
         analyze(self.coefficient_profile_shift2,0.05,-1,1)

@@ -2,23 +2,43 @@ import numpy as npy
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 class SVGTrace:
-    def __init__(self,scale=1,swift=0,angle=0,decal_x=0,decal_y=0):
+    def __init__(self,scale=1000):
         
         self.scale=scale
-        self.swift=swift
-        self.angle=angle
-        self.decal_x=decal_x
-        self.decal_y=decal_y
-        self.data=[]
         self.box=[]
-        self.zpd=[]
-        self.begin=[]
-        self.end=[]
-        self.list_name={}
-        self.indice=1
         self.InitBorne()
         self.primitives=[]
         self.name=[]
+        
+#    def Scale(self,L):
+#        
+#        for item in L:
+#            if 'Lines2D' in str(item.__class__):
+##                for ite in item.points:
+##                    ite.vector=ite.vector*self.scale
+#                try:
+#                    for ite in item.primitives:
+#                        if 'Line2D' in str(ite.__class__):
+#                            for it in ite.points:
+#                                it.vector=it.vector*self.scale
+#                        if 'Arc2D' in str(ite.__class__):
+#                            print(1)
+#                            ite.center.vector=ite.center.vector*self.scale
+#                            ite.start.vector=ite.start.vector*self.scale
+#                            ite.end.vector=ite.end.vector*self.scale
+#                            ite.radius=ite.radius*self.scale
+#                except:
+#                    pass
+##                try:
+##                    for ite in item.radius.keys():
+##                        item.radius[ite]=item.radius[ite]*self.scale
+##                except:
+##                    pass
+#                
+#            if 'Circle2D' in str(item.__class__):
+#                item.center.vector=item.center.vector*self.scale
+#                item.radius=item.radius*self.scale
+#        return L
         
     def InitBorne(self):
         
@@ -45,10 +65,10 @@ class SVGTrace:
         self.view_y=(self.boxY_max[0]-self.boxY_min[0])
         self.box.append('var s = Snap("#Gear");')
                                       
-        self.pt1=self.boxX_min[0]+self.decal_x
-        self.pt2=self.boxY_min[0]+self.decal_y
-        self.pt3=self.boxX_max[0]-self.boxX_min[0]+self.decal_x
-        self.pt4=self.boxY_max[0]-self.boxY_min[0]+self.decal_y 
+        self.pt1=self.boxX_min[0]
+        self.pt2=self.boxY_min[0]
+        self.pt3=self.boxX_max[0]-self.boxX_min[0]
+        self.pt4=self.boxY_max[0]-self.boxY_min[0]
                 
     def ConvertPrimitive2D(self,L,group_name,stroke,strokeWidth,
                            impact_box,strokeDasharray="none"):
@@ -57,13 +77,13 @@ class SVGTrace:
             if 'primitives2D' in str(j.__class__):
                 for n,m in enumerate(j.primitives):
                     if 'Line2D' in str(m.__class__):
-                        temp='var {} = svg.selectAll("#{}").append("path").attr("d","M{},{}L{},{}").attr("stroke-width", {}).attr("stroke", "{}").attr("stroke-dasharray","{}").attr("fill", "none");'.format(group_name,group_name,m.points[0].vector[0],m.points[0].vector[1],m.points[-1].vector[0],m.points[-1].vector[1],strokeWidth,stroke,strokeDasharray)
+                        temp='var {} = svg.selectAll("#{}").append("path").attr("d","M{},{}L{},{}").attr("stroke-width", {}).attr("stroke", "{}").attr("stroke-dasharray","{}").attr("fill", "none");'.format(group_name,group_name,m.points[0].vector[0]*self.scale,m.points[0].vector[1]*self.scale,m.points[-1].vector[0]*self.scale,m.points[-1].vector[1]*self.scale,strokeWidth,stroke,strokeDasharray)
                         self.primitives.append(temp)
                         if impact_box==0:
-                            self.UpdateBox([m.points[0].vector[0]],[m.points[0].vector[1]])
+                            self.UpdateBox([m.points[0].vector[0]*self.scale],[m.points[0].vector[1]*self.scale])
                             
                     if 'Arc2D' in str(m.__class__):
-                        temp='var {} = svg.selectAll("#{}").append("path").attr("d", "M{},{}A{},{} {} 0,1 {},{}").attr("stroke-width", {}).attr("stroke", "{}").attr("stroke-dasharray","{}").attr("fill", "none");'.format(group_name,group_name,m.start.vector[0],m.start.vector[1],m.radius,m.radius,(m.angle1+m.angle2)/2/npy.pi*180+90,m.end.vector[0],m.end.vector[1],strokeWidth,stroke,strokeDasharray)
+                        temp='var {} = svg.selectAll("#{}").append("path").attr("d", "M{},{}A{},{} {} 0,1 {},{}").attr("stroke-width", {}).attr("stroke", "{}").attr("stroke-dasharray","{}").attr("fill", "none");'.format(group_name,group_name,m.start.vector[0]*self.scale,m.start.vector[1]*self.scale,m.radius*self.scale,m.radius*self.scale,(m.angle1+m.angle2)/2/npy.pi*180+90,m.end.vector[0]*self.scale,m.end.vector[1]*self.scale,strokeWidth,stroke,strokeDasharray)
                         self.primitives.append(temp)                        
             
     def ConvertCircle2D(self,L,group_name,stroke,strokeWidth,impact_box,strokeDasharray="none"):
@@ -71,24 +91,25 @@ class SVGTrace:
         for i,j in enumerate(L):
             if 'Circle2D' in str(j.__class__):
                 if impact_box==0:
-                    self.UpdateBox([j.center.vector[0]],[j.center.vector[1]],j.radius)
-                temp='var {} = svg.selectAll("#{}").append("circle").attr("stroke-width", {}).attr("stroke", "{}").attr("stroke-dasharray","{}").attr("fill", "none").attr("cx",{}).attr("cy",{}).attr("r",{});'.format(group_name,group_name,strokeWidth,stroke,strokeDasharray,j.center.vector[0],j.center.vector[1],j.radius)
+                    self.UpdateBox([j.center.vector[0]*self.scale],[j.center.vector[1]*self.scale],j.radius*self.scale)
+                temp='var {} = svg.selectAll("#{}").append("circle").attr("stroke-width", {}).attr("stroke", "{}").attr("stroke-dasharray","{}").attr("fill", "none").attr("cx",{}).attr("cy",{}).attr("r",{});'.format(group_name,group_name,strokeWidth,stroke,strokeDasharray,j.center.vector[0]*self.scale,j.center.vector[1]*self.scale,j.radius*self.scale)
                 self.primitives.append(temp)
                 
     def ConvertLine2D(self,L,group_name,stroke,strokeWidth,impact_box,strokeDasharray="none"):
         
         for i,j in enumerate(L):
             if 'Line2D' in str(j.__class__):
-                temp='var {} = svg.selectAll("#{}").append("line").attr("stroke-width", {}).attr("stroke", "{}").attr("stroke-dasharray","{}").attr("fill", "none").attr("x1",{}).attr("y1",{}).attr("x2",{}).attr("y2",{});'.format(group_name,group_name,strokeWidth,stroke,strokeDasharray,j.points[0].vector[0],j.points[0].vector[1],j.points[-1].vector[0],j.points[-1].vector[1])
+                temp='var {} = svg.selectAll("#{}").append("line").attr("stroke-width", {}).attr("stroke", "{}").attr("stroke-dasharray","{}").attr("fill", "none").attr("x1",{}).attr("y1",{}).attr("x2",{}).attr("y2",{});'.format(group_name,group_name,strokeWidth,stroke,strokeDasharray,j.points[0].vector[0]*self.scale,j.points[0].vector[1]*self.scale,j.points[-1].vector[0]*self.scale,j.points[-1].vector[1]*self.scale)
                 self.primitives.append(temp)
                 if impact_box==0:
-                    self.UpdateBox([j.center.vector[0]],[j.center.vector[1]])
+                    self.UpdateBox([j.center.vector[0]*self.scale],[j.center.vector[1]*self.scale])
                 for k in j.points[0:-1]:
                     if impact_box==0:
-                        self.UpdateBox([k.vector[0]],[k.vector[1]])
+                        self.UpdateBox([k.vector[0]*self.scale],[k.vector[1]*self.scale])
     
     def Convert(self,L,group_name,stroke,strokeWidth,impact_box=0,strokeDasharray="none"):
         
+#        L=self.Scale(L)
         self.name.append('{} "group":"{}"{},'.format(chr(123),group_name,chr(125)))
         
         self.ConvertPrimitive2D(L,group_name,stroke,strokeWidth,impact_box,strokeDasharray)
@@ -114,7 +135,9 @@ class SVGTrace:
         self.vb3=self.boxX_max[0]-self.boxX_min[0]
         self.vb4=self.boxY_max[0]-self.boxY_min[0]
         
-        return template.render(list_polyline=self.primitives,rot1=(animate['gear1']['R'][0]/npy.pi*180),pos1_x=animate['gear1']['R'][1],pos1_y=animate['gear1']['R'][2],rot2=(animate['gear2']['R'][0]/npy.pi*180),pos2_x=animate['gear2']['R'][1],pos2_y=animate['gear2']['R'][2],width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4)
+        print((animate['gear1']['R'][0]/npy.pi*180),(animate['gear2']['R'][0]/npy.pi*180))
+        
+        return template.render(list_polyline=self.primitives,rot1=(animate['gear1']['R'][0]/npy.pi*180),pos1_x=animate['gear1']['R'][1]*1000,pos1_y=animate['gear1']['R'][2]*1000,rot2=(animate['gear2']['R'][0]/npy.pi*180),pos2_x=animate['gear2']['R'][1]*1000,pos2_y=animate['gear2']['R'][2]*1000,width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4)
     
     def Export(self,name='export.html'):
         

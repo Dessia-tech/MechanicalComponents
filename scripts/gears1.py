@@ -1,16 +1,16 @@
 import mechanical_components.gears as gears
 
-input_dict=({'type':'ratio'},
-          {'type':'Z1','min':30,'max':30},
-          {'type':'Z2','min':52,'max':52},
-          {'type':'center_distance','min':30,'max':70},
-          {'type':'helix_angle','nom':0.3},
+input_dict=({'type':'ratio','nom':0.3},
+          {'type':'Z1','min':15,'max':15},
+          {'type':'Z2','min':51,'max':51},
+          {'type':'center_distance','min':20,'max':70},
+          {'type':'helix_angle','nom':20},
           {'type':'gear_width','nom':20})
 
 
 
 GA_wizard=gears.GearAssemblyOptimizerWizard(input_dict)
-if GA_wizard.error:
+if GA_wizard.ok:
     GA_wizard.Optimize()
 
 
@@ -30,7 +30,7 @@ for i,ga in enumerate(results.solutions):
     ga.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
     ga.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
     ga.SVGCoeffYBIso('AbaqueCoeffYBIso.html')
-    ga.FreeCADExport('Assembly_{}'.format(i),(0,0),(ga.center_distance,0))
+#    ga.FreeCADExport('Assembly_{}'.format(i),(0,0),(ga.center_distance,0))
 
 print(results.Dict())
 
