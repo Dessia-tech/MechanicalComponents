@@ -1,4 +1,5 @@
 import numpy as npy
+import os as os
 import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
@@ -10,6 +11,7 @@ from scipy.interpolate import splprep, splev
 import itertools
 
 import mechanical_components.LibSvgD3 as LibSvg
+import mechanical_components.abaques.coeff_yb_iso as abaques
 
 import persistent
 #from dessia_common import ResultsDBClient
@@ -565,22 +567,28 @@ class GearAssembly(persistent.Persistent):
                        root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
         
         #chargement des abaques
-        fichier=open('coeff_yb_iso.txt','r')
-        lines=fichier.readlines()
-        fichier.close()
-        tab_coeff_yb_iso={}
-        list_col=[]
-        for i in lines[0].split('\n')[0].split(','):
-            tab_coeff_yb_iso[i]=[]
-            list_col.append(i)
-        self.list_coeff_yb_iso=[]
-        for i in lines[1::]:
-            temp=i.split('\n')[0].split(',')
-            tab_coeff_yb_iso[list_col[0]].append(float(temp[0]))
-            tab_coeff_yb_iso[list_col[1]].append(float(temp[1]))
-            self.list_coeff_yb_iso.append(vm.Point2D((float(temp[0]),float(temp[1]))))
+#        path=os.getcwd()
+#        fichier=open(path+"mechanical_components/abaques/coeff_yb_iso.txt",'r')
+#        fichier=open("coeff_yb_iso.txt",'r')
+#        lines=fichier.readlines()
+#        fichier.close()
+#        tab_coeff_yb_iso={}
+#        list_col=[]
+#        for i in lines[0].split('\n')[0].split(','):
+#            tab_coeff_yb_iso[i]=[]
+#            list_col.append(i)
+#        self.list_coeff_yb_iso=[]
+#        for i in lines[1::]:
+#            temp=i.split('\n')[0].split(',')
+#            tab_coeff_yb_iso[list_col[0]].append(float(temp[0]))
+#            tab_coeff_yb_iso[list_col[1]].append(float(temp[1]))
+#            self.list_coeff_yb_iso.append(vm.Point2D((float(temp[0]),float(temp[1]))))
+        self.list_coeff_yb_iso=abaques.list_coeff_yb_iso
+        self.tab_coeff_yb_iso=abaques.tab_coeff_yb_iso
+        
         control,pt=self.Gear1._BSpline(self.list_coeff_yb_iso)        
         self.fun_coeff_yb_iso = (lambda t : splev(t,control))
+#        print(tab_coeff_yb_iso,self.list_coeff_yb_iso)
             
     ### Data Geometry
         

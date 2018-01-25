@@ -107,7 +107,7 @@ class SVGTrace:
         
         print((animate['gear1']['R'][0]/npy.pi*180),(animate['gear2']['R'][0]/npy.pi*180))
         
-        return template.render(list_polyline=self.primitives,rot1=(animate['gear1']['R'][0]/npy.pi*180),pos1_x=animate['gear1']['R'][1]*1000,pos1_y=animate['gear1']['R'][2]*1000,rot2=(animate['gear2']['R'][0]/npy.pi*180),pos2_x=animate['gear2']['R'][1]*1000,pos2_y=animate['gear2']['R'][2]*1000,width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4,trait_ep=scale*30)
+        return template.render(list_polyline=self.primitives,rot1=(animate['gear1']['R'][0]/npy.pi*180),pos1_x=animate['gear1']['R'][1]*1000,pos1_y=animate['gear1']['R'][2]*1000,rot2=(animate['gear2']['R'][0]/npy.pi*180),pos2_x=animate['gear2']['R'][1]*1000,pos2_y=animate['gear2']['R'][2]*1000,width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4,trait_ep=1/(scale*20))
     
     def Export(self,name='export.html'):
         
@@ -130,7 +130,7 @@ class SVGTrace:
         
         print(scale,self.view_x,scale*30)
         
-        return template.render(list_name=self.name,list_polyline=self.primitives,width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4,trait_ep=scale*30)
+        return template.render(list_name=self.name,list_polyline=self.primitives,width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4,trait_ep=1/(scale*20))
     
     def Show(self,name='export.html',animate=None):
 #        print(self.BabylonScript())
