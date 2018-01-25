@@ -10,36 +10,6 @@ class SVGTrace:
         self.primitives=[]
         self.name=[]
         
-#    def Scale(self,L):
-#        
-#        for item in L:
-#            if 'Lines2D' in str(item.__class__):
-##                for ite in item.points:
-##                    ite.vector=ite.vector*self.scale
-#                try:
-#                    for ite in item.primitives:
-#                        if 'Line2D' in str(ite.__class__):
-#                            for it in ite.points:
-#                                it.vector=it.vector*self.scale
-#                        if 'Arc2D' in str(ite.__class__):
-#                            print(1)
-#                            ite.center.vector=ite.center.vector*self.scale
-#                            ite.start.vector=ite.start.vector*self.scale
-#                            ite.end.vector=ite.end.vector*self.scale
-#                            ite.radius=ite.radius*self.scale
-#                except:
-#                    pass
-##                try:
-##                    for ite in item.radius.keys():
-##                        item.radius[ite]=item.radius[ite]*self.scale
-##                except:
-##                    pass
-#                
-#            if 'Circle2D' in str(item.__class__):
-#                item.center.vector=item.center.vector*self.scale
-#                item.radius=item.radius*self.scale
-#        return L
-        
     def InitBorne(self):
         
         self.boxX_min=[npy.inf]
@@ -137,7 +107,7 @@ class SVGTrace:
         
         print((animate['gear1']['R'][0]/npy.pi*180),(animate['gear2']['R'][0]/npy.pi*180))
         
-        return template.render(list_polyline=self.primitives,rot1=(animate['gear1']['R'][0]/npy.pi*180),pos1_x=animate['gear1']['R'][1]*1000,pos1_y=animate['gear1']['R'][2]*1000,rot2=(animate['gear2']['R'][0]/npy.pi*180),pos2_x=animate['gear2']['R'][1]*1000,pos2_y=animate['gear2']['R'][2]*1000,width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4)
+        return template.render(list_polyline=self.primitives,rot1=(animate['gear1']['R'][0]/npy.pi*180),pos1_x=animate['gear1']['R'][1]*1000,pos1_y=animate['gear1']['R'][2]*1000,rot2=(animate['gear2']['R'][0]/npy.pi*180),pos2_x=animate['gear2']['R'][1]*1000,pos2_y=animate['gear2']['R'][2]*1000,width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4,trait_ep=scale*30)
     
     def Export(self,name='export.html'):
         
@@ -158,7 +128,9 @@ class SVGTrace:
         self.vb3=self.boxX_max[0]-self.boxX_min[0]
         self.vb4=self.boxY_max[0]-self.boxY_min[0]
         
-        return template.render(list_name=self.name,list_polyline=self.primitives,width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4)
+        print(scale,self.view_x,scale*30)
+        
+        return template.render(list_name=self.name,list_polyline=self.primitives,width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4,trait_ep=scale*30)
     
     def Show(self,name='export.html',animate=None):
 #        print(self.BabylonScript())
