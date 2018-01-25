@@ -11,7 +11,7 @@ from scipy.interpolate import splprep, splev
 import itertools
 
 import mechanical_components.LibSvgD3 as LibSvg
-import mechanical_components.abaques.coeff_yb_iso as abaques
+#import mechanical_components.abaques.coeff_yb_iso as abaques
 
 import persistent
 #from dessia_common import ResultsDBClient
@@ -583,11 +583,12 @@ class GearAssembly(persistent.Persistent):
 #            tab_coeff_yb_iso[list_col[0]].append(float(temp[0]))
 #            tab_coeff_yb_iso[list_col[1]].append(float(temp[1]))
 #            self.list_coeff_yb_iso.append(vm.Point2D((float(temp[0]),float(temp[1]))))
-        self.list_coeff_yb_iso=abaques.list_coeff_yb_iso
-        self.tab_coeff_yb_iso=abaques.tab_coeff_yb_iso
         
-        control,pt=self.Gear1._BSpline(self.list_coeff_yb_iso)        
-        self.fun_coeff_yb_iso = (lambda t : splev(t,control))
+#        self.list_coeff_yb_iso=abaques.list_coeff_yb_iso
+#        self.tab_coeff_yb_iso=abaques.tab_coeff_yb_iso
+#        
+#        control,pt=self.Gear1._BSpline(self.list_coeff_yb_iso)        
+#        self.fun_coeff_yb_iso = (lambda t : splev(t,control))
 #        print(tab_coeff_yb_iso,self.list_coeff_yb_iso)
             
     ### Data Geometry
