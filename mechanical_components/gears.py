@@ -1375,9 +1375,9 @@ class GearAssemblyOptimizerWizard:
     
 class GearAssemblyOptimizationResults(persistent.Persistent):
     
-    def __init__(self,list_solutions,bounds):
+    def __init__(self,gear_assemblies,bounds):
         
-        self.solutions=list_solutions
+        self.gear_assemblies=gear_assemblies
         self.input_data=bounds
 #        self.solutions[family]={}
 #        self.solutions[family]['obj']=[]
@@ -1393,7 +1393,7 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
     
     def CSVExport(self,name,opt='w',family='Famille_A'):
         if self.solutions!=[]:
-            (temp1,temp2)=self.solutions[0].CSVExport()
+            (temp1,temp2)=self.gear_assemblies[0].CSVExport()
             temp=temp1[0]
             for i in temp1[1::]:
                 temp+=','+i
@@ -1406,7 +1406,7 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
             fichier=open(name,opt)
             if not opt=='a':
                 fichier.write(temp+'\n')
-            for GA in self.solutions:
+            for GA in self.gear_assemblies:
                 (temp3,temp4)=GA.CSVExport()
                 temp=''
                 for i in temp1:
@@ -1418,9 +1418,9 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
     def Dict(self):
         d={}
         solutions=[]
-        for ga in self.solutions:
+        for ga in self.gear_assemblies:
             solutions.append(ga.Dict())
-        d['solutions']=solutions
+        d['gear_assemblies']=solutions
         d['input_data']=self.input_data
         return d
         
