@@ -1415,9 +1415,12 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
             fichier.close()
             
     def Dict(self):
-        d=[]
+        d={}
+        solutions=[]
         for ga in self.solutions:
-            d.append(ga.Dict())
+            solutions.append(ga.Dict())
+        d['solutions']=solutions
+        d['input_data']=self.input_data
         return d
         
 #class GearAssemblyDBClient(ResultsDBClient):
