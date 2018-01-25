@@ -854,8 +854,8 @@ class GearAssembly(persistent.Persistent):
         SVG1=LibSvg.SVGTrace(1000)
         SVG1.Convert(L1[0],'gear1','black',1/50,0)
         SVG1.Convert(L1[1],'gear2','red',1/50,0)
-        SVG1.Convert(L2,'Construction','blue',1/50,0,'0.001px, 0.001px')
-        SVG1.Convert(L3,'Construction','red',1/50,0,'0.001px, 0.001px')
+        SVG1.Convert(L2,'Construction','blue',1/50,0,'0.1px, 0.1px')
+        SVG1.Convert(L3,'Construction','red',1/50,0,'0.1px, 0.1px')
         SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
         
     def MeshingSVGExport(self,name,gear):
