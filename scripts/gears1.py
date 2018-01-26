@@ -30,7 +30,8 @@ for i,ga in enumerate(results.solutions):
     ga.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
     ga.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
 #    ga.SVGCoeffYBIso('AbaqueCoeffYBIso.html')
-#    ga.FreeCADExport('Assembly_{}'.format(i),(0,0),(ga.center_distance,0))
+    ga.FreeCADExport('Assembly_{}'.format(i),(0,0),(ga.center_distance,0))
 
-print(results.Dict())
+d=results.Dict()
+print(d)
 
