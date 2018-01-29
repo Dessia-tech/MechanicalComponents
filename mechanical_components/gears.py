@@ -814,7 +814,7 @@ class GearAssembly(persistent.Persistent):
     
     ### Export
     
-    def FreeCADExport(self,name,position1,position2):
+    def FreeCADExport(self,file_path,position1,position2,python_path,freecad_lib_path,export_types):
         TG1=self.Gear1.GearContours(10)
         TG2=self.Gear2.GearContours(10)
         list_rot=self.InitialPosition()
@@ -824,7 +824,7 @@ class GearAssembly(persistent.Persistent):
         R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width),name='R1')
         R2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width),name='R2')
         model=vm.VolumeModel([R1,R2])
-        model.FreeCADExport('python',name,'/usr/lib/freecad/lib')
+        model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
     
     def CSVExport(self):
         self.SigmaLewis()
@@ -1377,12 +1377,8 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
     
     def __init__(self,gear_assemblies,bounds):
         
-        self.gear_assemblies=gear_assemblies
+        self.solutions=gear_assemblies
         self.input_data=bounds
-#        self.solutions[family]={}
-#        self.solutions[family]['obj']=[]
-#        self.solutions[family]['bnds']=[]
-#        self.Add(list_solutions,bounds,family)
         self.type='mc_gear_assembly'
 #            
 #    def Add(self,list_solutions,bounds,family):
@@ -1393,7 +1389,7 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
     
     def CSVExport(self,name,opt='w',family='Famille_A'):
         if self.solutions!=[]:
-            (temp1,temp2)=self.gear_assemblies[0].CSVExport()
+            (temp1,temp2)=self.solutions[0].CSVExport()
             temp=temp1[0]
             for i in temp1[1::]:
                 temp+=','+i
@@ -1406,7 +1402,7 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
             fichier=open(name,opt)
             if not opt=='a':
                 fichier.write(temp+'\n')
-            for GA in self.gear_assemblies:
+            for GA in self.solutions:
                 (temp3,temp4)=GA.CSVExport()
                 temp=''
                 for i in temp1:
@@ -1418,9 +1414,9 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
     def Dict(self):
         d={}
         solutions=[]
-        for ga in self.gear_assemblies:
+        for ga in self.solutions:
             solutions.append(ga.Dict())
-        d['gear_assemblies']=solutions
+        d['solutions']=solutions
         d['input_data']=self.input_data
         return d
         
