@@ -1576,13 +1576,9 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
     
     def __init__(self,gear_assemblies,bounds):
         
-<<<<<<< HEAD
-        for obj in list_solutions:
+        for obj in gear_assemblies:
             obj.RoundData(5)
-        self.solutions=list_solutions
-=======
         self.solutions=gear_assemblies
->>>>>>> 55a94493aff4a550d10d87015b64db7457074268
         self.input_data=bounds
         self.type='mc_gear_assembly'
 #            

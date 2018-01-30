@@ -36,15 +36,8 @@ for i,ga in enumerate(results.solutions):
     ga.Gear2.GearGenerationSVGExport('Cremaillere_Z2-s{}.html'.format(str(i)))
     ga.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
     ga.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
-<<<<<<< HEAD
-#    ga.FreeCADExport('Assembly_{}'.format(i),(0,0),(ga.center_distance,0))
-
-#print(results.Dict())
-=======
-#    ga.SVGCoeffYBIso('AbaqueCoeffYBIso.html')
     ga.FreeCADExport('Assembly_{}'.format(i),(0,0),(ga.center_distance,0),'python','/usr/lib/freecad/lib',['fcstd','stl'])
 
 d=results.Dict()
 print(d)
->>>>>>> 55a94493aff4a550d10d87015b64db7457074268
 
