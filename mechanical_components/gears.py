@@ -949,17 +949,17 @@ class GearAssembly(persistent.Persistent):
     
     ### Export
     
-    def FreeCADExport(self,name,position1,position2):
+    def FreeCADExport(self,file_path,position1,position2,python_path,freecad_lib_path,export_types):
         TG1=self.Gear1.GearContours(10)
         TG2=self.Gear2.GearContours(10)
         list_rot=self.InitialPosition()
         L1=self.GearAssemblyTrace([TG1,TG2],[position1,position2],list_rot)
         C1=vm.Contour2D(L1[0])
         C2=vm.Contour2D(L1[1])
-        R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C1],(0,0,10),name='R1')
-        R2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C2],(0,0,10),name='R2')
+        R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width),name='R1')
+        R2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width),name='R2')
         model=vm.VolumeModel([R1,R2])
-        model.FreeCADExport('python',name,'/usr/lib/freecad/lib')
+        model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
     
     def CSVExport(self):
         self.SigmaLewis()
@@ -1574,16 +1574,16 @@ class GearAssemblyOptimizerWizard:
     
 class GearAssemblyOptimizationResults(persistent.Persistent):
     
-    def __init__(self,list_solutions,bounds):
+    def __init__(self,gear_assemblies,bounds):
         
+<<<<<<< HEAD
         for obj in list_solutions:
             obj.RoundData(5)
         self.solutions=list_solutions
+=======
+        self.solutions=gear_assemblies
+>>>>>>> 55a94493aff4a550d10d87015b64db7457074268
         self.input_data=bounds
-#        self.solutions[family]={}
-#        self.solutions[family]['obj']=[]
-#        self.solutions[family]['bnds']=[]
-#        self.Add(list_solutions,bounds,family)
         self.type='mc_gear_assembly'
 #            
 #    def Add(self,list_solutions,bounds,family):
