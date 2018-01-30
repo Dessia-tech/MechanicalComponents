@@ -1,13 +1,20 @@
 import mechanical_components.gears as gears
 
-input_dict=({'type':'ratio','nom':0.3},
-          {'type':'Z1','min':15,'max':15},
-          {'type':'Z2','min':51,'max':51},
-          {'type':'center_distance','min':20,'max':70},
-          {'type':'helix_angle','nom':20},
-          {'type':'gear_width','nom':20})
+input_dict=({'type':'Z1','nom':30},
+          {'type':'Z2','nom':51},
+          {'type':'center_distance','min':60,'max':100},
+          {'type':'transverse_pressure_angle','min':15,'max':25},
+          {'type':'helix_angle','min':20,'max':30},
+          {'type':'gear_width','min':20,'max':40},
+          {'type':'maximum_torque','nom':50},
+          {'type':'coefficient_profile_shift1','min':-1.2,'max':1.2},
+          {'type':'coefficient_profile_shift2','min':-1.2,'max':1.2},
+          {'type':'material1','nom':'acier_allie_cementation'},
+          {'type':'material2','nom':'acier_allie_cementation'},
+          {'type':'nb_cycle1','nom':10000000},
+          )
 
-
+#constraint_dict=({},)
 
 GA_wizard=gears.GearAssemblyOptimizerWizard(input_dict)
 if GA_wizard.ok:
@@ -29,8 +36,7 @@ for i,ga in enumerate(results.solutions):
     ga.Gear2.GearGenerationSVGExport('Cremaillere_Z2-s{}.html'.format(str(i)))
     ga.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
     ga.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
-#    ga.SVGCoeffYBIso('AbaqueCoeffYBIso.html')
 #    ga.FreeCADExport('Assembly_{}'.format(i),(0,0),(ga.center_distance,0))
 
-print(results.Dict())
+#print(results.Dict())
 

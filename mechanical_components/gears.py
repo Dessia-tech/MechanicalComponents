@@ -1,4 +1,6 @@
 import numpy as npy
+import math as mt
+from scipy import interpolate
 import os as os
 import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
@@ -7,15 +9,112 @@ import volmdlr.primitives2D as primitives2D
 from scipy.linalg import norm
 from scipy.optimize import minimize,fsolve
 from scipy.interpolate import splprep, splev
+import cma as cma
 #from sympy import *
 import itertools
 
 import mechanical_components.LibSvgD3 as LibSvg
-#import mechanical_components.abaques.coeff_yb_iso as abaques
 
 import persistent
 #from dessia_common import ResultsDBClient
 #import pyDOE
+
+class Material:
+    
+    def __init__(self):
+        
+        data_array,dico_axis,dico_nom,type_axis=self.DataCoeffYBIso()
+        self.data_coeff_YB_Iso=self.GenereCoeff(data_array,dico_axis,dico_nom,type_axis)
+    
+        data_array,dico_axis,dico_nom,type_axis=self.DataWholerCurve()
+        self.data_wholer_curve=self.GenereCoeff(data_array,dico_axis,dico_nom,type_axis)
+        
+        data_array,dico_axis,dico_nom,type_axis=self.DataGearMaterial()
+        self.data_gear_material=self.GenereCoeff(data_array,dico_axis,dico_nom,type_axis)
+        
+    def GenereCoeff(self,data_array,dico_axis,dico_nom,type_axis):
+        structure={}
+        vect_x=npy.linspace(data_array[dico_nom['x']][0,0],data_array[dico_nom['x']][-1,0],len(data_array[dico_nom['x']][:,0]))
+        vect_y=npy.linspace(data_array[dico_nom['y']][0,1],data_array[dico_nom['y']][-1,1],len(data_array[dico_nom['y']][:,1]))
+        
+        for i,j in type_axis.items():
+            if j=='Log':
+                axe_reel=[mt.log10(dico_axis[i][0]),mt.log10(dico_axis[i][-1])]
+            if j=='Linear':
+                axe_reel=dico_axis[i]
+            if i=='x':
+                ax,bx=self.AxisLinear(axe_reel,vect_x)
+            if i=='y':
+                ay,by=self.AxisLinear(axe_reel,vect_y)
+
+        for key,data in dico_nom.items():
+            if not key in ['x','y']:
+                export=[]
+                for item in data_array[data]:
+                    data_x=item[0]*ax+bx
+                    data_y=item[1]*ay+by
+                    export.append([data_x,data_y])
+                export=npy.array(export)
+                structure[key]=export
+        structure['x']=type_axis['x']
+        structure['y']=type_axis['y']
+        return structure
+    
+    def DataCoeffYBIso(self):
+        data_svg=['56.097561,477.97196 81.707319,-1.21951 81.70732,1.21951 82.92682,0 79.2683,-1.21951 82.92683,0 81.70731,-1.21951 81.70732,0 81.70732,1.21951',
+                               '57.317073,476.75245 -1.219512,-82.92683 0,-82.92683 1.219512,-84.14634 0,-82.92683 1.219512,-82.92683',
+                               '56.097561,58.459766 76.829269,59.756094 71.95122,43.90244 89.02439,45.12195 78.04878,32.92683 75.60976,19.5122 74.39024,7.31707 90.2439,1.21951 97.56098,1.21952']
+        dico_nom={'evol_coeff_yb_iso':2,'x':0,'y':1}
+        dico_axis={'x':[0,5,10,15,20,25,30,35,40],'y':[0.5,0.6,0.7,0.8,0.9,1]}
+        type_axis={'x':'Linear','y':'Linear'}
+        data_array=self.SVG2Array(data_svg)
+        return data_array,dico_axis,dico_nom,type_axis
+    
+    def DataWholerCurve(self):
+        data_svg=['199.46895,423.19149 0,-42.67247 -0.99238,-41.68007 0.99238,-31.75625 -0.99238,-28.77911 0,-20.84004 0,-19.84765 0,-20.84004 0,-18.85528 0.99238,-17.86289 0,-14.88574 0,-16.87051 0,-12.90098 0,-9.92382 0,-11.9086 0,-11.90859 0,-10.916213','200.46133,423.19149 34.7334,-0.99239 20.84004,0.99239 14.88574,-0.99239 11.9086,0 36.29445,0.74708 36.12719,-0.80283 21.67632,0.80283 14.45088,0 11.23957,0 38.93709,-0.40141 36.1272,0.40141 21.67631,0 16.85936,-0.40141 11.23957,0 36.1272,-0.40142 37.33143,-0.40141 19.26784,0.40141 14.04947,0.80283 9.2325,0 36.93002,-0.40141','236,100.3622 63.42857,18.28572 61.14286,15.42857 93.71428,21.71429 57.71429,3.42857 65.71429,1.14285 65.71428,0.57143 38.28572,0','213.04348,126.27525 55.65217,34.78261 38.26087,22.60869 66.08696,6.95652 115.65217,-0.86956 103.47826,0 86.95652,-0.86957','221.14286,140.3622 60.57143,46.28572 34.85714,26.85714 43.42857,27.42857 13.14286,5.71429 78.28571,-0.57143 125.71429,1.14286 103.42857,-2.28572','234.28571,204.3622 50.28572,29.14286 37.71428,21.14286 41.14286,21.14286 31.42857,12 48,5.14285 65.71429,0 83.42857,-1.14285 88,0','237.3913,261.05786 112.17392,50.43478 83.47826,31.30435 69.56522,18.26087 84.34782,-0.86957 92.17391,-0.86956']
+        dico_nom={'acier_allie_cementation':2,'acier_allie_nitruration':3,'acier_allie_trempe_revenu_bt':4,'acier_allie_trempe_revenu_ht':5,'acier_carbone_non_traite':6,'x':1,'y':0}
+        dico_axis={'x':[10000,100000000],'y':[20,100]}
+        type_axis={'x':'Log','y':'Log'}
+        data_array=self.SVG2Array(data_svg)
+        return data_array,dico_axis,dico_nom,type_axis
+    
+    def DataGearMaterial(self):
+        data_svg=['76.2931,579.71715 91.17956,0.9304 59.54583,0.9304 47.45059,-0.9304 134.90853,0 110.71804,-0.9304','76.2931,579.71715 0,-148.86459 -0.930404,-90.24915 0,-240.974553','350.76218,194.53003 53.96341,-28.84251 56.75463,-29.77292 40.93776,-22.32969','352.62299,209.41649 49.31139,-26.98171 39.07695,-19.53847 54.89382,-29.77292','319.12846,281.05757 71.64108,-46.52018 56.75462,-39.07696 66.98906,-45.58977','345.17976,370.37632 51.1722,-42.79857 53.96341,-42.79856','267.02585,377.81955 43.72897,-36.28574 38.14655,-33.49453 23.26009,-20.46888','163.75104,467.1383 37.21615,-30.70332 30.70332,-25.1209 16.74727,-17.67767','82.805926,535.98817 38.146554,-31.63372 20.46888,-15.81686 13.02565,-14.88646','103.27481,574.13472 37.21614,-33.49453 33.49453,-35.35534 25.1209,-26.0513 14.88646,-17.67767']
+        dico_nom={'acier_allie_cementation':2,'acier_allie_nitruration':3,'acier_allie_trempe_totale':4,'acier_allie_trempe_local':5,'acier_carbone_non_traite':6,'fontes_speciales':7,'bronze':8,'fontes_grises':9,'x':0,'y':1}
+        dico_axis={'x':[20,150],'y':[5,45]}
+        type_axis={'x':'Log','y':'Log'}
+        data_array=self.SVG2Array(data_svg)
+        return data_array,dico_axis,dico_nom,type_axis
+    
+    def FunCoeff(self,x,data,type_x='Linear',type_y='Linear'):
+        if type_x=='Log': 
+            x=mt.log10(x)
+        f = interpolate.interp1d(list(data[:,0]),list(data[:,1]), fill_value='extrapolate')
+        sol=f(x)
+        if type_y=='Log':
+            sol=10**sol
+        return sol
+    
+    def AxisLinear(self,axe,vect):
+        a=(axe[0]-axe[-1])/(vect[0]-vect[-1])
+        b=axe[0]-a*vect[0]
+        return a,b
+    
+    def SVG2Array(self,data):
+        # en entrée une liste de data SVG positionnee en relatif et 
+        # en sortie liste Array avec positionnement en absolu
+        export={}
+        for i,dat in enumerate(data):
+            data_temp=[]
+            sol=dat.split(' ')
+            for item in sol:
+                temp=item.split(',')
+                data_temp.append([float(temp[0]),float(temp[1])])
+            export_temp=[data_temp[0]]
+            for item in data_temp[1::]:
+                export_temp.append([item[0]+export_temp[-1][0],item[1]+export_temp[-1][1]])
+            export[i]=npy.array(export_temp)
+        return export
 
 class Rack(persistent.Persistent):
     def __init__(self,transverse_radial_pitch,transverse_pressure_angle_T=None,circular_tooth_thickness=None,gear_addendum=None,
@@ -536,20 +635,21 @@ class Gear(persistent.Persistent):
         
 class GearAssembly(persistent.Persistent):
     def __init__(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
-                 coefficient_profile_shift2,gear_width,maximum_torque,
-                 transverse_pressure_angle_rack_T1=None,
-                 transverse_pressure_angle_rack_T2=None,circular_tooth_thickness_rack1=None,
-                 circular_tooth_thickness_rack2=None,
-                 gear_addendum_rack1=None,gear_addendum_rack2=None,gear_dedendum_rack1=None,gear_dedendum_rack2=None,
-                 root_radius_T1=None,root_radius_T2=None,root_radius_R1=None,
-                 root_radius_R2=None,transverse_pressure_angle_rack_R1=None,transverse_pressure_angle_rack_R2=None):
+             coefficient_profile_shift2,gear_width,maximum_torque,
+             material1,material2,nb_cycle1,
+             transverse_pressure_angle_rack_T1=None,
+             transverse_pressure_angle_rack_T2=None,circular_tooth_thickness_rack1=None,
+             circular_tooth_thickness_rack2=None,
+             gear_addendum_rack1=None,gear_addendum_rack2=None,gear_dedendum_rack1=None,gear_dedendum_rack2=None,
+             root_radius_T1=None,root_radius_T2=None,root_radius_R1=None,
+             root_radius_R2=None,transverse_pressure_angle_rack_R1=None,transverse_pressure_angle_rack_R2=None):
         
         self.GearAssemblyParam(Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
-                   coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
-                   transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
-                   gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
-                   root_radius_T1,root_radius_T2,root_radius_R1,
-                   root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
+               coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
+               transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
+               gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
+               root_radius_T1,root_radius_T2,root_radius_R1,
+               root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
         
         self.Rack1=Rack(self.transverse_radial_pitch_rack1,self.transverse_pressure_angle_rack_T1,circular_tooth_thickness_rack1,
                         gear_addendum_rack1,gear_dedendum_rack1,root_radius_T1,root_radius_R1,transverse_pressure_angle_rack_R1)
@@ -560,37 +660,22 @@ class GearAssembly(persistent.Persistent):
         self.Gear2=Gear(self.Z2,self.Rack2,self.coefficient_profile_shift2)
         
         self.GearAssemblyParam2(Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
-                       coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
-                       transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
-                       gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
-                       root_radius_T1,root_radius_T2,root_radius_R1,
-                       root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
+               coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
+               transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
+               gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
+               root_radius_T1,root_radius_T2,root_radius_R1,
+               root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
         
         #chargement des abaques
-#        path=os.getcwd()
-#        fichier=open(path+"mechanical_components/abaques/coeff_yb_iso.txt",'r')
-#        fichier=open("coeff_yb_iso.txt",'r')
-#        lines=fichier.readlines()
-#        fichier.close()
-#        tab_coeff_yb_iso={}
-#        list_col=[]
-#        for i in lines[0].split('\n')[0].split(','):
-#            tab_coeff_yb_iso[i]=[]
-#            list_col.append(i)
-#        self.list_coeff_yb_iso=[]
-#        for i in lines[1::]:
-#            temp=i.split('\n')[0].split(',')
-#            tab_coeff_yb_iso[list_col[0]].append(float(temp[0]))
-#            tab_coeff_yb_iso[list_col[1]].append(float(temp[1]))
-#            self.list_coeff_yb_iso.append(vm.Point2D((float(temp[0]),float(temp[1]))))
+        self.material1=material1
+        self.material2=material2
+        self.nb_cycle1=nb_cycle1
+        self.material=Material()
         
-#        self.list_coeff_yb_iso=abaques.list_coeff_yb_iso
-#        self.tab_coeff_yb_iso=abaques.tab_coeff_yb_iso
-#        
-#        control,pt=self.Gear1._BSpline(self.list_coeff_yb_iso)        
-#        self.fun_coeff_yb_iso = (lambda t : splev(t,control))
-#        print(tab_coeff_yb_iso,self.list_coeff_yb_iso)
-            
+        #initialisation contrainte ISO
+        self.SigmaISO()
+        self.SigmaMaterialISO()
+        
     ### Data Geometry
         
     def GearAssemblyParam(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
@@ -672,18 +757,20 @@ class GearAssembly(persistent.Persistent):
         self.gear_height_lewis2=self.Gear2.outside_diameter/2-self.Gear2.root_diameter_active/2-(self.Gear2.outside_active_angle/2*self.Gear2.outside_diameter/2*npy.tan(self.transverse_pressure_angle))
         
     def Update(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
-                       coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
-                       transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
-                       gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
-                       root_radius_T1,root_radius_T2,root_radius_R1,
-                       root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2):
+           coefficient_profile_shift2,gear_width,maximum_torque,
+           material1,material2,nb_cycle1,
+           transverse_pressure_angle_rack_T1,
+           transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
+           gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
+           root_radius_T1,root_radius_T2,root_radius_R1,
+           root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2):
         
         self.GearAssemblyParam(Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
-                       coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
-                       transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
-                       gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
-                       root_radius_T1,root_radius_T2,root_radius_R1,
-                       root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
+           coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
+           transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
+           gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
+           root_radius_T1,root_radius_T2,root_radius_R1,
+           root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
         
         self.Rack1.Update(self.transverse_radial_pitch_rack1,transverse_pressure_angle_rack_T1,circular_tooth_thickness_rack1,
                         gear_addendum_rack1,gear_dedendum_rack1,root_radius_T1,root_radius_R1,transverse_pressure_angle_rack_R1)
@@ -693,18 +780,21 @@ class GearAssembly(persistent.Persistent):
         self.Gear2.Update(self.Z2,self.Rack2,coefficient_profile_shift2)
         
         self.GearAssemblyParam2(Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
-                       coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
-                       transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
-                       gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
-                       root_radius_T1,root_radius_T2,root_radius_R1,
-                       root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
+           coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
+           transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
+           gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
+           root_radius_T1,root_radius_T2,root_radius_R1,
+           root_radius_R2,transverse_pressure_angle_rack_R1,transverse_pressure_angle_rack_R2)
+        
+        self.SigmaISO()
+        self.SigmaMaterialISO()
         
     ### Contraintes
         
     def CriteriaIneq(self):
 #        print(self.radial_contact_ratio,self.transverse_radial_pitch,self.transverse_pressure_angle)
         crit=[
-              2*self.center_distance-self.Gear1.root_diameter_active-self.Gear2.outside_diameter,
+              (2*self.center_distance-self.Gear1.root_diameter_active-self.Gear2.outside_diameter),
               2*self.center_distance-self.Gear2.root_diameter_active-self.Gear1.outside_diameter,
               self.space_width1-self.circular_tooth_thickness2,
               self.space_width2-self.circular_tooth_thickness1,
@@ -712,9 +802,11 @@ class GearAssembly(persistent.Persistent):
               self.Gear2.outside_diameter-self.DF2,
               self.DF1-self.DB1,
               self.DF2-self.DB2,
-              self.radial_contact_ratio-1.2,
+              self.radial_contact_ratio-1,
               self.linear_backlash-0.05*10**(-3),
-              0.1*10**(-3)-self.linear_backlash
+              (0.2*10**(-3)-self.linear_backlash),
+              (self.sigma_lim1-self.sigma_iso_1)/self.sigma_lim1,
+              (self.sigma_lim2-self.sigma_iso_2)/self.sigma_lim2,
               ]
         return crit
         
@@ -770,6 +862,31 @@ class GearAssembly(persistent.Persistent):
         self.sigma_lewis_maximum1=6*self.tangential_load*self.gear_height_lewis1/(self.gear_width*self.Gear1.root_gear_length**2)
         self.sigma_lewis_maximum2=6*self.tangential_load*self.gear_height_lewis2/(self.gear_width*self.Gear2.root_gear_length**2)
         
+    def SigmaISO(self):
+        
+        self._CoeffYFIso()
+        self._CoeffYEIso()
+        self._CoeffYBIso()
+        self.sigma_iso_1=abs(self.tangential_load/(self.gear_width*self.Gear1.rack.module)*self.coeff_yf_iso1*self.coeff_ye_iso*self.coeff_yb_iso)
+        self.sigma_iso_2=abs(self.tangential_load/(self.gear_width*self.Gear2.rack.module)*self.coeff_yf_iso2*self.coeff_ye_iso*self.coeff_yb_iso)
+        
+    def SigmaMaterialISO(self):
+        
+        safety_factor=1
+        data=self.material.data_wholer_curve
+        sgl1=self.material.FunCoeff(self.nb_cycle1,data[self.material1],data['x'],data['y'])
+        data=self.material.data_gear_material
+        sgl1=self.material.FunCoeff(sgl1,data[self.material1],data['x'],data['y'])
+        self.Gear1._CoeffYSIso()
+        self.sigma_lim1=(sgl1/(safety_factor*self.Gear1.coeff_ys_iso))*10**7
+        
+        data=self.material.data_wholer_curve
+        sgl2=self.material.FunCoeff(self.nb_cycle1*self.Z1/self.Z2,data[self.material2],data['x'],data['y'])
+        data=self.material.data_gear_material
+        sgl2=self.material.FunCoeff(sgl2,data[self.material2],data['x'],data['y'])
+        self.Gear2._CoeffYSIso()
+        self.sigma_lim2=(sgl2/(safety_factor*self.Gear2.coeff_ys_iso))*10**7
+        
     def _CoeffYFIso(self):
         #facteur de forme pour la contrainte ISO
         angle=30/180*npy.pi
@@ -784,11 +901,10 @@ class GearAssembly(persistent.Persistent):
         
     def _CoeffYBIso(self):
         #facteur de contrefort pour la contrainte ISO
-        self.coeff_yb_iso=float(self.fun_coeff_yb_iso(self.helix_angle)[1])
-        
-    
-        
-        
+        data=self.material.data_coeff_YB_Iso
+        self.coeff_yb_iso=self.material.FunCoeff(self.helix_angle,data['evol_coeff_yb_iso'],data['x'],data['y'])
+#        self.coeff_yb_iso=float(self.fun_coeff_yb_iso(self.helix_angle)[1])
+
     ### Generique
         
     def Dict(self):
@@ -811,6 +927,25 @@ class GearAssembly(persistent.Persistent):
         d['Gear2']=self.Gear2.Dict()
 
         return d
+    
+    def RoundData(self,prec):
+        self.Update(self.Z1,self.Z2,
+           round(float(self.center_distance),prec),
+           round(float(self.transverse_pressure_angle),prec),
+           round(float(self.helix_angle),prec),
+           round(float(self.coefficient_profile_shift1),prec),
+           round(float(self.coefficient_profile_shift2),prec),
+           round(float(self.gear_width),prec),
+           self.maximum_torque,self.material1,self.material2,self.nb_cycle1,transverse_pressure_angle_rack_T1=None,
+           transverse_pressure_angle_rack_T2=None,circular_tooth_thickness_rack1=None,
+           circular_tooth_thickness_rack2=None,gear_addendum_rack1=None,gear_addendum_rack2=None,
+           gear_dedendum_rack1=None,gear_dedendum_rack2=None,root_radius_T1=None,root_radius_T2=None,
+           root_radius_R1=None,root_radius_R2=None,transverse_pressure_angle_rack_R1=None,
+           transverse_pressure_angle_rack_R2=None)
+        for key,ob in (self.Dict()).items():
+            if 'float' in str(ob.__class__):
+                data=round(float(ob),prec)
+                setattr(self,key,data)
     
     ### Export
     
@@ -835,11 +970,6 @@ class GearAssembly(persistent.Persistent):
         d3=['gear2_'+i for i in d3]
         return list(d.keys())+d1+d3,list(d.values())+d2+d4
     
-    def SVGCoeffYBIso(self,name):
-        L=[primitives2D.RoundedLines2D(self.list_coeff_yb_iso,{},False)]
-        SVG1=LibSvg.SVGTrace(700)
-        SVG1.Convert(L,'G','black',0.02,0)
-        SVG1.Export(name)
         
     def SVGExport(self,name,position1,position2):
         #tuple1 et 2 correspondent a la position des centres
@@ -859,7 +989,6 @@ class GearAssembly(persistent.Persistent):
         L3.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.Gear2.root_diameter_active/2))
         #G1=vm.Contour2D(LR)
         #G1.MPLPlot()
-        print(self.center_distance)
         SVG1=LibSvg.SVGTrace(1000)
         SVG1.Convert(L1[0],'gear1','black',1/50,0)
         SVG1.Convert(L1[1],'gear2','red',1/50,0)
@@ -909,6 +1038,7 @@ class ContinuousGearAssemblyOptimizer:
     def __init__(self,Z1,Z2,center_distance,transverse_pressure_angle,
            helix_angle,coefficient_profile_shift1,
            coefficient_profile_shift2,gear_width,maximum_torque,
+           material1,material2,nb_cycle1,
            transverse_pressure_angle_rack_T1=None,
            transverse_pressure_angle_rack_T2=None,
            circular_tooth_thickness_rack1=None,circular_tooth_thickness_rack2=None,
@@ -920,6 +1050,7 @@ class ContinuousGearAssemblyOptimizer:
         self.GearAssemblyParam(Z1,Z2,center_distance,transverse_pressure_angle,
            helix_angle,coefficient_profile_shift1,
            coefficient_profile_shift2,gear_width,maximum_torque,
+           material1,material2,nb_cycle1,
            transverse_pressure_angle_rack_T1,
            transverse_pressure_angle_rack_T2,
            circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
@@ -936,7 +1067,8 @@ class ContinuousGearAssemblyOptimizer:
                  'gear_width':gear_width}
         self.Bounds=npy.array([center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width])
         
-        self.xk={'Z1':self.Z1,'Z2':self.Z2,'maximum_torque':self.maximum_torque}
+        self.xk={'Z1':self.Z1,'Z2':self.Z2,'maximum_torque':self.maximum_torque,
+                 'material1':self.material1,'material2':self.material2,'nb_cycle1':self.nb_cycle1}
         self.xo={'transverse_pressure_angle_rack_T1':transverse_pressure_angle_rack_T1,
                  'transverse_pressure_angle_rack_T2':transverse_pressure_angle_rack_T2,
                  'circular_tooth_thickness_rack1':circular_tooth_thickness_rack1,
@@ -960,6 +1092,8 @@ class ContinuousGearAssemblyOptimizer:
         self.xt=dict(list(self.xk.items())+list(self.xu.items())+list(self.xo.items()))
         self.GearAssembly=GearAssembly(**self.xt)
         
+        self.coeff=6*[1]
+        
     def Update(self,Xu):
         
         self.DefXU(Xu)
@@ -971,6 +1105,7 @@ class ContinuousGearAssemblyOptimizer:
     def GearAssemblyParam(self,Z1,Z2,center_distance,transverse_pressure_angle,
            helix_angle,coefficient_profile_shift1,
            coefficient_profile_shift2,gear_width,maximum_torque,
+           material1,material2,nb_cycle1,
            transverse_pressure_angle_rack_T1,
            transverse_pressure_angle_rack_T2,
            circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
@@ -988,10 +1123,14 @@ class ContinuousGearAssemblyOptimizer:
         self.coefficient_profile_shift1=[]
         self.coefficient_profile_shift2=[]
         self.gear_width=[]
+        self.material1=material1
+        self.material2=material2
+        self.nb_cycle1=nb_cycle1
         
     def DefVar(self,Z1=None,Z2=None,center_distance=None,transverse_pressure_angle=None,
            helix_angle=None,coefficient_profile_shift1=None,
            coefficient_profile_shift2=None,gear_width=None,maximum_torque=None,
+           material1=None,material2=None,nb_cycle1=None,
            transverse_pressure_angle_rack_T1=None,
            transverse_pressure_angle_rack_T2=None,
            circular_tooth_thickness_rack1=None,circular_tooth_thickness_rack2=None,
@@ -1063,16 +1202,45 @@ class ContinuousGearAssemblyOptimizer:
         FEQ=self.feq(x)
         FINEQ=self.fineq(x)
         obj=0
-#        for i in FINEQ:
-#            obj=obj+(i**2)
+#        for k,i in enumerate(FINEQ):
+#            obj+=(i/self.coeff[k])**2
         obj+=0.01*((self.GearAssembly.radial_contact_ratio-2)**2)
         obj+=0.01*((self.GearAssembly.linear_backlash-0.07*10**(-3))**2)
+#        obj+=(FINEQ[-1]-10)**2
+#        obj+=(FINEQ[-2]-10)**2
         for i in FINEQ:
             if i < 0:
-                obj+=-10*i
+                obj+=-1000*i
             else:
                 obj+=0.0001*i
         
+#        for k,i in enumerate(FINEQ):
+#            if i<0.1:
+#                obj+=(i/self.coeff[k])**2
+#            else:
+#                obj+=0
+        
+        return obj
+    
+    def ObjectiveCMA(self,x):
+
+        for i,dat in enumerate(self.Bounds):
+            x[i]=(x[i]+1)/2*(dat[1]-dat[0])+dat[0]
+        
+        FEQ=self.feq(x)
+        FINEQ=self.fineq(x)
+        obj=0
+#        for k,i in enumerate(FINEQ):
+#            obj+=(i/self.coeff[k])**2
+        obj+=0.01*((self.GearAssembly.radial_contact_ratio-2)**2)
+        obj+=0.01*((self.GearAssembly.linear_backlash-0.07*10**(-3))**2)
+#        obj+=(FINEQ[-1]-10)**2
+#        obj+=(FINEQ[-2]-10)**2
+        for i in FINEQ:
+            if i < 0:
+                obj+=-1000*i
+            else:
+                obj+=0.0001*i
         return obj
              
     def fineq(self,x):
@@ -1093,7 +1261,6 @@ class ContinuousGearAssemblyOptimizer:
         #ineq.extend(self.GearAssembly.Rack2.CriteriaIneq())
         
         return ineq
-    
         
     def feq(self,x):
         
@@ -1120,24 +1287,28 @@ class ContinuousGearAssemblyOptimizer:
             cons = ({'type': 'eq','fun' : self.feq},{'type': 'ineq','fun' : self.fineq})
             cons = {'type': 'ineq','fun' : self.fineq}
             opt = {'maxiter':10000,'xtol': 1e-8, 'disp': False}
-            #[x, _, _, imode,_] = fmin_slsqp(objective, x0,bounds=bounds, ieqcons=[const2], full_output=1,args=(p0,dR),iter=1000,iprint=0,acc=1e-1)
-            #[x, _, imode,_] = root(const1, x0, method='lm')
-#                cx = minimize(self.Objective, x0, bounds=self.GearAssembly.Bounds,constraints=cons,options=opt)
             cx = minimize(self.Objective, x0, bounds=self.Bounds, options=opt)
-            FEQ=self.feq(cx.x)
-            FINEQ=self.fineq(cx.x)
-#            print('Status de convergence {}, Valeur de la fonctionnelle {}'.format(cx.status,cx.fun))
-#                print(cx)
-            if cx.fun<10 and min(FINEQ)>-1e-4:
-                xsol=cx.x
+            xsol=cx.x
+            if min(self.fineq(xsol))>-1e-7:
                 self.solutions.append(xsol)
                 arret=1
-#                print('Convergence atteinte avec le statut {}, Valeur de la fonctionnelle {}'.format(cx.status,cx.fun))
+
+#            x0= 6 * [0]
+#            cx = cma.fmin(self.ObjectiveCMA, [0] * 6, 0.5,options={'bounds':[-1,1]})
+##                          options={'bounds':[-1,1],'maxiter':5000,'tolfun':1e-10})
+#            x=cx[0]
+#            for ii,dat in enumerate(self.Bounds):
+#                x[ii]=(x[ii]+1)/2*(dat[1]-dat[0])+dat[0]
+#            if min(self.fineq(x))>-1e-7:
+#                self.solutions.append(x)
+#                arret=1
+            
+                print('Convergence atteinte avec le statut {}, Valeur de la fonctionnelle {}'.format(cx.status,cx.fun))
             i=i+1
             
             
 class GearAssemblyOptimizer:
-    def __init__(self,ratio,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width,maximum_torque):
+    def __init__(self,ratio,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width,maximum_torque,material1,material2,nb_cycle1):
         
         self.ratio=ratio
         self.Z1=Z1
@@ -1149,6 +1320,9 @@ class GearAssemblyOptimizer:
         self.coefficient_profile_shift2=coefficient_profile_shift2
         self.gear_width=gear_width
         self.maximum_torque=maximum_torque
+        self.material1=material1
+        self.material2=material2
+        self.nb_cycle1=nb_cycle1
         
         self.AnalyzeCombination()
         self.solutions=[]
@@ -1192,6 +1366,9 @@ class GearAssemblyOptimizer:
                 Temp1['coefficient_profile_shift2']=(self.coefficient_profile_shift2['min'],self.coefficient_profile_shift2['max'])
                 Temp1['gear_width']=(self.gear_width['min'],self.gear_width['max'])
                 Temp1['maximum_torque']=self.maximum_torque['min']
+                Temp1['material1']=self.material1
+                Temp1['material2']=self.material2
+                Temp1['nb_cycle1']=self.nb_cycle1
                 self.plex_calcul.append(Temp1)
                 
         
@@ -1224,6 +1401,14 @@ class GearAssemblyOptimizerWizard:
         def DefRatio(type,nom=None,min=None,max=None,err=None,prog=None,prem=None,pgcd=None):
             self.ratio={'nom':nom,'min':min,'max':max,'err':err,'prog':prog,'prem':prem,'pgcd':pgcd}
             
+        def DefMaterial(type,nom=None):
+            if type=='material1':
+                self.material1={'nom':nom}
+            if type=='material2':
+                self.material2={'nom':nom}
+            if type=='nb_cycle1':
+                self.nb_cycle1={'nom':nom}
+            
         def DefGeneral(type,nom=None,min=None,max=None,err=None,prog=None,prem=None,pgcd=None):
             if type=='center_distance':
                 self.center_distance={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
@@ -1251,12 +1436,17 @@ class GearAssemblyOptimizerWizard:
         DefGeneral('coefficient_profile_shift2')
         DefGeneral('gear_width')
         DefGeneral('maximum_torque')
+        DefGeneral('material1')
+        DefGeneral('material2')
+        DefGeneral('nb_cycle1')
         #Prise en compte des datas renseignees par la variable d'entree
         for i in data:
             if i['type'] in ['Z1','Z2']:
                 DefZ(**i)
             elif i['type'] in ['ratio']:
                 DefRatio(**i)
+            elif i['type'] in ['material1','material2','nb_cycle1']:
+                DefMaterial(**i)
             else:
                 DefGeneral(**i)
         
@@ -1276,7 +1466,11 @@ class GearAssemblyOptimizerWizard:
            {'min':self.coefficient_profile_shift1['min'],'max':self.coefficient_profile_shift1['max']},
            {'min':self.coefficient_profile_shift2['min'],'max':self.coefficient_profile_shift2['max']},
            {'min':self.gear_width['min']/1000,'max':self.gear_width['max']/1000},
-           {'min':self.maximum_torque['min'],'max':self.maximum_torque['max']})
+           {'min':self.maximum_torque['min'],'max':self.maximum_torque['max']},
+           self.material1['nom'],
+           self.material2['nom'],
+           self.nb_cycle1['nom']
+           )
         M1.Optimize(callback)
         self.solutions=M1.solutions
         
@@ -1371,12 +1565,19 @@ class GearAssemblyOptimizerWizard:
         analyze(self.gear_width,0.05,15,25)
         analyze(self.maximum_torque,0.05,100,150)
         
-
+        if self.material1['nom']==None:
+            self.material1['nom']='acier_allie_cementation'
+        if self.material2['nom']==None:
+            self.material2['nom']='acier_allie_cementation'
+        if self.nb_cycle1['nom']==None:
+            self.nb_cycle1['nom']=10000000
     
 class GearAssemblyOptimizationResults(persistent.Persistent):
     
     def __init__(self,list_solutions,bounds):
         
+        for obj in list_solutions:
+            obj.RoundData(5)
         self.solutions=list_solutions
         self.input_data=bounds
 #        self.solutions[family]={}
@@ -1423,6 +1624,7 @@ class GearAssemblyOptimizationResults(persistent.Persistent):
         d['solutions']=solutions
         d['input_data']=self.input_data
         return d
+    
         
 #class GearAssemblyDBClient(ResultsDBClient):
 #    def __init__(self,address):
