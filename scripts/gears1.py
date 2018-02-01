@@ -1,12 +1,12 @@
 import mechanical_components.gears as gears
 
-input_dict=({'type':'Z1','nom':30},
+input_dict=({'type':'Z1','nom':13},
           {'type':'Z2','nom':51},
-          {'type':'center_distance','min':60,'max':100},
-          {'type':'transverse_pressure_angle','min':15,'max':25},
+          {'type':'center_distance','min':20,'max':100},
+          {'type':'transverse_pressure_angle','min':15,'max':30},
           {'type':'helix_angle','min':20,'max':30},
-          {'type':'gear_width','min':20,'max':40},
-          {'type':'maximum_torque','nom':50},
+          {'type':'gear_width','min':20,'max':50},
+          {'type':'maximum_torque','nom':120},
           {'type':'coefficient_profile_shift1','min':-1.2,'max':1.2},
           {'type':'coefficient_profile_shift2','min':-1.2,'max':1.2},
           {'type':'material1','nom':'acier_allie_cementation'},

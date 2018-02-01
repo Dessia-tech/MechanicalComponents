@@ -813,7 +813,7 @@ class GearAssembly(persistent.Persistent):
               self.DF2-self.DB2,
               self.radial_contact_ratio-1,
               self.linear_backlash-0.05*10**(-3),
-              (0.2*10**(-3)-self.linear_backlash),
+#              (0.5*10**(-3)-self.linear_backlash),
               (self.sigma_lim1-self.sigma_iso_1)/self.sigma_lim1,
               (self.sigma_lim2-self.sigma_iso_2)/self.sigma_lim2,
               ]
@@ -1219,7 +1219,7 @@ class ContinuousGearAssemblyOptimizer:
 #        for k,i in enumerate(FINEQ):
 #            obj+=(i/self.coeff[k])**2
         obj+=0.01*((self.GearAssembly.radial_contact_ratio-2)**2)
-        obj+=0.01*((self.GearAssembly.linear_backlash-0.07*10**(-3))**2)
+        obj+=1000*((self.GearAssembly.linear_backlash-0.05*10**(-3))**2)
 #        obj+=(FINEQ[-1]-10)**2
 #        obj+=(FINEQ[-2]-10)**2
         for i in FINEQ:
