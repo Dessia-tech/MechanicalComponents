@@ -243,19 +243,20 @@ class Rack(persistent.Persistent):
         return list(d.keys()),list(d.values())
     
 class Gear(persistent.Persistent):
-    def __init__(self,tooth_number,rack_data,coefficient_profile_shift,gear_width):
+    def __init__(self,tooth_number,rack_data,coefficient_profile_shift,gear_width,material):
         
         self.rack=rack_data
         
         save=[self.rack.transverse_radial_pitch,tooth_number,coefficient_profile_shift]
         self.save=save[:]
-        self.GearParam(tooth_number,rack_data,coefficient_profile_shift,gear_width)
+        self.GearParam(tooth_number,rack_data,coefficient_profile_shift,gear_width,material)
         self._RootDiameterActive()
         
     ### Data geometry
         
-    def GearParam(self,tooth_number,rack_data,coefficient_profile_shift,gear_width):
+    def GearParam(self,tooth_number,rack_data,coefficient_profile_shift,gear_width,material):
         
+        self.material=material
         self.gear_width=gear_width
         self.tooth_number=tooth_number
         self.coefficient_profile_shift=coefficient_profile_shift
@@ -313,9 +314,9 @@ class Gear(persistent.Persistent):
         self.save=save[:]
         
         
-    def Update(self,tooth_number,rack_data,coefficient_profile_shift,gear_width):
+    def Update(self,tooth_number,rack_data,coefficient_profile_shift,gear_width,material):
         
-        self.GearParam(tooth_number,rack_data,coefficient_profile_shift,gear_width)
+        self.GearParam(tooth_number,rack_data,coefficient_profile_shift,gear_width,material)
         save=[self.rack.transverse_radial_pitch,self.tooth_number,self.coefficient_profile_shift]
         if not self.save==[self.rack.transverse_radial_pitch,self.tooth_number,self.coefficient_profile_shift]:
             self._RootDiameterActive()
@@ -664,8 +665,8 @@ class GearAssembly(persistent.Persistent):
         self.Rack2=Rack(self.transverse_radial_pitch_rack2,self.transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack2,
                         gear_addendum_rack2,gear_dedendum_rack2,root_radius_T2,root_radius_R2,transverse_pressure_angle_rack_R2)
         
-        self.Gear1=Gear(self.Z1,self.Rack1,self.coefficient_profile_shift1,self.gear_width)
-        self.Gear2=Gear(self.Z2,self.Rack2,self.coefficient_profile_shift2,self.gear_width)
+        self.Gear1=Gear(self.Z1,self.Rack1,self.coefficient_profile_shift1,self.gear_width,material1)
+        self.Gear2=Gear(self.Z2,self.Rack2,self.coefficient_profile_shift2,self.gear_width,material2)
         
         self.GearAssemblyParam2(Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
                coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
@@ -784,8 +785,8 @@ class GearAssembly(persistent.Persistent):
                         gear_addendum_rack1,gear_dedendum_rack1,root_radius_T1,root_radius_R1,transverse_pressure_angle_rack_R1)
         self.Rack2.Update(self.transverse_radial_pitch_rack2,transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack2,
                         gear_addendum_rack2,gear_dedendum_rack2,root_radius_T2,root_radius_R2,transverse_pressure_angle_rack_R2)
-        self.Gear1.Update(self.Z1,self.Rack1,coefficient_profile_shift1,self.gear_width)
-        self.Gear2.Update(self.Z2,self.Rack2,coefficient_profile_shift2,self.gear_width)
+        self.Gear1.Update(self.Z1,self.Rack1,coefficient_profile_shift1,self.gear_width,self.material1)
+        self.Gear2.Update(self.Z2,self.Rack2,coefficient_profile_shift2,self.gear_width,self.material2)
         
         self.GearAssemblyParam2(Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
            coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
