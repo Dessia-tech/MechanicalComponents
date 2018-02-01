@@ -607,6 +607,9 @@ class Gear(persistent.Persistent):
             else:
                 d[k]=v
 
+        d['mass']=self.Mass()
+
+
         del d['save']
         d['rack']=self.rack.Dict()
         return d
@@ -911,6 +914,9 @@ class GearAssembly(persistent.Persistent):
 #        self.coeff_yb_iso=float(self.fun_coeff_yb_iso(self.helix_angle)[1])
 
     ### Generique
+    
+    def Mass(self):
+        return self.Gear1.Mass()+self.Gear2.Mass()
         
     def Dict(self):
         self.SigmaLewis()
@@ -927,6 +933,8 @@ class GearAssembly(persistent.Persistent):
 
         del d['Rack1']
         del d['Rack2']
+        
+        d['mass']=self.Mass()
         
         d['Gear1']=self.Gear1.Dict()
         d['Gear2']=self.Gear2.Dict()
