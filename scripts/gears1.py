@@ -9,9 +9,9 @@ input_dict=({'type':'Z1','nom':30},
           {'type':'maximum_torque','nom':50},
           {'type':'coefficient_profile_shift1','min':-1.2,'max':1.2},
           {'type':'coefficient_profile_shift2','min':-1.2,'max':1.2},
-          {'type':'material1','nom':'acier_allie_cementation'},
-          {'type':'material2','nom':'acier_allie_cementation'},
-          {'type':'nb_cycle1','nom':10000000},
+#          {'type':'material1','nom':'acier_allie_cementation'},
+#          {'type':'material2','nom':'acier_allie_cementation'},
+#          {'type':'nb_cycle1','nom':10000000},
           )
 
 #constraint_dict=({},)

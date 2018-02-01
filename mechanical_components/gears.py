@@ -1409,9 +1409,9 @@ class GearAssemblyOptimizerWizard:
         def DefMaterial(type,nom=None):
             if type=='material1':
                 self.material1={'nom':nom}
-            if type=='material2':
+            elif type=='material2':
                 self.material2={'nom':nom}
-            if type=='nb_cycle1':
+            elif type=='nb_cycle1':
                 self.nb_cycle1={'nom':nom}
             
         def DefGeneral(type,nom=None,min=None,max=None,err=None,prog=None,prem=None,pgcd=None):
@@ -1441,9 +1441,9 @@ class GearAssemblyOptimizerWizard:
         DefGeneral('coefficient_profile_shift2')
         DefGeneral('gear_width')
         DefGeneral('maximum_torque')
-        DefGeneral('material1')
-        DefGeneral('material2')
-        DefGeneral('nb_cycle1')
+        DefMaterial('material1')
+        DefMaterial('material2')
+        DefMaterial('nb_cycle1')
         #Prise en compte des datas renseignees par la variable d'entree
         for i in data:
             if i['type'] in ['Z1','Z2']:
