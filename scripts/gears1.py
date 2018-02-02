@@ -1,6 +1,6 @@
 import mechanical_components.gears as gears
 
-input_dict=({'type':'Z1','nom':13},
+input_dict=({'type':'Z1','nom':30},
           {'type':'Z2','nom':51},
           {'type':'center_distance','min':20,'max':100},
           {'type':'transverse_pressure_angle','min':15,'max':30},
