@@ -19,7 +19,7 @@ import persistent
 #from dessia_common import ResultsDBClient
 #import pyDOE
 
-class Material:
+class Material(persistent.Persistent):
     
     def __init__(self):
         
