@@ -8,10 +8,10 @@ input_dict=(
           {'type':'transverse_pressure_angle','min':15,'max':30},
           {'type':'helix_angle','min':20,'max':30},
           {'type':'gear_width','min':20,'max':50},
-          {'type':'maximum_torque','nom':120},
+          {'type':'maximum_torque','nom':50},
           {'type':'coefficient_profile_shift1','min':-1.2,'max':1.2},
           {'type':'coefficient_profile_shift2','min':-1.2,'max':1.2},
-          {'type':'material1','nom':'hardened_alloy_steel'},
+          {'type':'material1','nom':'cast_iron'},
           {'type':'material2','nom':'hardened_alloy_steel'},
           {'type':'nb_cycle1','nom':10000000},
           )
