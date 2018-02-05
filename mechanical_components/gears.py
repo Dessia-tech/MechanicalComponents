@@ -19,7 +19,7 @@ import persistent
 #from dessia_common import ResultsDBClient
 #import pyDOE
 
-class Material:
+class Material(persistent.Persistent):
     
     def __init__(self):
         
@@ -88,9 +88,9 @@ class Material:
     
     def FunCoeff(self,x,data,type_x='Linear',type_y='Linear'):
         if type_x=='Log': 
-            x=mt.log10(x)
+            x=npy.log10(x)
         f = interpolate.interp1d(list(data[:,0]),list(data[:,1]), fill_value='extrapolate')
-        sol=f(x)
+        sol=float(f(x))
         if type_y=='Log':
             sol=10**sol
         return sol
@@ -609,8 +609,12 @@ class Gear(persistent.Persistent):
                 d[k]=v
 
         d['mass']=self.Mass()
-
-
+        
+        try:
+            del d['rac']
+        except KeyError:
+            pass
+        
         del d['save']
         d['rack']=self.rack.Dict()
         return d
@@ -934,6 +938,8 @@ class GearAssembly(persistent.Persistent):
 
         del d['Rack1']
         del d['Rack2']
+        
+        del d['material']
         
         d['mass']=self.Mass()
         

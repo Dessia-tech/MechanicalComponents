@@ -43,4 +43,5 @@ for i,ga in enumerate(results.solutions):
 
 d=results.Dict()
 print(d)
-
+import json
+json.dumps(d)
