@@ -974,18 +974,12 @@ class GearAssembly(persistent.Persistent):
         TG2=self.Gear2.GearContours(10)
         list_rot=self.InitialPosition()
         L1=self.GearAssemblyTrace([TG1,TG2],[position1,position2],list_rot)
-        SVG1=LibSvg.SVGTrace(1000)
-        SVG1.Convert(L1[0],'gear1','black',1/50,0)
-        SVG1.Convert(L1[1],'gear1','black',1/50,0)
-        SVG1.Show(file_path)
-        
-        
-#        C1=vm.Contour2D(L1[0])
-#        C2=vm.Contour2D(L1[1])
-#        R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width),name='R1')
-#        R2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width),name='R2')
-#        model=vm.VolumeModel([R1,R2])
-#        model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
+        C1=vm.Contour2D(L1[0])
+        C2=vm.Contour2D(L1[1])
+        R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width),name='R1')
+        R2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width),name='R2')
+        model=vm.VolumeModel([R1,R2])
+        model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
     
     def CSVExport(self):
         self.SigmaLewis()
@@ -1589,7 +1583,7 @@ class GearAssemblyOptimizerWizard:
         analyze(self.coefficient_profile_shift1,0.05,-1,1)
         analyze(self.coefficient_profile_shift2,0.05,-1,1)
         analyze(self.gear_width,0.05,15,25)
-        analyze(self.maximum_torque,0.05,100,150)
+        analyze(self.maximum_torque,0,100,150)
         
         if self.material1['nom']==None:
             self.material1['nom']='hardened_alloy_steel'
