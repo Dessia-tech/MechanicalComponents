@@ -126,7 +126,7 @@ class SVGTrace:
         self.vb3=self.boxX_max[0]-self.boxX_min[0]
         self.vb4=self.boxY_max[0]-self.boxY_min[0]
         
-        return template.render(list_name=self.name,list_polyline=self.primitives,width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4,trait_ep=1/(scale*20))
+        return template.render(list_name=self.name,list_polyline=self.primitives,width=width,height=height,vb1=self.vb1,vb2=self.vb2,vb3=self.vb3,vb4=self.vb4,trait_ep=1/(scale))
     
     def Show(self,name='export.html',animate=None):
 #        print(self.BabylonScript())
