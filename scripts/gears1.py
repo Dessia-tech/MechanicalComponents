@@ -11,7 +11,7 @@ input_dict=(
           {'type':'maximum_torque','nom':50},
           {'type':'coefficient_profile_shift1','min':-1.2,'max':1.2},
           {'type':'coefficient_profile_shift2','min':-1.2,'max':1.2},
-          {'type':'material1','nom':'cast_iron'},
+          {'type':'material1','nom':'hardened_alloy_steel'},
           {'type':'material2','nom':'hardened_alloy_steel'},
           {'type':'nb_cycle1','nom':10000000},
           )
@@ -38,7 +38,8 @@ for i,ga in enumerate(results.solutions):
     ga.Gear2.GearGenerationSVGExport('Cremaillere_Z2-s{}.html'.format(str(i)))
     ga.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
     ga.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
-    ga.FreeCADExport('Assembly_{}bis.html'.format(i),(0,0),(ga.center_distance,0),'python','/usr/lib/freecad/lib',['fcstd','stl'])
+    ga.FreeCADExport('GearAssembly_{}'.format(i),(0,0),(ga.center_distance,0),
+                     'python','/usr/lib/freecad/lib',['fcstd','stl'])
     
 
 d=results.Dict()

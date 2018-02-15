@@ -976,8 +976,17 @@ class GearAssembly(persistent.Persistent):
         L1=self.GearAssemblyTrace([TG1,TG2],[position1,position2],list_rot)
         C1=vm.Contour2D(L1[0])
         C2=vm.Contour2D(L1[1])
-        R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width),name='R1')
-        R2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width),name='R2')
+        if self.helix_angle==0.:            
+            R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width),name='R1')
+            R2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width),name='R2')
+        else:
+            R1=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+                                                   vm.Vector3D((0,1,0)),C1,(position1[0],position1[1],0),
+                                                   (0,0,self.gear_width),self.DF1*mt.pi/mt.tan(self.helix_angle),name='Gear1')
+            R2=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+                                                   vm.Vector3D((0,1,0)),C2,(position2[0],position2[1],0),
+                                                   (0,0,self.gear_width),-self.DF2*mt.pi/mt.tan(self.helix_angle),name='Gear2')
+
         model=vm.VolumeModel([R1,R2])
         model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
     
