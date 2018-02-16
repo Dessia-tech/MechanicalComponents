@@ -243,18 +243,18 @@ class Rack(persistent.Persistent):
         return list(d.keys()),list(d.values())
     
 class Gear(persistent.Persistent):
-    def __init__(self,tooth_number,rack_data,coefficient_profile_shift,gear_width,material):
+    def __init__(self,tooth_number,rack_data,coefficient_profile_shift,gear_width,material,rim,alpha_rim,boring_diameter,thickness_rim):
         
         self.rack=rack_data
         
         save=[self.rack.transverse_radial_pitch,tooth_number,coefficient_profile_shift]
         self.save=save[:]
-        self.GearParam(tooth_number,rack_data,coefficient_profile_shift,gear_width,material)
+        self.GearParam(tooth_number,rack_data,coefficient_profile_shift,gear_width,material,rim,alpha_rim,boring_diameter,thickness_rim)
         self._RootDiameterActive()
         
     ### Data geometry
         
-    def GearParam(self,tooth_number,rack_data,coefficient_profile_shift,gear_width,material):
+    def GearParam(self,tooth_number,rack_data,coefficient_profile_shift,gear_width,material,rim,alpha_rim,boring_diameter,thickness_rim):
         
         self.material=material
         self.gear_width=gear_width
@@ -311,17 +311,65 @@ class Gear(persistent.Persistent):
         rho=self.rack.root_radius_T
         self.root_diameter_active_bis=2*(rho+b**2/(r+b))
         
+        #initialisation rim
+        self.rim=rim
+        self.alpha_rim=alpha_rim
+        self.boring_diameter=boring_diameter
+        self.thickness_rim=thickness_rim
+        self.RimDef()
+        
         self.save=save[:]
         
         
-    def Update(self,tooth_number,rack_data,coefficient_profile_shift,gear_width,material):
+    def Update(self,tooth_number,rack_data,coefficient_profile_shift,gear_width,material,rim,alpha_rim,boring_diameter,thickness_rim):
         
-        self.GearParam(tooth_number,rack_data,coefficient_profile_shift,gear_width,material)
+        self.GearParam(tooth_number,rack_data,coefficient_profile_shift,gear_width,material,rim,alpha_rim,boring_diameter,thickness_rim)
+        self.RimDef()
         save=[self.rack.transverse_radial_pitch,self.tooth_number,self.coefficient_profile_shift]
         if not self.save==[self.rack.transverse_radial_pitch,self.tooth_number,self.coefficient_profile_shift]:
             self._RootDiameterActive()
 #            print(save,self.root_diameter_active)
         self.save=save[:]
+        
+    def RimDef(self):
+        if str(self.rim) in 'rim_gear':
+            self.boring_diameter_out=self.boring_diameter+4e-3
+            self.rim_diameter_int=self.root_diameter-self.alpha_rim*(self.outside_diameter-self.root_diameter)
+            rim_diam_max=(self.rim_diameter_int-self.boring_diameter_out)/2
+            rim_diam_thickness=(self.gear_width-self.thickness_rim)
+            self.rim_diam=min(rim_diam_max,rim_diam_thickness)
+            self.rim_diam_x=self.thickness_rim/2+self.rim_diam/2
+            self.rim_diam_r1=self.boring_diameter_out/2+self.rim_diam/2
+            self.rim_diam_r2=self.rim_diameter_int/2-self.rim_diam/2
+    
+    def RimContour(self):
+        if str(self.rim) in 'rim_gear':
+            p=[vm.Point2D((0,self.boring_diameter/2))]
+            p.append(vm.Point2D((-self.gear_width/2,self.boring_diameter/2)))
+            p.append(vm.Point2D((-self.gear_width/2,self.boring_diameter_out/2)))
+            p.append(vm.Point2D((-self.thickness_rim/2,self.boring_diameter_out/2)))
+            p.append(vm.Point2D((-self.thickness_rim/2,self.rim_diameter_int/2)))
+            p.append(vm.Point2D((-self.gear_width/2,self.rim_diameter_int/2)))
+            p.append(vm.Point2D((-self.gear_width/2,self.root_diameter/2)))
+            p.append(vm.Point2D((self.gear_width/2,self.root_diameter/2)))
+            p.append(vm.Point2D((self.gear_width/2,self.rim_diameter_int/2)))
+            p.append(vm.Point2D((self.thickness_rim/2,self.rim_diameter_int/2)))
+            p.append(vm.Point2D((self.thickness_rim/2,self.boring_diameter_out/2)))
+            p.append(vm.Point2D((self.gear_width/2,self.boring_diameter_out/2)))
+            p.append(vm.Point2D((self.gear_width/2,self.boring_diameter/2)))
+            p.append(p[0])
+            ref=primitives2D.RoundedLines2D(p,{3:self.rim_diam/2,4:self.rim_diam/2,9:self.rim_diam/2,10:self.rim_diam/2},False)
+        elif str(self.rim) in 'shaft_gear':
+            p=[vm.Point2D((0,0))]
+            p.append(vm.Point2D((-self.gear_width/2,0)))
+            p.append(vm.Point2D((-self.gear_width/2,self.root_diameter/2)))
+            p.append(vm.Point2D((self.gear_width/2,self.root_diameter/2)))
+            p.append(vm.Point2D((self.gear_width/2,0)))
+            p.append(vm.Point2D((0,0)))
+            ref=primitives2D.RoundedLines2D(p,{},False)
+        print(str(self.rim) in 'shaft_gear',str(self.rim) in 'rim_gear',self.rim)
+        return ref
+        
     
     def GearSection(self,diameter):
         #epaisseur de la dent au diameter
@@ -650,6 +698,7 @@ class GearAssembly(persistent.Persistent):
     def __init__(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
              coefficient_profile_shift2,gear_width,maximum_torque,
              material1,material2,nb_cycle1,
+             rim1,rim2,alpha_rim1,alpha_rim2,boring_diameter1,boring_diameter2,thickness_rim1,thickness_rim2,
              transverse_pressure_angle_rack_T1=None,
              transverse_pressure_angle_rack_T2=None,circular_tooth_thickness_rack1=None,
              circular_tooth_thickness_rack2=None,
@@ -669,8 +718,8 @@ class GearAssembly(persistent.Persistent):
         self.Rack2=Rack(self.transverse_radial_pitch_rack2,self.transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack2,
                         gear_addendum_rack2,gear_dedendum_rack2,root_radius_T2,root_radius_R2,transverse_pressure_angle_rack_R2)
         
-        self.Gear1=Gear(self.Z1,self.Rack1,self.coefficient_profile_shift1,self.gear_width,material1)
-        self.Gear2=Gear(self.Z2,self.Rack2,self.coefficient_profile_shift2,self.gear_width,material2)
+        self.Gear1=Gear(self.Z1,self.Rack1,self.coefficient_profile_shift1,self.gear_width,material1,rim1,alpha_rim1,boring_diameter1,thickness_rim1)
+        self.Gear2=Gear(self.Z2,self.Rack2,self.coefficient_profile_shift2,self.gear_width,material2,rim2,alpha_rim2,boring_diameter2,thickness_rim2)
         
         self.GearAssemblyParam2(Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
                coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
@@ -689,6 +738,15 @@ class GearAssembly(persistent.Persistent):
         self.SigmaISO()
         self.SigmaMaterialISO()
         
+        self.rim1=rim1
+        self.alpha_rim1=alpha_rim1
+        self.boring_diameter1=boring_diameter1
+        self.thickness_rim1=thickness_rim1
+        self.rim2=rim2
+        self.alpha_rim2=alpha_rim2
+        self.boring_diameter2=boring_diameter2
+        self.thickness_rim2=thickness_rim2
+         
     ### Data Geometry
         
     def GearAssemblyParam(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
@@ -772,6 +830,7 @@ class GearAssembly(persistent.Persistent):
     def Update(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
            coefficient_profile_shift2,gear_width,maximum_torque,
            material1,material2,nb_cycle1,
+           rim1,rim2,alpha_rim1,alpha_rim2,boring_diameter1,boring_diameter2,thickness_rim1,thickness_rim2,
            transverse_pressure_angle_rack_T1,
            transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
            gear_addendum_rack1,gear_addendum_rack2,gear_dedendum_rack1,gear_dedendum_rack2,
@@ -789,8 +848,8 @@ class GearAssembly(persistent.Persistent):
                         gear_addendum_rack1,gear_dedendum_rack1,root_radius_T1,root_radius_R1,transverse_pressure_angle_rack_R1)
         self.Rack2.Update(self.transverse_radial_pitch_rack2,transverse_pressure_angle_rack_T2,circular_tooth_thickness_rack2,
                         gear_addendum_rack2,gear_dedendum_rack2,root_radius_T2,root_radius_R2,transverse_pressure_angle_rack_R2)
-        self.Gear1.Update(self.Z1,self.Rack1,coefficient_profile_shift1,self.gear_width,self.material1)
-        self.Gear2.Update(self.Z2,self.Rack2,coefficient_profile_shift2,self.gear_width,self.material2)
+        self.Gear1.Update(self.Z1,self.Rack1,coefficient_profile_shift1,self.gear_width,self.material1,rim1,alpha_rim1,boring_diameter1,thickness_rim1)
+        self.Gear2.Update(self.Z2,self.Rack2,coefficient_profile_shift2,self.gear_width,self.material2,rim2,alpha_rim2,boring_diameter2,thickness_rim2)
         
         self.GearAssemblyParam2(Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,
            coefficient_profile_shift2,gear_width,maximum_torque,transverse_pressure_angle_rack_T1,
@@ -956,7 +1015,10 @@ class GearAssembly(persistent.Persistent):
            round(float(self.coefficient_profile_shift1),prec),
            round(float(self.coefficient_profile_shift2),prec),
            round(float(self.gear_width),prec),
-           self.maximum_torque,self.material1,self.material2,self.nb_cycle1,transverse_pressure_angle_rack_T1=None,
+           self.maximum_torque,self.material1,self.material2,self.nb_cycle1,
+           self.rim1,self.rim2,self.alpha_rim1,self.alpha_rim2,self.boring_diameter1,
+           self.boring_diameter2,self.thickness_rim1,self.thickness_rim2,
+           transverse_pressure_angle_rack_T1=None,
            transverse_pressure_angle_rack_T2=None,circular_tooth_thickness_rack1=None,
            circular_tooth_thickness_rack2=None,gear_addendum_rack1=None,gear_addendum_rack2=None,
            gear_dedendum_rack1=None,gear_dedendum_rack2=None,root_radius_T1=None,root_radius_T2=None,
@@ -970,6 +1032,9 @@ class GearAssembly(persistent.Persistent):
     ### Export
     
     def FreeCADExport(self,file_path,position1,position2,python_path,freecad_lib_path,export_types):
+        RIM1=self.Gear1.RimContour()
+        RIM2=self.Gear2.RimContour()
+        
         TG1=self.Gear1.GearContours(10)
         TG2=self.Gear2.GearContours(10)
         list_rot=self.InitialPosition()
@@ -1068,6 +1133,7 @@ class ContinuousGearAssemblyOptimizer:
            helix_angle,coefficient_profile_shift1,
            coefficient_profile_shift2,gear_width,maximum_torque,
            material1,material2,nb_cycle1,
+           rim1,rim2,alpha_rim1,alpha_rim2,boring_diameter1,boring_diameter2,thickness_rim1,thickness_rim2,
            transverse_pressure_angle_rack_T1=None,
            transverse_pressure_angle_rack_T2=None,
            circular_tooth_thickness_rack1=None,circular_tooth_thickness_rack2=None,
@@ -1080,6 +1146,7 @@ class ContinuousGearAssemblyOptimizer:
            helix_angle,coefficient_profile_shift1,
            coefficient_profile_shift2,gear_width,maximum_torque,
            material1,material2,nb_cycle1,
+           rim1,rim2,alpha_rim1,alpha_rim2,boring_diameter1,boring_diameter2,thickness_rim1,thickness_rim2,
            transverse_pressure_angle_rack_T1,
            transverse_pressure_angle_rack_T2,
            circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
@@ -1093,11 +1160,21 @@ class ContinuousGearAssemblyOptimizer:
                  'helix_angle':helix_angle,
                  'coefficient_profile_shift1':coefficient_profile_shift1,
                  'coefficient_profile_shift2':coefficient_profile_shift2,
-                 'gear_width':gear_width}
+                 'gear_width':gear_width
+                 }
         self.Bounds=npy.array([center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width])
         
         self.xk={'Z1':self.Z1,'Z2':self.Z2,'maximum_torque':self.maximum_torque,
-                 'material1':self.material1,'material2':self.material2,'nb_cycle1':self.nb_cycle1}
+                 'material1':self.material1,'material2':self.material2,'nb_cycle1':self.nb_cycle1,
+                 'rim1':rim1,
+                 'rim2':rim2,
+                 'alpha_rim1':alpha_rim1,
+                 'alpha_rim2':alpha_rim2,
+                 'boring_diameter1':boring_diameter1,
+                 'boring_diameter2':boring_diameter2,
+                 'thickness_rim1':thickness_rim1,
+                 'thickness_rim2':thickness_rim2,
+                 }
         self.xo={'transverse_pressure_angle_rack_T1':transverse_pressure_angle_rack_T1,
                  'transverse_pressure_angle_rack_T2':transverse_pressure_angle_rack_T2,
                  'circular_tooth_thickness_rack1':circular_tooth_thickness_rack1,
@@ -1123,6 +1200,15 @@ class ContinuousGearAssemblyOptimizer:
         
         self.coeff=6*[1]
         
+        self.rim1=rim1
+        self.alpha_rim1=alpha_rim1
+        self.boring_diameter1=boring_diameter1
+        self.thickness_rim1=thickness_rim1
+        self.rim2=rim2
+        self.alpha_rim2=alpha_rim2
+        self.boring_diameter2=boring_diameter2
+        self.thickness_rim2=thickness_rim2
+        
     def Update(self,Xu):
         
         self.DefXU(Xu)
@@ -1135,6 +1221,7 @@ class ContinuousGearAssemblyOptimizer:
            helix_angle,coefficient_profile_shift1,
            coefficient_profile_shift2,gear_width,maximum_torque,
            material1,material2,nb_cycle1,
+           rim1,rim2,alpha_rim1,alpha_rim2,boring_diameter1,boring_diameter2,thickness_rim1,thickness_rim2,
            transverse_pressure_angle_rack_T1,
            transverse_pressure_angle_rack_T2,
            circular_tooth_thickness_rack1,circular_tooth_thickness_rack2,
@@ -1160,6 +1247,8 @@ class ContinuousGearAssemblyOptimizer:
            helix_angle=None,coefficient_profile_shift1=None,
            coefficient_profile_shift2=None,gear_width=None,maximum_torque=None,
            material1=None,material2=None,nb_cycle1=None,
+           rim1=None,rim2=None,alpha_rim1=None,alpha_rim2=None,
+           boring_diameter1=None,boring_diameter2=None,thickness_rim1=None,thickness_rim2=None,
            transverse_pressure_angle_rack_T1=None,
            transverse_pressure_angle_rack_T2=None,
            circular_tooth_thickness_rack1=None,circular_tooth_thickness_rack2=None,
@@ -1213,17 +1302,15 @@ class ContinuousGearAssemblyOptimizer:
         
     def CriteriaEq(self):
         
-#        crit=[self.GearAssembly.Rack1.transverse_pressure_angle_T-self.GearAssembly.Rack1.transverse_pressure_angle_R,
-#              self.GearAssembly.Rack1.root_radius_T-self.GearAssembly.Rack1.root_radius_R,
-#              self.GearAssembly.Rack2.transverse_pressure_angle_T-self.GearAssembly.Rack2.transverse_pressure_angle_R,
-#              self.GearAssembly.Rack2.root_radius_T-self.GearAssembly.Rack2.root_radius_R]
-#        crit=[self.transverse_radial_pitch_rack1-self.transverse_radial_pitch_rack2]
         crit=[0]
         return crit
         
     def CriteriaIneq(self):
-        
-        crit=[0]
+        crit=[]
+        if self.GearAssembly.Gear1.rim in 'rim_gear':
+            crit.append(self.GearAssembly.Gear1.rim_diameter_int-self.GearAssembly.Gear1.boring_diameter_out)
+        if self.GearAssembly.Gear2.rim in 'rim_gear':
+            crit.append(self.GearAssembly.Gear2.rim_diameter_int-self.GearAssembly.Gear2.boring_diameter_out)
         return crit
         
     def Objective(self,x):
@@ -1337,7 +1424,7 @@ class ContinuousGearAssemblyOptimizer:
             
             
 class GearAssemblyOptimizer:
-    def __init__(self,ratio,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width,maximum_torque,material1,material2,nb_cycle1):
+    def __init__(self,ratio,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width,maximum_torque,material1,material2,nb_cycle1,rim1,rim2,alpha_rim1,alpha_rim2,boring_diameter1,boring_diameter2,thickness_rim1,thickness_rim2):
         
         self.ratio=ratio
         self.Z1=Z1
@@ -1352,6 +1439,15 @@ class GearAssemblyOptimizer:
         self.material1=material1
         self.material2=material2
         self.nb_cycle1=nb_cycle1
+        
+        self.rim1=rim1
+        self.rim2=rim2
+        self.alpha_rim1=alpha_rim1
+        self.alpha_rim2=alpha_rim2
+        self.boring_diameter1=boring_diameter1
+        self.boring_diameter2=boring_diameter2
+        self.thickness_rim1=thickness_rim1
+        self.thickness_rim2=thickness_rim2
         
         self.AnalyzeCombination()
         self.solutions=[]
@@ -1398,6 +1494,14 @@ class GearAssemblyOptimizer:
                 Temp1['material1']=self.material1
                 Temp1['material2']=self.material2
                 Temp1['nb_cycle1']=self.nb_cycle1
+                Temp1['rim1']=self.rim1
+                Temp1['rim2']=self.rim2
+                Temp1['alpha_rim1']=self.alpha_rim1
+                Temp1['alpha_rim2']=self.alpha_rim2
+                Temp1['boring_diameter1']=self.boring_diameter1
+                Temp1['boring_diameter2']=self.boring_diameter2
+                Temp1['thickness_rim1']=self.thickness_rim1
+                Temp1['thickness_rim2']=self.thickness_rim2
                 self.plex_calcul.append(Temp1)
                 
         
@@ -1430,13 +1534,29 @@ class GearAssemblyOptimizerWizard:
         def DefRatio(type,nom=None,min=None,max=None,err=None,prog=None,prem=None,pgcd=None):
             self.ratio={'nom':nom,'min':min,'max':max,'err':err,'prog':prog,'prem':prem,'pgcd':pgcd}
             
-        def DefMaterial(type,nom=None):
+        def DefString(type,nom=None):
             if type=='material1':
                 self.material1={'nom':nom}
             elif type=='material2':
                 self.material2={'nom':nom}
             elif type=='nb_cycle1':
                 self.nb_cycle1={'nom':nom}
+            elif type=='rim1':
+                self.rim1={'nom':nom}
+            elif type=='rim2':
+                self.rim2={'nom':nom}
+            elif type=='alpha_rim1':
+                self.alpha_rim1={'nom':nom}
+            elif type=='alpha_rim2':
+                self.alpha_rim2={'nom':nom}
+            elif type=='boring_diameter1':
+                self.boring_diameter1={'nom':nom}
+            elif type=='boring_diameter2':
+                self.boring_diameter2={'nom':nom}
+            elif type=='thickness_rim1':
+                self.thickness_rim1={'nom':nom}
+            elif type=='thickness_rim2':
+                self.thickness_rim2={'nom':nom}
             
         def DefGeneral(type,nom=None,min=None,max=None,err=None,prog=None,prem=None,pgcd=None):
             if type=='center_distance':
@@ -1453,6 +1573,7 @@ class GearAssemblyOptimizerWizard:
                 self.gear_width={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
             elif type=='maximum_torque':
                 self.maximum_torque={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
+            
                 
         #Initialisation des dictionnaires (passage à None l'ensemble des arg)
         DefZ('Z1')
@@ -1465,17 +1586,25 @@ class GearAssemblyOptimizerWizard:
         DefGeneral('coefficient_profile_shift2')
         DefGeneral('gear_width')
         DefGeneral('maximum_torque')
-        DefMaterial('material1')
-        DefMaterial('material2')
-        DefMaterial('nb_cycle1')
+        DefString('alpha_rim1')
+        DefString('alpha_rim2')
+        DefString('boring_diameter1')
+        DefString('boring_diameter2')
+        DefString('thickness_rim1')
+        DefString('thickness_rim2')
+        DefString('material1')
+        DefString('material2')
+        DefString('nb_cycle1')
         #Prise en compte des datas renseignees par la variable d'entree
         for i in data:
             if i['type'] in ['Z1','Z2']:
                 DefZ(**i)
             elif i['type'] in ['ratio']:
                 DefRatio(**i)
-            elif i['type'] in ['material1','material2','nb_cycle1']:
-                DefMaterial(**i)
+            elif i['type'] in ['material1','material2','nb_cycle1','rim1','rim2',
+                  'alpha_rim1','alpha_rim2',
+                  'boring_diameter1','boring_diameter2','thickness_rim1','thickness_rim2']:
+                DefString(**i)
             else:
                 DefGeneral(**i)
         
@@ -1498,7 +1627,15 @@ class GearAssemblyOptimizerWizard:
            {'min':self.maximum_torque['min'],'max':self.maximum_torque['max']},
            self.material1['nom'],
            self.material2['nom'],
-           self.nb_cycle1['nom']
+           self.nb_cycle1['nom'],
+           self.rim1['nom'],
+           self.rim2['nom'],
+           self.alpha_rim1['nom'],
+           self.alpha_rim2['nom'],
+           self.boring_diameter1['nom']/1000,
+           self.boring_diameter2['nom']/1000,
+           self.thickness_rim1['nom']/1000,
+           self.thickness_rim2['nom']/1000,
            )
         M1.Optimize(callback)
         self.solutions=M1.solutions
@@ -1600,11 +1737,26 @@ class GearAssemblyOptimizerWizard:
             self.material2['nom']='hardened_alloy_steel'
         if self.nb_cycle1['nom']==None:
             self.nb_cycle1['nom']=10000000
+        if self.rim1['nom']==None:
+            self.rim1['nom']='shaft_gear'
+        if self.rim2['nom']==None:
+            self.rim2['nom']='shaft_gear'
+        if self.alpha_rim1['nom']==None:
+            self.alpha_rim1['nom']=1
+        if self.alpha_rim2['nom']==None:
+            self.alpha_rim2['nom']=2
+        if self.boring_diameter1['nom']==None:
+            self.boring_diameter1['nom']=30*1e-3
+        if self.boring_diameter2['nom']==None:
+            self.boring_diameter2['nom']=30*1e-3
+        if self.thickness_rim1['nom']==None:
+            self.thickness_rim1['nom']=7*1e-3
+        if self.thickness_rim2['nom']==None:
+            self.thickness_rim2['nom']=7*1e-3
     
 class GearAssemblyOptimizationResults(persistent.Persistent):
     
     def __init__(self,gear_assemblies,bounds):
-        
         for obj in gear_assemblies:
             obj.RoundData(5)
         self.solutions=gear_assemblies
