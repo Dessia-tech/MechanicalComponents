@@ -1,15 +1,15 @@
 import numpy as npy
 import math as mt
 from scipy import interpolate
-import os as os
+import os
 import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
-#import math
+import math
 from scipy.linalg import norm
 from scipy.optimize import minimize,fsolve
 from scipy.interpolate import splprep, splev
-import cma as cma
+import cma
 #from sympy import *
 import itertools
 
@@ -337,7 +337,7 @@ class Gear(persistent.Persistent):
             self.rim_diameter_int=self.root_diameter-self.alpha_rim*(self.outside_diameter-self.root_diameter)
             rim_diam_max=(self.rim_diameter_int-self.boring_diameter_out)/2
             rim_diam_thickness=(self.gear_width-self.thickness_rim)
-            self.rim_diam=min(rim_diam_max,rim_diam_thickness)
+            self.rim_diam=0.8*min(rim_diam_max,rim_diam_thickness)
             self.rim_diam_x=self.thickness_rim/2+self.rim_diam/2
             self.rim_diam_r1=self.boring_diameter_out/2+self.rim_diam/2
             self.rim_diam_r2=self.rim_diameter_int/2-self.rim_diam/2
@@ -358,7 +358,7 @@ class Gear(persistent.Persistent):
             p.append(vm.Point2D((self.gear_width/2,self.boring_diameter_out/2)))
             p.append(vm.Point2D((self.gear_width/2,self.boring_diameter/2)))
             p.append(p[0])
-            ref=primitives2D.RoundedLines2D(p,{3:self.rim_diam/2,4:self.rim_diam/2,9:self.rim_diam/2,10:self.rim_diam/2},False)
+            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{3:self.rim_diam/2,4:self.rim_diam/2,9:self.rim_diam/2,10:self.rim_diam/2},False).primitives)
         elif str(self.rim) in 'shaft_gear':
             p=[vm.Point2D((0,0))]
             p.append(vm.Point2D((-self.gear_width/2,0)))
@@ -366,8 +366,8 @@ class Gear(persistent.Persistent):
             p.append(vm.Point2D((self.gear_width/2,self.root_diameter/2)))
             p.append(vm.Point2D((self.gear_width/2,0)))
             p.append(vm.Point2D((0,0)))
-            ref=primitives2D.RoundedLines2D(p,{},False)
-        print(str(self.rim) in 'shaft_gear',str(self.rim) in 'rim_gear',self.rim)
+            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
+#        print(str(self.rim) in 'shaft_gear',str(self.rim) in 'rim_gear',self.rim)
         return ref
         
     
@@ -1034,25 +1034,50 @@ class GearAssembly(persistent.Persistent):
     def FreeCADExport(self,file_path,position1,position2,python_path,freecad_lib_path,export_types):
         RIM1=self.Gear1.RimContour()
         RIM2=self.Gear2.RimContour()
+#        RIM1.MPLPlot()
+#        RIM2.MPLPlot()
+        gear1=primitives3D.RevolvedProfile(vm.Point3D((position1[0],position1[1],0.5*self.gear_width)),vm.Vector3D((0,0,1)),
+                                           vm.Vector3D((0,1,0)),[RIM1],vm.Vector3D((position1[0],position1[1],0)),
+                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='Rim1')
+        gear2=primitives3D.RevolvedProfile(vm.Point3D((position2[0],position2[1],0.5*self.gear_width)),vm.Vector3D((0,0,1)),
+                                           vm.Vector3D((0,1,0)),[RIM2],vm.Vector3D((position2[0],position2[1],0)),
+                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='Rim2')
         
+        # Teeth
         TG1=self.Gear1.GearContours(10)
         TG2=self.Gear2.GearContours(10)
         list_rot=self.InitialPosition()
         L1=self.GearAssemblyTrace([TG1,TG2],[position1,position2],list_rot)
         C1=vm.Contour2D(L1[0])
         C2=vm.Contour2D(L1[1])
+#        C1.MPLPlot()
+        h1=0.5*(self.Gear1.outside_diameter-self.Gear1.root_diameter)
+        h2=0.5*(self.Gear2.outside_diameter-self.Gear2.root_diameter)
+        r1=0.5*(self.Gear1.outside_diameter-(h1*(1+self.Gear1.alpha_rim)))
+        r2=0.5*(self.Gear2.outside_diameter-(h2*(1+self.Gear2.alpha_rim)))
+        print(h1,h2,r1,r2)
+        
+        C1int=vm.Contour2D([vm.Circle2D(vm.Point2D(position1),r1)])
+        C2int=vm.Contour2D([vm.Circle2D(vm.Point2D(position2),r2)])
         if self.helix_angle==0.:            
-            R1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width),name='R1')
-            R2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width),name='R2')
+            t1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+                                            vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width),
+                                            name='Teeth1')
+            t2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+                                            vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width),
+                                            name='Teeth2')
         else:
-            R1=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-                                                   vm.Vector3D((0,1,0)),C1,(position1[0],position1[1],0),
-                                                   (0,0,self.gear_width),self.DF1*mt.pi/mt.tan(self.helix_angle),name='Gear1')
-            R2=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-                                                   vm.Vector3D((0,1,0)),C2,(position2[0],position2[1],0),
-                                                   (0,0,self.gear_width),-self.DF2*mt.pi/mt.tan(self.helix_angle),name='Gear2')
+            t1=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+                                                   vm.Vector3D((0,1,0)),(position1[0],position1[1],0),
+                                                   (0,0,self.gear_width),self.DF1*mt.pi/mt.tan(self.helix_angle),
+                                                   C1,[C1int],name='Teeth1')
+            t2=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+                                                   vm.Vector3D((0,1,0)),(position2[0],position2[1],0),
+                                                   (0,0,self.gear_width),-self.DF2*mt.pi/mt.tan(self.helix_angle),
+                                                   C2,[C2int],name='Teeth2')
 
-        model=vm.VolumeModel([R1,R2])
+        model=vm.VolumeModel([gear1,t1,gear2,t2])
+#        model=vm.VolumeModel([gear1,t1,gear2])
         model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
     
     def CSVExport(self):
