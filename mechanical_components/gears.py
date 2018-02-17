@@ -343,6 +343,7 @@ class Gear(persistent.Persistent):
             self.rim_diam_r2=self.rim_diameter_int/2-self.rim_diam/2
     
     def RimContour(self):
+        hg=self.alpha_rim*(self.outside_diameter-self.root_diameter)/2
         if str(self.rim) in 'rim_gear':
             p=[vm.Point2D((0,self.boring_diameter/2))]
             p.append(vm.Point2D((-self.gear_width/2,self.boring_diameter/2)))
@@ -350,8 +351,8 @@ class Gear(persistent.Persistent):
             p.append(vm.Point2D((-self.thickness_rim/2,self.boring_diameter_out/2)))
             p.append(vm.Point2D((-self.thickness_rim/2,self.rim_diameter_int/2)))
             p.append(vm.Point2D((-self.gear_width/2,self.rim_diameter_int/2)))
-            p.append(vm.Point2D((-self.gear_width/2,self.root_diameter/2)))
-            p.append(vm.Point2D((self.gear_width/2,self.root_diameter/2)))
+            p.append(vm.Point2D((-self.gear_width/2,self.root_diameter/2-hg/2)))
+            p.append(vm.Point2D((self.gear_width/2,self.root_diameter/2-hg/2)))
             p.append(vm.Point2D((self.gear_width/2,self.rim_diameter_int/2)))
             p.append(vm.Point2D((self.thickness_rim/2,self.rim_diameter_int/2)))
             p.append(vm.Point2D((self.thickness_rim/2,self.boring_diameter_out/2)))
@@ -362,8 +363,8 @@ class Gear(persistent.Persistent):
         elif str(self.rim) in 'shaft_gear':
             p=[vm.Point2D((0,0))]
             p.append(vm.Point2D((-self.gear_width/2,0)))
-            p.append(vm.Point2D((-self.gear_width/2,self.root_diameter/2)))
-            p.append(vm.Point2D((self.gear_width/2,self.root_diameter/2)))
+            p.append(vm.Point2D((-self.gear_width/2,self.root_diameter/2-hg/2)))
+            p.append(vm.Point2D((self.gear_width/2,self.root_diameter/2-hg/2)))
             p.append(vm.Point2D((self.gear_width/2,0)))
             p.append(vm.Point2D((0,0)))
             ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
@@ -1034,8 +1035,8 @@ class GearAssembly(persistent.Persistent):
     def FreeCADExport(self,file_path,position1,position2,python_path,freecad_lib_path,export_types):
         RIM1=self.Gear1.RimContour()
         RIM2=self.Gear2.RimContour()
-#        RIM1.MPLPlot()
-#        RIM2.MPLPlot()
+        RIM1.MPLPlot()
+        RIM2.MPLPlot()
         gear1=primitives3D.RevolvedProfile(vm.Point3D((position1[0],position1[1],0.5*self.gear_width)),vm.Vector3D((0,0,1)),
                                            vm.Vector3D((0,1,0)),[RIM1],vm.Vector3D((position1[0],position1[1],0)),
                                            vm.Vector3D((0,0,1)),angle=2*math.pi,name='Rim1')
@@ -1051,10 +1052,10 @@ class GearAssembly(persistent.Persistent):
         C1=vm.Contour2D(L1[0])
         C2=vm.Contour2D(L1[1])
 #        C1.MPLPlot()
-        h1=0.5*(self.Gear1.outside_diameter-self.Gear1.root_diameter)
-        h2=0.5*(self.Gear2.outside_diameter-self.Gear2.root_diameter)
-        r1=0.5*(self.Gear1.outside_diameter-(h1*(1+self.Gear1.alpha_rim)))
-        r2=0.5*(self.Gear2.outside_diameter-(h2*(1+self.Gear2.alpha_rim)))
+        h1=self.Gear1.alpha_rim*(self.Gear1.outside_diameter-self.Gear1.root_diameter)
+        h2=self.Gear2.alpha_rim*(self.Gear2.outside_diameter-self.Gear2.root_diameter)
+        r1=self.Gear1.root_diameter/2-h1/2
+        r2=self.Gear2.root_diameter/2-h2/2
         print(h1,h2,r1,r2)
         
         C1int=vm.Contour2D([vm.Circle2D(vm.Point2D(position1),r1)])
