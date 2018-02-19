@@ -1618,6 +1618,8 @@ class GearAssemblyOptimizerWizard:
         DefGeneral('coefficient_profile_shift2')
         DefGeneral('gear_width')
         DefGeneral('maximum_torque')
+        DefString('rim1')
+        DefString('rim2')
         DefString('alpha_rim1')
         DefString('alpha_rim2')
         DefString('boring_diameter1')
