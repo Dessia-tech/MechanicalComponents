@@ -1035,8 +1035,8 @@ class GearAssembly(persistent.Persistent):
     def FreeCADExport(self,file_path,position1,position2,python_path,freecad_lib_path,export_types):
         RIM1=self.Gear1.RimContour()
         RIM2=self.Gear2.RimContour()
-        RIM1.MPLPlot()
-        RIM2.MPLPlot()
+#        RIM1.MPLPlot()
+#        RIM2.MPLPlot()
         gear1=primitives3D.RevolvedProfile(vm.Point3D((position1[0],position1[1],0.5*self.gear_width)),vm.Vector3D((0,0,1)),
                                            vm.Vector3D((0,1,0)),[RIM1],vm.Vector3D((position1[0],position1[1],0)),
                                            vm.Vector3D((0,0,1)),angle=2*math.pi,name='Rim1')
@@ -1045,37 +1045,43 @@ class GearAssembly(persistent.Persistent):
                                            vm.Vector3D((0,0,1)),angle=2*math.pi,name='Rim2')
         
         # Teeth
-        TG1=self.Gear1.GearContours(10)
-        TG2=self.Gear2.GearContours(10)
+        TG1=self.Gear1.GearContours(5)
+        TG2=self.Gear2.GearContours(5)
         list_rot=self.InitialPosition()
         L1=self.GearAssemblyTrace([TG1,TG2],[position1,position2],list_rot)
         C1=vm.Contour2D(L1[0])
         C2=vm.Contour2D(L1[1])
 #        C1.MPLPlot()
-        h1=self.Gear1.alpha_rim*(self.Gear1.outside_diameter-self.Gear1.root_diameter)
-        h2=self.Gear2.alpha_rim*(self.Gear2.outside_diameter-self.Gear2.root_diameter)
+        h1=0.5*self.Gear1.alpha_rim*(self.Gear1.outside_diameter-self.Gear1.root_diameter)
+        h2=0.5*self.Gear2.alpha_rim*(self.Gear2.outside_diameter-self.Gear2.root_diameter)
         r1=self.Gear1.root_diameter/2-h1/2
         r2=self.Gear2.root_diameter/2-h2/2
-        print(h1,h2,r1,r2)
+#        print(h1,h2,r1,r2)
+        c1=primitives3D.Cylinder((position1[0],position1[1],0.48*self.gear_width),
+                                 (0,0,1),r1,1.05*self.gear_width)
+        c2=primitives3D.Cylinder((position2[0],position2[1],0.48*self.gear_width),
+                                 (0,0,1),r2,1.05*self.gear_width)
         
-        C1int=vm.Contour2D([vm.Circle2D(vm.Point2D(position1),r1)])
-        C2int=vm.Contour2D([vm.Circle2D(vm.Point2D(position2),r2)])
+#        C1int=vm.Contour2D([vm.Circle2D(vm.Point2D(position1),r1)])
+#        C2int=vm.Contour2D([vm.Circle2D(vm.Point2D(position2),r2)])
         if self.helix_angle==0.:            
             t1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-                                            vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width),
-                                            name='Teeth1')
+                                            vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width))
             t2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-                                            vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width),
-                                            name='Teeth2')
+                                            vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width))
         else:
             t1=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
                                                    vm.Vector3D((0,1,0)),(position1[0],position1[1],0),
                                                    (0,0,self.gear_width),self.DF1*mt.pi/mt.tan(self.helix_angle),
-                                                   C1,[C1int],name='Teeth1')
+                                                   C1)
             t2=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
                                                    vm.Vector3D((0,1,0)),(position2[0],position2[1],0),
                                                    (0,0,self.gear_width),-self.DF2*mt.pi/mt.tan(self.helix_angle),
-                                                   C2,[C2int],name='Teeth2')
+                                                   C2)
+
+        # Creating holes in teeths
+        t1=primitives3D.Cut(t1,c1,name='Teeth1')
+        t2=primitives3D.Cut(t2,c2,name='Teeth2')
 
         model=vm.VolumeModel([gear1,t1,gear2,t2])
 #        model=vm.VolumeModel([gear1,t1,gear2])
