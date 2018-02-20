@@ -1122,6 +1122,32 @@ class GearAssembly(persistent.Persistent):
         SVG1.Convert(L3,'Construction','red',1/50,0,'0.1px, 0.1px')
         SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
         
+    def SVGExportDico(self,name,position1,position2):
+        #tuple1 et 2 correspondent a la position des centres
+        TG1=self.Gear1.GearContours(5)
+        TG2=self.Gear2.GearContours(5)
+        list_rot=self.InitialPosition()
+        L1=self.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
+        L2=[]
+        L2.append(vm.Circle2D(vm.Point2D(position1),self.DF1/2))
+        L2.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.DF2/2))
+        L2.append(vm.Circle2D(vm.Point2D(position1),self.Gear1.base_diameter/2))
+        L2.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.Gear2.base_diameter/2))
+        L2.append(vm.Circle2D(vm.Point2D(position1),self.pitch_diameter_factory1/2))
+        L2.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.pitch_diameter_factory2/2))
+        L3=[]
+        L3.append(vm.Circle2D(vm.Point2D(position1),self.Gear1.root_diameter_active/2))
+        L3.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.Gear2.root_diameter_active/2))
+        #G1=vm.Contour2D(LR)
+        #G1.MPLPlot()
+        temp=ConvertBSPline()
+        SVG1=LibSvg.SVGTrace(1000)
+        SVG1.Convert(L1[0],'gear1','black',1/50,0)
+        SVG1.Convert(L1[1],'gear2','red',1/50,0)
+        SVG1.Convert(L2,'Construction','blue',1/50,0,'0.1px, 0.1px')
+        SVG1.Convert(L3,'Construction','red',1/50,0,'0.1px, 0.1px')
+        SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
+        
     def MeshingSVGExport(self,name,gear):
         if gear=='Z1':
             dent=self.Gear1

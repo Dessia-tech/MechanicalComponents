@@ -14,14 +14,14 @@ input_dict=(
           {'type':'material1','nom':'hardened_alloy_steel'},
           {'type':'material2','nom':'hardened_alloy_steel'},
           {'type':'nb_cycle1','nom':10000000},
-          {'type':'rim1','nom':'rim_gear'},
-          {'type':'rim2','nom':'rim_gear'},
-          {'type':'alpha_rim1','nom':1.1},
-          {'type':'alpha_rim2','nom':1.1},
-          {'type':'boring_diameter1','nom':10},
-          {'type':'boring_diameter2','nom':30},
-          {'type':'thickness_rim1','nom':6},
-          {'type':'thickness_rim2','nom':6},
+#          {'type':'rim1','nom':'rim_gear'},
+#          {'type':'rim2','nom':'rim_gear'},
+#          {'type':'alpha_rim1','nom':1.1},
+#          {'type':'alpha_rim2','nom':1.1},
+#          {'type':'boring_diameter1','nom':10},
+#          {'type':'boring_diameter2','nom':30},
+#          {'type':'thickness_rim1','nom':6},
+#          {'type':'thickness_rim2','nom':6},
           )
 
 #constraint_dict=({},)
