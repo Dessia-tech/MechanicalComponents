@@ -1,7 +1,7 @@
 import numpy as npy
 import math as mt
 from scipy import interpolate
-import os
+#import os
 import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
@@ -9,7 +9,7 @@ import math
 from scipy.linalg import norm
 from scipy.optimize import minimize,fsolve
 from scipy.interpolate import splprep, splev
-import cma
+#import cma
 #from sympy import *
 import itertools
 
@@ -135,7 +135,7 @@ class Rack(persistent.Persistent):
         self.root_radius_T=root_radius_T
         self.root_radius_R=root_radius_R
         self.transverse_pressure_angle_R=transverse_pressure_angle_R
-        self.module=self.transverse_radial_pitch/npy.pi
+        self.module=self.transverse_radial_pitch/math.pi
         
         #if nothing define, we put the ISO definition for the rack
         if gear_addendum==None:
@@ -208,12 +208,6 @@ class Rack(persistent.Persistent):
         *self.root_radius_R*(1-npy.sin(self.transverse_pressure_angle_R)))]
         crit.append(self.circular_tooth_thickness-(self.gear_addendum*npy.tan(self.transverse_pressure_angle_T)+self.gear_addendum*npy.tan(self.transverse_pressure_angle_R)))
         return crit
-        
-    def Mass(self):
-        pass
-    
-    def VolumeModel(self):
-        pass
     
     def SVGExport(self,number,name):
         
@@ -270,8 +264,8 @@ class Gear(persistent.Persistent):
         self.tooth_space=rack_data.transverse_radial_pitch-self.circular_tooth_thickness
         
         self.transverse_pressure_angle_T_factory=rack_data.transverse_pressure_angle_T
-        circular_tooth_thickness_angle=self.circular_tooth_thickness/(self.pitch_diameter_factory/2)
-        tooth_space_angle=self.tooth_space/(self.pitch_diameter_factory/2)
+#        circular_tooth_thickness_angle=self.circular_tooth_thickness/(self.pitch_diameter_factory/2)
+#        tooth_space_angle=self.tooth_space/(self.pitch_diameter_factory/2)
         self.base_diameter=self.pitch_diameter_factory*npy.cos(self.transverse_pressure_angle_T_factory)
         temp=self.pitch_diameter_factory-2*rack_data.gear_dedendum+2*rack_data.root_radius_T-2*rack_data.root_radius_T*npy.sin(rack_data.transverse_pressure_angle_T)-2*rack_data.module*self.coefficient_profile_shift
         
@@ -380,11 +374,10 @@ class Gear(persistent.Persistent):
     
     def GearSectionISO(self,angle):
         
-        drap=1
-        a=drap*self.rack.a
+        a=self.rack.a
         b=self.rack.b-self.rack.module*self.coefficient_profile_shift
         r=self.pitch_diameter_factory/2
-        rho=self.rack.root_radius_T
+#        rho=self.rack.root_radius_T
         
         theta0=fsolve((lambda theta:a + b*npy.tan(theta) + r*(-angle - self.root_angle/2 - theta + npy.pi/2)) ,0)[0]
         phi0=(a-b*npy.tan(theta0))/r
@@ -399,11 +392,10 @@ class Gear(persistent.Persistent):
     def _RootDiameterActive(self):
         
         #Analyse diam pied de dent actif
-        drap=1
-        a=drap*self.rack.a
+        a=self.rack.a
         b=self.rack.b-self.rack.module*self.coefficient_profile_shift
         r=self.pitch_diameter_factory/2
-        rho=self.rack.root_radius_T
+#        rho=self.rack.root_radius_T
         phi=-(a+b*npy.tan(npy.pi/2-self.transverse_pressure_angle_T_factory))/r
         data=2*norm(self._Trochoide(phi))
         self.root_diameter_active=data
@@ -494,8 +486,8 @@ class Gear(persistent.Persistent):
         
         a=drap*self.rack.a
         b=self.rack.b-self.rack.module*self.coefficient_profile_shift
-        r=self.pitch_diameter_factory/2
-        rho=self.rack.root_radius_T
+#        r=self.pitch_diameter_factory/2
+#        rho=self.rack.root_radius_T
         self.phi0=npy.arctan((a)/(self.pitch_diameter_factory-b))
         self.phi0=a/(self.pitch_diameter_factory/2)
         
@@ -539,7 +531,7 @@ class Gear(persistent.Persistent):
     
     def _RootCircleTrace(self,number):
         
-        theta4=-self.root_angle/2
+#        theta4=-self.root_angle/2
         
         drap=1
         a=drap*self.rack.a
