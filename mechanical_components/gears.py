@@ -12,6 +12,7 @@ from scipy.interpolate import splprep, splev
 import cma
 #from sympy import *
 import itertools
+from jinja2 import Environment, PackageLoader, select_autoescape
 
 import mechanical_components.LibSvgD3 as LibSvg
 
@@ -1122,7 +1123,7 @@ class GearAssembly(persistent.Persistent):
         SVG1.Convert(L3,'Construction','red',1/50,0,'0.1px, 0.1px')
         SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
         
-    def SVGExportDico(self,name,position1,position2):
+    def SVGGearSet(self,name,position1,position2,local=0):
         #tuple1 et 2 correspondent a la position des centres
         TG1=self.Gear1.GearContours(5)
         TG2=self.Gear2.GearContours(5)
@@ -1140,13 +1141,73 @@ class GearAssembly(persistent.Persistent):
         L3.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.Gear2.root_diameter_active/2))
         #G1=vm.Contour2D(LR)
         #G1.MPLPlot()
-        temp=ConvertBSPline()
-        SVG1=LibSvg.SVGTrace(1000)
-        SVG1.Convert(L1[0],'gear1','black',1/50,0)
-        SVG1.Convert(L1[1],'gear2','red',1/50,0)
-        SVG1.Convert(L2,'Construction','blue',1/50,0,'0.1px, 0.1px')
-        SVG1.Convert(L3,'Construction','red',1/50,0,'0.1px, 0.1px')
-        SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
+        Temp=self.Convert(L1[0],0,1,2,1/50,0)
+        Temp.extend(self.Convert(L1[1],0,2,2,1/50,0))
+        
+        #definition de la viewbox
+        boxX_min,boxX_max,boxY_min,boxY_max=npy.inf,-npy.inf,npy.inf,-npy.inf
+        for li in Temp:
+            if li['inbox']==0:
+                boxX_min=min(boxX_min,float(min(npy.array(li['data'])[:,0])))
+                boxY_min=min(boxY_min,float(min(npy.array(li['data'])[:,1])))
+                boxX_max=max(boxX_max,float(max(npy.array(li['data'])[:,0])))
+                boxY_max=max(boxY_max,float(max(npy.array(li['data'])[:,1])))
+        view_x=(boxX_max-boxX_min)
+        view_y=(boxY_max-boxY_min)
+        width=700
+        scale=width/view_x
+        height=scale*view_y
+        vb1=boxX_min
+        vb2=boxY_min
+        vb3=boxX_max-boxX_min
+        vb4=boxY_max-boxY_min
+        
+        data=str(Temp)
+        data=data.replace(chr(39)+'data'+chr(39),'data')
+        data=data.replace(chr(39)+'curve'+chr(39),'curve')
+        data=data.replace(chr(39)+'group'+chr(39),'group')
+        data=data.replace(chr(39)+'color'+chr(39),'color')
+        data=data.replace(chr(39)+'size'+chr(39),'size')
+        data=data.replace(chr(39)+'inbox'+chr(39),'inbox')
+        if local==1:
+            with open(name,'w') as file:
+                file.write(self.ExportSVGGearSet(data,width,height,scale,vb1,vb2,vb3,vb4,name))
+        
+#        SVG1=LibSvg.SVGTrace(1000)
+#        SVG1.Convert(L1[0],'gear1','black',1/50,0)
+#        SVG1.Convert(L1[1],'gear2','red',1/50,0)
+#        SVG1.Convert(L2,'Construction','blue',1/50,0,'0.1px, 0.1px')
+#        SVG1.Convert(L3,'Construction','red',1/50,0,'0.1px, 0.1px')
+#        SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
+        
+    def ExportSVGGearSet(self,data,width,height,scale,vb1,vb2,vb3,vb4,name='export.html'):
+        
+        env = Environment(loader=PackageLoader('mechanical_components', 'templates'),
+                          autoescape=select_autoescape(['html', 'xml']))
+        
+        template = env.get_template('template_animate2.html')
+        
+        return template.render(list_name=name,data=data,width=width,height=height,vb1=vb1,vb2=vb2,vb3=vb3,vb4=vb4,trait_ep=1/(scale))
+        
+    def Convert(self,liste,curve,group,color,size,inbox):
+        #Export ensemble de ligne uniquement
+        List=[]
+        for i,obj in enumerate(liste):
+            dico={}
+            dico['data']=[]
+            for j,objL in enumerate(obj.primitives):
+                dico['data'].append([1000*objL.points[0].vector[0],1000*objL.points[0].vector[1]]) 
+            dico['data'].append([1000*objL.points[-1].vector[0],1000*objL.points[-1].vector[1]])
+            dico['curve']=curve
+            dico['group']=group
+            dico['color']=color
+            dico['size']=size
+            dico['inbox']=inbox
+            List.append(dico)
+        return List
+    
+    
+        
         
     def MeshingSVGExport(self,name,gear):
         if gear=='Z1':
@@ -1482,7 +1543,7 @@ class ContinuousGearAssemblyOptimizer:
             
             
 class GearAssemblyOptimizer:
-    def __init__(self,ratio,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width,maximum_torque,material1,material2,nb_cycle1,rim1,rim2,alpha_rim1,alpha_rim2,boring_diameter1,boring_diameter2,thickness_rim1,thickness_rim2):
+    def __init__(self,Z1,Z2,center_distance,transverse_pressure_angle,helix_angle,coefficient_profile_shift1,coefficient_profile_shift2,gear_width,maximum_torque,material1,material2,nb_cycle1,ratio=None,rim1=None,rim2=None,alpha_rim1=None,alpha_rim2=None,boring_diameter1=None,boring_diameter2=None,thickness_rim1=None,thickness_rim2=None):
         
         self.ratio=ratio
         self.Z1=Z1
@@ -1519,20 +1580,11 @@ class GearAssemblyOptimizer:
         for i in plex:
             drap=0
             ratio=i[0]/i[1]
-            if self.ratio['min']==None:
-                if not self.ratio['max']==None:
-                    if ratio<=self.ratio['max']:
-                        drap=1
-                else:
+            if self.ratio is not None:
+                if ratio<=self.ratio['max'] and ratio>=self.ratio['min']:
                     drap=1
             else:
-                if self.ratio['max']==None:
-                    if ratio>=self.ratio['min']:
-                        drap=1
-                else:
-                    if ratio>=self.ratio['min']:
-                        if ratio<=self.ratio['max']:
-                            drap=1
+                drap=1
             if drap==1:
                 Temp=[(i[0],i[0])]
                 Temp1={}
@@ -1549,17 +1601,17 @@ class GearAssemblyOptimizer:
                 Temp1['coefficient_profile_shift2']=(self.coefficient_profile_shift2['min'],self.coefficient_profile_shift2['max'])
                 Temp1['gear_width']=(self.gear_width['min'],self.gear_width['max'])
                 Temp1['maximum_torque']=self.maximum_torque['min']
-                Temp1['material1']=self.material1
-                Temp1['material2']=self.material2
-                Temp1['nb_cycle1']=self.nb_cycle1
-                Temp1['rim1']=self.rim1
-                Temp1['rim2']=self.rim2
-                Temp1['alpha_rim1']=self.alpha_rim1
-                Temp1['alpha_rim2']=self.alpha_rim2
-                Temp1['boring_diameter1']=self.boring_diameter1
-                Temp1['boring_diameter2']=self.boring_diameter2
-                Temp1['thickness_rim1']=self.thickness_rim1
-                Temp1['thickness_rim2']=self.thickness_rim2
+                Temp1['material1']=self.material1['nom']
+                Temp1['material2']=self.material2['nom']
+                Temp1['nb_cycle1']=self.nb_cycle1['nom']
+                Temp1['rim1']=self.rim1['nom']
+                Temp1['rim2']=self.rim2['nom']
+                Temp1['alpha_rim1']=self.alpha_rim1['nom']
+                Temp1['alpha_rim2']=self.alpha_rim2['nom']
+                Temp1['boring_diameter1']=self.boring_diameter1['nom']
+                Temp1['boring_diameter2']=self.boring_diameter2['nom']
+                Temp1['thickness_rim1']=self.thickness_rim1['nom']
+                Temp1['thickness_rim2']=self.thickness_rim2['nom']
                 self.plex_calcul.append(Temp1)
                 
         
@@ -1578,242 +1630,161 @@ class GearAssemblyOptimizer:
             except:
                 pass    
             
-            
 class GearAssemblyOptimizerWizard:
     
     def __init__(self,data):
         
-        def DefZ(type,nom=None,min=None,max=None):
-            if type=='Z1':
-                self.Z1={'nom':nom,'min':min,'max':max}
-            elif type=='Z2':
-                self.Z2={'nom':nom,'min':min,'max':max}
-                
-        def DefRatio(type,nom=None,min=None,max=None,err=None,prog=None,prem=None,pgcd=None):
-            self.ratio={'nom':nom,'min':min,'max':max,'err':err,'prog':prog,'prem':prem,'pgcd':pgcd}
-            
-        def DefString(type,nom=None):
-            if type=='material1':
-                self.material1={'nom':nom}
-            elif type=='material2':
-                self.material2={'nom':nom}
-            elif type=='nb_cycle1':
-                self.nb_cycle1={'nom':nom}
-            elif type=='rim1':
-                self.rim1={'nom':nom}
-            elif type=='rim2':
-                self.rim2={'nom':nom}
-            elif type=='alpha_rim1':
-                self.alpha_rim1={'nom':nom}
-            elif type=='alpha_rim2':
-                self.alpha_rim2={'nom':nom}
-            elif type=='boring_diameter1':
-                self.boring_diameter1={'nom':nom}
-            elif type=='boring_diameter2':
-                self.boring_diameter2={'nom':nom}
-            elif type=='thickness_rim1':
-                self.thickness_rim1={'nom':nom}
-            elif type=='thickness_rim2':
-                self.thickness_rim2={'nom':nom}
-            
-        def DefGeneral(type,nom=None,min=None,max=None,err=None,prog=None,prem=None,pgcd=None):
-            if type=='center_distance':
-                self.center_distance={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
-            elif type=='transverse_pressure_angle':
-                self.transverse_pressure_angle={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
-            elif type=='helix_angle':
-                self.helix_angle={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
-            elif type=='coefficient_profile_shift1':
-                self.coefficient_profile_shift1={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
-            elif type=='coefficient_profile_shift2':
-                self.coefficient_profile_shift2={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
-            elif type=='gear_width':
-                self.gear_width={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
-            elif type=='maximum_torque':
-                self.maximum_torque={'nom':nom,'min':min,'max':max,'err':err,'prog':prog}
-            
-                
-        #Initialisation des dictionnaires (passage à None l'ensemble des arg)
-        DefZ('Z1')
-        DefZ('Z2')
-        DefRatio('ratio')
-        DefGeneral('center_distance')
-        DefGeneral('transverse_pressure_angle')
-        DefGeneral('helix_angle')
-        DefGeneral('coefficient_profile_shift1')
-        DefGeneral('coefficient_profile_shift2')
-        DefGeneral('gear_width')
-        DefGeneral('maximum_torque')
-        DefString('rim1')
-        DefString('rim2')
-        DefString('alpha_rim1')
-        DefString('alpha_rim2')
-        DefString('boring_diameter1')
-        DefString('boring_diameter2')
-        DefString('thickness_rim1')
-        DefString('thickness_rim2')
-        DefString('material1')
-        DefString('material2')
-        DefString('nb_cycle1')
-        #Prise en compte des datas renseignees par la variable d'entree
-        for i in data:
-            if i['type'] in ['Z1','Z2']:
-                DefZ(**i)
-            elif i['type'] in ['ratio']:
-                DefRatio(**i)
-            elif i['type'] in ['material1','material2','nb_cycle1','rim1','rim2',
-                  'alpha_rim1','alpha_rim2',
-                  'boring_diameter1','boring_diameter2','thickness_rim1','thickness_rim2']:
-                DefString(**i)
-            else:
-                DefGeneral(**i)
+        dico={}
+        for lign in data:
+            dico[lign['type']]={}
+            for key,val in lign.items():
+                if 'type' not in key:
+                    dico[lign['type']][key]=val
         
         #Analyse conformite des datas et lancement des calculs
-        self.ok=self.AnalyzeDataSet()
+        self.ok=self.AnalyzeDataSet(dico)
         if self.ok==True:
-            self.DefaultDataSet()
+            dico=self.DefaultDataSet(dico)
+            self.dico_gear_assembly_optimizer=dico
             
             
     def Optimize(self,callback=lambda x:x):
-        M1=GearAssemblyOptimizer({'min':self.ratio['min'],'max':self.ratio['max']},
-           {'min':self.Z1['min'],'max':self.Z1['max']},
-           {'min':self.Z2['min'],'max':self.Z2['max']},
-           {'min':self.center_distance['min']/1000,'max':self.center_distance['max']/1000},
-           {'min':self.transverse_pressure_angle['min']/180*npy.pi,'max':self.transverse_pressure_angle['max']/180*npy.pi},
-           {'min':self.helix_angle['min']/180*npy.pi,'max':self.helix_angle['max']/180*npy.pi},
-           {'min':self.coefficient_profile_shift1['min'],'max':self.coefficient_profile_shift1['max']},
-           {'min':self.coefficient_profile_shift2['min'],'max':self.coefficient_profile_shift2['max']},
-           {'min':self.gear_width['min']/1000,'max':self.gear_width['max']/1000},
-           {'min':self.maximum_torque['min'],'max':self.maximum_torque['max']},
-           self.material1['nom'],
-           self.material2['nom'],
-           self.nb_cycle1['nom'],
-           self.rim1['nom'],
-           self.rim2['nom'],
-           self.alpha_rim1['nom'],
-           self.alpha_rim2['nom'],
-           self.boring_diameter1['nom']/1000,
-           self.boring_diameter2['nom']/1000,
-           self.thickness_rim1['nom']/1000,
-           self.thickness_rim2['nom']/1000,
-           )
+        
+        M1=GearAssemblyOptimizer(**self.dico_gear_assembly_optimizer)
         M1.Optimize(callback)
         self.solutions=M1.solutions
         
             
-    def AnalyzeDataSet(self):
+    def AnalyzeDataSet(self,data):
         
-        if self.ratio['nom']==None:
-            if self.ratio['min']==None:
-                if self.Z1['nom']==None:
-                    if self.Z1['min']==None:
-                        return False
-                    elif self.Z1['max']==None:
-                        return False
-                elif self.Z2['nom']==None:
-                    if self.Z2['min']==None:
-                        return False
-                    elif self.Z2['max']==None:
-                        return False
-            elif self.ratio['max']==None:
-                if self.Z1['nom']==None:
-                    if self.Z1['min']==None:
-                        return False
-                    elif self.Z1['max']==None:
-                        return False
-                elif self.Z2['nom']==None:
-                    if self.Z2['min']==None:
-                        return False
-                    elif self.Z2['max']==None:
-                        return False
-        else:
-            if not self.ratio['min']==None:
-                return False
-            elif not self.ratio['max']==None:
-                return False
-                    
-        data=[self.Z1,self.Z2,self.center_distance,self.transverse_pressure_angle,self.helix_angle,self.coefficient_profile_shift1,self.coefficient_profile_shift2,self.gear_width,self.maximum_torque]
-        for i in data:
-            if not i['nom']==None:
-                if not i['min']==None:
+        if 'ratio' in data:
+            if 'nom' not in data['ratio']:
+                if 'min' not in data['ratio']:
+                    if 'Z1' in data:
+                        if 'nom' not in data['Z1']:
+                            if 'min' not in data['Z1'] or 'max' not in data['Z1']:
+                                return False
+                        elif 'nom' not in data['Z2']:
+                            if 'min' not in data['Z2'] or 'max' not in data['Z2']:
+                                return False
+                elif 'max' not in data['ratio']:
+                    if 'Z1' in data:
+                        if 'nom' not in data['Z1']:
+                            if 'min' not in data['Z1'] or 'max' not in data['Z1']:
+                                return False
+                        elif 'nom' not in data['Z2']:
+                            if 'min' not in data['Z2'] or 'max' not in data['Z2']:
+                                return False
+            elif 'nom' not in data['ratio']:
+                if 'min' not in data['ratio'] or 'max' not in data['ratio']:
                     return False
-                elif not i['max']==None:
+                
+                    
+        dat=['Z1','Z2','center_distance','transverse_pressure_angle','helix_angle','coefficient_profile_shift1','coefficient_profile_shift2','gear_width','maximum_torque']
+        for i in dat:
+            if 'nom' not in data[i]:
+                if 'min' not in data[i] or 'max' not in data[i]:
                     return False
             
         return True
         
-    def DefaultDataSet(self):
+    def DefaultDataSet(self,data):
         
-        self.bounds={}
-        if not self.ratio['nom']==None:
-            if self.ratio['err']==None:
-                self.ratio['err']=0.05
-            self.ratio['min']=self.ratio['nom']*(1-self.ratio['err'])
-            self.ratio['max']=self.ratio['nom']*(1+self.ratio['err'])
-            
-        if self.Z1['nom']==None:
-            if self.Z1['min']==None:
-                self.Z1['min']=10
-            if self.Z1['max']==None:
-                self.Z1['max']=100
-        else:
-            self.Z1['min']=self.Z1['nom']
-            self.Z1['max']=self.Z1['nom']
-            
-        if self.Z2['nom']==None:
-            if self.Z2['min']==None:
-                self.Z2['min']=10
-            if self.Z2['max']==None:
-                self.Z2['max']=100
-        else:
-            self.Z2['min']=self.Z2['nom']
-            self.Z2['max']=self.Z2['nom']
+        if 'ratio' in data:
+            if 'nom' in data['ratio'] and 'err' not in data['ratio']:
+                data['ratio']['err']=0.05
+            if 'nom' in data['ratio']:
+                data['ratio']['min']=data['ratio']['nom']*(1-data['ratio']['err'])
+                data['ratio']['max']=data['ratio']['nom']*(1+data['ratio']['err'])
+                del(data['ratio']['nom'])
+                del(data['ratio']['err'])
+        if 'Z1' in data:
+            if 'nom' not in data['Z1']:
+                if 'min' not in data['Z1']:
+                    data['Z1']['min']=10
+                elif 'max' not in data['Z1']:
+                    data['Z1']['max']=100
+            else:
+                data['Z1']['min']=data['Z1']['nom']
+                data['Z1']['max']=data['Z1']['nom']
+                del(data['Z1']['nom'])
+        if 'Z2' in data:
+            if 'nom' not in data['Z2']:
+                if 'min' not in data['Z2']:
+                    data['Z2']['min']=10
+                elif 'max' not in data['Z2']:
+                    data['Z2']['max']=100
+            else:
+                data['Z2']['min']=data['Z2']['nom']
+                data['Z2']['max']=data['Z2']['nom']
+                del(data['Z2']['nom'])
 
-        def analyze(i,err,mini,maxi):
-            if not i['nom']==None:
-                if i['err']==None:
-                    i['err']=err
-                i['min']=i['nom']*(1-i['err'])
-                i['max']=i['nom']*(1+i['err'])
-            elif i['min']==None:
-                i['min']=mini
-                if i['max']==None:
-                    i['max']=maxi
-            elif i['max']==None:
-                i['max']=maxi
+        def analyze1(data,key,err,mini,maxi):
+            if key not in data:
+                data[key]={}
+            if 'nom' in data[key] and 'err' not in data[key]:
+                data[key]['err']=err
+            if 'nom' in data[key]:
+                data[key]['min']=data[key]['nom']*(1-data[key]['err'])
+                data[key]['max']=data[key]['nom']*(1+data[key]['err'])
+                del(data[key]['nom'])
+                del(data[key]['err'])
+            if 'min' not in data[key]:
+                data[key]['min']=mini
+                if 'max' not in data[key]:
+                    data[key]['max']=maxi
+            if 'max' not in data[key]:
+                data[key]['max']=maxi
+            return data
+            
                 
         #Data par defaut en mm,deg et Nm
-        analyze(self.helix_angle,2,15,25)
-        analyze(self.transverse_pressure_angle,2,15,25)
-        analyze(self.center_distance,0.05,40,100)
-        analyze(self.coefficient_profile_shift1,0.05,-1,1)
-        analyze(self.coefficient_profile_shift2,0.05,-1,1)
-        analyze(self.gear_width,0.05,15,25)
-        analyze(self.maximum_torque,0,100,150)
+        data=analyze1(data,'helix_angle',2,15,25)
+        data=analyze1(data,'transverse_pressure_angle',2,15,25)
+        data=analyze1(data,'center_distance',0.05,40,100)
+        data=analyze1(data,'coefficient_profile_shift1',0.05,-1,1)
+        data=analyze1(data,'coefficient_profile_shift2',0.05,-1,1)
+        data=analyze1(data,'gear_width',0.05,15,25)
+        data=analyze1(data,'maximum_torque',0,100,150)
         
-        if self.material1['nom']==None:
-            self.material1['nom']='hardened_alloy_steel'
-        if self.material2['nom']==None:
-            self.material2['nom']='hardened_alloy_steel'
-        if self.nb_cycle1['nom']==None:
-            self.nb_cycle1['nom']=10000000
-        if self.rim1['nom']==None:
-            self.rim1['nom']='shaft_gear'
-        if self.rim2['nom']==None:
-            self.rim2['nom']='shaft_gear'
-        if self.alpha_rim1['nom']==None:
-            self.alpha_rim1['nom']=1
-        if self.alpha_rim2['nom']==None:
-            self.alpha_rim2['nom']=2
-        if self.boring_diameter1['nom']==None:
-            self.boring_diameter1['nom']=30*1e-3
-        if self.boring_diameter2['nom']==None:
-            self.boring_diameter2['nom']=30*1e-3
-        if self.thickness_rim1['nom']==None:
-            self.thickness_rim1['nom']=7*1e-3
-        if self.thickness_rim2['nom']==None:
-            self.thickness_rim2['nom']=7*1e-3
-    
+        liste=['material1','material2','nb_cycle1','rim1','rim2','boring_diameter1','boring_diameter2','thickness_rim1','thickness_rim2','alpha_rim1','alpha_rim2']
+        for i in liste:
+            if i not in data:
+                data[i]={}
+                
+        def analyze2(data,key,nom):
+            if 'nom' not in data[key]:
+                data[key]['nom']=nom
+            return data
+        
+        data=analyze2(data,'material1','hardened_alloy_steel')
+        data=analyze2(data,'material2','hardened_alloy_steel')
+        data=analyze2(data,'nb_cycle1',10000000)
+        data=analyze2(data,'rim1','shaft_gear')
+        data=analyze2(data,'rim2','shaft_gear')
+        data=analyze2(data,'alpha_rim1',1)
+        data=analyze2(data,'alpha_rim2',1)
+        data=analyze2(data,'boring_diameter1',30*1e-3)
+        data=analyze2(data,'boring_diameter2',30*1e-3)
+        data=analyze2(data,'thickness_rim1',7*1e-3)
+        data=analyze2(data,'thickness_rim2',7*1e-3)
+        
+        #changement unité
+        data['center_distance']['min']= data['center_distance']['min']/1000
+        data['center_distance']['max']= data['center_distance']['max']/1000
+        data['transverse_pressure_angle']['min']= data['transverse_pressure_angle']['min']/180*npy.pi
+        data['transverse_pressure_angle']['max']= data['transverse_pressure_angle']['max']/180*npy.pi
+        data['helix_angle']['min']= data['helix_angle']['min']/180*npy.pi
+        data['helix_angle']['max']= data['helix_angle']['max']/180*npy.pi
+        data['gear_width']['min']= data['gear_width']['min']/1000
+        data['gear_width']['max']= data['gear_width']['max']/1000
+        data['boring_diameter1']['nom']= data['boring_diameter1']['nom']/1000
+        data['boring_diameter2']['nom']= data['boring_diameter2']['nom']/1000
+        data['thickness_rim1']['nom']= data['thickness_rim1']['nom']/1000
+        data['thickness_rim2']['nom']= data['thickness_rim2']['nom']/1000
+        
+        return data
+
 class GearAssemblyOptimizationResults(persistent.Persistent):
     
     def __init__(self,gear_assemblies,bounds):
