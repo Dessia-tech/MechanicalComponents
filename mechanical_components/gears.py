@@ -443,7 +443,7 @@ class Gear(persistent.Persistent):
         L.append(self._RootCircleTrace(0))
         L.append(self._TrochoideTrace(2*discret,0,'R'))
         L.append(self._InvoluteTrace(discret,1,'R'))
-        for i in list_number:
+        for i in list_number[1::]:
             L.append(self._OutsideTrace(i))
             L.append(self._InvoluteTrace(discret,i,'T'))
             L.append(self._TrochoideTrace(2*discret,i,'T'))
@@ -1127,7 +1127,19 @@ class GearAssembly(persistent.Persistent):
         #tuple1 et 2 correspondent a la position des centres
         TG1=self.Gear1.GearContours(5)
         TG2=self.Gear2.GearContours(5)
+        
+        #Definition de la position angulaire initiale
         list_rot=self.InitialPosition()
+        if position2[0]==position1[0]:
+            if position2[1]-position1[1]>0:
+                angle=npy.pi/2
+            else:
+                angle=-npy.pi/2
+        else:
+            angle=-npy.arctan((position2[1]-position1[1])/(position2[0]-position1[0]))
+        list_rot[0]=list_rot[0]-angle
+        list_rot[1]=list_rot[1]-angle
+        
         L1=self.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
         L2=[]
         L2.append(vm.Circle2D(vm.Point2D(position1),self.DF1/2))
@@ -1141,17 +1153,20 @@ class GearAssembly(persistent.Persistent):
         L3.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.Gear2.root_diameter_active/2))
         #G1=vm.Contour2D(LR)
         #G1.MPLPlot()
-        Temp=self.Convert(L1[0],0,1,2,1/50,0)
-        Temp.extend(self.Convert(L1[1],0,2,2,1/50,0))
         
         #definition de la viewbox
-        boxX_min,boxX_max,boxY_min,boxY_max=npy.inf,-npy.inf,npy.inf,-npy.inf
-        for li in Temp:
-            if li['inbox']==0:
-                boxX_min=min(boxX_min,float(min(npy.array(li['data'])[:,0])))
-                boxY_min=min(boxY_min,float(min(npy.array(li['data'])[:,1])))
-                boxX_max=max(boxX_max,float(max(npy.array(li['data'])[:,0])))
-                boxY_max=max(boxY_max,float(max(npy.array(li['data'])[:,1])))
+#        boxX_min,boxX_max,boxY_min,boxY_max=npy.inf,-npy.inf,npy.inf,-npy.inf
+#        for li in Temp:
+#            if li['inbox']==0:
+#                boxX_min=min(boxX_min,float(min(npy.array(li['data'])[:,0])))
+#                boxY_min=min(boxY_min,float(min(npy.array(li['data'])[:,1])))
+#                boxX_max=max(boxX_max,float(max(npy.array(li['data'])[:,0])))
+#                boxY_max=max(boxY_max,float(max(npy.array(li['data'])[:,1])))
+        boxX_min=min(position1[0]-self.Gear1.outside_diameter/2,position2[0]-self.Gear2.outside_diameter/2)*1000
+        boxX_max=max(position1[0]+self.Gear1.outside_diameter/2,position2[0]+self.Gear2.outside_diameter/2)*1000
+        boxY_min=min(position1[1]-self.Gear1.outside_diameter/2,position2[1]-self.Gear2.outside_diameter/2)*1000
+        boxY_max=max(position1[1]+self.Gear1.outside_diameter/2,position2[1]+self.Gear2.outside_diameter/2)*1000
+        
         view_x=(boxX_max-boxX_min)
         view_y=(boxY_max-boxY_min)
         width=700
@@ -1162,6 +1177,14 @@ class GearAssembly(persistent.Persistent):
         vb3=boxX_max-boxX_min
         vb4=boxY_max-boxY_min
         
+        Temp,ListGear1=self.ConvertBspline(L1[0],0,1,2,1/scale,0)
+        Temp2,ListGear2=self.ConvertBspline(L1[1],0,2,2,1/scale,0)
+        Temp.extend(Temp2)
+        Temp2=self.ConvertCircle(L2,1,3,2,0.5/scale,1,0)
+        Temp.extend(Temp2)
+        Temp2=self.ConvertCircle(L3,1,3,2,0.5/scale,1,0)
+        Temp.extend(Temp2)
+        
         data=str(Temp)
         data=data.replace(chr(39)+'data'+chr(39),'data')
         data=data.replace(chr(39)+'curve'+chr(39),'curve')
@@ -1169,9 +1192,21 @@ class GearAssembly(persistent.Persistent):
         data=data.replace(chr(39)+'color'+chr(39),'color')
         data=data.replace(chr(39)+'size'+chr(39),'size')
         data=data.replace(chr(39)+'inbox'+chr(39),'inbox')
+        data=data.replace(chr(39)+'cx'+chr(39),'cx')
+        data=data.replace(chr(39)+'cy'+chr(39),'cy')
+        data=data.replace(chr(39)+'r'+chr(39),'r')
+        data=data.replace(chr(39)+'dash'+chr(39),'dash')
+        
+        rot1=2*npy.pi/self.Gear1.tooth_number*180/npy.pi
+        pos1_x=position1[0]*1000
+        pos1_y=position1[1]*1000
+        rot2=-2*npy.pi/self.Gear2.tooth_number*180/npy.pi
+        pos2_x=position2[0]*1000
+        pos2_y=position2[1]*1000
+        
         if local==1:
             with open(name,'w') as file:
-                file.write(self.ExportSVGGearSet(data,width,height,scale,vb1,vb2,vb3,vb4,name))
+                file.write(self.ExportSVGGearSet(str(ListGear1),str(ListGear2),data,width,height,1/scale,0.5/scale,vb1,vb2,vb3,vb4,name,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y))
         
 #        SVG1=LibSvg.SVGTrace(1000)
 #        SVG1.Convert(L1[0],'gear1','black',1/50,0)
@@ -1180,18 +1215,20 @@ class GearAssembly(persistent.Persistent):
 #        SVG1.Convert(L3,'Construction','red',1/50,0,'0.1px, 0.1px')
 #        SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
         
-    def ExportSVGGearSet(self,data,width,height,scale,vb1,vb2,vb3,vb4,name='export.html'):
+    def ExportSVGGearSet(self,ListGear1,ListGear2,data,width,height,trait_ep,trait_ep3,vb1,vb2,vb3,vb4,
+                         name,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y):
         
         env = Environment(loader=PackageLoader('mechanical_components', 'templates'),
                           autoescape=select_autoescape(['html', 'xml']))
         
         template = env.get_template('template_animate2.html')
         
-        return template.render(list_name=name,data=data,width=width,height=height,vb1=vb1,vb2=vb2,vb3=vb3,vb4=vb4,trait_ep=1/(scale))
+        return template.render(ListGear1=ListGear1,ListGear2=ListGear2,list_name=name,data=data,width=width,height=height,vb1=vb1,vb2=vb2,vb3=vb3,vb4=vb4,trait_ep=trait_ep,trait_ep3=trait_ep3,rot1=rot1,pos1_x=pos1_x,pos1_y=pos1_y,rot2=rot2,pos2_x=pos2_x,pos2_y=pos2_y)
         
-    def Convert(self,liste,curve,group,color,size,inbox):
+    def ConvertBspline(self,liste,curve,group,color,size,inbox):
         #Export ensemble de ligne uniquement
         List=[]
+        ListTotal=[]
         for i,obj in enumerate(liste):
             dico={}
             dico['data']=[]
@@ -1204,11 +1241,27 @@ class GearAssembly(persistent.Persistent):
             dico['size']=size
             dico['inbox']=inbox
             List.append(dico)
+            ListTotal.extend(dico['data'])
+#        ListTotal.extend(List[0]['data'])
+        return List,ListTotal
+    
+    def ConvertCircle(self,liste,curve,group,color,size,dash,inbox):
+        List=[]
+        for i,obj in enumerate(liste):
+            dico={}
+            dico['cx']=float(obj.center.vector[0])*1000
+            dico['cy']=float(obj.center.vector[1])*1000
+            dico['r']=float(obj.radius)*1000
+            dico['curve']=curve
+            dico['group']=group
+            dico['color']=color
+            dico['size']=size
+            dico['inbox']=inbox
+            dico['dash']=dash
+            List.append(dico)
+#        ListTotal.extend(List[0]['data'])
         return List
     
-    
-        
-        
     def MeshingSVGExport(self,name,gear):
         if gear=='Z1':
             dent=self.Gear1

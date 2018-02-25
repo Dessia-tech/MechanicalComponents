@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style type="text/css">
+
+svg {
+  font-family: "Helvetica Neue", Helvetica;
+}
+
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var width = {{width}};
+var height = {{height}};
+var transform = d3.zoomIdentity;
+
+var svg = d3.select('body').append('svg')
+
+var DataCurve = {{data}};
+var ListGear1 = {{ListGear1}};
+var ListGear2 = {{ListGear2}};
+
+function Genere(aa){
+
+    var svg = d3.select("svg")
+        .attr('width', width)
+        .attr('height', height)
+        .attr('viewBox',"{{vb1}} {{vb2}} {{vb3}} {{vb4}}")
+        .append("g")
+        .attr("id","box1")
+        .attr("transform","translate(0,0)rotate(0)")
+        .append("g")
+        .attr("id","box2")
+       
+    var anime = [
+        { "group_a":"gear1_a","group": "gear1", "rot": {{rot1}},"name":"#gear1","TX":{{pos1_x}},"TY":{{pos1_y}} },
+        { "group_a":"gear2_a","group": "gear2", "rot": {{rot2}},"name":"#gear2","TX":{{pos2_x}},"TY":{{pos2_y}} },
+        { "group_a":"Construction_a","group": "Construction", "rot": 0,"name":"#Construction","TX":0,"TY":0}];
+        
+    var Ganime = svg.selectAll("svg")
+        .data(anime)
+        .enter()
+        .append("g")
+        .attr("id","GROUP")
+        .attr("transform", function(d){return "translate("+d.TX+" , "+d.TY+")"})
+        .append("g")
+        .attr("id",function(d){return d.group})
+    
+        
+    function G2anime(){ 
+        if (click){
+        d3.selectAll("svg")
+        Ganime
+        .transition()
+        .ease(d3.easeLinear)
+        .duration(1000)
+        .attrTween("transform", function(d) { return d3.interpolateString("rotate(0)", "rotate("+d.rot+")") })
+        .on("end",G2anime)
+        }
+    }
+        
+    var colorblue=d3.scaleLinear()
+		.domain([0,54])
+		.range(["white",  "#3399FF"]);
+    var areaGenerator = d3.area();
+    var area = areaGenerator(ListGear1);
+    
+    // Create a path element and set its d attribute
+    d3.selectAll("#gear1")
+        	.append('path')
+        	.attr('d', area)
+         .attr('fill',colorblue(4));
+    
+    var colorred=d3.scaleLinear()
+		.domain([0,54])
+		.range(["white",  "red"]);
+    var areaGenerator = d3.area();
+    var area = areaGenerator(ListGear2);
+    
+    // Create a path element and set its d attribute
+    d3.selectAll("#gear2")
+        	.append('path')
+        	.attr('d', area)
+         .attr('fill',colorred(2));
+        
+    Constr()
+    var click = false
+    d3.selectAll("svg")
+        //.on("click",G2anime)
+        .on("click", function() {
+      click = !click;
+      console.log(click);
+      if (click) {
+        G2anime();
+        console.log('essai')
+      }
+    });   
+    
+}
+    
+Genere(1)
+
+    
+function Constr(){
+      DataCurve.forEach(function(d) {
+          if (d.curve==0){
+              var lineGenerator = d3.line();
+              lineGenerator.curve(d3.curveCardinal.tension(0));
+              var pathString = lineGenerator(d.data);
+              if (d.group==1){
+                  d3.selectAll("#gear1").append('path')
+                  	.attr('d', pathString)
+                    .attr("stroke-width", d.size)
+                    .attr("stroke", "blue")
+                    .attr("stroke-dasharray","none")
+                    .attr("fill", "none");}
+              else if (d.group==2){
+                  d3.selectAll("#gear2").append('path')
+                    .attr('d', pathString)
+                    .attr("stroke-width", d.size)
+                    .attr("stroke", "red")
+                    .attr("stroke-dasharray","none")
+                    .attr("fill", "none");}
+          }
+          if (d.curve==1){
+              d3.selectAll("#Construction").append('circle')
+                  .attr('cx',d.cx)
+                  .attr('cy',d.cy)
+                  .attr('r',d.r)
+                  .attr("stroke-width", d.size)
+                  .attr("stroke", "blue")
+                  .attr("fill", "none")
+                  .attr("stroke-dasharray","0.5px, 0.5px")
+
+          }
+      });
+          
+}
+
+svg.selectAll()
+    .call(d3.drag()
+);
+        
+svg.call(d3.zoom()
+    .scaleExtent([1 / 2, 50])
+    .on("zoom", zoomed));
+
+function zoomed() {
+  svg.select("#box2").attr("transform", d3.event.transform);
+  svg.selectAll("path").attr("stroke-width", {{trait_ep}}*1/(d3.event.transform.k))
+  svg.selectAll("circle").attr("stroke-width", {{trait_ep3}}*1/(d3.event.transform.k))
+  svg.selectAll("circle").attr("stroke-dasharray", 0.5/(d3.event.transform.k)+"px, "+0.5/(d3.event.transform.k)+"px")
+  console.log(d3.event.transform.k)
+}
+
+
+
+
+</script>
