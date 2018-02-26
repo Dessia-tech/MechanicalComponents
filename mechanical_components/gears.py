@@ -1123,7 +1123,7 @@ class GearAssembly(persistent.Persistent):
         SVG1.Convert(L3,'Construction','red',1/50,0,'0.1px, 0.1px')
         SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
         
-    def SVGExport(self,name,position1=None,position2=None,local=0):
+    def D3Export(self,position1=None,position2=None):
         if position1==None:
             position1=(0,0)
         if position2==None:
@@ -1173,17 +1173,6 @@ class GearAssembly(persistent.Persistent):
         
         L3.append(vm.Line2D(vm.Point2D(position1),vm.Point2D(position2)))
         
-        #G1=vm.Contour2D(LR)
-        #G1.MPLPlot()
-        
-        #definition de la viewbox
-#        boxX_min,boxX_max,boxY_min,boxY_max=npy.inf,-npy.inf,npy.inf,-npy.inf
-#        for li in Temp:
-#            if li['inbox']==0:
-#                boxX_min=min(boxX_min,float(min(npy.array(li['data'])[:,0])))
-#                boxY_min=min(boxY_min,float(min(npy.array(li['data'])[:,1])))
-#                boxX_max=max(boxX_max,float(max(npy.array(li['data'])[:,0])))
-#                boxY_max=max(boxY_max,float(max(npy.array(li['data'])[:,1])))
         boxX_min=min(position1[0]-self.Gear1.outside_diameter/2,position2[0]-self.Gear2.outside_diameter/2)*1000
         boxX_max=max(position1[0]+self.Gear1.outside_diameter/2,position2[0]+self.Gear2.outside_diameter/2)*1000
         boxY_min=min(position1[1]-self.Gear1.outside_diameter/2,position2[1]-self.Gear2.outside_diameter/2)*1000
@@ -1199,12 +1188,12 @@ class GearAssembly(persistent.Persistent):
         vb3=boxX_max-boxX_min
         vb4=boxY_max-boxY_min
         
-        data,ListGear1=self.ConvertBspline(L1[0],0,1,2,1/scale,0)
-        data2,ListGear2=self.ConvertBspline(L1[1],0,2,2,1/scale,0)
+        data,ListGear1=self._ConvertBspline(L1[0],0,1,2,1/scale,0)
+        data2,ListGear2=self._ConvertBspline(L1[1],0,2,2,1/scale,0)
         data.extend(data2)
-        data2=self.ConvertGeom(L2,3,2,0.5/scale,0,0)
+        data2=self._ConvertGeom(L2,3,2,0.5/scale,0,0)
         data.extend(data2)
-        data2=self.ConvertGeom(L3,3,2,0.5/scale,1,0)
+        data2=self._ConvertGeom(L3,3,2,0.5/scale,1,0)
         data.extend(data2)
         
         rot1=2*npy.pi/self.Gear1.tooth_number*180/npy.pi
@@ -1213,17 +1202,19 @@ class GearAssembly(persistent.Persistent):
         rot2=-2*npy.pi/self.Gear2.tooth_number*180/npy.pi
         pos2_x=position2[0]*1000
         pos2_y=position2[1]*1000
-        
-        if local==1:
-            with open(name,'w') as file:
-                env = Environment(loader=PackageLoader('mechanical_components', 'templates'),
-                          autoescape=select_autoescape(['html', 'xml']))
-                template = env.get_template('template_animate2.html')
-                file.write(template.render(ListGear1=ListGear1,ListGear2=ListGear2,list_name=name,data=data,width=width,height=height,vb1=vb1,vb2=vb2,vb3=vb3,vb4=vb4,trait_ep=1/scale,trait_ep3=0.5/scale,rot1=rot1,pos1_x=pos1_x,pos1_y=pos1_y,rot2=rot2,pos2_x=pos2_x,pos2_y=pos2_y))
                 
         return ListGear1,ListGear2,data,width,height,scale,vb1,vb2,vb3,vb4,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y
+    
+    def SVGExport(self,name='export.html',position1=None,position2=None):
+        ListGear1,ListGear2,data,width,height,scale,vb1,vb2,vb3,vb4,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y=self.D3Export(position1,position2)
+        with open(name,'w') as file:
+            env = Environment(loader=PackageLoader('mechanical_components', 'templates'),
+                      autoescape=select_autoescape(['html', 'xml']))
+            template = env.get_template('template_animate2.html')
+            file.write(template.render(ListGear1=ListGear1,ListGear2=ListGear2,list_name=name,data=data,width=width,height=height,vb1=vb1,vb2=vb2,vb3=vb3,vb4=vb4,trait_ep=1/scale,trait_ep3=0.5/scale,rot1=rot1,pos1_x=pos1_x,pos1_y=pos1_y,rot2=rot2,pos2_x=pos2_x,pos2_y=pos2_y))
         
-    def ConvertBspline(self,liste,curve,group,color,size,inbox):
+        
+    def _ConvertBspline(self,liste,curve,group,color,size,inbox):
         #Export ensemble de ligne uniquement
         List=[]
         ListTotal=[]
@@ -1243,16 +1234,16 @@ class GearAssembly(persistent.Persistent):
 #        ListTotal.extend(List[0]['data'])
         return List,ListTotal
     
-    def ConvertGeom(self,liste,group,color,size,dash,inbox):
+    def _ConvertGeom(self,liste,group,color,size,dash,inbox):
         List=[]
         for i,obj in enumerate(liste):
             dico={}
-            if 'Circle2D' in str(obj.__class__):
+            if 'Circle2D' in obj.__class__.__name__:
                 dico['cx']=float(obj.center.vector[0])*1000
                 dico['cy']=float(obj.center.vector[1])*1000
                 dico['r']=float(obj.radius)*1000
                 dico['curve']=1
-            if 'Line2D' in str(obj.__class__):
+            if 'Line2D' in obj.__class__.__name__:
                 dico['data']=[[float(obj.points[0].vector[0])*1000,float(obj.points[0].vector[1])*1000],[float(obj.points[1].vector[0])*1000,float(obj.points[1].vector[1])*1000]]
                 dico['curve']=2
             dico['group']=group
