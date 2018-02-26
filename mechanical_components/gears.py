@@ -1167,6 +1167,8 @@ class GearAssembly(persistent.Persistent):
         alpha=npy.pi/4+0.8
         L3.append(vm.Line2D(vm.Point2D((position1[0]-npy.cos(alpha)*self.Gear1.root_diameter_active/2,position1[1]-npy.sin(alpha)*self.Gear1.root_diameter_active/2)),vm.Point2D((position1[0]+npy.cos(alpha)*self.Gear1.root_diameter_active/2,position1[1]+npy.sin(alpha)*self.Gear1.root_diameter_active/2))))
         
+        L3.append(vm.Line2D(vm.Point2D(position1),vm.Point2D(position2)))
+        
         #G1=vm.Contour2D(LR)
         #G1.MPLPlot()
         
@@ -1193,25 +1195,13 @@ class GearAssembly(persistent.Persistent):
         vb3=boxX_max-boxX_min
         vb4=boxY_max-boxY_min
         
-        Temp,ListGear1=self.ConvertBspline(L1[0],0,1,2,1/scale,0)
-        Temp2,ListGear2=self.ConvertBspline(L1[1],0,2,2,1/scale,0)
-        Temp.extend(Temp2)
-        Temp2=self.ConvertGeom(L2,3,2,0.5/scale,0,0)
-        Temp.extend(Temp2)
-        Temp2=self.ConvertGeom(L3,3,2,0.5/scale,1,0)
-        Temp.extend(Temp2)
-        
-        data=str(Temp)
-        data=data.replace(chr(39)+'data'+chr(39),'data')
-        data=data.replace(chr(39)+'curve'+chr(39),'curve')
-        data=data.replace(chr(39)+'group'+chr(39),'group')
-        data=data.replace(chr(39)+'color'+chr(39),'color')
-        data=data.replace(chr(39)+'size'+chr(39),'size')
-        data=data.replace(chr(39)+'inbox'+chr(39),'inbox')
-        data=data.replace(chr(39)+'cx'+chr(39),'cx')
-        data=data.replace(chr(39)+'cy'+chr(39),'cy')
-        data=data.replace(chr(39)+'r'+chr(39),'r')
-        data=data.replace(chr(39)+'dash'+chr(39),'dash')
+        data,ListGear1=self.ConvertBspline(L1[0],0,1,2,1/scale,0)
+        data2,ListGear2=self.ConvertBspline(L1[1],0,2,2,1/scale,0)
+        data.extend(data2)
+        data2=self.ConvertGeom(L2,3,2,0.5/scale,0,0)
+        data.extend(data2)
+        data2=self.ConvertGeom(L3,3,2,0.5/scale,1,0)
+        data.extend(data2)
         
         rot1=2*npy.pi/self.Gear1.tooth_number*180/npy.pi
         pos1_x=position1[0]*1000
@@ -1222,14 +1212,9 @@ class GearAssembly(persistent.Persistent):
         
         if local==1:
             with open(name,'w') as file:
-                file.write(self.ExportSVGGearSet(str(ListGear1),str(ListGear2),data,width,height,1/scale,0.5/scale,vb1,vb2,vb3,vb4,name,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y))
-        
-#        SVG1=LibSvg.SVGTrace(1000)
-#        SVG1.Convert(L1[0],'gear1','black',1/50,0)
-#        SVG1.Convert(L1[1],'gear2','red',1/50,0)
-#        SVG1.Convert(L2,'Construction','blue',1/50,0,'0.1px, 0.1px')
-#        SVG1.Convert(L3,'Construction','red',1/50,0,'0.1px, 0.1px')
-#        SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
+                file.write(self.ExportSVGGearSet(ListGear1,ListGear2,data,width,height,1/scale,0.5/scale,vb1,vb2,vb3,vb4,name,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y))
+                
+        return ListGear1,ListGear2,data,width,height,scale,vb1,vb2,vb3,vb4,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y
         
     def ExportSVGGearSet(self,ListGear1,ListGear2,data,width,height,trait_ep,trait_ep3,vb1,vb2,vb3,vb4,
                          name,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y):

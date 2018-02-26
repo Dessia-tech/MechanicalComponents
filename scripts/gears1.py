@@ -44,7 +44,7 @@ for i,ga in enumerate(results.solutions):
     ga.Gear2.GearGenerationSVGExport('Cremaillere_Z2-s{}.html'.format(str(i)))
     ga.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
     ga.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
-    ga.SVGGearSet('exp.html',(0,0),(-ga.center_distance,0),1)
+    ga.SVGGearSet('exp.html',(0,0),(ga.center_distance,0),1)
     r=ga.FreeCADExport('GearAssembly_{}'.format(i),(0,0),(ga.center_distance,0),
                      'python','/usr/lib/freecad/lib',['fcstd','stl'])
     print(r)
