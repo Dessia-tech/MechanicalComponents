@@ -1143,14 +1143,30 @@ class GearAssembly(persistent.Persistent):
         L1=self.GearAssemblyTrace([TG1,TG2],[(0,0),(0,0)],list_rot)
         L2=[]
         L2.append(vm.Circle2D(vm.Point2D(position1),self.DF1/2))
-        L2.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.DF2/2))
+        L2.append(vm.Circle2D(vm.Point2D(position2),self.DF2/2))
         L2.append(vm.Circle2D(vm.Point2D(position1),self.Gear1.base_diameter/2))
-        L2.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.Gear2.base_diameter/2))
+        L2.append(vm.Circle2D(vm.Point2D(position2),self.Gear2.base_diameter/2))
         L2.append(vm.Circle2D(vm.Point2D(position1),self.pitch_diameter_factory1/2))
-        L2.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.pitch_diameter_factory2/2))
+        L2.append(vm.Circle2D(vm.Point2D(position2),self.pitch_diameter_factory2/2))
+        L2.append(vm.Circle2D(vm.Point2D(position1),self.Gear1.root_diameter_active/2))
+        L2.append(vm.Circle2D(vm.Point2D(position2),self.Gear2.root_diameter_active/2))
+        
         L3=[]
-        L3.append(vm.Circle2D(vm.Point2D(position1),self.Gear1.root_diameter_active/2))
-        L3.append(vm.Circle2D(vm.Point2D((self.center_distance,0)),self.Gear2.root_diameter_active/2))
+        #quote
+        alpha=npy.pi/4
+        L3.append(vm.Line2D(vm.Point2D((position2[0]-npy.cos(alpha)*self.DF2/2,position2[1]-npy.sin(alpha)*self.DF2/2)),vm.Point2D((position2[0]+npy.cos(alpha)*self.DF2/2,position2[1]+npy.sin(alpha)*self.DF2/2))))
+        alpha=npy.pi/4+0.4
+        L3.append(vm.Line2D(vm.Point2D((position2[0]-npy.cos(alpha)*self.Gear2.base_diameter/2,position2[1]-npy.sin(alpha)*self.Gear2.base_diameter/2)),vm.Point2D((position2[0]+npy.cos(alpha)*self.Gear2.base_diameter/2,position2[1]+npy.sin(alpha)*self.Gear2.base_diameter/2))))
+        alpha=npy.pi/4+0.8
+        L3.append(vm.Line2D(vm.Point2D((position2[0]-npy.cos(alpha)*self.Gear2.root_diameter_active/2,position2[1]-npy.sin(alpha)*self.Gear2.root_diameter_active/2)),vm.Point2D((position2[0]+npy.cos(alpha)*self.Gear2.root_diameter_active/2,position2[1]+npy.sin(alpha)*self.Gear2.root_diameter_active/2))))
+        
+        alpha=npy.pi/4
+        L3.append(vm.Line2D(vm.Point2D((position1[0]-npy.cos(alpha)*self.DF1/2,position1[1]-npy.sin(alpha)*self.DF1/2)),vm.Point2D((position1[0]+npy.cos(alpha)*self.DF1/2,position1[1]+npy.sin(alpha)*self.DF1/2))))
+        alpha=npy.pi/4+0.4
+        L3.append(vm.Line2D(vm.Point2D((position1[0]-npy.cos(alpha)*self.Gear1.base_diameter/2,position1[1]-npy.sin(alpha)*self.Gear1.base_diameter/2)),vm.Point2D((position1[0]+npy.cos(alpha)*self.Gear1.base_diameter/2,position1[1]+npy.sin(alpha)*self.Gear1.base_diameter/2))))
+        alpha=npy.pi/4+0.8
+        L3.append(vm.Line2D(vm.Point2D((position1[0]-npy.cos(alpha)*self.Gear1.root_diameter_active/2,position1[1]-npy.sin(alpha)*self.Gear1.root_diameter_active/2)),vm.Point2D((position1[0]+npy.cos(alpha)*self.Gear1.root_diameter_active/2,position1[1]+npy.sin(alpha)*self.Gear1.root_diameter_active/2))))
+        
         #G1=vm.Contour2D(LR)
         #G1.MPLPlot()
         
@@ -1180,9 +1196,9 @@ class GearAssembly(persistent.Persistent):
         Temp,ListGear1=self.ConvertBspline(L1[0],0,1,2,1/scale,0)
         Temp2,ListGear2=self.ConvertBspline(L1[1],0,2,2,1/scale,0)
         Temp.extend(Temp2)
-        Temp2=self.ConvertCircle(L2,1,3,2,0.5/scale,1,0)
+        Temp2=self.ConvertGeom(L2,3,2,0.5/scale,0,0)
         Temp.extend(Temp2)
-        Temp2=self.ConvertCircle(L3,1,3,2,0.5/scale,1,0)
+        Temp2=self.ConvertGeom(L3,3,2,0.5/scale,1,0)
         Temp.extend(Temp2)
         
         data=str(Temp)
@@ -1245,14 +1261,18 @@ class GearAssembly(persistent.Persistent):
 #        ListTotal.extend(List[0]['data'])
         return List,ListTotal
     
-    def ConvertCircle(self,liste,curve,group,color,size,dash,inbox):
+    def ConvertGeom(self,liste,group,color,size,dash,inbox):
         List=[]
         for i,obj in enumerate(liste):
             dico={}
-            dico['cx']=float(obj.center.vector[0])*1000
-            dico['cy']=float(obj.center.vector[1])*1000
-            dico['r']=float(obj.radius)*1000
-            dico['curve']=curve
+            if 'Circle2D' in str(obj.__class__):
+                dico['cx']=float(obj.center.vector[0])*1000
+                dico['cy']=float(obj.center.vector[1])*1000
+                dico['r']=float(obj.radius)*1000
+                dico['curve']=1
+            if 'Line2D' in str(obj.__class__):
+                dico['data']=[[float(obj.points[0].vector[0])*1000,float(obj.points[0].vector[1])*1000],[float(obj.points[1].vector[0])*1000,float(obj.points[1].vector[1])*1000]]
+                dico['curve']=2
             dico['group']=group
             dico['color']=color
             dico['size']=size
