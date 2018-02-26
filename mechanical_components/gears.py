@@ -1202,16 +1202,20 @@ class GearAssembly(persistent.Persistent):
         rot2=-2*npy.pi/self.Gear2.tooth_number*180/npy.pi
         pos2_x=position2[0]*1000
         pos2_y=position2[1]*1000
-                
-        return ListGear1,ListGear2,data,width,height,scale,vb1,vb2,vb3,vb4,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y
+        dico_export={'ListGear1':ListGear1,'ListGear2':ListGear2,'data':data,'width':width,'height':height,'scale':scale,'vb1':vb1,'vb2':vb2,'vb3':vb3,'vb4':vb4,'rot1':rot1,'pos1_x':pos1_x,'pos1_y':pos1_y,'rot2':rot2,'pos2_x':pos2_x,'pos2_y':pos2_y}
+        
+        return dico_export
     
     def SVGExport(self,name='export.html',position1=None,position2=None):
-        ListGear1,ListGear2,data,width,height,scale,vb1,vb2,vb3,vb4,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y=self.D3Export(position1,position2)
+        dico_export=self.D3Export(position1,position2)
+        dico_export['list_name']=name
+        dico_export['trait_ep']=1/dico_export['scale']
+        dico_export['trait_ep3']=0.5/dico_export['scale']
         with open(name,'w') as file:
             env = Environment(loader=PackageLoader('mechanical_components', 'templates'),
                       autoescape=select_autoescape(['html', 'xml']))
             template = env.get_template('template_animate2.html')
-            file.write(template.render(ListGear1=ListGear1,ListGear2=ListGear2,list_name=name,data=data,width=width,height=height,vb1=vb1,vb2=vb2,vb3=vb3,vb4=vb4,trait_ep=1/scale,trait_ep3=0.5/scale,rot1=rot1,pos1_x=pos1_x,pos1_y=pos1_y,rot2=rot2,pos2_x=pos2_x,pos2_y=pos2_y))
+            file.write(template.render(**dico_export))
         
         
     def _ConvertBspline(self,liste,curve,group,color,size,inbox):
