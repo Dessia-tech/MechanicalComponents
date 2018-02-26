@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style type="text/css">
+
+svg {
+  font-family: "Helvetica Neue", Helvetica;
+}
+
+.legend {
+		font-size: 2px;             
+		text-anchor: start;
+		}
+
+
+</style>
+<body>
+<svg width="300" height="200">
+  <defs>
+    <marker
+      id="arrow"
+      markerUnits="strokeWidth"
+      markerWidth="20" markerHeight="30" viewBox="-20 -20 30 30"
+      refX="0"
+      refY="0"
+      orient="auto">
+      <polyline points="-20,-15 0,0 -20,15" stroke="black" stroke-width="1px" fill="none"/>
+    </marker>
+    <marker
+      id="start"
+      markerUnits="strokeWidth"
+      markerWidth="40" markerHeight="60" viewBox="-40 -40 60 60"
+      refX="0"
+      refY="0"
+      orient="auto">
+      <polyline points="40,-30 0,0 40,30" stroke="black" stroke-width="1px" fill="none"/>
+    </marker>
+  </defs>
+</svg>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var width = {{width}};
+var height = {{height}};
+var transform = d3.zoomIdentity;
+
+var svg = d3.select('body').select('svg')
+
+var DataCurve = {{data|safe}};
+var ListGear1 = {{ListGear1|safe}};
+var ListGear2 = {{ListGear2|safe}};
+
+var vb1 = {{vb1}};
+var vb2 = {{vb2}};
+var vb3 = {{vb3}};
+var vb4 = {{vb4}};
+
+
+var svg2 = d3.select("svg")
+    .attr('width', width)
+    .attr('height', height)
+    .attr('viewBox',"{{vb1}} {{vb2}} {{vb3}} {{vb4}}")
+    .append("g")
+    .attr("id","box1")
+    .attr("transform","translate(0,0)rotate(0)")
+    .append("g")
+    .attr("id","box2")
+   
+var anime = [
+    { "group_a":"gear1_a","group": "gear1", "rot": {{rot1}},"name":"#gear1","TX":{{pos1_x}},"TY":{{pos1_y}} },
+    { "group_a":"gear2_a","group": "gear2", "rot": {{rot2}},"name":"#gear2","TX":{{pos2_x}},"TY":{{pos2_y}} },
+    { "group_a":"Construction_a","group": "Construction", "rot": 0,"name":"#Construction","TX":0,"TY":0},
+    { "group_a":"Quote_a","group": "Quote", "rot": 0,"name":"#Quote","TX":0,"TY":0}];
+    
+var Ganime = svg2.selectAll("svg")
+    .data(anime)
+    .enter()
+    .append("g")
+    .attr("id","GROUP")
+    .attr("transform", function(d){return "translate("+d.TX+" , "+d.TY+")"})
+    .append("g")
+    .attr("id",function(d){return d.group})
+
+    
+function G2anime(){ 
+    if (click){
+    d3.selectAll("svg")
+    Ganime
+    .transition()
+    .ease(d3.easeLinear)
+    .duration(1000)
+    .attrTween("transform", function(d) { return d3.interpolateString("rotate(0)", "rotate("+d.rot+")") })
+    .on("end",G2anime)
+    }
+}
+    
+var colorblue=d3.scaleLinear()
+		.domain([0,54])
+		.range(["white",  "#3399FF"]);
+var areaGenerator = d3.area();
+var area = areaGenerator(ListGear1);
+
+// Create a path element and set its d attribute
+d3.selectAll("#gear1")
+    	.append('path')
+    	.attr('d', area)
+     .attr('fill',colorblue(4));
+
+var colorred=d3.scaleLinear()
+		.domain([0,54])
+		.range(["white",  "red"]);
+var areaGenerator = d3.area();
+var area = areaGenerator(ListGear2);
+
+// Create a path element and set its d attribute
+d3.selectAll("#gear2")
+    	.append('path')
+    	.attr('d', area)
+     .attr('fill',colorred(2));
+    
+var quoteComp = 0
+var quoteFont = (vb3-vb1)/80;
+console.log(quoteFont)
+Constr()
+
+var click = false
+d3.selectAll("path")
+    //.on("click",G2anime)
+    .on("click", function() {
+  click = !click;
+  console.log(click);
+  if (click) {
+    G2anime();
+    console.log('essai')
+  }
+});   
+    
+
+function precisionRound(number, precision) {
+      var factor = Math.pow(10, precision);
+      return Math.round(number * factor) / factor;
+}
+    
+function Constr(){
+      DataCurve.forEach(function(d) {
+          if (d.curve==0){
+              var lineGenerator = d3.line();
+              lineGenerator.curve(d3.curveCardinal.tension(0));
+              var pathString = lineGenerator(d.data);
+              if (d.group==1){
+                  d3.selectAll("#gear1").append('path')
+                  	.attr('d', pathString)
+                    .attr("stroke-width", d.size)
+                    .attr("stroke", "blue")
+                    .attr("stroke-dasharray","none")
+                    .attr("class","gear")
+                    .attr("fill", "none");}
+              else if (d.group==2){
+                  d3.selectAll("#gear2").append('path')
+                    .attr('d', pathString)
+                    .attr("stroke-width", d.size)
+                    .attr("stroke", "red")
+                    .attr("stroke-dasharray","none")
+                    .attr("class","gear")
+                    .attr("fill", "none");}
+          }
+          if (d.curve==1){
+              d3.selectAll("#Construction").append('circle')
+                  .attr('cx',d.cx)
+                  .attr('cy',d.cy)
+                  .attr('r',d.r)
+                  .attr("stroke-width", d.size)
+                  .attr("stroke", "blue")
+                  .attr("fill", "none")
+                  .attr("stroke-dasharray","0.5px, 0.5px")
+
+          }
+          if (d.curve==2){
+              var lineGenerator = d3.line();
+              var pathString = lineGenerator(d.data);
+              quoteComp+=1;
+              if (quoteComp % 2 ==0){var quoteOffset = "10%"}
+              else {var quoteOffset = "70%"}
+              quoteVal=Math.pow(Math.pow(d.data[0][0]-d.data[1][0],2)+Math.pow(d.data[0][1]-d.data[1][1],2),0.5)
+              d3.selectAll("#Quote").append('path')
+                  .attr("d",pathString)
+                  .attr("stroke-width", d.size)
+                  .attr("stroke", "black")
+                  .attr("class","quote")
+                  .attr("fill", "none")
+                  .attr("marker-start","url(#start)")
+                  .attr("marker-end","url(#arrow)")
+                  .attr("id", "quote_"+quoteComp)
+              d3.selectAll("#Quote")
+                  .append("text")
+                  .attr("class", "quoteText")
+                  .style('font-size', quoteFont)
+                  .attr("dy", -1)
+                  .append("textPath")
+                  .attr("xlink:href","#quote_"+quoteComp)
+                  .attr("startOffset",quoteOffset)
+                  .text("\u2300 "+precisionRound(quoteVal,2)+" mm")
+              console.log(d.data[0][0])
+          }
+      });
+          
+}
+
+svg.selectAll()
+    .call(d3.drag()
+);
+        
+var zoom = d3.zoom()
+    .scaleExtent([1 / 2, 50])
+    .on("zoom", zoomed);
+svg.call(zoom);
+
+function zoomed() {
+  svg.select("#box2").attr("transform", d3.event.transform);
+  svg.selectAll(".gear").attr("stroke-width", {{trait_ep}}*1/(d3.event.transform.k))
+  svg.selectAll(".quote").attr("stroke-width", {{trait_ep3}}*1/(d3.event.transform.k))
+  svg.selectAll(".quoteText").style("font-size", quoteFont*1/(d3.event.transform.k))
+  svg.selectAll(".quoteText").attr("dy", -1*1/(d3.event.transform.k))
+  svg.selectAll("circle").attr("stroke-width", {{trait_ep3}}*1/(d3.event.transform.k))
+  svg.selectAll("circle").attr("stroke-dasharray", 0.5/(d3.event.transform.k)+"px, "+0.5/(d3.event.transform.k)+"px")
+  console.log(d3.event.transform.k)
+}
+
+TextShowHide=svg.select("#box1").append("text")
+	.attr("x", vb1+0.05*(vb3-vb1))             
+	.attr("y", vb2+0.6*(vb4-vb2))    
+	.attr("class", "legend")
+	.style("fill", "blue")        
+	.text("Show/Hide Construction line")
+var bbox = TextShowHide.node().getBBox()
+var rect1 = svg.append("rect")
+  .attr('x', bbox.x)
+  .attr('y', bbox.y)
+  .attr('width', bbox.width)
+  .attr('height', bbox.height)
+  .attr('fill','yellow')
+  .attr('opacity',0.3)
+  .on("click", function(){
+		// Determine if current line is visible
+		var active   = Construction.active ? false : true,
+		  newOpacity = active ? 0 : 1;
+		// Hide or show the elements
+		d3.select("#Construction").style("opacity", newOpacity);
+		// Update whether or not the elements are active
+		Construction.active = active;
+	})
+	
+TextQuote=svg.select("#box1").append("text")
+	.attr("x", vb1+0.05*(vb3-vb1))             
+	.attr("y", vb2+0.62*(vb4-vb2))    
+	.attr("class", "legend")
+	.style("fill", "blue")        
+	.text("Show/Hide Quote")
+var bbox = TextQuote.node().getBBox()
+var rect1 = svg.append("rect")
+  .attr('x', bbox.x)
+  .attr('y', bbox.y)
+  .attr('width', bbox.width)
+  .attr('height', bbox.height)
+  .attr('fill','yellow')
+  .attr('opacity',0.3)
+  .on("click", function(){
+		// Determine if current line is visible
+		var active   = Construction.active ? false : true,
+		  newOpacity = active ? 0 : 1;
+		// Hide or show the elements
+		d3.select("#Quote").style("opacity", newOpacity);
+		// Update whether or not the elements are active
+		Construction.active = active;
+	})
+	
+TextStart=svg.select("#box1").append("text")
+  	.attr("x", vb1+0.05*(vb3-vb1))
+  	.attr("y", vb2+0.64*(vb4-vb2))
+  	.attr("class", "legend")
+  	.style("fill", "blue")
+  	.text("Start/Stop")
+  var bbox = TextStart.node().getBBox()
+  var rect2 = svg.append("rect")
+    .attr('x', bbox.x)
+    .attr('y', bbox.y)
+    .attr('width', bbox.width)
+    .attr('height', bbox.height)
+    .attr('fill','yellow')
+    .attr('opacity',0.3)
+    .on("click", function() {
+      click = !click;
+      console.log(click);
+      if (click) {
+        G2anime();
+        console.log('essai')
+      }})
+      
+var active = d3.select(null);
+TextZoomInit=svg.select("#box1").append("text")
+      	.attr("x", vb1+0.05*(vb3-vb1))
+      	.attr("y", vb2+0.66*(vb4-vb2))
+      	.attr("class", "legend")
+      	.style("fill", "blue")
+      	.text("Zoom Init")
+      var bbox = TextZoomInit.node().getBBox()
+      var rect3 = svg.append("rect")
+    .attr('x', bbox.x)
+    .attr('y', bbox.y)
+    .attr('width', bbox.width)
+    .attr('height', bbox.height)
+    .attr('fill','yellow')
+    .attr('opacity',0.3)
+    .on("click",
+      function() {
+         active.classed("active", false);
+         active = d3.select(null);
+    
+         svg.transition()
+             .duration(750)
+             .call( zoom.transform, d3.zoomIdentity );
+        }
+    )
+
+
+</script>

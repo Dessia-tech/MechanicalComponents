@@ -14,14 +14,14 @@ input_dict=(
           {'type':'material1','nom':'hardened_alloy_steel'},
           {'type':'material2','nom':'hardened_alloy_steel'},
           {'type':'nb_cycle1','nom':10000000},
-          {'type':'rim1','nom':'rim_gear'},
-          {'type':'rim2','nom':'rim_gear'},
-          {'type':'alpha_rim1','nom':1.1},
-          {'type':'alpha_rim2','nom':1.1},
-          {'type':'boring_diameter1','nom':10},
-          {'type':'boring_diameter2','nom':30},
-          {'type':'thickness_rim1','nom':6},
-          {'type':'thickness_rim2','nom':6},
+#          {'type':'rim1','nom':'rim_gear'},
+#          {'type':'rim2','nom':'rim_gear'},
+#          {'type':'alpha_rim1','nom':1.1},
+#          {'type':'alpha_rim2','nom':1.1},
+#          {'type':'boring_diameter1','nom':10},
+#          {'type':'boring_diameter2','nom':30},
+#          {'type':'thickness_rim1','nom':6},
+#          {'type':'thickness_rim2','nom':6},
           )
 
 #constraint_dict=({},)
@@ -37,13 +37,13 @@ results.CSVExport('data.csv','w')
 ### Sorties graphiques SVG
 print('Nb solutions:',len(results.solutions))
 for i,ga in enumerate(results.solutions):
-    ga.SVGExport('Assembly_{}.html'.format(i),(0,0),(ga.center_distance,0))
     ga.Gear1.rack.SVGExport(5,'rack1-s{}.html'.format(str(i)))
     ga.Gear2.rack.SVGExport(5,'rack2-s{}.html'.format(str(i)))
     ga.Gear1.GearGenerationSVGExport('Cremaillere_Z1-s{}.html'.format(str(i)))
     ga.Gear2.GearGenerationSVGExport('Cremaillere_Z2-s{}.html'.format(str(i)))
     ga.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
     ga.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
+    ga.SVGExport()
     r=ga.FreeCADExport('GearAssembly_{}'.format(i),(0,0),(ga.center_distance,0),
                      'python','/usr/lib/freecad/lib',['fcstd','stl'])
     print(r)
