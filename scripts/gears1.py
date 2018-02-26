@@ -37,14 +37,13 @@ results.CSVExport('data.csv','w')
 ### Sorties graphiques SVG
 print('Nb solutions:',len(results.solutions))
 for i,ga in enumerate(results.solutions):
-    ga.SVGExport('Assembly_{}.html'.format(i),(0,0),(ga.center_distance,0))
     ga.Gear1.rack.SVGExport(5,'rack1-s{}.html'.format(str(i)))
     ga.Gear2.rack.SVGExport(5,'rack2-s{}.html'.format(str(i)))
     ga.Gear1.GearGenerationSVGExport('Cremaillere_Z1-s{}.html'.format(str(i)))
     ga.Gear2.GearGenerationSVGExport('Cremaillere_Z2-s{}.html'.format(str(i)))
     ga.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
     ga.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
-    ga.SVGGearSet('exp.html',(0,0),(ga.center_distance,0),1)
+    ga.SVGExport('exp.html',local=1)
     r=ga.FreeCADExport('GearAssembly_{}'.format(i),(0,0),(ga.center_distance,0),
                      'python','/usr/lib/freecad/lib',['fcstd','stl'])
     print(r)

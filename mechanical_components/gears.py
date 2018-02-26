@@ -1098,7 +1098,7 @@ class GearAssembly(persistent.Persistent):
         return list(d.keys())+d1+d3,list(d.values())+d2+d4
     
         
-    def SVGExport(self,name,position1,position2):
+    def SVGGearSet(self,name,position1,position2):
         #tuple1 et 2 correspondent a la position des centres
         TG1=self.Gear1.GearContours(5)
         TG2=self.Gear2.GearContours(5)
@@ -1123,7 +1123,11 @@ class GearAssembly(persistent.Persistent):
         SVG1.Convert(L3,'Construction','red',1/50,0,'0.1px, 0.1px')
         SVG1.Show(name,{'gear1':{'R':[2*npy.pi/self.Gear1.tooth_number,0,0]},'gear2':{'R':[-2*npy.pi/self.Gear2.tooth_number,self.center_distance,0]}})
         
-    def SVGGearSet(self,name,position1,position2,local=0):
+    def SVGExport(self,name,position1=None,position2=None,local=0):
+        if position1==None:
+            position1=(0,0)
+        if position2==None:
+            position2=(self.center_distance,0)
         #tuple1 et 2 correspondent a la position des centres
         TG1=self.Gear1.GearContours(5)
         TG2=self.Gear2.GearContours(5)
@@ -1212,19 +1216,12 @@ class GearAssembly(persistent.Persistent):
         
         if local==1:
             with open(name,'w') as file:
-                file.write(self.ExportSVGGearSet(ListGear1,ListGear2,data,width,height,1/scale,0.5/scale,vb1,vb2,vb3,vb4,name,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y))
+                env = Environment(loader=PackageLoader('mechanical_components', 'templates'),
+                          autoescape=select_autoescape(['html', 'xml']))
+                template = env.get_template('template_animate2.html')
+                file.write(template.render(ListGear1=ListGear1,ListGear2=ListGear2,list_name=name,data=data,width=width,height=height,vb1=vb1,vb2=vb2,vb3=vb3,vb4=vb4,trait_ep=1/scale,trait_ep3=0.5/scale,rot1=rot1,pos1_x=pos1_x,pos1_y=pos1_y,rot2=rot2,pos2_x=pos2_x,pos2_y=pos2_y))
                 
         return ListGear1,ListGear2,data,width,height,scale,vb1,vb2,vb3,vb4,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y
-        
-    def ExportSVGGearSet(self,ListGear1,ListGear2,data,width,height,trait_ep,trait_ep3,vb1,vb2,vb3,vb4,
-                         name,rot1,pos1_x,pos1_y,rot2,pos2_x,pos2_y):
-        
-        env = Environment(loader=PackageLoader('mechanical_components', 'templates'),
-                          autoescape=select_autoescape(['html', 'xml']))
-        
-        template = env.get_template('template_animate2.html')
-        
-        return template.render(ListGear1=ListGear1,ListGear2=ListGear2,list_name=name,data=data,width=width,height=height,vb1=vb1,vb2=vb2,vb3=vb3,vb4=vb4,trait_ep=trait_ep,trait_ep3=trait_ep3,rot1=rot1,pos1_x=pos1_x,pos1_y=pos1_y,rot2=rot2,pos2_x=pos2_x,pos2_y=pos2_y)
         
     def ConvertBspline(self,liste,curve,group,color,size,inbox):
         #Export ensemble de ligne uniquement
