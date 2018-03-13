@@ -15,7 +15,7 @@ Created on Mon Mar  5 17:29:05 2018
 """
 
 verin = clutches.HydraulicCylinder(0.030, 0.050, 0.100, 0.005, 0, 0, 0)
-emb = clutches.Clutch(0.086, 0.125, 0.0006, 4, 0.062, 875, 1.5*(1/6)*10**-4, 0, verin)
+emb = clutches.Clutch(verin, separator_tooth_type = 'outer')
 
 regime = np.linspace(0, 2500*math.pi/30, 100)
 test = emb.DragTorque(regime, 0)
@@ -33,10 +33,17 @@ primitives.extend(verin.piston_volume)
 model_verin = vm.VolumeModel(primitives)
 resp=model_verin.FreeCADExport('python','cylinder','/usr/lib/freecad/lib/',['stl','fcstd'])
 
+## Export Freecad vérin
+primitives = []
+primitives.extend(verin.spring_volume)
+model_ressort = vm.VolumeModel(primitives)
+resp=model_ressort.FreeCADExport('python','spring','/usr/lib/freecad/lib/',['stl','fcstd'])
+print(resp)
+
 # Export Freecad embrayage
 primitives = []
-
-primitives.extend(emb.plate_volume)
+primitives.extend(emb.separator_plate_volume)
+primitives.extend(emb.friction_plate_volume)
 model_emb = vm.VolumeModel(primitives)
 resp=model_emb.FreeCADExport('python','plate','/usr/lib/freecad/lib/',['stl','fcstd'])
 
