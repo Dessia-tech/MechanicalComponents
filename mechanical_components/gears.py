@@ -214,7 +214,7 @@ class Rack(persistent.Persistent):
         
         R1=self.RackComplete(npy.arange(number))
         Ref=[vm.Line2D(vm.Point2D((-self.transverse_radial_pitch,0)),vm.Point2D(((number+1)*self.transverse_radial_pitch,0)))]
-        Ref.append(vm.Line2D(vm.Point2D((-self.transverse_radial_pitch,self.gear_addendum)),vm.Point2D(((number+1)*self.transverse_radial_pitch,self.gear_addendum))))
+        Ref.append(vm.Line2D(vm.Point2D((-self.transverse_radial_pitcgit push --set-upstream origin clutchesh,self.gear_addendum)),vm.Point2D(((number+1)*self.transverse_radial_pitch,self.gear_addendum))))
         Ref.append(vm.Line2D(vm.Point2D((-self.transverse_radial_pitch,-self.gear_dedendum)),vm.Point2D(((number+1)*self.transverse_radial_pitch,-self.gear_dedendum))))
         SVG1=LibSvg.SVGTrace(700)
         SVG1.Convert(R1,'R1','black',0.0002,0)
