@@ -1,15 +1,17 @@
-import math
-import numpy as np
-import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Mon Mar  5 11:20:18 2018
 
 @author: jezequel
 """
+
+import math
+import numpy as npy
+import volmdlr as vm
+import volmdlr.primitives3D as primitives3D
+import volmdlr.primitives2D as primitives2D
+
+from scipy.optimize import minimize
 
 class Clutch:
     """
@@ -46,6 +48,10 @@ class Clutch:
         self.separator_plate_volume = self.SeparatorPlateVolume()
         self.friction_plate_contours = self.FrictionPlateContour()
         self.friction_plate_volume = self.FrictionPlateVolume()
+        
+    def Update(self, values):
+        for key,value in values.items():
+            setattr(self,key,value)
         
     def DragTorque(self, omega, delta_p):
         """
@@ -501,3 +507,41 @@ class HydraulicCylinder:
         primitives.append(volume)
         
         return primitives
+    
+class ClutchOptimizer:
+    
+    def __init__(self,clutch,specs):
+        self.specs=specs
+        self.clutch=clutch
+        self.bounds=[]
+        self.attributes=[]
+        self.fixed_values={}
+        
+        
+        for k,v in self.specs.items():
+            tv = type(v)
+            if tv == tuple:
+                self.attributes.append(k)
+                self.bounds.append(v)
+            else:
+                self.fixed_values[k]=v
+
+        self.n=len(self.attributes)                
+
+        # Imposing default values                 
+    
+    def Optimize(self):
+        def Objective(xa):
+            values={}
+            for xai,attribute,bounds in zip(xa,self.attributes,self.bounds):
+                values[attribute]=bounds[0]+(bounds[1]-bounds[0])*xai
+            self.clutch.Update(values)
+            return self.clutch.DragTorque([100],0.003)[0]
+        
+        xra0=npy.random.random(self.n)
+        res=minimize(Objective,xra0,bounds=[(0,1)]*self.n)
+        return res
+
+
+                
+        

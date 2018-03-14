@@ -26,6 +26,9 @@ plt.plot(regime*30/math.pi, test)
 plt.show()
 """
 
+co=clutches.ClutchOptimizer(emb,{'plate_inner_radius':0.3,'plate_outer_radius':(0.35,0.4)})
+res=co.Optimize()
+
 ## Export Freecad vérin
 primitives = []
 primitives.extend(verin.chamber_volume)
