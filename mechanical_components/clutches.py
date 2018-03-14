@@ -87,20 +87,44 @@ class Clutch:
         
         return drag_torque
     
-#    def TransferredTorque(self):
-#        """
-#        Calculs the transferred torque during Inertia phase
-#        """
-#        tranferred_torque = self.friction_coeff*R*N*self.hydraulic_cylinder.cylinder_force
-#        
-#        return tranferred_torque
+    def SlippingTransferredTorque(self):
+        """
+        Calculs transferred torque when clutch is in slipping phase
+        """
+        return transferred_torque
         
-#    def ClutchAssembly(self):
-#        chamber_volume = self.hydraulic_cylinder.chamber_volume
-#        piston_rod_volume = self.hydraulic_cylinder.piston_rod_volume
-#        piston_head_volume = self.hydraulic_cylinder.piston_head_volume
-#        
-#        p0 = vm.Point3D((0, 0, 0), 'origin')
+    
+    def ClosedTransferredTorque(self):
+        """
+        Calculs the transferred torque when clutch is engaged
+        """
+        n = self.n_friction_plates
+        nu = 1
+        r2 = self.plate_outer_radius
+        r1 = self.plate_inner_radius
+        F = 1
+        
+        tranferred_torque = n*(2/3)*nu*F*(r2**3-r1**3)/(r2**2-r1**2)
+        
+        return tranferred_torque
+        
+    def Update(self):
+        """
+        Updates clutch object
+        """
+        
+    def Mass(self):
+        """ 
+        Calculs the mass of the entire clutch
+        """
+        # =====================================================================
+        # Separator plates
+        # =====================================================================
+        # Tooth height, module & pitch diameter
+        h = 0.005 # /!\ A changer
+        m = 
+        
+        mass = x + self.hydraulic_cylinder.Mass()
         
     def SeparatorPlateContour(self):
         """
@@ -325,13 +349,13 @@ class Clutch:
             primitives.extend([plate_volume, friction_paper_1_volume, friction_paper_2_volume])
         
         return primitives
-        
+        bjec
     
 class HydraulicCylinder:
     """
     Defines a hydraulic cylinder object
     """
-    def __init__(self, inner_radius, outer_radius, chamber_width, thickness,chamber_pressure,
+    def __init__(self, inner_radius, outer_radius, chamber_width, thickness, chamber_pressure,
                  spring_young_modulus = 80000, spring_poisson_ratio = 0.33,
                  spring_n_windings = 10, spring_wire_diameter = 0.0005, spring_outer_diameter = 0.01, 
                  spring_free_length = 0.01, spring_final_length = 0.005):
@@ -372,7 +396,12 @@ class HydraulicCylinder:
         
     def SpringStiffness(self):
         """
-        Spring stiffness calculation
+        Spring stiffnesf SpringResultingForce(self):
+        l0 = self.spring_free_length
+        l = self.spring_final_length
+        
+        F = -self.spring_stiffness*(l - l0)
+        s calculation
         """
         E = self.spring_young_modulus
         nu = self.spring_poisson_ratio
@@ -385,6 +414,14 @@ class HydraulicCylinder:
         stiffness = G*d**4/(8*n*D**3)
         
         return stiffness
+    
+    def Mass(self):
+        """
+        Calculs the mass of the hydraulinc cylinder
+        """
+        a = self.chamber_volume[1]
+        
+        return mass
         
     def ChamberContour(self):
         """
@@ -544,4 +581,5 @@ class ClutchOptimizer:
 
 
                 
-        
+
+
