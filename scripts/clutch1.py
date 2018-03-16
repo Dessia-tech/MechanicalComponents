@@ -26,7 +26,7 @@ plt.plot(regime*30/math.pi, test)
 plt.show()
 """
 
-co=clutches.ClutchOptimizer(emb, {'plate_inner_radius' : 0.060, 'plate_outer_radius' : (0.100, 0.120)})
+co=clutches.ClutchOptimizer(emb, {'plate_inner_radius' : 0.060, 'plate_height' : (0.007, 0.020)})
 res=co.Optimize()
 
 ## Export Freecad vérin

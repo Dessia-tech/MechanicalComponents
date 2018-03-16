@@ -51,6 +51,14 @@ class Clutch:
         self.friction_plate_contours = self.FrictionPlateContour()
         self.friction_plate_volume = self.FrictionPlateVolume()
         
+    def _get_plate_height(self):
+        return self.plate_outer_radius-self.plate_inner_radius
+
+    def _set_plate_height(self,value):
+        self.plate_outer_radius=self.plate_inner_radius+value
+
+    plate_height=property(_get_plate_height,_set_plate_height)
+        
     def Update(self, values):
         for key,value in values.items():
             self.hydraulic_cylinder
@@ -613,6 +621,7 @@ class ClutchOptimizer:
         self.attributes = []
         self.fixed_values = {}
         
+        
         for k,v in self.specs.items():
             tv = type(v)
             if tv == tuple:
@@ -627,7 +636,7 @@ class ClutchOptimizer:
     def Optimize(self):
         def Objective(xa):
             values = {}
-            for xai, attribute, bounds in zip(xa, self.attributes, self.bounds):
+            for xai, attribute, bounds in zip(xa, self.attributes, self.bounds):                    
                 values[attribute] = bounds[0] + (bounds[1] - bounds[0])*xai
             self.clutch.Update(values)
 #            return self.clutch.DragTorque([100], 0.003)[0]
