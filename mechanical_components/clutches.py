@@ -18,16 +18,17 @@ class Clutch:
     Defines a wet clutch object
     """
     def __init__(self,hydraulic_cylinder,
-                 plate_inner_radius = 0.090, plate_outer_radius = 0.120,
+                 plate_inner_radius = 0.090, plate_height = 0.030,
                  separator_plate_width = 0.0018, friction_plate_width = 0.0008, friction_paper_width = 0.0004,
                  separator_tooth_type = 'outer', clearance = 0.0002, n_friction_plates = 4,
                  oil_dynamic_viscosity = 0.062, oil_volumic_mass = 875,
                  input_flow = 1.5*(1/6)*10**-4,
                  max_pressure = 5000000, max_time = 0.2, max_drag_torque = 50,
                  name = ''):
+        
         # Plates parameters
         self.plate_inner_radius = plate_inner_radius
-        self.plate_outer_radius = plate_outer_radius
+        self.plate_height = plate_height
         self.separator_plate_width = separator_plate_width
         self.friction_plate_width = friction_plate_width
         self.friction_paper_width = friction_paper_width
@@ -53,18 +54,30 @@ class Clutch:
         self.friction_plate_contours = self.FrictionPlateContour()
         self.friction_plate_volume = self.FrictionPlateVolume()
         
+    def _get_plate_height(self):
+        return self.plate_outer_radius - self.plate_inner_radius
+
+    def _set_plate_height(self,value):
+        self.plate_outer_radius = self.plate_inner_radius + value
+
+    plate_height=property(_get_plate_height,_set_plate_height)
+        
     def Update(self, values):
         for key,value in values.items():
-            self.hydraulic_cylinder
-            setattr(self,key,value)
+            str_split = key.split('.')
+            if len(str_split) == 2:
+                setattr(getattr(self, str_split[0]), str_split[1], value)
+            elif len(str_split) == 1:
+                setattr(self,key,value)
         
         # Contours and volumes
         if math.isnan(self.plate_outer_radius):
-            print(values)
+            raise ValueError
         self.separator_plate_contours = self.SeparatorPlateContour()
         self.separator_plate_volume = self.SeparatorPlateVolume()
         self.friction_plate_contours = self.FrictionPlateContour()
-        self.friction_plate_volume = self.FrictionPlateVolume()            
+        self.friction_plate_volume = self.FrictionPlateVolume()
+        self.hydraulic_cylinder.Update()
     
         
     def DragTorque(self, omega, delta_p):
@@ -108,15 +121,15 @@ class Clutch:
         return transferred_torque
         
     
-    def ClosedTransferredTorque(self):
+    def EngagedTransferredTorque(self):
         """
         Calculs the transferred torque when clutch is engaged
         """
         n = self.n_friction_plates
-        nu = 1
+        nu = 0.11 # /!\ TODO
         r2 = self.plate_outer_radius
         r1 = self.plate_inner_radius
-        F = 100
+        F = self.hydraulic_cylinder.PistonForce() - self.hydraulic_cylinder.SpringResultingForce()
         
         tranferred_torque = n*(2/3)*nu*F*(r2**3-r1**3)/(r2**2-r1**2)
         
@@ -126,7 +139,7 @@ class Clutch:
         """
         Calculs the pressure applied on the clutch plates
         """
-        plate_contact_area = 2*math.pi*(self.plate_outer_radius - self.plate_inner_radius)
+        plate_contact_area = math.pi*(self.plate_outer_radius**2 - self.plate_inner_radius**2)
         
         F = self.hydraulic_cylinder.PistonForce() - self.hydraulic_cylinder.SpringResultingForce()
         
@@ -134,9 +147,9 @@ class Clutch:
         
         return pressure
     
-    def EngagingTime(self):
+    def EngagementTime(self):
         I = 0.1 # A définir
-        Ct = self.ClosedTransferredTorque()
+        Ct = self.EngagedTransferredTorque()
         delta_omega_0 = 100 # A définir
         
         # Cas Ct indépendant du temps
@@ -460,8 +473,27 @@ class HydraulicCylinder:
         self.spring_resulting_force = self.SpringResultingForce()
         self.engaged_chamber_pressure = engaged_chamber_pressure
         
+    def _get_height(self):
+        return self.outer_radius - self.inner_radius
+
+    def _set_height(self,value):
+        self.outer_radius = self.inner_radius + value
+
+    height=property(_get_height,_set_height)
+        
+    def Update(self):
+        # Contour & volumes
+        self.chamber_contour = self.ChamberContour()
+        self.chamber_volume = self.ChamberVolume()
+        
+        self.piston_rod_contour = self.PistonRodContour()
+        self.piston_volume = self.PistonVolume()
+        
+        self.spring_contour = self.SpringContour()
+        self.spring_volume = self.SpringVolume()
+        
     def PistonForce(self):
-        piston_area = 2*math.pi*self.outer_radius
+        piston_area = math.pi*self.outer_radius**2
         
         F = self.engaged_chamber_pressure*piston_area
         return F     
@@ -658,7 +690,7 @@ class ClutchOptimizer:
     def Optimize(self):
         def Objective(xa):
             values = {}
-            for xai, attribute, bounds in zip(xa, self.attributes, self.bounds):
+            for xai, attribute, bounds in zip(xa, self.attributes, self.bounds):                    
                 values[attribute] = bounds[0] + (bounds[1] - bounds[0])*xai
             self.clutch.Update(values)
 #            return self.clutch.DragTorque([100], 0.003)[0]
@@ -668,7 +700,7 @@ class ClutchOptimizer:
             return -self.clutch.PlatePressure() + self.clutch.max_pressure
         
         def TimeConstraint(xa):
-            return -self.clutch.EngagingTime() + self.clutch.max_time
+            return -self.clutch.EngagementTime() + self.clutch.max_time
         
         def DragTorqueConstraint(xa, regime, delta_p):
             return max(self.clutch.DragTorque(regime, delta_p)) - self.clutch.max_drag_torque
