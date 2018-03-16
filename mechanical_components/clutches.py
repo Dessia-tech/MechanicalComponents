@@ -22,7 +22,9 @@ class Clutch:
                  separator_plate_width = 0.0018, friction_plate_width = 0.0008, friction_paper_width = 0.0004,
                  separator_tooth_type = 'outer', clearance = 0.0002, n_friction_plates = 4,
                  oil_dynamic_viscosity = 0.062, oil_volumic_mass = 875,
-                 input_flow = 1.5*(1/6)*10**-4, max_pressure = 5000000, max_time = 0.2, name=''):
+                 input_flow = 1.5*(1/6)*10**-4,
+                 max_pressure = 5000000, max_time = 0.2, max_drag_torque = 50,
+                 name = ''):
         # Plates parameters
         self.plate_inner_radius = plate_inner_radius
         self.plate_outer_radius = plate_outer_radius
@@ -55,6 +57,15 @@ class Clutch:
         for key,value in values.items():
             self.hydraulic_cylinder
             setattr(self,key,value)
+        
+        # Contours and volumes
+        if math.isnan(self.plate_outer_radius):
+            print(values)
+        self.separator_plate_contours = self.SeparatorPlateContour()
+        self.separator_plate_volume = self.SeparatorPlateVolume()
+        self.friction_plate_contours = self.FrictionPlateContour()
+        self.friction_plate_volume = self.FrictionPlateVolume()            
+    
         
     def DragTorque(self, omega, delta_p):
         """
@@ -124,7 +135,7 @@ class Clutch:
         return pressure
     
     def EngagingTime(self):
-        I = 1 # A définir
+        I = 0.1 # A définir
         Ct = self.ClosedTransferredTorque()
         delta_omega_0 = 100 # A définir
         
@@ -145,23 +156,19 @@ class Clutch:
 
         # Separator plates
         sep_outer_contour = self.separator_plate_contours[0]
-#        separator_plate_inner_contour = self.separator_plate_contours[1] /!\ Voir pb d'aire de contour sur cercle
-        sep_inner_contour_area = math.pi*self.plate_inner_radius**2
-        sep_volume = (self.n_separator_plates + 1)*(sep_outer_contour.Area() - sep_inner_contour_area)*self.separator_plate_width # Last plate is 2 times wider
+        sep_inner_contour = self.separator_plate_contours[1]
+        sep_volume = (self.n_separator_plates + 1)*(sep_outer_contour.Area() - sep_inner_contour.Area())*self.separator_plate_width # Last plate is 2 times wider
         
         sep_mass = steel_volumic_mass*sep_volume
         
         # Friction plates
-#        friction_plate_outer_contour = self.friction_plate_contours[0]
-        fric_outer_contour_area = math.pi*self.plate_outer_radius**2
+        fric_outer_contour = self.friction_plate_contours[0]
         fric_inner_contour = self.friction_plate_contours[1] 
-        fric_volume = self.n_friction_plates*(fric_outer_contour_area - fric_inner_contour.Area())*self.friction_plate_width
+        fric_volume = self.n_friction_plates*(fric_outer_contour.Area() - fric_inner_contour.Area())*self.friction_plate_width
         
         fric_paper_volume = math.pi*self.friction_paper_width*(self.plate_outer_radius**2-self.plate_inner_radius**2)
         
         fric_mass = fric_volume*steel_volumic_mass + 2*fric_paper_volume*paper_volumic_mass
-        
-        
         
         mass = sep_mass + fric_mass + self.hydraulic_cylinder.Mass()
         
@@ -200,11 +207,17 @@ class Clutch:
             circle = vm.Circle2D(p0, self.plate_inner_radius)
         
             # Lines definition
-            l1 = vm.Arc2D(p4, p3, p2)
-            l2 = vm.Line2D(p2, p1)
-            l3 = vm.Line2D(p1, p5)
-            l4 = vm.Line2D(p5, p6)
-            l5 = vm.Arc2D(p6, p7, p8)
+            try:
+                l1 = vm.Arc2D(p4, p3, p2)
+                l2 = vm.Line2D(p2, p1)
+                l3 = vm.Line2D(p1, p5)
+                l4 = vm.Line2D(p5, p6)
+                l5 = vm.Arc2D(p6, p7, p8)
+            except:
+                print(p0.vector)
+                print('r1 = ', r1, '; r2 = ', r2, '; beta12 = ', beta12)
+                print(p4.vector, p3.vector, p2.vector)
+                
             
             primitives = [l1, l2, l3, l4, l5]
             
@@ -347,17 +360,17 @@ class Clutch:
         zp = vm.Vector3D((0, 0, 1))
         
         primitives = []
-        for i in range(self.n_friction_plates):
+        for i in range(self.n_friction_plates + 1):
             p0 = vm.Point3D((0, 0, i*(self.separator_plate_width + 2*self.clearance + 2*self.friction_paper_width + self.friction_plate_width)))
             
-            if i == self.n_friction_plates - 1:
+            if i == self.n_friction_plates:
                 width = 2*self.separator_plate_width
             else:
                 width = self.separator_plate_width
             
             plate_volume = primitives3D.ExtrudedProfile(p0, xp, yp, self.separator_plate_contours, (0, 0, width))
             
-            primitives.append(plate_volume)
+            primitives.append(plate_volume)                
         
         return primitives
     
@@ -374,7 +387,7 @@ class Clutch:
         zp = vm.Vector3D(zp_coord)
         
         primitives = []
-        for i in range(self.n_friction_plates - 1):
+        for i in range(self.n_friction_plates):
             p0_coord = (0, 0, i*(self.separator_plate_width + 2*self.clearance + 2*self.friction_paper_width + self.friction_plate_width) + self.separator_plate_width + self.clearance + self.friction_paper_width)
             pp1_coord = (0, 0, p0_coord[2] + self.friction_plate_width + self.friction_paper_width/2)
             pp2_coord = (0, 0, p0_coord[2] -self.friction_paper_width/2)
@@ -390,10 +403,23 @@ class Clutch:
             primitives.extend([plate_volume, friction_paper_1_volume, friction_paper_2_volume])
         
         return primitives
+
+    def CADExport(self):
+        volumes =[]
         
-    def GetParam(self):
-        params = []
+        # Clutch volumes
+        volumes.extend(self.separator_plate_volume)
+        volumes.extend(self.friction_plate_volume)
         
+        # Cylinder volumes
+        volumes.extend(self.hydraulic_cylinder.chamber_volume)
+        volumes.extend(self.hydraulic_cylinder.piston_volume)
+        volumes.extend(self.hydraulic_cylinder.spring_volume)
+        
+        model = vm.VolumeModel(volumes)
+        resp = model.FreeCADExport('python','clutch','/usr/lib/freecad/lib/',['stl','fcstd'])
+        
+        return resp
     
 class HydraulicCylinder:
     """
@@ -468,17 +494,22 @@ class HydraulicCylinder:
         """
         Calculs the mass of the hydraulinc cylinder
         """
-        material_volumic_mass = 7500
+        chamber_volumic_mass = 7500
+        piston_volumic_mass = 7500
+        spring_volumic_mass = 7500
         
-        # Chamber mass
+        # Chamber
         Vint = math.pi*self.chamber_width*self.inner_radius**2
         Vext = math.pi*(self.chamber_width + self.thickness)*self.outer_radius**2
         Vchamber = Vext - Vint
         
-        # Piston rod
-#        Vrod = math.pi*self.piston_rod_contour.Area()
+        # Piston
+        Vpiston = sum([i.Volume() for i in self.piston_volume])
         
-        mass = Vchamber * material_volumic_mass
+#        # Spring
+#        Vspring = sum([i.Volume() for i in self.spring_volume])
+        
+        mass = Vchamber*chamber_volumic_mass + Vpiston*piston_volumic_mass #+ Vspring*spring_volumic_mass
         
         return mass
         
@@ -634,13 +665,20 @@ class ClutchOptimizer:
             return self.clutch.Mass()
         
         def PressureConstraint(xa):
-            return self.clutch.PlatePressure() - self.clutch.max_pressure
+            return -self.clutch.PlatePressure() + self.clutch.max_pressure
         
         def TimeConstraint(xa):
-            return self.clutch.EngagingTime() - self.clutch.max_time
+            return -self.clutch.EngagingTime() + self.clutch.max_time
+        
+        def DragTorqueConstraint(xa, regime, delta_p):
+            return max(self.clutch.DragTorque(regime, delta_p)) - self.clutch.max_drag_torque
+        
+        regime = npy.linspace(0, 2500*math.pi/30, 100)
+        delta_p = 0
         
         fun_constraints = [{'type' : 'ineq', 'fun' : PressureConstraint},
-                           {'type' : 'ineq', 'fun' : TimeConstraint}]
+                           {'type' : 'ineq', 'fun' : TimeConstraint},
+                           {'type' : 'ineq', 'fun' : DragTorqueConstraint, 'args' : [regime, delta_p]}]
         
         xra0 = npy.random.random(self.n)
         res = minimize(Objective, xra0, constraints = fun_constraints, bounds = [(0, 1)]*self.n)

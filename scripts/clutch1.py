@@ -1,6 +1,6 @@
 import math
 import mechanical_components.clutches as clutches
-import numpy as np
+import numpy as npy
 import matplotlib.pyplot as plt
 import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
@@ -13,66 +13,46 @@ Created on Mon Mar  5 17:29:05 2018
 
 @author: jezequel
 """
-
-verin = clutches.HydraulicCylinder()
-emb = clutches.Clutch(verin, separator_tooth_type = 'outer')
-
-regime = np.linspace(0, 2500*math.pi/30, 100)
-test = emb.DragTorque(regime, 0)
+#regime = npy.linspace(0, 2500*math.pi/30, 100)
+#test = emb.DragTorque(regime, 0)
 #print(test)
+#
+#
+#plt.plot(regime*30/math.pi, test)
+#plt.show()
 
-"""
-plt.plot(regime*30/math.pi, test)
+n_friction_plates = [1, 2, 3, 4, 5, 6, 7]
+results = []
+for i, n_plates in enumerate(n_friction_plates):
+    verin = clutches.HydraulicCylinder()
+    emb = clutches.Clutch(verin, separator_tooth_type = 'outer')
+    co=clutches.ClutchOptimizer(emb, {'plate_inner_radius' : 0.060,
+                                      'plate_outer_radius' : (0.100, 0.120),
+                                      'separator_plate_width' : (0.0010, 0.0020),
+                                      'friction_plate_width' : (0.0006, 0.0010),
+                                      'friction_paper_width' : (0.0004, 0.0008),
+                                      'clearance' : (0.00005, 0.00040),
+                                      'n_friction_plates' : n_plates,
+                                      'max_pressure' : 5000000,
+                                      'max_time' : 0.2,
+                                      'max_drag_torque' : 50})
+    res=co.Optimize()
+    print(res)
+    [print(val*(co.bounds[i][1] - co.bounds[i][0]) + co.bounds[i][0]) for i, val in enumerate(res.x)]
+    results.append(co.clutch)
+    
+masses = [i.Mass() for i in results]
+n_friction_plates = [i.n_friction_plates for i in results]
+transferred_torques = [i.ClosedTransferredTorque() for i in results]
+inner_radius = [i.plate_inner_radius for i in results]
+outer_radius = [i.plate_outer_radius for i in results]
+#engagement_time = [i.]
+
+a = results[0]
+a.CADExport()
+
+plt.plot(n_friction_plates, masses)
 plt.show()
-"""
 
-co=clutches.ClutchOptimizer(emb, {'plate_inner_radius' : 0.060, 'plate_outer_radius' : (0.100, 0.120)})
-res=co.Optimize()
-
-## Export Freecad vérin
-primitives = []
-primitives.extend(co.clutch.hydraulic_cylinder.chamber_volume)
-primitives.extend(co.clutch.hydraulic_cylinder.piston_volume)
-#model_verin = vm.VolumeModel(primitives)
-#resp=model_verin.FreeCADExport('python','cylinder','/usr/lib/freecad/lib/',['stl','fcstd'])
-
-## Export Freecad vérin
-#primitives = []
-primitives.extend(co.clutch.hydraulic_cylinder.spring_volume)
-#model_ressort = vm.VolumeModel(primitives)
-#resp=model_ressort.FreeCADExport('python','spring','/usr/lib/freecad/lib/',['stl','fcstd'])
+#resp =co.clutch.CADExport()
 #print(resp)
-
-# Export Freecad embrayage
-#primitives = []
-primitives.extend(co.clutch.separator_plate_volume)
-primitives.extend(co.clutch.friction_plate_volume)
-model_emb = vm.VolumeModel(primitives)
-resp=model_emb.FreeCADExport('python','plate','/usr/lib/freecad/lib/',['stl','fcstd'])
-print(resp)
-
-#p0 = vm.Point2D((0, 0))
-#p1 = vm.Point2D((0.09, 0))
-#p2 = vm.Point2D((0, 0.09))
-#p3 = vm.Point2D((-0.09, 0))
-#p4 = vm.Point2D((0, -0.09))
-#
-#l0 = vm.Arc2D(p1, p2, p3)
-#l1 = vm.Arc2D(p3, p4, p1)
-#
-#primitives = [l0, l1]
-#c = vm.Contour2D(primitives)
-
-#p0 = vm.Point2D((5, 0.5))
-#p1 = vm.Point2D((-5, 0.5))
-#p2 = vm.Point2D((-5, -0.5))
-#p3 = vm.Point2D((5, -0.5))
-#
-#l0 = vm.Line2D(p0, p1)
-#l1 = vm.Line2D(p1, p2)
-#l2 = vm.Line2D(p2, p3)
-#l3 = vm.Line2D(p3, p0)
-#
-#primitives = [l0, l1, l2, l3]
-#c = vm.Contour2D(primitives)
-
