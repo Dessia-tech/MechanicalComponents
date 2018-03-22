@@ -24,11 +24,13 @@ class Clutch:
                  oil_dynamic_viscosity = 0.062, oil_volumic_mass = 875,
                  input_flow = 1.5*(1/6)*10**-4,
                  max_pressure = 5000000, max_time = 0.2, max_drag_torque = 50,
+                 min_torque = 30,
                  name = ''):
         
         # Plates parameters
         self.plate_inner_radius = plate_inner_radius
         self.plate_height = plate_height
+        self.tooth_height = 0.005
         self.separator_plate_width = separator_plate_width
         self.friction_plate_width = friction_plate_width
         self.friction_paper_width = friction_paper_width
@@ -44,15 +46,25 @@ class Clutch:
         self.input_flow = input_flow
         self.max_pressure = max_pressure
         
+        # Material parameters
+        self.steel_volumic_mass = 7500
+        self.paper_volumic_mass = 1000
+        
         # Hydraulic cylinder part
         self.hydraulic_cylinder = hydraulic_cylinder
         self.name = name
+        
+        # Geometry
+        self.origin = vm.Point2D((0,0))
         
         # Contours and volumes
         self.separator_plate_contours = self.SeparatorPlateContour()
         self.separator_plate_volume = self.SeparatorPlateVolume()
         self.friction_plate_contours = self.FrictionPlateContour()
         self.friction_plate_volume = self.FrictionPlateVolume()
+        
+        # Moments of inertia & Masses
+        self.PlatesGeometryUpdate()
         
     def _get_plate_height(self):
         return self.plate_outer_radius - self.plate_inner_radius
@@ -71,14 +83,57 @@ class Clutch:
                 setattr(self,key,value)
         
         # Contours and volumes
-        if math.isnan(self.plate_outer_radius):
-            raise ValueError
         self.separator_plate_contours = self.SeparatorPlateContour()
         self.separator_plate_volume = self.SeparatorPlateVolume()
         self.friction_plate_contours = self.FrictionPlateContour()
         self.friction_plate_volume = self.FrictionPlateVolume()
         self.hydraulic_cylinder.Update()
-    
+        
+        # Plates geometry
+        self.PlatesGeometryUpdate()
+        
+    def PlatesGeometryUpdate(self):
+        p0 = self.origin
+        
+        # Temporaire (attente correction moment quadratique)
+        r1 = self.plate_inner_radius
+        r1eq = r1 - self.tooth_height/2
+        r2 = self.plate_outer_radius
+        r2eq = r2 + self.tooth_height/2
+        
+        self.J_paper = (self.paper_volumic_mass*math.pi*self.friction_paper_width*(r2**4-r1**4))/2
+        if self.separator_tooth_type == 'outer':            
+            self.J_sep = (self.n_separator_plates + 1)*(self.steel_volumic_mass*math.pi*self.separator_plate_width*(r2eq**4-r1**4))/2
+            self.J_fric = self.n_friction_plates*(self.steel_volumic_mass*math.pi*self.separator_plate_width*(r2**4-r1eq**4) + 2*self.J_paper)/2
+        else:
+            self.J_sep = (self.n_separator_plates + 1)*(self.steel_volumic_mass*math.pi*self.separator_plate_width*(r2**4-r1eq**4))/2
+            self.J_fric = self.n_friction_plates*(self.steel_volumic_mass*math.pi*self.separator_plate_width*(r2eq**4-r1**4) + 2*self.J_paper)/2
+        
+        # Plates are considered as cylinders and pitch radius the mean radius of outer and outer + height radii
+        # Separator plate
+#        sep_outer_contour = self.separator_plate_contours[0]
+#        sep_inner_contour = self.separator_plate_contours[1]
+#        sep_volume = (self.n_separator_plates + 1)*(sep_outer_contour.Area() - sep_inner_contour.Area())*self.separator_plate_width # Last plate is 2 times wider
+        sep_volume = sum([i.Volume() for i in self.separator_plate_volume])
+        
+        self.sep_mass = self.steel_volumic_mass*sep_volume
+#        self.sep_SMA = sep_outer_contour.SecondMomentArea(p0) - sep_inner_contour.SecondMomentArea(p0)
+#        self.J_sep = (self.n_separator_plates + 1)*self.steel_volumic_mass*self.separator_plate_width*(self.sep_SMA[0, 0] + self.sep_SMA[1, 1])
+        
+        # Friction plate
+#        fric_outer_contour = self.friction_plate_contours[0]
+#        fric_inner_contour = self.friction_plate_contours[1] 
+#        fric_volume = self.n_friction_plates*(fric_outer_contour.Area() - fric_inner_contour.Area())*self.friction_plate_width
+#        fric_paper_volume = math.pi*self.friction_paper_width*(self.plate_outer_radius**2-self.plate_inner_radius**2)
+        fric_volume = sum([i.Volume() for i in self.friction_plate_volume[:self.n_friction_plates]])
+        fric_paper_volume = sum([i.Volume() for i in self.friction_plate_volume[self.n_friction_plates:]])
+
+        
+#        J_paper = (self.paper_volumic_mass*math.pi*self.friction_paper_width*(self.plate_outer_radius**4-self.plate_inner_radius**4))/2
+        
+        self.fric_mass = fric_volume*self.steel_volumic_mass + 2*fric_paper_volume*self.paper_volumic_mass
+#        self.fric_SMA = fric_outer_contour.SecondMomentArea(p0) - fric_inner_contour.SecondMomentArea(p0)
+#        self.J_fric = (self.n_friction_plates)*(self.steel_volumic_mass*self.separator_plate_width*(self.sep_SMA[0, 0] + self.sep_SMA[1, 1]) + 2*J_paper)
         
     def DragTorque(self, omega, delta_p):
         """
@@ -139,7 +194,7 @@ class Clutch:
         """
         Calculs the pressure applied on the clutch plates
         """
-        plate_contact_area = math.pi*(self.plate_outer_radius**2 - self.plate_inner_radius**2)
+        plate_contact_area = 2*self.n_friction_plates*math.pi*(self.plate_outer_radius**2 - self.plate_inner_radius**2)
         
         F = self.hydraulic_cylinder.PistonForce() - self.hydraulic_cylinder.SpringResultingForce()
         
@@ -147,10 +202,11 @@ class Clutch:
         
         return pressure
     
-    def EngagementTime(self):
-        I = 0.1 # A définir
+    def EngagementTime(self, regime):
+#        I = 0.1 # TODO
+        I = self.J_sep + self.J_fric + self.J_paper
         Ct = self.EngagedTransferredTorque()
-        delta_omega_0 = 100 # A définir
+        delta_omega_0 = regime # TODO
         
         # Cas Ct indépendant du temps
         tf = I*delta_omega_0/Ct
@@ -164,26 +220,23 @@ class Clutch:
         """ 
         Calculs the mass of the entire clutch
         """
-        steel_volumic_mass = 7500
-        paper_volumic_mass = 1000
-
         # Separator plates
-        sep_outer_contour = self.separator_plate_contours[0]
-        sep_inner_contour = self.separator_plate_contours[1]
-        sep_volume = (self.n_separator_plates + 1)*(sep_outer_contour.Area() - sep_inner_contour.Area())*self.separator_plate_width # Last plate is 2 times wider
-        
-        sep_mass = steel_volumic_mass*sep_volume
+#        sep_outer_contour = self.separator_plate_contours[0]
+#        sep_inner_contour = self.separator_plate_contours[1]
+#        sep_volume = (self.n_separator_plates + 1)*(sep_outer_contour.Area() - sep_inner_contour.Area())*self.separator_plate_width # Last plate is 2 times wider
+#        
+#        sep_mass = steel_volumic_mass*sep_volume
         
         # Friction plates
-        fric_outer_contour = self.friction_plate_contours[0]
-        fric_inner_contour = self.friction_plate_contours[1] 
-        fric_volume = self.n_friction_plates*(fric_outer_contour.Area() - fric_inner_contour.Area())*self.friction_plate_width
+#        fric_outer_contour = self.friction_plate_contours[0]
+#        fric_inner_contour = self.friction_plate_contours[1] 
+#        fric_volume = self.n_friction_plates*(fric_outer_contour.Area() - fric_inner_contour.Area())*self.friction_plate_width
+#        
+#        fric_paper_volume = math.pi*self.friction_paper_width*(self.plate_outer_radius**2-self.plate_inner_radius**2)
+#        
+#        fric_mass = fric_volume*steel_volumic_mass + 2*fric_paper_volume*paper_volumic_mass
         
-        fric_paper_volume = math.pi*self.friction_paper_width*(self.plate_outer_radius**2-self.plate_inner_radius**2)
-        
-        fric_mass = fric_volume*steel_volumic_mass + 2*fric_paper_volume*paper_volumic_mass
-        
-        mass = sep_mass + fric_mass + self.hydraulic_cylinder.Mass()
+        mass = self.sep_mass + self.fric_mass + self.hydraulic_cylinder.Mass()
         
         return mass
         
@@ -193,10 +246,11 @@ class Clutch:
         """
         # Geometry. /!\ Define variables in __init__ and not here
         n_dent = 20
-        Ddent = 0.010
-#        alpha = math.pi/3
-        theta = math.pi/n_dent
-        beta12 = theta/2
+        alpha_tirage = 1*math.pi/180
+        theta = 2*math.pi/n_dent
+        beta = 0.2*theta
+        alpha_tot = theta-2*beta
+        h = self.tooth_height
         
         r1 = self.plate_inner_radius
         r2 = self.plate_outer_radius
@@ -204,73 +258,70 @@ class Clutch:
         p0 = vm.Point2D((0, 0))
         
         if self.separator_tooth_type == 'outer':
-            h = 0.005
+            p = p0.Translation((0, r2 + h))
+            p7 = p.Rotation(p0, -theta/2)
+            p67 = p7.Rotation(p0, beta/2)
+            p6 = p67.Rotation(p0, beta/2)
+            [x6, y6] = p6.vector
+            r = y6 - x6/math.tan(alpha_tirage)
+            pc = p0.Translation((0, r))
+            p4 = p0.Translation((0, r2))
+            p5 = p4.Rotation(pc, -alpha_tirage/2)
+            p3 = p4.Rotation(pc, alpha_tirage/2)
+            p2 = p6.Rotation(p0, alpha_tot)
+            p12 = p2.Rotation(p0, beta/2)
+            p1 = p12.Rotation(p0, beta/2)
             
-            # Points definition
-            p1 = p0.Translation((Ddent/2, r2 + h))
-            p2 = vm.Point2D((r2*math.sin(beta12), r2*math.cos(beta12)))
-            p3 = p2.Rotation(p0, -beta12/2)
-            p4 = p3.Rotation(p0, -beta12/2)
-            p5 = p0.Translation((-Ddent/2, r2 + h))
-            p6 = vm.Point2D((-r2*math.sin(beta12), r2*math.cos(beta12)))
-            p7 = p6.Rotation(p0, beta12/2)
-            p8 = p7.Rotation(p0, beta12/2)
+            l1 = vm.Arc2D(p7, p67, p6)
+            l2 = vm.Line2D(p6, p5)
+            l3 = vm.Arc2D(p5, p4, p3)
+            l4 = vm.Line2D(p3, p2)
+            l5 = vm.Arc2D(p2, p12, p1)
             
             # Plate inner interface
-            circle = vm.Circle2D(p0, self.plate_inner_radius)
-        
-            # Lines definition
-            try:
-                l1 = vm.Arc2D(p4, p3, p2)
-                l2 = vm.Line2D(p2, p1)
-                l3 = vm.Line2D(p1, p5)
-                l4 = vm.Line2D(p5, p6)
-                l5 = vm.Arc2D(p6, p7, p8)
-            except:
-                print(p0.vector)
-                print('r1 = ', r1, '; r2 = ', r2, '; beta12 = ', beta12)
-                print(p4.vector, p3.vector, p2.vector)
+            circle = vm.Circle2D(p0, r1)
                 
-            
             primitives = [l1, l2, l3, l4, l5]
             
             # Rotate tooth pattern
             new_primitives = primitives[:]
             for i in range(n_dent-1):
-                new_primitives.extend([j.Rotation(p0, (i+1)*2*theta, True) for j in primitives])
+                new_primitives.extend([j.Rotation(p0, (i+1)*theta, True) for j in primitives])
                 
             # Contours definition. /!\ Outer contour needs to be appended first 
             plate_contours = [vm.Contour2D(new_primitives), vm.Contour2D([circle])]
             
         elif self.separator_tooth_type == 'inner':
-            h = 0.005
-            
             # Points definition
-            p1 = p0.Translation(((Ddent/2), r1 - h))
-            p2 = vm.Point2D((r1*math.sin(beta12), r1*math.cos(beta12)))
-            p3 = p2.Rotation(p0, -beta12/2)
-            p4 = p3.Rotation(p0, -beta12/2)
-            p5 = p0.Translation((-Ddent/2, r1 - h))
-            p6 = vm.Point2D((-r1*math.sin(beta12), r1*math.cos(beta12)))
-            p7 = p6.Rotation(p0, beta12/2)
-            p8 = p7.Rotation(p0, beta12/2)
+            p = p0.Translation((0, r1 - h))
+            p7 = p.Rotation(p0, -theta/2)
+            p67 = p7.Rotation(p0, beta/2)
+            p6 = p67.Rotation(p0, beta/2)
+            [x6, y6] = p6.vector
+            r = y6 - x6/math.tan(alpha_tirage)
+            pc = p0.Translation((0, r))
+            p4 = p0.Translation((0, r1))
+            p5 = p4.Rotation(pc, -alpha_tirage/2)
+            p3 = p4.Rotation(pc, alpha_tirage/2)
+            p2 = p6.Rotation(p0, alpha_tot)
+            p12 = p2.Rotation(p0, beta/2)
+            p1 = p12.Rotation(p0, beta/2)
+            
+            l1 = vm.Arc2D(p7, p67, p6)
+            l2 = vm.Line2D(p6, p5)
+            l3 = vm.Arc2D(p5, p4, p3)
+            l4 = vm.Line2D(p3, p2)
+            l5 = vm.Arc2D(p2, p12, p1)
             
             # Plate inner interface
-            circle = vm.Circle2D(p0, self.plate_outer_radius)
-        
-            # Lines definition
-            l1 = vm.Arc2D(p4, p3, p2)
-            l2 = vm.Line2D(p2, p1)
-            l3 = vm.Line2D(p1, p5)
-            l4 = vm.Line2D(p5, p6)
-            l5 = vm.Arc2D(p6, p7, p8)
-            
+            circle = vm.Circle2D(p0, r2)
+                
             primitives = [l1, l2, l3, l4, l5]
             
             # Rotate tooth pattern
             new_primitives = primitives[:]
             for i in range(n_dent-1):
-                new_primitives.extend([j.Rotation(p0, (i+1)*2*theta, True) for j in primitives])
+                new_primitives.extend([j.Rotation(p0, (i+1)*theta, True) for j in primitives])
                 
             # Contours definition. /!\ Outer contour needs to be appended first 
             plate_contours = [vm.Contour2D([circle]), vm.Contour2D(new_primitives)]
@@ -283,86 +334,89 @@ class Clutch:
         """
         # Geometry. /!\ Define variables in __init__ and not here
         n_dent = 20
-        Ddent = 0.010
-#        alpha = math.pi/3
-        theta = math.pi/n_dent
-        beta12 = theta/2
+        alpha_tirage = 1*math.pi/180
+        theta = 2*math.pi/n_dent
+        beta = 0.2*theta
+        alpha_tot = theta-2*beta
+        h = self.tooth_height
         
         r1 = self.plate_inner_radius
         r2 = self.plate_outer_radius
             
         p0 = vm.Point2D((0, 0))
         
-        if self.separator_tooth_type == 'outer':
-            # => Friction plates type : inner
-            h = 0.005
-            
+        if self.separator_tooth_type == 'inner':
+            # => Friction plates type : outer
             # Points definition
-            p1 = p0.Translation(((Ddent/2), r1 - h))
-            p2 = vm.Point2D((r1*math.sin(beta12), r1*math.cos(beta12)))
-            p3 = p2.Rotation(p0, -beta12/2)
-            p4 = p3.Rotation(p0, -beta12/2)
-            p5 = p0.Translation((-Ddent/2, r1 - h))
-            p6 = vm.Point2D((-r1*math.sin(beta12), r1*math.cos(beta12)))
-            p7 = p6.Rotation(p0, beta12/2)
-            p8 = p7.Rotation(p0, beta12/2)
+            p = p0.Translation((0, r2 + h))
+            p7 = p.Rotation(p0, -theta/2)
+            p67 = p7.Rotation(p0, beta/2)
+            p6 = p67.Rotation(p0, beta/2)
+            [x6, y6] = p6.vector
+            r = y6 - x6/math.tan(alpha_tirage)
+            pc = p0.Translation((0, r))
+            p4 = p0.Translation((0, r2))
+            p5 = p4.Rotation(pc, -alpha_tirage/2)
+            p3 = p4.Rotation(pc, alpha_tirage/2)
+            p2 = p6.Rotation(p0, alpha_tot)
+            p12 = p2.Rotation(p0, beta/2)
+            p1 = p12.Rotation(p0, beta/2)
             
-            # Plate inner interface
-            circle = vm.Circle2D(p0, self.plate_outer_radius)
-        
-            # Lines definition
-            l1 = vm.Arc2D(p4, p3, p2)
-            l2 = vm.Line2D(p2, p1)
-            l3 = vm.Line2D(p1, p5)
-            l4 = vm.Line2D(p5, p6)
-            l5 = vm.Arc2D(p6, p7, p8)
+            l1 = vm.Arc2D(p7, p67, p6)
+            l2 = vm.Line2D(p6, p5)
+            l3 = vm.Arc2D(p5, p4, p3)
+            l4 = vm.Line2D(p3, p2)
+            l5 = vm.Arc2D(p2, p12, p1)
+            
+            circle = vm.Circle2D(p0, r1)
             
             primitives = [l1, l2, l3, l4, l5]
             
             # Rotate tooth pattern
             new_primitives = primitives[:]
             for i in range(n_dent-1):
-                new_primitives.extend([j.Rotation(p0, (i+1)*2*theta, True) for j in primitives])
-                
-            # Contours definition. /!\ Outer contour needs to be appended first 
-            plate_contours = [vm.Contour2D([circle]), vm.Contour2D(new_primitives)]
-            
-        elif self.separator_tooth_type == 'outer':
-            # Friction plates type : outer
-            h = 0.015
-            
-            # Points definition
-            p1 = p0.Translation((Ddent/2, r2 + h))
-            p2 = vm.Point2D((r2*math.sin(beta12), r2*math.cos(beta12)))
-            p3 = p2.Rotation(p0, -beta12/2)
-            p4 = p3.Rotation(p0, -beta12/2)
-            p5 = p0.Translation((-Ddent/2, r2 + h))
-            p6 = vm.Point2D((-r2*math.sin(beta12), r2*math.cos(beta12)))
-            p7 = p6.Rotation(p0, beta12/2)
-            p8 = p7.Rotation(p0, beta12/2)
-            
-            # Plate inner interface
-            circle = vm.Circle2D(p0, self.plate_inner_radius)
-        
-            # Lines definition
-            l1 = vm.Arc2D(p4, p3, p2)
-            l2 = vm.Line2D(p2, p1)
-            l3 = vm.Line2D(p1, p5)
-            l4 = vm.Line2D(p5, p6)
-            l5 = vm.Arc2D(p6, p7, p8)
-            
-            primitives = [l1, l2, l3, l4, l5]
-            
-            # Rotate tooth pattern
-            new_primitives = primitives[:]
-            for i in range(n_dent-1):
-                new_primitives.extend([j.Rotation(p0, (i+1)*2*theta, True) for j in primitives])
+                new_primitives.extend([j.Rotation(p0, (i+1)*theta, True) for j in primitives])
                 
             # Contours definition. /!\ Outer contour needs to be appended first 
             plate_contours = [vm.Contour2D(new_primitives), vm.Contour2D([circle])]
             
+        elif self.separator_tooth_type == 'outer':
+            # Friction plates type : inner
+            # Points definition
+            p = p0.Translation((0, r1 - h))
+            p7 = p.Rotation(p0, -theta/2)
+            p67 = p7.Rotation(p0, beta/2)
+            p6 = p67.Rotation(p0, beta/2)
+            [x6, y6] = p6.vector
+            r = y6 - x6/math.tan(alpha_tirage)
+            pc = p0.Translation((0, r))
+            p4 = p0.Translation((0, r1))
+            p5 = p4.Rotation(pc, -alpha_tirage/2)
+            p3 = p4.Rotation(pc, alpha_tirage/2)
+            p2 = p6.Rotation(p0, alpha_tot)
+            p12 = p2.Rotation(p0, beta/2)
+            p1 = p12.Rotation(p0, beta/2)
+            
+            l1 = vm.Arc2D(p7, p67, p6)
+            l2 = vm.Line2D(p6, p5)
+            l3 = vm.Arc2D(p5, p4, p3)
+            l4 = vm.Line2D(p3, p2)
+            l5 = vm.Arc2D(p2, p12, p1)
+            
+            # Plate inner interface
+            circle = vm.Circle2D(p0, r2)
+            
+            primitives = [l1, l2, l3, l4, l5]
+            
+            # Rotate tooth pattern
+            new_primitives = primitives[:]
+            for i in range(n_dent-1):
+                new_primitives.extend([j.Rotation(p0, (i+1)*theta, True) for j in primitives])
+                
+            # Contours definition. /!\ Outer contour needs to be appended first 
+            plate_contours = [vm.Contour2D([circle]), vm.Contour2D(new_primitives)]
+            
         return plate_contours
-        
         
     def SeparatorPlateVolume(self):
         """
@@ -381,7 +435,7 @@ class Clutch:
             else:
                 width = self.separator_plate_width
             
-            plate_volume = primitives3D.ExtrudedProfile(p0, xp, yp, self.separator_plate_contours, (0, 0, width))
+            plate_volume = primitives3D.ExtrudedProfile(p0, xp, yp, self.separator_plate_contours, (0, 0, width), 'separator_plate_{0}'.format(i))
             
             primitives.append(plate_volume)                
         
@@ -409,9 +463,9 @@ class Clutch:
             pp1 = p0.Translation(pp1_coord)
             pp2 = p0.Translation(pp2_coord)
             
-            plate_volume = primitives3D.ExtrudedProfile(p0, xp, yp, self.friction_plate_contours, (0, 0, self.friction_plate_width))
-            friction_paper_1_volume = primitives3D.HollowCylinder(pp1_coord, zp_coord, self.plate_inner_radius, self.plate_outer_radius, self.friction_paper_width)
-            friction_paper_2_volume = primitives3D.HollowCylinder(pp2_coord, zp_coord, self.plate_inner_radius, self.plate_outer_radius, self.friction_paper_width)
+            plate_volume = primitives3D.ExtrudedProfile(p0, xp, yp, self.friction_plate_contours, (0, 0, self.friction_plate_width), 'friction_plate_{0}'.format(i))
+            friction_paper_1_volume = primitives3D.HollowCylinder(pp1_coord, zp_coord, self.plate_inner_radius, self.plate_outer_radius, self.friction_paper_width, 'friction_paper_{0}1'.format(i))
+            friction_paper_2_volume = primitives3D.HollowCylinder(pp2_coord, zp_coord, self.plate_inner_radius, self.plate_outer_radius, self.friction_paper_width, 'friction_paper_{0}2'.format(i))
         
             primitives.extend([plate_volume, friction_paper_1_volume, friction_paper_2_volume])
         
@@ -439,10 +493,10 @@ class HydraulicCylinder:
     Defines a hydraulic cylinder object
     """
     def __init__(self, inner_radius = 0.020, outer_radius = 0.050,
-                 chamber_width = 0.100, thickness = 0.0005, engaged_chamber_pressure = 500000,
+                 chamber_width = 0.100, thickness = 0.0005, engaged_chamber_pressure = 50000,
                  n_springs = 6,
-                 spring_young_modulus = 80000, spring_poisson_ratio = 0.33,
-                 spring_n_windings = 10, spring_wire_diameter = 0.001, spring_outer_diameter = 0.01, 
+                 spring_young_modulus = 210*10**9, spring_poisson_ratio = 0.33,
+                 spring_n_windings = 5, spring_wire_diameter = 0.001, spring_outer_diameter = 0.01, 
                  spring_free_length = 0.01, spring_final_length = 0.005):
         
         # Geometry
@@ -468,6 +522,9 @@ class HydraulicCylinder:
         self.spring_contour = self.SpringContour()
         self.spring_volume = self.SpringVolume()
         
+        # Material parameter
+        self.steel_volumic_mass = 7500
+        
         # Force
         self.spring_stiffness = self.SpringStiffness()
         self.spring_resulting_force = self.SpringResultingForce()
@@ -492,8 +549,10 @@ class HydraulicCylinder:
         self.spring_contour = self.SpringContour()
         self.spring_volume = self.SpringVolume()
         
+        self.spring_stiffness = self.SpringStiffness()
+        
     def PistonForce(self):
-        piston_area = math.pi*self.outer_radius**2
+        piston_area = math.pi*(self.outer_radius**2 - self.inner_radius**2)
         
         F = self.engaged_chamber_pressure*piston_area
         return F     
@@ -525,11 +584,7 @@ class HydraulicCylinder:
     def Mass(self):
         """
         Calculs the mass of the hydraulinc cylinder
-        """
-        chamber_volumic_mass = 7500
-        piston_volumic_mass = 7500
-        spring_volumic_mass = 7500
-        
+        """        
         # Chamber
         Vint = math.pi*self.chamber_width*self.inner_radius**2
         Vext = math.pi*(self.chamber_width + self.thickness)*self.outer_radius**2
@@ -541,7 +596,7 @@ class HydraulicCylinder:
 #        # Spring
 #        Vspring = sum([i.Volume() for i in self.spring_volume])
         
-        mass = Vchamber*chamber_volumic_mass + Vpiston*piston_volumic_mass #+ Vspring*spring_volumic_mass
+        mass = Vchamber*self.steel_volumic_mass + Vpiston*self.steel_volumic_mass #+ Vspring*self.steel_volumic_mass
         
         return mass
         
@@ -582,9 +637,7 @@ class HydraulicCylinder:
         pc = vm.Point3D((0, 0, 1))
         xp = vm.Vector3D((1, 0, 0))
         yp = vm.Vector3D((0, 1, 0))
-        zp = vm.Vector3D((0, 0, 1))
-        #zp = vm.Vector3D((0, 0, 1))
-        
+        zp = vm.Vector3D((0, 0, 1))        
         
         primitives = []
         chamber_volume = primitives3D.RevolvedProfile(p0, zp, yp, [self.chamber_contour], p0, zp, 2*math.pi, 'cylinder_chamber')
@@ -662,13 +715,12 @@ class HydraulicCylinder:
         zp = vm.Vector3D(zp_coord)
         
         primitives = []
-        volume = primitives3D.HelicalExtrudedProfile(p0, xp, zp, (0, 0, 0), (0, self.spring_free_length, 0), self.spring_free_length/self.spring_n_windings, self.spring_contour)
+        volume = primitives3D.HelicalExtrudedProfile(p0, xp, zp, (0, 0, 0), (0, self.spring_free_length, 0), self.spring_free_length/self.spring_n_windings, self.spring_contour, name = 'spring')
         primitives.append(volume)
         
         return primitives
     
 class ClutchOptimizer:
-    
     def __init__(self, clutch, specs):
         self.specs = specs
         self.clutch = clutch
@@ -696,27 +748,30 @@ class ClutchOptimizer:
 #            return self.clutch.DragTorque([100], 0.003)[0]
             return self.clutch.Mass()
         
-        def PressureConstraint(xa):
-            return -self.clutch.PlatePressure() + self.clutch.max_pressure
+#        def PressureConstraint(xa):
+#            return self.clutch.max_pressure - self.clutch.PlatePressure()
         
-        def TimeConstraint(xa):
-            return -self.clutch.EngagementTime() + self.clutch.max_time
+        def TimeConstraint(xa, regime):
+            return self.clutch.max_time - max(self.clutch.EngagementTime(regime))
         
-        def DragTorqueConstraint(xa, regime, delta_p):
-            return max(self.clutch.DragTorque(regime, delta_p)) - self.clutch.max_drag_torque
+#        def DragTorqueConstraint(xa, regime, delta_p):
+#            return self.clutch.max_drag_torque - max(self.clutch.DragTorque(regime, delta_p))
+            
+        def SpringConstraint(xa):
+            return self.clutch.hydraulic_cylinder.PistonForce() - self.clutch.hydraulic_cylinder.SpringResultingForce()
+        
+        def TorqueConstraint(xa):
+            return self.clutch.EngagedTransferredTorque() - self.clutch.min_torque
         
         regime = npy.linspace(0, 2500*math.pi/30, 100)
         delta_p = 0
         
-        fun_constraints = [{'type' : 'ineq', 'fun' : PressureConstraint},
-                           {'type' : 'ineq', 'fun' : TimeConstraint},
-                           {'type' : 'ineq', 'fun' : DragTorqueConstraint, 'args' : [regime, delta_p]}]
+        fun_constraints = [{'type' : 'ineq', 'fun' : TimeConstraint, 'args' : [regime]},
+                           {'type' : 'ineq', 'fun' : TorqueConstraint},
+                           {'type' : 'ineq', 'fun' : SpringConstraint}]
+#                            {'type' : 'ineq', 'fun' : PressureConstraint},
+#                           {'type' : 'ineq', 'fun' : DragTorqueConstraint, 'args' : [regime, delta_p]},
         
         xra0 = npy.random.random(self.n)
         res = minimize(Objective, xra0, constraints = fun_constraints, bounds = [(0, 1)]*self.n)
         return res
-
-
-                
-
-
