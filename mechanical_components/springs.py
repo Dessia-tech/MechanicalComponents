@@ -89,17 +89,35 @@ class SpringOptimizer():
         
     def Optimize(self):
         def Objective(xa):
+            print('xa',xa)
             values = {}
             for xai, attribute, bounds in zip(xa, self.attributes, self.bounds):                    
                 values[attribute] = bounds[0] + (bounds[1] - bounds[0])*xai
             self.spring.Update(values)
-            return (self.spring.Stiffness() - self.spring.TargetStiffness())**2
+            print('fun',(self.spring.Stiffness() - self.spring.TargetStiffness())**2)
+            return (1e-3*abs(self.spring.Stiffness() - self.spring.TargetStiffness()))
         
         def DiameterRatioConstraintMin(xa):
+            values = {}
+            for xai, attribute, bounds in zip(xa, self.attributes, self.bounds):                    
+                values[attribute] = bounds[0] + (bounds[1] - bounds[0])*xai
+            self.spring.Update(values)
+            print('min',self.spring.D/self.spring.d-5)
             return self.spring.D/self.spring.d - 5
         
         def DiameterRatioConstraintMax(xa):
+            values = {}
+            for xai, attribute, bounds in zip(xa, self.attributes, self.bounds):                    
+                values[attribute] = bounds[0] + (bounds[1] - bounds[0])*xai
+            self.spring.Update(values)
+            print('max',13 - self.spring.D/self.spring.d)
             return 13 - self.spring.D/self.spring.d
+        
+        def ParametersBoundsMin(xa):
+            return min(xa)
+        
+        def ParametersBoundsMax(xa):
+            return 1-max(xa)
         
 #        def DiameterConstructionBoundsMin(xa):
 #            return (self.spring.D+self.spring.d/2)/(self.spring.D-self.spring.d/2) - 1.4
@@ -107,12 +125,22 @@ class SpringOptimizer():
 #        def DiameterConstructionBoundsMax(xa):
 #            return 2 - (self.spring.D+self.spring.d/2)/(self.spring.D-self.spring.d/2)
         
-#        fun_constraints = [{'type' : 'ineq', 'fun' : DiameterRatioConstraintMin}],
-#                           {'type' : 'ineq', 'fun' : DiameterRatioConstraintMax}]#,
+        fun_constraints = [{'type' : 'ineq', 'fun' : DiameterRatioConstraintMin},
+                           {'type' : 'ineq', 'fun' : DiameterRatioConstraintMax}]
+#                           {'type' : 'ineq', 'fun' : ParametersBoundsMin},
+#                           {'type' : 'ineq', 'fun' : ParametersBoundsMax}]#,
 #                           {'type' : 'ineq', 'fun' : DiameterConstructionBoundsMin},
 #                           {'type' : 'ineq', 'fun' : DiameterConstructionBoundsMax}]
         
-        xra0 = npy.random.random(self.n)
-#        res = minimize(Objective, xra0, constraints = fun_constraints, bounds = [(0, 1)]*self.n)
-        res = minimize(Objective, xra0, bounds = [(0, 1)]*self.n)
+        for i in range(1000):
+            xra0 = npy.random.random(self.n)
+            if DiameterRatioConstraintMin(xra0)>0:
+                if DiameterRatioConstraintMax(xra0)>0:
+                    print('valid')
+                    break
+                
+        res = minimize(Objective, xra0, constraints = fun_constraints, bounds = [(0., 1.)]*self.n)
+#        res = fmin_slsqp(Objective, xra0, ieqcons = [DiameterRatioConstraintMin,DiameterRatioConstraintMax], bounds = [(0., 1.)]*self.n,epsilon=0.1)
+#        print(DiameterRatioConstraintMax())
+#        res = minimize(Objective, xra0, bounds = [(0, 1)]*self.n)
         return res

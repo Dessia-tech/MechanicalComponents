@@ -17,14 +17,15 @@ n_spires = npy.linspace(0.5, 9.5, 10)
 results = []
 for n in n_spires:
     spring = springs.Spring()
-    so = springs.SpringOptimizer(spring, {'displacement' : 0.005,
-                                          'D' : (0.001, 0.1),
-                                          'd' : (0.0001, 0.01),
+    so = springs.SpringOptimizer(spring, {'displacement' : 0.003,
+                                          'D' : (0.001, 0.3),
+                                          'd' : (0.0001, 0.1),
                                           'F0' : 100,
                                           'F1' : 1000,
                                           'n' : n})
     
     res = so.Optimize()
+    print(res)
     if res['success']:
         results.append(so.spring)
     print('---------------------------------------------\n',
