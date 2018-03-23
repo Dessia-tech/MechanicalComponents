@@ -39,6 +39,7 @@ class Clutch:
         self.n_friction_plates = n_friction_plates
         self.n_separator_plates = n_friction_plates + 1
         self.max_time = max_time
+        self.total_clearance = self.Displacement
         
         # Oil parameters
         self.oil_dynamic_viscosity = oil_dynamic_viscosity
@@ -87,11 +88,19 @@ class Clutch:
         self.separator_plate_volume = self.SeparatorPlateVolume()
         self.friction_plate_contours = self.FrictionPlateContour()
         self.friction_plate_volume = self.FrictionPlateVolume()
-        self.hydraulic_cylinder.Update()
+        
+        
+        self.total_clearance = Displacement()
+        self.hydraulic_cylinder.Update(self.total_clearance)
         
         # Plates geometry
         self.PlatesGeometryUpdate()
         
+    def Displacement(self):
+        d = 2*self.n_friction_plates*self.clearance
+        
+        return d
+    
     def PlatesGeometryUpdate(self):
         p0 = self.origin
         
@@ -512,6 +521,7 @@ class HydraulicCylinder:
         self.spring_outer_diameter = spring_outer_diameter
         self.spring_free_length = spring_free_length
         self.spring_final_length = spring_final_length
+        self.displacement = spring_final_length - spring_free_length
         
         self.chamber_contour = self.ChamberContour()
         self.chamber_volume = self.ChamberVolume()
@@ -526,6 +536,8 @@ class HydraulicCylinder:
         self.steel_volumic_mass = 7500
         
         # Force
+#        self.hydraulic_force = self.HydraulicForce()
+#        self.piston_force = 
         self.spring_stiffness = self.SpringStiffness()
         self.spring_resulting_force = self.SpringResultingForce()
         self.engaged_chamber_pressure = engaged_chamber_pressure
@@ -538,7 +550,7 @@ class HydraulicCylinder:
 
     height=property(_get_height,_set_height)
         
-    def Update(self):
+    def Update(self, displacement):
         # Contour & volumes
         self.chamber_contour = self.ChamberContour()
         self.chamber_volume = self.ChamberVolume()
@@ -551,33 +563,56 @@ class HydraulicCylinder:
         
         self.spring_stiffness = self.SpringStiffness()
         
-    def PistonForce(self):
-        piston_area = math.pi*(self.outer_radius**2 - self.inner_radius**2)
+        self.displacement = displacement
         
-        F = self.engaged_chamber_pressure*piston_area
+    def PressureArea(self):
+        area = math.pi*(self.outer_radius**2 - self.inner_radius**2)
+        return area
+        
+    def HydraulicForce(self):        
+        F = self.engaged_chamber_pressure*self.PressureArea()
         return F     
     
-    def SpringResultingForce(self):
-        l0 = self.spring_free_length
-        l = self.spring_final_length
-        
-        F = self.n_springs*(-self.spring_stiffness*(l - l0))
-        
+    def SpringForce(self):        
+        F = self.n_springs*(-self.SpringStiffness()*self.displacement)
         return F
+    
+    def PistonForce(self):
+        force = self.HydraulicForce() - self.SpringForce()
+        if force < 0:
+            force = 0
+        return force
+    
+    def SpringLengths(self):
+        p0 = 10**5 # /!\ TODO lub pressure
+        p1 = self.engaged_chamber_pressure
+        
+        htot = self.displacement
+        
+        l0 = htot*p0/(p1-p0)
+        l1 = l0+htot
+        
+        return l0, l1
         
     def SpringStiffness(self):
         """
         Spring stiffness calculation
         """
-        E = self.spring_young_modulus
-        nu = self.spring_poisson_ratio
-        n = self.spring_n_windings
-        d = self.spring_wire_diameter
-        D = self.spring_outer_diameter
+        p1 = self.engaged_chamber_pressure
+        S = self.PressureArea()
         
-        G = E/(2*(1+nu))
+        l0, l1 = self.SpringLengths()
         
-        stiffness = G*d**4/(8*n*D**3)
+        stiffness = p1*S/l1
+#        E = self.spring_young_modulus
+#        nu = self.spring_poisson_ratio
+#        n = self.spring_n_windings
+#        d = self.spring_wire_diameter
+#        D = self.spring_outer_diameter
+#        
+#        G = E/(2*(1+nu))
+#        
+#        stiffness = G*d**4/(8*n*D**3)
         
         return stiffness
     
@@ -720,6 +755,7 @@ class HydraulicCylinder:
         
         return primitives
     
+
 class ClutchOptimizer:
     def __init__(self, clutch, specs):
         self.specs = specs
