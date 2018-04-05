@@ -481,7 +481,7 @@ class Clutch:
         return primitives
 
     def CADExport(self):
-        volumes =[]
+        volumes = []
         
         # Clutch volumes
         volumes.extend(self.separator_plate_volume)
@@ -733,7 +733,6 @@ class HydraulicCylinder:
         pc = p0.Translation((self.spring_outer_diameter/2, 0))
         
         circle = vm.Circle2D(pc, self.spring_wire_diameter/2)
-        minimize
         contour = vm.Contour2D([circle])
         
         return contour
