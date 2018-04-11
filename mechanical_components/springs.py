@@ -9,8 +9,15 @@ import math
 import numpy as npy
 import volmdlr as vm
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
+import pandas as pd
+from pandas.plotting import scatter_matrix
+import json
+import os
+
+from copy import copy
 
 from scipy.optimize import minimize
 
@@ -455,3 +462,253 @@ class SpringAssemblyOptimizationResults():
         p_frontY = [pair[1] for pair in p_front]
         index = [i for i, input_pair in enumerate(myList) if [Xs[i], Ys[i]] in p_front]
         return p_frontX, p_frontY, index
+    
+class Catalog():
+    def __init__(self, csv_file, name = ''):
+        self.csv_file = csv_file
+        self.products = pd.read_csv(csv_file)
+        self.name = name
+        
+        self.CorrectionDynParameters()
+        
+    def CorrectionDynParameters(self):
+        self.products['Fndyn'] = pd.to_numeric(self.products['Fndyn'], errors = 'coerce').fillna(0)
+        self.products['shdyn'] = pd.to_numeric(self.products['shdyn'], errors = 'coerce').fillna(0)
+        self.products['Lndyn'] = pd.to_numeric(self.products['Lndyn'], errors = 'coerce').fillna(0)
+        
+    def FindSprings(self, specs):
+        products = copy(self.products)
+        for key, bounds in specs.items():
+            products = products[products[key] > bounds[0]]
+            products = products[products[key] < bounds[1]]
+            
+        indices = products.index
+        
+        return indices
+    
+    def PlotStats(self):
+        scatter_matrix(self.products, alpha=0.2, figsize=(6, 6), diagonal='kde')
+        
+        plt.figure()
+        plt.hist(self.products['D']/self.products['d'])
+        
+    def Price(self, product_index, n_product):        
+        current_dict = eval(self.products['prices'][product_index])
+        
+        keys = list(current_dict.keys())
+        stop = False
+        while not stop:
+            max_key = max(keys)
+            if n_product >= min(keys):
+                if n_product >= max_key:
+                    price = current_dict[max_key]
+                    stop = True
+                else:
+                    keys.remove(max_key)
+            else:
+                 price = current_dict[min(keys)]   
+                
+        return price
+    
+    def Instantiate(self, product_indices, n_springs, pattern, r1, r2):
+        for product_index in product_indices:
+            spring = Spring(self.products['D'][product_index],
+                            self.products['d'][product_index],
+                            self.products['n'][product_index], # /!\ n_spires 0.5 & 0.25 : a vérifier
+                            self.products['L0'][product_index])
+                            # /!\ Voir pour matériaux
+            
+            springs = [spring]*n_springs
+            if n_springs != 1:
+                if pattern == 'circular':
+                    angle = 2*math.pi/n_springs
+                    geometry = {'pattern' : pattern, 'radius' : (r1 + r2)/2, 'angle' : angle}
+                    springs = SpringAssembly(springs, geometry)
+                
+        return springs
+    
+ferroflex_catalog = Catalog(os.path.join(os.path.dirname(__file__), 'catalogs/ferroflex.csv'))
+
+class Catalogs():
+    def __init__(self, catalogs):
+        self.catalogs = {catalog.name : catalog for catalog in catalogs}
+        
+catalogs = Catalogs([ferroflex_catalog])
+
+class Product():
+    def __init__(self, catalog, product_index):
+        self.catalog = catalog
+        self.product_index = product_index
+        
+    def Instantiate(self):
+        spring = Spring(self.catalog.products['D'][self.product_index],
+                        self.catalog.products['d'][self.product_index],
+                        self.catalog.products['n'][self.product_index], # /!\ n_spires 0.5 & 0.25 : a vérifier
+                        self.catalog.products['L0'][self.product_index])
+                        # /!\ Voir pour matériaux
+                        
+        return spring
+
+class ProductAssembly():
+    def __init__(self, products):
+        self.products = products
+        self.n_products = len(products)
+        
+        self.l0 = self.FreeLength()
+        
+    def Instantiate(self, geometry):
+        springs = [product.Instantiate() for product in self.products]
+        
+        spring_assembly = SpringAssembly(springs, geometry)
+        
+        return spring_assembly
+    
+    def FreeLength(self):
+        product = self.products[0]
+        l0 = product.catalog.products['L0'][product.product_index]
+        
+        return l0
+    
+    def Price(self, prod_volume):
+        assembly_price = sum([product.catalog.Price(product.product_index, self.n_products*prod_volume) for product in self.products])
+        
+        return assembly_price
+        
+class CatalogOptimizer():
+    def __init__(self, catalog, F1, F2, stroke, target_stiffness_percentage,
+                 max_l1, r1 = 0.090, r2 = 0.120, n_springs = [1], pattern = 'shaft mounted',
+                 prod_volume = 50):
+        self.catalog = catalog
+        self.F1 = F1
+        self.F2 = F2
+        self.stroke = stroke
+        self.target_k_percentage = target_stiffness_percentage
+        self.max_l1 = max_l1
+        self.r1 = r1
+        self.r2 = r2
+        self.n_springs = n_springs
+        self.pattern = pattern
+        self.prod_volume = prod_volume
+        
+        self.opti_indices = self.Optimize()
+        
+    def TargetStiffness(self, F1eq, F2eq):
+        target_k = (F2eq - F1eq)/self.stroke
+        
+        range_k = ((1-self.target_k_percentage)*target_k, (1+self.target_k_percentage)*target_k)
+        
+        return range_k
+    
+    def StiffnessConstraint(self, range_k):
+        indices = self.catalog.FindSprings({'R' : range_k})
+        
+        return indices
+    
+    def InitialLengthConstraint(self, F1eq):
+        products = copy(self.catalog.products)
+        products = products[products['L0']*(F1eq/products['R']) < self.max_l1]
+        
+        indices = products.index
+        
+        return indices
+        
+    def MaxForceConstraint(self, F2eq):
+        indices = self.catalog.FindSprings({'Fndyn' : (F2eq, math.inf)})
+        
+        return indices
+        
+    def SizeConstraint(self, angle):
+        products = copy(self.catalog.products)
+        if self.pattern == 'shaft mounted':
+            products = products[products['D'] - products['d'] > self.r1]
+            products = products[products['D'] + products['d'] < self.r2]
+        elif self.pattern == 'circular':
+            products = products[products['D'] + products['d'] < (self.r2 - self.r1)]
+            products = products[products['D'] + products['d'] < (self.r2 + self.r1)*math.sin(angle/2)]
+            
+        indices = products.index
+        
+        return indices
+            
+    def Optimize(self):
+        indices_dict = {}
+        for ns in self.n_springs:
+            F1eq = self.F1/ns
+            F2eq = self.F2/ns
+            angle = 2*math.pi/ns
+            
+            current_range_k = self.TargetStiffness(F1eq, F2eq)
+            indices_StC = self.StiffnessConstraint(current_range_k)
+            indices_ILC = self.InitialLengthConstraint(F1eq)
+            indices_MFC = self.MaxForceConstraint(F2eq)
+            indices_SiC = self.SizeConstraint(angle)
+            
+            indices = [indice for indice in self.catalog.products.index
+                       if indice in indices_StC
+                       and indice in indices_ILC
+                       and indice in indices_MFC
+                       and indice in indices_SiC]
+            
+            indices_dict[ns] = indices
+            
+        return indices_dict
+    
+class CatalogOptimizationResults():
+    def __init__(self, indices_dicts, catalogs, prod_volume = 50):
+        self.indices_dicts = indices_dicts
+        self.catalogs = catalogs
+        
+        self.X = []
+        self.Y = []
+        self.product_assemblies = []
+        
+        for cat_name, indices_dict in indices_dicts.items():
+             catalog = catalogs.catalogs[cat_name]
+             for ns, indices in indices_dict.items():
+                 for product_index in indices:
+                     product = Product(catalog, product_index)
+                     product_assembly = ProductAssembly([product]*ns)
+                     
+                     price = product_assembly.Price(prod_volume)
+                     l0 = product_assembly.l0
+                     
+                     self.X.append(l0)
+                     self.Y.append(price)
+                     self.product_assemblies.append(product_assembly)
+        
+        self.p_frontX, self.p_frontY, index = self.ParetoFrontier(self.X, self.Y, False, False)
+        
+        self.results = [self.product_assemblies[i] for i in index]
+        
+    def PlotResults(self):
+        plt.figure()
+        plt.plot(self.X, self.Y, 'b.', label = 'Assemblies')
+        plt.plot(self.p_frontX, self.p_frontY, 'r', label = 'Pareto Frontier')
+        plt.xlabel('Length')
+        plt.ylabel('Price')
+        plt.legend()
+        
+    def ParetoFrontier(self, Xs, Ys, maxX = True, maxY = True):
+        # Sort the list in either ascending or descending order of X
+        myList = sorted([[Xs[i], Ys[i]] for i in range(len(Xs))], reverse=maxX)
+    
+        # Start the Pareto frontier with the first value in the sorted list
+        p_front = [myList[0]]    
+    
+        # Loop through the sorted list
+        for pair in myList[1:]:
+            if maxY: 
+                if pair[1] >= p_front[-1][1]: # Look for higher values of Y…
+                    p_front.append(pair) # … and add them to the Pareto frontier
+            else:
+                if pair[1] <= p_front[-1][1]: # Look for lower values of Y…
+                    p_front.append(pair) # … and add them to the Pareto frontier
+    
+        # Turn resulting pairs back into a list of Xs and Ys
+        p_frontX = [pair[0] for pair in p_front]
+        p_frontY = [pair[1] for pair in p_front]
+        index = [i for i, input_pair in enumerate(myList) if [Xs[i], Ys[i]] in p_front]
+        return p_frontX, p_frontY, index        
+        
+        
+    

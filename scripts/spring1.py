@@ -15,17 +15,37 @@ import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 from scipy.spatial import ConvexHull
 from time import time
-
-td = time()
+from bs4 import BeautifulSoup
+import pandas as pd
 
 F1 = 100
 F2 = 500
-stroke = 0.010
+stroke = 0.005
 l1_max = 0.1
-
+k_percent = 0.100
+prod_volume = 50
+r1 = 0.090
+r2 = 0.120
 n_springs = [i + 3 for i in range(8)]
 
-sao = springs.SpringAssemblyOptimizer(F1, F2, stroke, n_springs, 0.090, 0.120, l1_max, 'circular')
+# =============================================================================
+# Catalog optimization
+# =============================================================================
+co = springs.CatalogOptimizer(springs.ferroflex_catalog, F1, F2, stroke, k_percent, l1_max, r1, r2, n_springs, 'circular')
+dictionnary = {springs.ferroflex_catalog.name : co.opti_indices}
+cor = springs.CatalogOptimizationResults(dictionnary, springs.catalogs, 50)
+list_springs_assembly = cor.results
+
+#products = [product.catalog.Price(product.product_index, 20)  for res in cor.results for product in res.products]
+#products
+
+
+
+
+# =============================================================================
+# Assembly optimization
+# =============================================================================
+sao = springs.SpringAssemblyOptimizer(F1, F2, stroke, n_springs, r1, r2, l1_max, 'circular')
 
 l_assemb = [assembly.n_springs for assembly in sao.assemblies]
 k_assemb = [spring.Stiffness() for assembly in sao.assemblies for spring in assembly.springs]
@@ -94,7 +114,7 @@ for d in diametres_m:
                     springs_ok.append(so.spring)
                     resultats.append(res)
                 
-#D = [s.D for s in springs_ok]
+D = [s.D for s in springs_ok]
 d = [s.d for s in springs_ok]
 #w = [s.D/s.d for s in springs_ok]
 #a = [(s.D+s.d)/(s.D-s.d) for s in springs_ok]
@@ -111,105 +131,124 @@ Da = [s.D for s in all_springs]
 da = [s.d for s in all_springs]
 
 points = npy.array([[s.d, s.D] for s in springs_ok])
+#
+#fig = plt.figure()
+#
+## XC60
+#Dc = [s.D for s in springs_ok if s.material.name == 'XC60']
+#dc = [s.d for s in springs_ok if s.material.name == 'XC60']
+#Dac = [s.D for s in all_springs if s.material.name == 'XC60']
+#dac = [s.d for s in all_springs if s.material.name == 'XC60']
+#pc = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == 'XC60'])
+#
+#ac = fig.add_subplot(321)
+#ac.set_title('XC60')
+#ac.set_xlabel('d (m)')
+#ac.set_ylabel('D (m)')
+#ac.plot(da, Da, '.', color = 'gray')
+#ac.plot(dac, Dac, 'k.')
+#ac.plot(dc, Dc, 'co')
+#ac.plot(d_assemb, D_assemb, 'o', color = 'darkcyan')
+#    
+## XC95
+#Db = [s.D for s in springs_ok if s.material.name == 'XC95']
+#db = [s.d for s in springs_ok if s.material.name == 'XC95']
+#Dab = [s.D for s in all_springs if s.material.name == 'XC95']
+#dab = [s.d for s in all_springs if s.material.name == 'XC95']
+#pb = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == 'XC95'])
+#    
+#ab = fig.add_subplot(322)
+#ab.set_title('XC95')
+#ab.set_xlabel('d (m)')
+#ab.set_ylabel('D (m)')
+#ab.plot(da, Da, '.', color = 'gray')
+#ab.plot(dab, Dab, 'k.')
+#ab.plot(db, Db, 'bo')
+#ab.plot(d_assemb, D_assemb, 'o', color = 'navy')
+#
+## 50CV4
+#Dg = [s.D for s in springs_ok if s.material.name == '50CV4']
+#dg = [s.d for s in springs_ok if s.material.name == '50CV4']
+#Dag = [s.D for s in all_springs if s.material.name == '50CV4']
+#dag = [s.d for s in all_springs if s.material.name == '50CV4']
+#pg = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == '50CV4'])
+#    
+#ag = fig.add_subplot(323)
+#ag.set_title('50CV4')
+#ag.set_xlabel('d (m)')
+#ag.set_ylabel('D (m)')
+#ag.plot(da, Da, '.', color = 'gray')
+#ag.plot(dag, Dag, 'k.')
+#ag.plot(dg, Dg, 'go')
+#ag.plot(d_assemb, D_assemb, 'o', color = 'darkgreen')
+#
+## Z15CN17-03
+#Dy = [s.D for s in springs_ok if s.material.name == 'Z15CN17-03']
+#dy = [s.d for s in springs_ok if s.material.name == 'Z15CN17-03']
+#Day = [s.D for s in all_springs if s.material.name == 'Z15CN17-03']
+#day = [s.d for s in all_springs if s.material.name == 'Z15CN17-03']
+#py = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == 'Z15CN17-03'])
+#    
+#ay = fig.add_subplot(324)
+#ay.set_title('Z15CN17-03')
+#ay.set_xlabel('d (m)')
+#ay.set_ylabel('D (m)')
+#ay.plot(da, Da, '.', color = 'gray')
+#ay.plot(day, Day, 'k.')
+#ay.plot(dy, Dy, 'o', color = 'yellow')
+#ay.plot(d_assemb, D_assemb, 'o', color = 'y')
+#
+## CuSN6 R950
+#Do = [s.D for s in springs_ok if s.material.name == 'CuSn6 R950']
+#do = [s.d for s in springs_ok if s.material.name == 'CuSn6 R950']
+#Dao = [s.D for s in all_springs if s.material.name == 'CuSn6 R950']
+#dao = [s.d for s in all_springs if s.material.name == 'CuSn6 R950']
+#po = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == 'CuSn6 R950'])
+##hullo = ConvexHull(po)
+#    
+#ao = fig.add_subplot(325)
+#ao.set_title('CuSn6 R950')
+#ao.set_xlabel('d (m)')
+#ao.set_ylabel('D (m)')
+#ao.plot(da, Da, '.', color = 'gray')
+#ao.plot(dao, Dao, 'k.')
+#ao.plot(do, Do, 'o', color = 'orange')
+#ao.plot(d_assemb, D_assemb, 'o', color = 'darkorange')
+#
+## CuZn36 R700
+#Dr = [s.D for s in springs_ok if s.material.name == 'CuZn36 R700']
+#dr = [s.d for s in springs_ok if s.material.name == 'CuZn36 R700']
+#Dar = [s.D for s in all_springs if s.material.name == 'CuZn36 R700']
+#dar = [s.d for s in all_springs if s.material.name == 'CuZn36 R700']
+#pr = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == 'CuZn36 R700'])
+#    
+#ar = fig.add_subplot(326)
+#ar.set_title('CuSn36 R700')
+#ar.set_xlabel('d (m)')
+#ar.set_ylabel('D (m)')
+#ar.plot(da, Da, '.', color = 'gray')
+#ar.plot(dar, Dar, 'k.')
+#ar.plot(dr, Dr, 'ro')
+#ar.plot(d_assemb, D_assemb, 'o', color = 'darkred')
 
-fig = plt.figure()
+#c = springs.Catalog('ferroflex/catalog_SI', prod_volume)
+#c.CorrectionDynParameters()
 
-# XC60
-Dc = [s.D for s in springs_ok if s.material.name == 'XC60']
-dc = [s.d for s in springs_ok if s.material.name == 'XC60']
-Dac = [s.D for s in all_springs if s.material.name == 'XC60']
-dac = [s.d for s in all_springs if s.material.name == 'XC60']
-pc = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == 'XC60'])
+#catalogs = co.opti_catalogs
 
-ac = fig.add_subplot(321)
-ac.set_title('XC60')
-ac.set_xlabel('d (m)')
-ac.set_ylabel('D (m)')
-ac.plot(da, Da, '.', color = 'gray')
-ac.plot(dac, Dac, 'k.')
-ac.plot(dc, Dc, 'co')
-ac.plot(d_assemb, D_assemb, 'o', color = 'darkcyan')
-    
-# XC95
-Db = [s.D for s in springs_ok if s.material.name == 'XC95']
-db = [s.d for s in springs_ok if s.material.name == 'XC95']
-Dab = [s.D for s in all_springs if s.material.name == 'XC95']
-dab = [s.d for s in all_springs if s.material.name == 'XC95']
-pb = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == 'XC95'])
-    
-ab = fig.add_subplot(322)
-ab.set_title('XC95')
-ab.set_xlabel('d (m)')
-ab.set_ylabel('D (m)')
-ab.plot(da, Da, '.', color = 'gray')
-ab.plot(dab, Dab, 'k.')
-ab.plot(db, Db, 'bo')
-ab.plot(d_assemb, D_assemb, 'o', color = 'navy')
+#fig = plt.figure()
+#plt.plot(da, Da, '.', color = 'darkgrey')
+#plt.plot(d, D, '.', color = 'grey')
+#plt.plot(d_assemb, D_assemb, 'k.')
+#[plt.plot(catalog.products['d'], catalog.products['D'], '.', color = colors.hsv_to_rgb((1/(i+1), 0.7, 0.7)), label = str(n_springs[i])) for i, catalog in enumerate(catalogs)]
+##plt.plot(c.catalog_init['d'], c.catalog_init['R'], 'k.')
+##plt.plot(co.opti_cat.catalog['d'], co.opti_cat.catalog['R'],'r.')
+#plt.xlabel('d')
+#plt.ylabel('D')
+#plt.title('F1 = {0}, F2 = {1}, s = {2}'.format(F1, F2, stroke))
+#plt.legend()
+#fig.canvas.set_window_title('%k = ' + str(k_percent*100))
 
-# 50CV4
-Dg = [s.D for s in springs_ok if s.material.name == '50CV4']
-dg = [s.d for s in springs_ok if s.material.name == '50CV4']
-Dag = [s.D for s in all_springs if s.material.name == '50CV4']
-dag = [s.d for s in all_springs if s.material.name == '50CV4']
-pg = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == '50CV4'])
-    
-ag = fig.add_subplot(323)
-ag.set_title('50CV4')
-ag.set_xlabel('d (m)')
-ag.set_ylabel('D (m)')
-ag.plot(da, Da, '.', color = 'gray')
-ag.plot(dag, Dag, 'k.')
-ag.plot(dg, Dg, 'go')
-ag.plot(d_assemb, D_assemb, 'o', color = 'darkgreen')
-
-# Z15CN17-03
-Dy = [s.D for s in springs_ok if s.material.name == 'Z15CN17-03']
-dy = [s.d for s in springs_ok if s.material.name == 'Z15CN17-03']
-Day = [s.D for s in all_springs if s.material.name == 'Z15CN17-03']
-day = [s.d for s in all_springs if s.material.name == 'Z15CN17-03']
-py = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == 'Z15CN17-03'])
-    
-ay = fig.add_subplot(324)
-ay.set_title('Z15CN17-03')
-ay.set_xlabel('d (m)')
-ay.set_ylabel('D (m)')
-ay.plot(da, Da, '.', color = 'gray')
-ay.plot(day, Day, 'k.')
-ay.plot(dy, Dy, 'o', color = 'yellow')
-ay.plot(d_assemb, D_assemb, 'o', color = 'y')
-
-# CuSN6 R950
-Do = [s.D for s in springs_ok if s.material.name == 'CuSn6 R950']
-do = [s.d for s in springs_ok if s.material.name == 'CuSn6 R950']
-Dao = [s.D for s in all_springs if s.material.name == 'CuSn6 R950']
-dao = [s.d for s in all_springs if s.material.name == 'CuSn6 R950']
-po = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == 'CuSn6 R950'])
-#hullo = ConvexHull(po)
-    
-ao = fig.add_subplot(325)
-ao.set_title('CuSn6 R950')
-ao.set_xlabel('d (m)')
-ao.set_ylabel('D (m)')
-ao.plot(da, Da, '.', color = 'gray')
-ao.plot(dao, Dao, 'k.')
-ao.plot(do, Do, 'o', color = 'orange')
-ao.plot(d_assemb, D_assemb, 'o', color = 'darkorange')
-
-# CuZn36 R700
-Dr = [s.D for s in springs_ok if s.material.name == 'CuZn36 R700']
-dr = [s.d for s in springs_ok if s.material.name == 'CuZn36 R700']
-Dar = [s.D for s in all_springs if s.material.name == 'CuZn36 R700']
-dar = [s.d for s in all_springs if s.material.name == 'CuZn36 R700']
-pr = npy.array([[s.d, s.D] for s in springs_ok if s.material.name == 'CuZn36 R700'])
-    
-ar = fig.add_subplot(326)
-ar.set_title('CuSn36 R700')
-ar.set_xlabel('d (m)')
-ar.set_ylabel('D (m)')
-ar.plot(da, Da, '.', color = 'gray')
-ar.plot(dar, Dar, 'k.')
-ar.plot(dr, Dr, 'ro')
-ar.plot(d_assemb, D_assemb, 'o', color = 'darkred')
 
 #fig2 = plt.figure()
 #plt.plot(cost_assemb3, m_assemb3, 'c.', label = '3')
