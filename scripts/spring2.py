@@ -33,6 +33,10 @@ sao = springs.SpringAssemblyOptimizer(spring_spec['F1'],
 
 saor = springs.SpringAssemblyOptimizationResults(sao.assemblies, input_data)
 
+saor_d=saor.Dict()
+print(saor_d)
+import json
+j=json.dumps(saor_d)
 
 if catalog_spec:
     saor.CatalogStudy()

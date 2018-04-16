@@ -47,6 +47,9 @@ class Material:
     def MaxShearStress(self):
         tau_max = 0.56*self.Rm
         return tau_max
+    
+    def Dict(self):
+        return self.__dict__
         
 steel1 = Material(7850, 200*10**9, 0.3, 750*10**6, 0.8*10**-3, 12*10**-3, 1, 'XC60')
 steel2 = Material(7850, 200*10**9, 0.3, 1000*10**6, 3*10**-3, 12*10**-3, 2.5, 'XC95')
@@ -194,6 +197,11 @@ class Spring():
         
         return resp
     
+    def Dict(self):
+        d=self.__dict__.copy()
+        d['material']=self.material.Dict()
+        del d['contour']
+    
 class SpringAssembly():
     def __init__(self, springs, geometry):
         self.springs = springs
@@ -242,6 +250,15 @@ class SpringAssembly():
             
         model = vm.VolumeModel(volumes)
         resp = model.FreeCADExport('python','spring_assembly','/usr/lib/freecad/lib/',['stl','fcstd'])
+        return resp
+        
+    def Dict(self):
+        d=self.__dict__.copy()
+        springs=[]
+        for spring in self.springs:
+            springs.append(spring.Dict())
+        d['springs']=springs
+        return d
         
 class SpringOptimizer():    
     def __init__(self, spring, specs, F2):
@@ -516,6 +533,16 @@ class SpringAssemblyOptimizationResults():
         index = [i for i, input_pair in enumerate(myList) if [Xs[i], Ys[i]] in p_front]
         return p_frontX, p_frontY, index
     
+    def Dict(self):
+        d={}
+        assemblies=[]
+        for assembly in self.assemblies:
+            assemblies.append(assembly.Dict())
+        d['assemblies']=assemblies
+        d['input_data']=self.input_data
+        return d
+    
+    
 class Catalog():
     def __init__(self, csv_file, name = ''):
         self.csv_file = csv_file
@@ -626,6 +653,7 @@ class ProductAssembly():
         assembly_price = sum([product.catalog.Price(product.product_index, self.n_products*prod_volume) for product in self.products])
         
         return assembly_price
+    
         
 class CatalogOptimizer():
     def __init__(self, catalog, F1, F2, stroke, target_stiffness_percentage,
