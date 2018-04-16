@@ -35,3 +35,8 @@ saor = springs.SpringAssemblyOptimizationResults(sao.assemblies, input_data)
 
 if catalog_spec['bool_catalog']:
     saor.CatalogStudy()
+    
+from dessia_api_client import Client
+
+c=Client()
+r=c.SubmitJob('mc_spring',input_data)
