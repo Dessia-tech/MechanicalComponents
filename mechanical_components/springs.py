@@ -14,7 +14,7 @@ import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 import pandas as pd
 from pandas.plotting import scatter_matrix
-import json
+#import json
 import os
 
 from copy import copy
@@ -231,6 +231,9 @@ class SpringAssembly():
             angle = self.geometry['angle']
             
             [spring.SpringPosition((radius*math.cos(i*angle), radius*math.sin(i*angle))) for i, spring in enumerate(self.springs)]
+            
+        elif self.geometry['pattern'] == 'shaft mounted':
+            [spring.SpringPosition((0, 0)) for i, spring in enumerate(self.springs)]
     
     def CADExport(self):
         volumes = []
@@ -399,6 +402,7 @@ class SpringAssemblyOptimizer():
         self.assemblies = []
         
         if pattern == 'circular':
+            print('ok')
             for i in n_springs:
                 F1eq = F1/i
                 F2eq = F2/i
@@ -417,6 +421,25 @@ class SpringAssemblyOptimizer():
                                 geometry = {'pattern' : pattern, 'radius' : (r1 + r2)/2, 'angle' : angle}
                                 assembly = SpringAssembly([Spring(sdo.D, d, n, sdo.l0, material) for j in range(i)], geometry)
                                 self.assemblies.append(assembly)
+                                
+        elif pattern == 'shaft mounted':
+            for i in n_springs:
+                F1eq = F1/i
+                F2eq = F2/i
+                for d in diameters_m:
+                    for n in n_spires:
+                        for material in materials:
+                            sdo = SpringDiscreteOptimizer(F1eq, F2eq, stroke, d, n, material)
+                            if sdo.tau_k < material.tau_max\
+                            and d >= material.d_min and d <= material.d_max\
+                            and sdo.D/d > 5 and sdo.D/d < 13\
+                            and (sdo.D+d)/(sdo.D-d) > 1.4 and (sdo.D+d)/(sdo.D-d) < 2\
+                            and (sdo.D - d) > r1 and (sdo.D + d) < r2\
+                            and sdo.l1 < l1_max:
+                                print(sdo, 'ok')
+                                geometry = {'pattern' : pattern, 'radius' : None, 'angle' : None}
+                                assembly = SpringAssembly([Spring(sdo.D, d, n, sdo.l0, material) for j in range(i)], geometry)
+                                self.assemblies.append(assembly)
                                             
     def TargetStiffness(self):
         k = (self.F2 - self.F1)/self.stroke
@@ -424,14 +447,44 @@ class SpringAssemblyOptimizer():
         return k
     
 class SpringAssemblyOptimizationResults():
-    def __init__(self, assemblies, bounds):
+    def __init__(self, assemblies, input_data):
         self.assemblies = assemblies
+        self.input_data = input_data
         self.l0_assemb = [assembly.l0 for assembly in assemblies]
         self.cost_assemb = [assembly.Cost() for assembly in assemblies]
         
         self.p_frontX, self.p_frontY, index = self.ParetoFrontier(self.cost_assemb, self.l0_assemb, False, False)
         
         self.results = [assemblies[i] for i in index]
+        
+        self.catalog_optimization_results = None
+        
+    def CatalogStudy(self):
+        spring_spec = self.input_data[0]
+        catalog_spec = self.input_data[1]
+        n_springs = [i + spring_spec['n_springs1'] for i in range(spring_spec['n_springs2'] - spring_spec['n_springs1'] + 1)]
+        
+        co = CatalogOptimizer(ferroflex_catalog,
+                              spring_spec['F1'],
+                              spring_spec['F2'],
+                              spring_spec['stroke'],
+                              catalog_spec['k_precision'],
+                              spring_spec['l1_max'],
+                              spring_spec['r1'],
+                              spring_spec['r2'],
+                              n_springs,
+                              spring_spec['pattern'].lower())
+        
+        dictionnary = {ferroflex_catalog.name : co.opti_indices}
+        cor = CatalogOptimizationResults(dictionnary, catalogs, catalog_spec['prod_volume'])
+        
+        self.catalog_optimization_results = cor
+    
+    def CatalogSearch(self):
+        if self.catalog_optimization_results is None:
+            self.CatalogStudy()
+            
+        test = self.catalog_optimization_results
         
     def PlotResults(self):
         fig = plt.figure()

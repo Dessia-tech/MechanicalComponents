@@ -17,6 +17,7 @@ from scipy.spatial import ConvexHull
 from time import time
 from bs4 import BeautifulSoup
 import pandas as pd
+from dessia_api_client import Client
 
 F1 = 100
 F2 = 500
@@ -31,10 +32,10 @@ n_springs = [i + 3 for i in range(8)]
 # =============================================================================
 # Catalog optimization
 # =============================================================================
-co = springs.CatalogOptimizer(springs.ferroflex_catalog, F1, F2, stroke, k_percent, l1_max, r1, r2, n_springs, 'circular')
-dictionnary = {springs.ferroflex_catalog.name : co.opti_indices}
-cor = springs.CatalogOptimizationResults(dictionnary, springs.catalogs, 50)
-list_springs_assembly = cor.results
+#co = springs.CatalogOptimizer(springs.ferroflex_catalog, F1, F2, stroke, k_percent, l1_max, r1, r2, n_springs, 'circular')
+#dictionnary = {springs.ferroflex_catalog.name : co.opti_indices}
+#cor = springs.CatalogOptimizationResults(dictionnary, springs.catalogs, 50)
+#list_springs_assembly = cor.results
 
 #products = [product.catalog.Price(product.product_index, 20)  for res in cor.results for product in res.products]
 #products
