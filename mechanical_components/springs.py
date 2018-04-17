@@ -500,7 +500,7 @@ class SpringAssemblyOptimizationResults():
                                   spring_spec['pattern'].lower())
             
             dictionnary = {cat_name : co.opti_indices}
-        cor = CatalogOptimizationResults(dictionnary, catalogs, catalog_spec['prod_volume'])
+        cor = CatalogOptimizationResults(dictionnary, list(catalogs.keys()), catalog_spec['prod_volume'])
         
         self.catalog_optimization_results = cor
     

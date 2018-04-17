@@ -37,13 +37,16 @@ sao = springs.SpringAssemblyOptimizer(spring_spec['F1'],
 
 saor = springs.SpringAssemblyOptimizationResults(sao.assemblies, input_data)
 
-saor_d=saor.Dict()
 
-j=json.dumps(saor_d)
-s=jsonpickle.dumps(saor)
+
 s2=pickle.dumps(saor)
 if catalog_spec:
     saor.CatalogStudy()
+    
+saor_d=saor.Dict()
+j=json.dumps(saor_d)
+s=jsonpickle.dumps(saor)
+pickle.dumps(saor)
 
-c=Client()
-r=c.SubmitJob('mc_spring_assembly',input_data)
+#c=Client()
+#r=c.SubmitJob('mc_spring_assembly',input_data)
