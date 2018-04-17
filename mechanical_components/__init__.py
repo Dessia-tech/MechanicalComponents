@@ -6,4 +6,4 @@ Created on Fri Dec 29 17:49:24 2017
 @author: steven
 """
 
-__version__='0.0.1'
+__version__='0.0.2'
