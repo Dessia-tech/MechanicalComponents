@@ -1,9 +1,9 @@
 import mechanical_components.gears as gears
 
 input_dict=(
-#          {'type':'ratio','nom':0.3},
-          {'type':'Z1','min':20,'max':20},
-          {'type':'Z2','min':50,'max':50},
+          {'type':'ratio','nom':0.3,'erreur':0.04},
+          {'type':'Z1','min':20,'max':40},
+          {'type':'Z2','min':30,'max':70},
           {'type':'center_distance','min':30,'max':100},
           {'type':'transverse_pressure_angle','min':15,'max':30},
           {'type':'helix_angle','min':20,'max':30},
