@@ -7,14 +7,17 @@ Created on Thu Mar 22 17:02:33 2018
 """
 import math
 import numpy as npy
-import volmdlr as vm
+
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+
+import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
+
 import pandas as pd
 from pandas.plotting import scatter_matrix
-#import json
+
 import os
 
 from copy import copy
@@ -203,6 +206,8 @@ class Spring():
         d=self.__dict__.copy()
         d['material']=self.material.Dict()
         del d['contour']
+        
+        return d
     
 class SpringAssembly():
     def __init__(self, springs, geometry):
@@ -421,7 +426,6 @@ class SpringAssemblyOptimizer():
         self.assemblies = []
         
         if pattern == 'circular':
-            print('ok')
             for i in n_springs:
                 F1eq = F1/i
                 F2eq = F2/i
@@ -455,7 +459,6 @@ class SpringAssemblyOptimizer():
                             and (sdo.D+d)/(sdo.D-d) > 1.4 and (sdo.D+d)/(sdo.D-d) < 2\
                             and (sdo.D - d) > r1 and (sdo.D + d) < r2\
                             and sdo.l1 < l1_max:
-                                print(sdo, 'ok')
                                 geometry = {'pattern' : pattern, 'radius' : None, 'angle' : None}
                                 assembly = SpringAssembly([Spring(sdo.D, d, n, sdo.l0, material) for j in range(i)], geometry)
                                 self.assemblies.append(assembly)
@@ -484,18 +487,19 @@ class SpringAssemblyOptimizationResults():
         catalog_spec = self.input_data[1]
         n_springs = [i + spring_spec['n_springs1'] for i in range(spring_spec['n_springs2'] - spring_spec['n_springs1'] + 1)]
         
-        co = CatalogOptimizer(ferroflex_catalog,
-                              spring_spec['F1'],
-                              spring_spec['F2'],
-                              spring_spec['stroke'],
-                              catalog_spec['k_precision'],
-                              spring_spec['l1_max'],
-                              spring_spec['r1'],
-                              spring_spec['r2'],
-                              n_springs,
-                              spring_spec['pattern'].lower())
-        
-        dictionnary = {ferroflex_catalog.name : co.opti_indices}
+        for cat_name, catalog in catalogs.items():
+            co = CatalogOptimizer(catalog,
+                                  spring_spec['F1'],
+                                  spring_spec['F2'],
+                                  spring_spec['stroke'],
+                                  catalog_spec['k_precision'],
+                                  spring_spec['l1_max'],
+                                  spring_spec['r1'],
+                                  spring_spec['r2'],
+                                  n_springs,
+                                  spring_spec['pattern'].lower())
+            
+            dictionnary = {cat_name : co.opti_indices}
         cor = CatalogOptimizationResults(dictionnary, catalogs, catalog_spec['prod_volume'])
         
         self.catalog_optimization_results = cor
@@ -612,13 +616,9 @@ class Catalog():
 
 
 ferroflex_file = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'), 'mechanical_components/catalogs/ferroflex.csv')
-ferroflex_catalog = Catalog(ferroflex_file)
+ferroflex_catalog = Catalog(ferroflex_file, 'Ferroflex')
 
-#class Catalogs():
-#    def __init__(self, catalogs):
-#        self.catalogs = {catalog.name : catalog for catalog in catalogs}
-
-catalogs = [Catalog(ferroflex_catalog)]
+catalogs = {ferroflex_catalog.name : ferroflex_catalog}
 
 class Product():
     def __init__(self, catalog_name, product_index):
@@ -755,10 +755,10 @@ class CatalogOptimizationResults():
         self.product_assemblies = []
         
         for cat_name, indices_dict in indices_dicts.items():
-             catalog = catalogs.catalogs[cat_name]
+             catalog = catalogs[cat_name]
              for ns, indices in indices_dict.items():
                  for product_index in indices:
-                     product = Product(catalog, product_index)
+                     product = Product(cat_name, product_index)
                      product_assembly = ProductAssembly([product]*ns)
                      
                      price = product_assembly.Price(prod_volume)

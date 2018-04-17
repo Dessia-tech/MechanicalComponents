@@ -8,6 +8,8 @@ Created on Mon Apr 16 14:20:52 2018
 import mechanical_components.springs as springs
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+import json
+from dessia_api_client import Client
 
 input_data = [{'F1' : 100, 'F2' : 500, 'stroke' : 0.005,
                'l1_max' : 0.100, 'r1' : 0.090, 'r2' : 0.120,
@@ -34,14 +36,11 @@ sao = springs.SpringAssemblyOptimizer(spring_spec['F1'],
 saor = springs.SpringAssemblyOptimizationResults(sao.assemblies, input_data)
 
 saor_d=saor.Dict()
-print(saor_d)
-import json
+
 j=json.dumps(saor_d)
 
 if catalog_spec:
     saor.CatalogStudy()
-    
-from dessia_api_client import Client
 
 c=Client()
 r=c.SubmitJob('mc_spring_assembly',input_data)
