@@ -21,6 +21,8 @@ from copy import copy
 
 from scipy.optimize import minimize
 
+import pkg_resources
+
 class Material:
     def __init__(self, volumic_mass, young_modulus, poisson_ratio, Rm, d_min = 0.12*10**-3, d_max = 12*10**-3, cost_index = 10, name = ''):
         self.volumic_mass = volumic_mass
@@ -465,6 +467,7 @@ class SpringAssemblyOptimizer():
     
 class SpringAssemblyOptimizationResults():
     def __init__(self, assemblies, input_data):
+        self.type='mc_spring_assembly'
         self.assemblies = assemblies
         self.input_data = input_data
         self.l0_assemb = [assembly.l0 for assembly in assemblies]
@@ -606,8 +609,10 @@ class Catalog():
                     springs = SpringAssembly(springs, geometry)
                 
         return springs
-    
-ferroflex_catalog = Catalog(os.path.join(os.path.dirname(__file__), 'catalogs/ferroflex.csv'))
+
+
+ferroflex_file = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'), 'mechanical_components/catalogs/ferroflex.csv')
+ferroflex_catalog = Catalog(ferroflex_file)
 
 #class Catalogs():
 #    def __init__(self, catalogs):
