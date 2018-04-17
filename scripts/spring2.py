@@ -9,6 +9,8 @@ import mechanical_components.springs as springs
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import json
+import jsonpickle
+import pickle
 from dessia_api_client import Client
 
 input_data = [{'F1' : 100, 'F2' : 500, 'stroke' : 0.005,
@@ -38,7 +40,8 @@ saor = springs.SpringAssemblyOptimizationResults(sao.assemblies, input_data)
 saor_d=saor.Dict()
 
 j=json.dumps(saor_d)
-
+s=jsonpickle.dumps(saor)
+s2=pickle.dumps(saor)
 if catalog_spec:
     saor.CatalogStudy()
 

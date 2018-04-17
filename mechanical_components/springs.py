@@ -746,9 +746,9 @@ class CatalogOptimizer():
         return indices_dict
     
 class CatalogOptimizationResults():
-    def __init__(self, indices_dicts, catalogs, prod_volume = 50):
+    def __init__(self, indices_dicts, catalogs_names, prod_volume = 50):
         self.indices_dicts = indices_dicts
-        self.catalogs = catalogs
+        self.catalogs_names = catalogs_names
         
         self.X = []
         self.Y = []
@@ -771,6 +771,11 @@ class CatalogOptimizationResults():
         self.p_frontX, self.p_frontY, index = self.ParetoFrontier(self.X, self.Y, False, False)
         
         self.results = [self.product_assemblies[i] for i in index]
+        
+#    def __getstate__(self):
+#        d=self.__dict__.copy()
+#        del d['catalogs']
+#        return d
         
     def PlotResults(self):
         plt.figure()
