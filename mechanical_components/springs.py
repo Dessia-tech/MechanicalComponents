@@ -609,17 +609,23 @@ class Catalog():
     
 ferroflex_catalog = Catalog(os.path.join(os.path.dirname(__file__), 'catalogs/ferroflex.csv'))
 
-class Catalogs():
-    def __init__(self, catalogs):
-        self.catalogs = {catalog.name : catalog for catalog in catalogs}
-        
-catalogs = Catalogs([ferroflex_catalog])
+#class Catalogs():
+#    def __init__(self, catalogs):
+#        self.catalogs = {catalog.name : catalog for catalog in catalogs}
+
+catalogs = [Catalog(ferroflex_catalog)]
 
 class Product():
-    def __init__(self, catalog, product_index):
-        self.catalog = catalog
+    def __init__(self, catalog_name, product_index):
+        self.catalog_name = catalog_name
+        self.catalog=catalogs[catalog_name]
         self.product_index = product_index
-        
+    
+    def __getstate__(self):
+        d=self.__dict__.copy()
+        del d['catalog']
+        return d
+    
     def Instantiate(self):
         spring = Spring(self.catalog.products['D'][self.product_index],
                         self.catalog.products['d'][self.product_index],

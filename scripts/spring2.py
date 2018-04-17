@@ -44,4 +44,4 @@ if catalog_spec:
 from dessia_api_client import Client
 
 c=Client()
-r=c.SubmitJob('mc_spring',input_data)
+r=c.SubmitJob('mc_spring_assembly',input_data)
