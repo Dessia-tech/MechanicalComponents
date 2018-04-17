@@ -628,7 +628,8 @@ class Product():
     
     def __getstate__(self):
         d=self.__dict__.copy()
-        del d['catalog']
+        if 'catalog' in d:
+            del d['catalog']
         return d
     
     def Instantiate(self):
