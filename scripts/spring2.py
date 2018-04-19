@@ -48,5 +48,11 @@ j=json.dumps(saor_d)
 s=jsonpickle.dumps(saor)
 pickle.dumps(saor)
 
+# =============================================================================
+# Export FreeCAD
+# =============================================================================
+#sa = saor.results[-1]
+#sa.CADExport()
+
 #c=Client()
 #r=c.SubmitJob('mc_spring_assembly',input_data)

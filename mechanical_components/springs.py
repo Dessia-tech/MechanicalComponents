@@ -18,8 +18,6 @@ import volmdlr.primitives2D as primitives2D
 import pandas as pd
 from pandas.plotting import scatter_matrix
 
-import os
-
 from copy import copy
 
 from scipy.optimize import minimize
@@ -103,8 +101,6 @@ class Spring():
         self.lc = self.nt*self.d
         self.l_min = self.lc + self.Sa
         
-        self.w = self.SpringIndex()
-        
         self.material = material
         self.contour = self.Contour()
 
@@ -117,6 +113,13 @@ class Spring():
                 setattr(self,key,value)
                 
         self.p = self.l0/self.n
+        
+        self.k = self.Stiffness()
+        self.w = self.SpringIndex()
+        self.i = self.InclinationAngle()
+        self.lw = self.WireLength()
+        self.m = self.Mass()
+        self.cost = self.Cost()
        
         self.contour = self.Contour()
 #        self.volume = self.Volume()
@@ -167,35 +170,40 @@ class Spring():
         return ci
     
     def Contour(self):
-        p0 = vm.Point2D((self.D/2, 0))
+        p0 = vm.Point2D((0, 0))
         
         l1 = vm.Circle2D(p0, self.d/2)
         
         return vm.Contour2D([l1])
     
     def Volume(self, F):
-        p0_coord = (self.pos_x, self.pos_y, 0)
+        p_spring_coord = (self.pos_x, self.pos_y, 0)
+        p_spring = vm.Point3D(p_spring_coord)
+        
+        xp_coord = (self.pos_x/(math.sqrt(self.pos_x**2 + self.pos_y**2)), self.pos_y/(math.sqrt(self.pos_x**2 + self.pos_y**2)), 0)
+        p_plan = p_spring.Translation(((self.D/(2*math.sqrt(2)))*xp_coord[0], (self.D/(2*math.sqrt(2)))*xp_coord[1], 0))
+#        p0_coord = ((self.D/2 + 1), (self.D/2 + 1), 0)
         zp_coord = (0, 0, 1)
         
-        p0 = vm.Point3D(p0_coord)
-        pc = p0.Translation((self.d/2, 0, 0))
+#        p0 = vm.Point3D(p0_coord)
+#        pc = p0.Translation((self.d/2, 0, 0))
         
-        xp = vm.Vector3D((1, 0, 0))
-        yp = vm.Vector3D((0, 1, 0))
+        xp = vm.Vector3D(xp_coord)
+#        yp = vm.Vector3D((0, 1, 0))
         zp = vm.Vector3D(zp_coord)
         
         l = self.Length(F)
         p = l/self.n
         
         primitives = []
-        volume = primitives3D.HelicalExtrudedProfile(p0, xp, zp, (self.pos_x, self.pos_y, 0), (0, 0, l), p, self.contour, name = 'spring')
+        volume = primitives3D.HelicalExtrudedProfile(p_plan, xp, zp, p_spring_coord, (0, 0, l), p, self.contour, name = 'spring')
         primitives.append(volume)
         
         return primitives
     
     def CADExport(self):
         volumes = []
-        volumes.extend(self.volume)
+        volumes.extend(self.Volume(0))
         
         model = vm.VolumeModel(volumes)
         resp = model.FreeCADExport('python','spring','/usr/lib/freecad/lib/',['stl','fcstd'])
@@ -215,6 +223,9 @@ class SpringAssembly():
         self.n_springs = len(springs)
         self.geometry = geometry
         
+        self.k = self.Stiffness()
+        self.m = self.Mass()
+        self.cost = self.Cost()
         self.l0 = self.FreeLength()
         self.PositionSprings()
         
@@ -511,7 +522,7 @@ class SpringAssemblyOptimizationResults():
         test = self.catalog_optimization_results
         
     def PlotResults(self):
-        fig = plt.figure()
+        plt.figure()
         plt.plot(self.cost_assemb, self.l0_assemb, 'b.', label = 'Assemblies')
         plt.plot(self.p_frontX, self.p_frontY, 'r', label = 'Pareto Frontier')
         plt.xlabel('Cost')
@@ -543,10 +554,15 @@ class SpringAssemblyOptimizationResults():
     def Dict(self):
         d={}
         assemblies=[]
+        results = []
         for assembly in self.assemblies:
-            assemblies.append(assembly.Dict())
-        d['assemblies']=assemblies
-        d['input_data']=self.input_data
+            assembly_d = assembly.Dict()
+            assemblies.append(assembly_d)
+            if assembly in self.results:
+                results.append(assembly_d)
+        d['assemblies'] = assemblies
+        d['input_data'] = self.input_data
+        d['results'] = results
         return d
     
     
@@ -756,7 +772,6 @@ class CatalogOptimizationResults():
         self.product_assemblies = []
         
         for cat_name, indices_dict in indices_dicts.items():
-             catalog = catalogs[cat_name]
              for ns, indices in indices_dict.items():
                  for product_index in indices:
                      product = Product(cat_name, product_index)
