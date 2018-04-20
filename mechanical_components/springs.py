@@ -201,12 +201,12 @@ class Spring():
         
         return primitives
     
-    def CADExport(self):
+    def CADExport(self,name,python_path='python',freecad_path='/usr/lib/freecad/lib/',export_types=['stl','fcstd']):
         volumes = []
         volumes.extend(self.Volume(0))
         
         model = vm.VolumeModel(volumes)
-        resp = model.FreeCADExport('python','spring','/usr/lib/freecad/lib/',['stl','fcstd'])
+        resp = model.FreeCADExport(python_path,name,freecad_path,export_types)
         
         return resp
     
@@ -261,13 +261,14 @@ class SpringAssembly():
         elif self.geometry['pattern'] == 'shaft mounted':
             [spring.SpringPosition((0, 0)) for i, spring in enumerate(self.springs)]
     
-    def CADExport(self):
+    def CADExport(self,name,python_path='python',freecad_path='/usr/lib/freecad/lib/',
+                  export_types=['stl','fcstd']):
         volumes = []
         for spring in self.springs:
             volumes.extend(spring.Volume(0))
             
         model = vm.VolumeModel(volumes)
-        resp = model.FreeCADExport('python','spring_assembly','/usr/lib/freecad/lib/',['stl','fcstd'])
+        resp = model.FreeCADExport(python_path,name,freecad_path,export_types)
         return resp
         
     def Dict(self):

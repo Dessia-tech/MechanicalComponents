@@ -51,8 +51,8 @@ pickle.dumps(saor)
 # =============================================================================
 # Export FreeCAD
 # =============================================================================
-#sa = saor.results[-1]
-#sa.CADExport()
+sa = saor.results[-1]
+sa.CADExport('spring1',export_types=['fcstd'])
 
 #c=Client()
 #r=c.SubmitJob('mc_spring_assembly',input_data)
