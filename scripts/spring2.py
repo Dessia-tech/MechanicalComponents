@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import json
 import jsonpickle
-import pickle
+#import pickle
 from dessia_api_client import Client
 
 input_data = [{'F1' : 100, 'F2' : 500, 'stroke' : 0.005,
@@ -39,20 +39,18 @@ saor = springs.SpringAssemblyOptimizationResults(sao.assemblies, input_data)
 
 
 
-s2=pickle.dumps(saor)
-if catalog_spec:
-    saor.CatalogStudy()
+#s2=pickle.dumps(saor)
     
 saor_d=saor.Dict()
 j=json.dumps(saor_d)
 s=jsonpickle.dumps(saor)
-pickle.dumps(saor)
+#pickle.dumps(saor)
 
 # =============================================================================
 # Export FreeCAD
 # =============================================================================
-sa = saor.results[-1]
-sa.CADExport('spring1',export_types=['fcstd'])
+#sa = saor.results[-1]
+#sa.CADExport('spring1',export_types=['fcstd'])
 
 #c=Client()
 #r=c.SubmitJob('mc_spring_assembly',input_data)

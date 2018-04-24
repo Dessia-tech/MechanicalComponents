@@ -102,6 +102,16 @@ class Spring():
         self.l_min = self.lc + self.Sa
         
         self.material = material
+        self.matching_products = []
+        
+        
+        self.k = self.Stiffness()
+        self.w = self.SpringIndex()
+        self.i = self.InclinationAngle()
+        self.lw = self.WireLength()
+        self.m = self.Mass()
+        self.cost = self.Cost()
+        
         self.contour = self.Contour()
 
     def Update(self, values):
@@ -169,6 +179,15 @@ class Spring():
         
         return ci
     
+    def Custom2Catalog(self, accuracy_rate = 0.05):
+        for cat_name, catalog in catalogs.items():
+            specs = {'R' : (self.Stiffness()*(1 - accuracy_rate), self.Stiffness()*(1 + accuracy_rate)),
+                     'L0' : (self.Length(0)*(1 - accuracy_rate), self.Length(0)*(1 + accuracy_rate))}
+            panda_indices = catalog.FindSprings(specs)
+    
+            products = [Product(cat_name, ind) for ind in panda_indices.get_values()]
+            self.matching_products.extend(products)
+    
     def Contour(self):
         p0 = vm.Point2D((0, 0))
         
@@ -213,21 +232,29 @@ class Spring():
     def Dict(self):
         d=self.__dict__.copy()
         d['material']=self.material.Dict()
+        matching_products = []
+        for matching_product in self.matching_products:
+            matching_products.append(matching_product.Dict())
+        d['matching_products'] = matching_products
         del d['contour']
         
         return d
     
 class SpringAssembly():
-    def __init__(self, springs, geometry):
+    def __init__(self, springs, geometry, identity = None):
         self.springs = springs
         self.n_springs = len(springs)
         self.geometry = geometry
+        self.identity = identity
         
         self.k = self.Stiffness()
         self.m = self.Mass()
         self.cost = self.Cost()
         self.l0 = self.FreeLength()
         self.PositionSprings()
+        
+        self.matching_product_assemblies = []
+#        self.matching_product_assemblies_strict = []
         
     def Stiffness(self):
         k = sum([spring.Stiffness() for spring in self.springs])
@@ -270,13 +297,34 @@ class SpringAssembly():
         model = vm.VolumeModel(volumes)
         resp = model.FreeCADExport(python_path,name,freecad_path,export_types)
         return resp
-        
+    
+    def Custom2Catalog(self, accuracy_rate = 0.05):
+        products = []
+        for spring in self.springs:
+            for product in spring.matching_products:
+                if product not in products:
+                    products.append(product)
+                    
+        for product in products:
+            self.matching_product_assemblies.append(ProductAssembly([product]*self.n_springs))
+            
+#        for product_assembly in self.matching_product_assemblies:
+#            msa = product_assembly.Instantiate(self.geometry)
+#            if self.k > msa.k*(1 - accuracy_rate) and self.k < msa.k*(1 + accuracy_rate)\
+#            and self.l0 > msa.l0*(1 - accuracy_rate) and self.l0 < msa.l0*(1 + accuracy_rate):
+#                self.matching_product_assemblies_strict.append(product_assembly)
+            
     def Dict(self):
         d=self.__dict__.copy()
-        springs=[]
+        springs = []
+        matching_product_assemblies = []
         for spring in self.springs:
             springs.append(spring.Dict())
-        d['springs']=springs
+        for matching_product_assembly in self.matching_product_assemblies:
+            matching_product_assemblies.append(matching_product_assembly.Dict())
+            
+        d['springs'] = springs
+        d['matching_product_assemblies'] = matching_product_assemblies
         return d
         
 class SpringOptimizer():    
@@ -437,6 +485,7 @@ class SpringAssemblyOptimizer():
         
         self.assemblies = []
         
+        compteur = 0
         if pattern == 'circular':
             for i in n_springs:
                 F1eq = F1/i
@@ -453,8 +502,9 @@ class SpringAssemblyOptimizer():
                             and (sdo.D + d) < r2 - r1\
                             and (sdo.D + d) < (r1 + r2)*math.sin(angle/2)\
                             and sdo.l1 < l1_max:
+                                compteur += 1
                                 geometry = {'pattern' : pattern, 'radius' : (r1 + r2)/2, 'angle' : angle}
-                                assembly = SpringAssembly([Spring(sdo.D, d, n, sdo.l0, material) for j in range(i)], geometry)
+                                assembly = SpringAssembly([Spring(sdo.D, d, n, sdo.l0, material) for j in range(i)], geometry, compteur)
                                 self.assemblies.append(assembly)
                                 
         elif pattern == 'shaft mounted':
@@ -492,7 +542,11 @@ class SpringAssemblyOptimizationResults():
         
         self.results = [assemblies[i] for i in index]
         
-        self.catalog_optimization_results = None
+        self.catalog_optimization_results = self.CatalogStudy()
+        accuracy_rate = 0.05
+        [custom_spring.Custom2Catalog(accuracy_rate) for custom_assembly in self.results
+                                                     for custom_spring in custom_assembly.springs]
+        [custom_assembly.Custom2Catalog(accuracy_rate) for custom_assembly in self.results]
         
     def CatalogStudy(self):
         spring_spec = self.input_data[0]
@@ -514,13 +568,7 @@ class SpringAssemblyOptimizationResults():
             dictionnary = {cat_name : co.opti_indices}
         cor = CatalogOptimizationResults(dictionnary, list(catalogs.keys()), catalog_spec['prod_volume'])
         
-        self.catalog_optimization_results = cor
-    
-    def CatalogSearch(self):
-        if self.catalog_optimization_results is None:
-            self.CatalogStudy()
-            
-        test = self.catalog_optimization_results
+        return cor
         
     def PlotResults(self):
         plt.figure()
@@ -561,9 +609,11 @@ class SpringAssemblyOptimizationResults():
             assemblies.append(assembly_d)
             if assembly in self.results:
                 results.append(assembly_d)
+                    
         d['assemblies'] = assemblies
         d['input_data'] = self.input_data
         d['results'] = results
+        
         return d
     
     
@@ -632,7 +682,8 @@ class Catalog():
         return springs
 
 
-ferroflex_file = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'), 'mechanical_components/catalogs/ferroflex.csv')
+ferroflex_file = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                                               'mechanical_components/catalogs/ferroflex.csv')
 ferroflex_catalog = Catalog(ferroflex_file, 'Ferroflex')
 
 catalogs = {ferroflex_catalog.name : ferroflex_catalog}
@@ -640,23 +691,31 @@ catalogs = {ferroflex_catalog.name : ferroflex_catalog}
 class Product():
     def __init__(self, catalog_name, product_index):
         self.catalog_name = catalog_name
-        self.catalog=catalogs[catalog_name]
-        self.product_index = product_index
+        if isinstance(product_index, npy.generic):
+            self.product_index = npy.asscalar(product_index)
+        else:
+            self.product_index = product_index
     
-    def __getstate__(self):
-        d=self.__dict__.copy()
-        if 'catalog' in d:
-            del d['catalog']
-        return d
+#    def __getstate__(self):
+#        d=self.__dict__.copy()
+#        print(type(d['poduct_index']))
+#        if isinstance(d['poduct_index'], npy.generic):
+#            print('ok')
+#            d['poduct_index'] = npy.asscalar(d['poduct_index'])
+#        return d
     
     def Instantiate(self):
-        spring = Spring(self.catalog.products['D'][self.product_index],
-                        self.catalog.products['d'][self.product_index],
-                        self.catalog.products['n'][self.product_index], # /!\ n_spires 0.5 & 0.25 : a vérifier
-                        self.catalog.products['L0'][self.product_index])
+        catalog=catalogs[self.catalog_name]
+        spring = Spring(catalog.products['D'][self.product_index],
+                        catalog.products['d'][self.product_index],
+                        catalog.products['n'][self.product_index], # /!\ n_spires 0.5 & 0.25 : a vérifier
+                        catalog.products['L0'][self.product_index])
                         # /!\ Voir pour matériaux
                         
         return spring
+    
+    def Dict(self):
+        return self.__dict__
 
 class ProductAssembly():
     def __init__(self, products):
@@ -674,14 +733,25 @@ class ProductAssembly():
     
     def FreeLength(self):
         product = self.products[0]
-        l0 = product.catalog.products['L0'][product.product_index]
+        catalog = catalogs[product.catalog_name]
+        l0 = catalog.products['L0'][product.product_index]
         
         return l0
     
     def Price(self, prod_volume):
-        assembly_price = sum([product.catalog.Price(product.product_index, self.n_products*prod_volume) for product in self.products])
+        for product in self.products:
+            catalog = catalogs[product.catalog_name]
+            assembly_price = sum([catalog.Price(product.product_index, self.n_products*prod_volume) for product in self.products])
         
         return assembly_price
+    
+    def Dict(self):
+        d = self.__dict__.copy()
+        products = []
+        for product in self.products:
+            products.append(product.Dict())
+        d['products'] = products
+        return d
     
         
 class CatalogOptimizer():
