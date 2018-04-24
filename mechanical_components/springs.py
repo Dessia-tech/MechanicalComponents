@@ -241,11 +241,10 @@ class Spring():
         return d
     
 class SpringAssembly():
-    def __init__(self, springs, geometry, identity = None):
+    def __init__(self, springs, geometry):
         self.springs = springs
         self.n_springs = len(springs)
         self.geometry = geometry
-        self.identity = identity
         
         self.k = self.Stiffness()
         self.m = self.Mass()
@@ -485,7 +484,6 @@ class SpringAssemblyOptimizer():
         
         self.assemblies = []
         
-        compteur = 0
         if pattern == 'circular':
             for i in n_springs:
                 F1eq = F1/i
@@ -502,9 +500,8 @@ class SpringAssemblyOptimizer():
                             and (sdo.D + d) < r2 - r1\
                             and (sdo.D + d) < (r1 + r2)*math.sin(angle/2)\
                             and sdo.l1 < l1_max:
-                                compteur += 1
                                 geometry = {'pattern' : pattern, 'radius' : (r1 + r2)/2, 'angle' : angle}
-                                assembly = SpringAssembly([Spring(sdo.D, d, n, sdo.l0, material) for j in range(i)], geometry, compteur)
+                                assembly = SpringAssembly([Spring(sdo.D, d, n, sdo.l0, material) for j in range(i)], geometry)
                                 self.assemblies.append(assembly)
                                 
         elif pattern == 'shaft mounted':
@@ -558,7 +555,7 @@ class SpringAssemblyOptimizationResults():
                                   spring_spec['F1'],
                                   spring_spec['F2'],
                                   spring_spec['stroke'],
-                                  catalog_spec['k_precision'],
+                                  catalog_spec['stiffness_precision'],
                                   spring_spec['l1_max'],
                                   spring_spec['r1'],
                                   spring_spec['r2'],

@@ -16,7 +16,7 @@ from dessia_api_client import Client
 input_data = [{'F1' : 100, 'F2' : 500, 'stroke' : 0.005,
                'l1_max' : 0.100, 'r1' : 0.090, 'r2' : 0.120,
                'n_springs1' : 3, 'n_springs2' : 10, 'pattern' : 'circular'},
-              {'k_precision' : 0.05, 'prod_volume' : 50}]
+              {'stiffness_precision' : 0.05, 'prod_volume' : 50}]
 
 spring_spec = input_data[0]
 catalog_spec = input_data[1]
