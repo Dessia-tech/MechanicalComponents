@@ -299,9 +299,11 @@ class SpringAssembly():
     
     def Custom2Catalog(self, accuracy_rate = 0.05):
         products = []
+        product_indices = []
         for spring in self.springs:
             for product in spring.matching_products:
-                if product not in products:
+                if product.product_index not in product_indices:
+                    product_indices.append(product.product_index)
                     products.append(product)
                     
         for product in products:
@@ -601,15 +603,20 @@ class SpringAssemblyOptimizationResults():
         d={}
         assemblies=[]
         results = []
+        product_assemblies = []
         for assembly in self.assemblies:
             assembly_d = assembly.Dict()
             assemblies.append(assembly_d)
             if assembly in self.results:
                 results.append(assembly_d)
+                
+        for product_assembly in self.catalog_optimization_results.results:
+            product_assemblies.append(product_assembly.Dict())
                     
         d['assemblies'] = assemblies
         d['input_data'] = self.input_data
         d['results'] = results
+        d['catalog_results'] = product_assemblies
         
         return d
     

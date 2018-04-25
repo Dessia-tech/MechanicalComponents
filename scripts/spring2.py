@@ -37,11 +37,28 @@ sao = springs.SpringAssemblyOptimizer(spring_spec['F1'],
 
 saor = springs.SpringAssemblyOptimizationResults(sao.assemblies, input_data)
 
-
+for r in saor.results:
+    mpas = r.matching_product_assemblies
+    print('--')
+    for m in mpas:
+        products = m.products
+        for p in products:
+            print(p.product_index)
 
 #s2=pickle.dumps(saor)
     
 saor_d=saor.Dict()
+i = []
+ps = []
+for r in saor_d['results']:
+    mpas = r['matching_product_assemblies']
+    for m in mpas:
+        products = m['products']
+        if products[0] not in ps:
+            ps.append(products[0])
+        for p in products:
+            i.append(p['product_index'])
+                    
 j=json.dumps(saor_d)
 s=jsonpickle.dumps(saor)
 #pickle.dumps(saor)
