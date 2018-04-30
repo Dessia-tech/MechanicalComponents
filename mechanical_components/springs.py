@@ -331,7 +331,7 @@ class SpringAssembly(persistent.Persistent):
         d['matching_product_assemblies'] = matching_product_assemblies
         return d
         
-class SpringOptimizer():    
+class SpringOptimizer:    
     def __init__(self, spring, specs, F2):
         self.spring = spring
         self.specs = specs
@@ -404,7 +404,7 @@ class SpringOptimizer():
         return res
         
     
-class SpringDiscreteOptimizer():
+class SpringDiscreteOptimizer:
     def __init__(self, F1, F2, stroke, d, n, material = steel1):
         self.F1 = F1
         self.F2 = F2
@@ -477,7 +477,7 @@ class SpringDiscreteOptimizer():
         
         return l
     
-class SpringAssemblyOptimizer():
+class SpringAssemblyOptimizer:
     def __init__(self, F1, F2, stroke, n_springs, r1, r2, l1_max, pattern = 'circular'):
         self.F1 = F1
         self.F2 = F2
@@ -626,7 +626,7 @@ class SpringAssemblyOptimizationResults(persistent.Persistent):
         return d
     
     
-class Catalog():
+class Catalog(persistent.Persistent):
     def __init__(self, csv_file, name = ''):
         self.csv_file = csv_file
         self.products = pd.read_csv(csv_file)
@@ -779,7 +779,7 @@ class ProductAssembly(persistent.Persistent):
         return d
     
         
-class CatalogOptimizer():
+class CatalogOptimizer:
     def __init__(self, catalog, F1, F2, stroke, target_stiffness_percentage,
                  max_l1, r1 = 0.090, r2 = 0.120, n_springs = [1], pattern = 'shaft mounted',
                  prod_volume = 50):
