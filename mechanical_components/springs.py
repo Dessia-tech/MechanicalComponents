@@ -116,6 +116,16 @@ class Spring(persistent.Persistent):
         
         self.contour = self.Contour()
 
+    def __getstate__(self):
+        d=self.__dict__.copy()
+        del d['contour']
+        return d
+    
+    def __setstate__(self,d):
+        self.__dict__=d
+        self.contour = self.Contour()
+        
+
     def Update(self, values):
         for key,value in values.items():
             str_split = key.split('.')
@@ -741,7 +751,7 @@ class ProductAssembly(persistent.Persistent):
         self.geometry = geometry
         
         self.l0 = self.FreeLength()
-        
+                
     def Instantiate(self, geometry):
         springs = [product.Instantiate() for product in self.products]
         
