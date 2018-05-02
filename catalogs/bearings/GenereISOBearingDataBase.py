@@ -48,6 +48,7 @@ tableau_serie=pandas.DataFrame(tableau,columns=['d','D','B','rsmin','serie'])
 # Export en CSV
 # =============================================================
 
-tableau_serie.to_csv('serie_rlts_iso.csv')
-roller.to_csv('roller_iso.csv')
-radial_clearance.to_csv('radial_clearance_iso.csv')
+chemin_catalogs='../../mechanical_components/catalogs/'
+tableau_serie.to_csv(chemin_catalogs+'serie_rlts_iso.csv',index=False)
+roller.to_csv(chemin_catalogs+'roller_iso.csv',index=False)
+radial_clearance.to_csv(chemin_catalogs+'radial_clearance_iso.csv',index=False)

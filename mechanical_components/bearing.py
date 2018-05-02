@@ -22,6 +22,11 @@ from pandas.plotting import scatter_matrix
 import matplotlib.pyplot as plt
 #from dessia_common import ResultsDBClient
 #import pyDOE
+from operator import itemgetter
+
+# =============================================================
+# Object matériau (data huile) nécessaire pour le calcul de la durée de vie corrigée
+# =============================================================
 
 class OilData(persistent.Persistent):
     
@@ -149,9 +154,13 @@ class OilData(persistent.Persistent):
                 export_temp=data_temp
             export[i]=npy.array(export_temp)
         return export
+    
+# =============================================================
+# Object générique roulement cylindrique
+# =============================================================
 
 class RadialRollerBearing(persistent.Persistent):
-    def __init__(self,B,d,D,Lw,Dw,r_roller,E,F,Z,i,alpha,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,bm=1.1,c_gamma=0.05,oil_name='iso_vg_100'):
+    def __init__(self,B,d,D,Lw,Dw,r_roller,E,F,Z,i,alpha,O1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,bm=1.1,c_gamma=0.05,oil_name='iso_vg_100'):
         self.B=B
         self.d=d
         self.D=D
@@ -175,6 +184,7 @@ class RadialRollerBearing(persistent.Persistent):
         self.bm=bm
         self.c_gamma=c_gamma
         self.oil_name=oil_name
+        self.O1=O1
     def BaseStaticLoad(self):
         #le système d'unité en entrée est le SI
         self.C0r=44*(1-(self.Dw*1e3*npy.cos(self.alpha))/(self.Dpw*1e3))*self.i*self.Z*self.Lwe*1e3*self.Dw*1e3*npy.cos(self.alpha)
@@ -212,20 +222,19 @@ class RadialRollerBearing(persistent.Persistent):
             nu1=45000*(n*60/(2*npy.pi))**(-0.83)*(self.Dpw*1e3)**(-0.5)
         else:
             nu1=4500*(n*60/(2*npy.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
-        O1=OilData()
-        coeff_oil=O1.oil_kinematic_viscosity_curve[self.oil_name]
+        
+        coeff_oil=self.O1.oil_kinematic_viscosity_curve[self.oil_name]
         nu=10**(10**(coeff_oil['A']*npy.log10(T)+coeff_oil['B']))-0.6
         self.kappa=nu/nu1
         #définition du paramètre de contamination
-        O1.OilContamination(self.Dpw)
-        ec=O1.ec
+        self.O1.OilContamination(self.Dpw)
+        ec=self.O1.ec
         #calcul de la limite de charge en fatigue
         self.BaseStaticLoad()
         if self.Dpw<0.1:
             Cu=self.C0r/8.2
         else:
             Cu=self.C0r/8.2*(100/(self.Dpw*1e3))**0.3
-        print(Cu)
         #calcul du coefficient a_iso
         self.EquivalentDynamicLoad(Fr,Fa)
         if self.kappa<0.4:
@@ -238,40 +247,278 @@ class RadialRollerBearing(persistent.Persistent):
         #calcul de la durée de vie corrigée
         self.BaseLifeTime(Fr,Fa)
         self.Lnm=self.a1*self.a_iso*self.L10
-
-        
-        
-#R1=RadialRollerBearing(B=0.02,d=0.03,D=0.045,Lw=0.015,Dw=0.005,r_roller=0.001,E=0.04,F=0.036,Z=30,i=1,alpha=0)
-#R1.BaseLifeTime(1000)
-#R1.AdjustedLifeTime(1000,500,T=80,S=0.99)
                 
+# =============================================================
+# Objet avec 3 fonctions de selection des roulements cylindriques
+#   - Combinatoire sur les dimensions externe ISO
+#   - Combinatoire en prenant en compte les règles SKF
+#   - Estimation des durées de vie et charge dynamique et fonction de tri
+# =============================================================
         
 class BearingCombination():
-    def __init__(self,database):
-        self.database=database
+    def __init__(self):
+        self.tableau_serie=pandas.read_csv('../mechanical_components/catalogs/serie_rlts_iso.csv')
+        self.roller=pandas.read_csv('../mechanical_components/catalogs/roller_iso.csv')
+        self.radial_clearance=pandas.read_csv('../mechanical_components/catalogs/radial_clearance_iso.csv')
+        df1=self.tableau_serie.copy()
+        df2=self.roller.copy()
+        df3=self.radial_clearance.copy()
+        self.df=[df1,df2,df3]
+        self.dic={}
+        for i,it in enumerate(self.df):
+            for d in it.columns:
+                self.dic[d]=i
         
-    def Analyze(self,limit):
-        #analyse dimension generale du rlts
-        data_rlts=self.database.tableau_serie.copy()
+    def LoadSKFRules(self):
+        self.rules_rlts_skf=pandas.read_csv('../mechanical_components/catalogs/rules_rlts_skf.csv')
+        
+    def Analyze(self,limit,Fr,n,grade=['Gr_gn'],Fa=0):
+        # Combinatoire sur les dimensions externe ISO
+        self.Fr=Fr
+        self.Fa=Fa
+        self.n=n
+        data_rlts=self.tableau_serie.copy()
         for (k1,v1) in limit.items():
             #choix des rlts
             data_rlts=data_rlts[(data_rlts[k1] >= v1[0]) & (data_rlts[k1] <= v1[1])]
-        for i,index in enumerate(data_rlts.index):
-            data_roll=self.database.roller.copy()
+        liste1=list(data_rlts.index)
+        liste2=[]
+        for i,index in enumerate(liste1):
+            data_roll=self.roller.copy()
             #choix des rouleaux
             data_roll=data_roll[(data_rlts.D[index]-data_rlts.d[index])/2 > data_roll.Dw]
             data_roll=data_roll[data_rlts.B[index] > data_roll.Lw]
+            for j in list(data_roll.index):
+                liste2.append((index,j))
             
-            matrix_concat=npy.concatenate((npy.tile(data_rlts.loc[index,:].values,(len(data_roll),1)),data_roll.as_matrix()),axis=1)
-            tableau_serie_min_temp=pandas.DataFrame(matrix_concat,columns=list(data_rlts.columns)+list(data_roll.columns))
-            if i==0:
-                tableau_serie_min=tableau_serie_min_temp
-            if i >0:
-                tableau_serie_min=pandas.concat([tableau_serie_min, tableau_serie_min_temp])
+        liste3=[]
+        data_clearance1=self.radial_clearance.copy()
+        for i,ind in enumerate(liste2):
+            a=data_rlts.d[ind[0]]
+            data_clearance=data_clearance1
+            for j,gr in enumerate(grade):
+                liste_grade=['d_min','d_max']
+                liste_grade.append(gr+'_min')
+                liste_grade.append(gr+'_max')
+
+                data_clearance=data_clearance[(a > data_clearance.d_min) & (a <= data_clearance.d_max)]
                 
-        return tableau_serie_min
+                for k in data_clearance.index:
+                    liste3.append((ind[0],ind[1],k,gr))
+#                matrix_concat=npy.concatenate((npy.tile(data_rlts.loc[ind,:].values,(len(data_clearance),1)),data_clearance.as_matrix()),axis=1)
+#                tableau_serie_min_temp=pandas.DataFrame(matrix_concat,columns=list(data_rlts.columns)+list(data_clearance.columns))
+        return liste3
+    
+    def AnalyseSKFRules(self,liste):
+        # Combinatoire en prenant en compte les règles SKF
+        df_rules=self.rules_rlts_skf.to_dict()
+        liste_out=[]
+        for item in liste:
+            drap=1
+            for k2,v2 in df_rules['type'].items():
+                var_x=df_rules['x'][k2]
+                var_y=df_rules['y'][k2]
+                a=df_rules['a'][k2]
+                b=df_rules['b'][k2]
+                if (var_x in self.dic.keys()) & (var_y in self.dic.keys()):
+                    typ=df_rules['type'][k2]
+                    ind_x=self.dic[var_x]
+                    d_x=self.df[ind_x][var_x][item[ind_x]]
+                    ind_y=self.dic[var_y]
+                    d_y=self.df[ind_y][var_y][item[ind_y]]
+                    if typ=='inf':
+                        if d_y<(a*d_x+b)*0.8:
+                            drap=0
+                    elif typ=='sup':
+                        if d_y>(a*d_x+b)*1.2:
+                            drap=0
+            F_inter=self.AnalyseSKFInterRules(item,'F')
+            Dw=self.AccesData('Dw',item)
+            D=self.AccesData('D',item)
+            if F_inter[0]>F_inter[1]:
+                drap=0
+            E_min=F_inter[0]+2*Dw
+            if E_min>D:
+                drap=0
+            if drap==1:
+                liste_out.append(item)
+        return liste_out
+    
+    def AnalyseSKFInterRules(self,item,var):
+        # définition pour une variable donnée "var" de l'intervalle d'existance de cette variable 
+        # pour les données du roulement défini par "item" (liste des adresses dans les catalogues ISO)
+        df_rules=self.rules_rlts_skf.to_dict()
+        borne_inf=-npy.inf
+        borne_sup=npy.inf
+        for k1,v1 in df_rules['type'].items():
+            if var==df_rules['y'][k1]:
+                if df_rules['type'][k1]=='inf':
+                    if df_rules['x'][k1] in self.dic.keys():
+                        varx=df_rules['x'][k1]
+                        ind=self.dic[varx]
+                        d1=self.df[ind][varx][item[ind]]
+                        borne_inf=max(borne_inf,df_rules['a'][k1]*d1+df_rules['b'][k1])
+                if df_rules['type'][k1]=='sup':
+                    if df_rules['x'][k1] in self.dic.keys():
+                        varx=df_rules['x'][k1]
+                        ind=self.dic[varx]
+                        d1=self.df[ind][varx][item[ind]]
+                        borne_sup=min(borne_sup,df_rules['a'][k1]*d1+df_rules['b'][k1])
+        return [borne_inf,borne_sup]
+    
+    def AccesData(self,var,item):
+        return self.df[self.dic[var]][var][item[self.dic[var]]]
         
-#D1=DataBaseBearing()
-#C1=BearingCombination(D1)
-#tab_selection=C1.Analyze(limit={'d':[0.015,0.016],'D':[0.035,0.040],'B':[0.011,0.015]})
-#print(len(tab_selection))
+    def SortBearing(self,liste,const,S,T,oil_name,nb_sol):
+        # Estimation des durées de vie et charge dynamique et fonction de tri
+        for ind,item in enumerate(liste):
+            Dw=self.AccesData('Dw',item)
+            Lw=self.AccesData('Lw',item)
+            D=self.AccesData('D',item)
+            d=self.AccesData('d',item)
+            B=self.AccesData('B',item)
+            F_inter=self.AnalyseSKFInterRules(item,'F')
+            Gr_min=self.AccesData(item[-1]+'_min',item)
+            Gr_max=self.AccesData(item[-1]+'_max',item)
+            Gr=(Gr_min+Gr_max)/2
+            rsmin=self.AccesData('rsmin',item)
+            rsmax=self.AccesData('rsmax',item)
+            r_roller=(rsmin+rsmax)/2
+            
+            data={'B':B,'d':d,'D':D,'Lw':Lw,'Dw':Dw,'r_roller':r_roller,'i':1,'alpha':0,'O1':self.O1,'oil_name':oil_name}
+            liste_F=npy.arange(F_inter[0],F_inter[1],(F_inter[1]-F_inter[0])/10)
+#            sol=npy.array([[],[],[],[],[],[],[],[]])
+            for f in liste_F:
+                Zmax=int(2*npy.pi/(2*npy.arcsin((Dw/2)/(f/2+Dw/2))))
+                E=f+2*Dw+Gr
+                data['F']=f
+                data['E']=E
+                for Z in range(int(3/4*Zmax),Zmax+1):
+                    data['Z']=Z
+                    R1=RadialRollerBearing(**data)
+                    R1.BaseDynamicLoad()
+                    R1.BaseStaticLoad()
+                    R1.BaseLifeTime(Fr=self.Fr)
+                    R1.AdjustedLifeTime(Fr=self.Fr,n=self.n,Fa=self.Fa,S=S,T=T)
+                    data_export=data.copy()
+                    data_export['C0r']=R1.C0r
+                    data_export['Cr']=R1.Cr
+                    data_export['L10']=R1.L10
+                    data_export['Lnm']=R1.Lnm
+                    ll=[[ind]]
+                    ll_pos=['B','d','D','Lw','Dw','r_roller','i','alpha','E','F','Z','C0r','Cr','L10','Lnm']
+                    for key in ll_pos:
+                        ll.append([data_export[key]])
+                    try:
+                        sol=npy.concatenate((sol,ll),axis=1)
+                    except UnboundLocalError:
+                        sol=npy.array(ll)
+                    
+            li=self._AnalyseOptim(sol,const,ll_pos,nb_sol=nb_sol+20)
+            try:
+                liste_sort=npy.concatenate((liste_sort,sol[:,li]),axis=1)
+            except UnboundLocalError:
+                liste_sort=npy.array(sol[:,li])
+        li=self._AnalyseOptim(liste_sort,const,ll_pos,nb_sol=nb_sol+20)
+        solution={}
+        for i in range(nb_sol):
+            solution[i]={}
+            for j in ll_pos:
+                solution[i][j]=liste_sort[ll_pos.index(j)+1,li[i]]
+        self.solution=solution
+
+    def _AnalyseOptim(self,matrix,const,ll,nb_sol=20):
+        matrix1=matrix
+        temp=matrix1.argsort()
+        li_k2=[]
+        for co in const:
+            pos=ll.index(co['var'])
+            if co['type']=='min':
+                k2=list(temp[pos+1,0:min(nb_sol,temp.shape[1])])
+                matrix1=matrix1[:,tuple(k2)]
+                temp=matrix1.argsort()
+            elif co['type']=='max':
+                k2=list(temp[pos+1,temp.shape[1]-min(nb_sol,temp.shape[1]):-1])
+                k2.reverse()
+                matrix1=matrix1[:,tuple(k2)]
+                temp=matrix1.argsort()
+            elif co['type']=='bound_sup':
+                val=co['val']
+                k2=list(npy.where((matrix1[pos+1,:])<=val)[0])
+                matrix1=matrix1[:,k2]
+                temp=matrix1.argsort()
+            elif co['type']=='bound_inf':
+                val=co['val']
+                k2=list(npy.where((matrix1[pos+1,:])>=val)[0])
+                matrix1=matrix1[:,k2]
+                temp=matrix1.argsort()
+            li_k2.append(tuple(k2))
+        tp=range(matrix.shape[1])
+        for li in li_k2:
+            tpo=[]
+            for l in li:
+                tpo.append(tp[l])
+            tp=tpo
+        return tp
+    
+    def OptimizerBearing(self,input_dict):
+#        limit,grade,Fr,n=100,Fa=0,S=0.9,T=40,oil_name='iso_vg_100',nb_sol=10,maxi=None,mini=None
+        maxi=None
+        mini=None
+        
+        self.O1=OilData()
+        self.LoadSKFRules()
+        limit_ISO={}
+        limit_sort=[]
+        for it in input_dict:
+            if 'min' in it.keys():
+                if it['type'] in ['d','D','B','rsmin']:
+                    limit_ISO[it['type']]=[it['min'],it['max']]
+                elif it['type'] in ['L10','C0r','Cr','Lnm']:
+                    limit_sort.append({'type':'bound_inf','var':it['type'],'val':it['min']})
+                    limit_sort.append({'type':'bound_sup','var':it['type'],'val':it['max']})
+            elif 'grade'==it['type']:
+                grade=[it['nom']]
+            elif 'Fr'==it['type']:
+                Fr=it['nom']
+            elif 'Fa'==it['type']:
+                Fa=it['nom']
+            elif 'n'==it['type']:
+                n=it['nom']
+            elif 'S'==it['type']:
+                S=it['nom']
+            elif 'T'==it['type']:
+                T=it['nom']
+            elif 'oil_name'==it['type']:
+                oil_name=it['nom']
+            elif 'nb_sol'==it['type']:
+                nb_sol=it['nom']
+            elif 'maxi'==it['type']:
+                maxi=it['nom']
+            elif 'mini'==it['type']:
+                mini=it['nom']
+
+        liste_ind=self.Analyze(limit=limit_ISO,grade=grade,Fr=Fr,Fa=Fa,n=n)
+        print('Nombre de Solution ISO: ',len(liste_ind))
+        liste_ind=self.AnalyseSKFRules(liste_ind)
+        print('Nombre de Solution avec règles SKF: ',len(liste_ind))
+        
+        limit_sort.extend([{'type':'min','var':'B','val':None},
+                            {'type':'min','var':'D','val':None},
+                            {'type':'max','var':'d','val':None}])
+        if not maxi==None:
+            limit_sort.append({'type':'max','var':maxi,'val':None})
+        elif not mini==None:
+            limit_sort.append({'type':'min','var':mini,'val':None})
+            
+        self.SortBearing(liste_ind,const=limit_sort,S=S,T=T,oil_name=oil_name,nb_sol=nb_sol)
+                    
+    
+# =============================================================
+# Test sur un objet RadialRollerBearing
+# =============================================================
+
+        
+
+
+
