@@ -15,6 +15,9 @@ import itertools
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 import mechanical_components.LibSvgD3 as LibSvg
+import volmdlr as vm
+import volmdlr.primitives3D as primitives3D
+import volmdlr.primitives2D as primitives2D
 
 import persistent
 import pandas
@@ -160,10 +163,13 @@ class OilData(persistent.Persistent):
 # =============================================================
 
 class RadialRollerBearing(persistent.Persistent):
-    def __init__(self,B,d,D,Lw,Dw,r_roller,E,F,Z,i,alpha,O1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,bm=1.1,c_gamma=0.05,oil_name='iso_vg_100'):
+    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,O1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,bm=1.1,c_gamma=0.05,oil_name='iso_vg_100'):
+        self.typ=typ
         self.B=B
         self.d=d
         self.D=D
+        self.d1=d1
+        self.D1=D1
         self.E=E
         self.F=F
         self.Dw=Dw
@@ -185,6 +191,8 @@ class RadialRollerBearing(persistent.Persistent):
         self.c_gamma=c_gamma
         self.oil_name=oil_name
         self.O1=O1
+        self.jeu=(self.E-self.F-2*self.Dw)/4
+        self.ep=(self.B-self.Lw-2*self.jeu)/2
     def BaseStaticLoad(self):
         #le système d'unité en entrée est le SI
         self.C0r=44*(1-(self.Dw*1e3*npy.cos(self.alpha))/(self.Dpw*1e3))*self.i*self.Z*self.Lwe*1e3*self.Dw*1e3*npy.cos(self.alpha)
@@ -247,6 +255,93 @@ class RadialRollerBearing(persistent.Persistent):
         #calcul de la durée de vie corrigée
         self.BaseLifeTime(Fr,Fa)
         self.Lnm=self.a1*self.a_iso*self.L10
+        
+    def Dict(self):
+
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
+        del d['O1']
+
+        return d
+    
+    def InternalRingContour(self):
+        
+        if self.typ=='NU':
+            p=[vm.Point2D((0,self.d/2))]
+            p.append(vm.Point2D((-self.B/2,self.d/2)))
+            p.append(vm.Point2D((-self.B/2,self.F/2)))
+            p.append(vm.Point2D((self.B/2,self.F/2)))
+            p.append(vm.Point2D((self.B/2,self.d/2)))
+            p.append(p[0])
+            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
+        elif self.typ=='N':
+            
+            p=[vm.Point2D((0,self.d/2))]
+            p.append(vm.Point2D((-self.B/2,self.d/2)))
+            p.append(vm.Point2D((-self.B/2,self.d1/2)))
+            p.append(vm.Point2D((-self.B/2+self.ep,self.d1/2)))
+            p.append(vm.Point2D((-self.B/2+self.ep,self.F/2)))
+            p.append(vm.Point2D((self.B/2-self.ep,self.F/2)))
+            p.append(vm.Point2D((self.B/2-self.ep,self.d1/2)))
+            p.append(vm.Point2D((self.B/2,self.d1/2)))
+            p.append(vm.Point2D((self.B/2,self.d/2)))
+            p.append(p[0])
+            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
+        return ref
+    
+    def ExternalRingContour(self):
+        
+        if self.typ=='N':
+            p=[vm.Point2D((0,self.E/2))]
+            p.append(vm.Point2D((-self.B/2,self.E/2)))
+            p.append(vm.Point2D((-self.B/2,self.D/2)))
+            p.append(vm.Point2D((self.B/2,self.D/2)))
+            p.append(vm.Point2D((self.B/2,self.E/2)))
+            p.append(p[0])
+            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
+        return ref
+    
+    def RollerContour(self):
+        p=[vm.Point2D((0,self.F/2+self.jeu))]
+        p.append(vm.Point2D((-self.Lw/2,self.F/2+self.jeu)))
+        p.append(vm.Point2D((-self.Lw/2,self.F/2+self.jeu+self.Dw)))
+        p.append(vm.Point2D((self.Lw/2,self.F/2+self.jeu+self.Dw)))
+        p.append(vm.Point2D((self.Lw/2,self.F/2+self.jeu)))
+        p.append(p[0])
+        ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
+        return ref
+        
+    def FreeCADExport(self,file_path,export_types):
+        #bague interne
+        IRC=self.InternalRingContour()        
+        irc=primitives3D.RevolvedProfile(vm.Point3D((0,0,0)),vm.Vector3D((0,0,1)),
+                                           vm.Vector3D((0,1,0)),[IRC],vm.Vector3D((0,0,0)),
+                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='irc')
+        #bague externe
+        ERC=self.ExternalRingContour()
+        erc=primitives3D.RevolvedProfile(vm.Point3D((0,0,0)),vm.Vector3D((0,0,1)),
+                                           vm.Vector3D((0,1,0)),[ERC],vm.Vector3D((0,0,0)),
+                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='erc')
+        #roller
+        ROL=self.RollerContour()
+        rol=primitives3D.RevolvedProfile(vm.Point3D((0,self.F/2+self.jeu+self.Dw/2,0)),vm.Vector3D((0,0,1)),
+                                           vm.Vector3D((0,1,0)),[ERC],vm.Vector3D((0,self.F/2+self.jeu+self.Dw/2,0)),
+                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='rol')
+        
+        total=[IRC,ERC,ROL]
+        G1=vm.Contour2D(total)
+#        G1.MPLPlot()
+        
+        model=vm.VolumeModel([irc,erc,rol])
+#        model=vm.VolumeModel([gear1,t1,gear2])
+        model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
                 
 # =============================================================
 # Objet avec 3 fonctions de selection des roulements cylindriques
@@ -344,6 +439,13 @@ class BearingCombination():
                 liste_out.append(item)
         return liste_out
     
+    def AnalyseSKFValueRules(self,var_x,var_y,data_x):
+        df_rules=self.rules_rlts_skf.to_dict()
+        for k1,v1 in df_rules['type'].items():
+            if (var_y==df_rules['y'][k1]) & (var_x==df_rules['x'][k1]):
+                data_y=df_rules['a'][k1]*data_x+df_rules['b'][k1]
+        return data_y
+    
     def AnalyseSKFInterRules(self,item,var):
         # définition pour une variable donnée "var" de l'intervalle d'existance de cette variable 
         # pour les données du roulement défini par "item" (liste des adresses dans les catalogues ISO)
@@ -369,7 +471,7 @@ class BearingCombination():
     def AccesData(self,var,item):
         return self.df[self.dic[var]][var][item[self.dic[var]]]
         
-    def SortBearing(self,liste,const,S,T,oil_name,nb_sol):
+    def SortBearing(self,liste,const,S,T,oil_name,nb_sol,typ):
         # Estimation des durées de vie et charge dynamique et fonction de tri
         for ind,item in enumerate(liste):
             Dw=self.AccesData('Dw',item)
@@ -385,7 +487,7 @@ class BearingCombination():
             rsmax=self.AccesData('rsmax',item)
             r_roller=(rsmin+rsmax)/2
             
-            data={'B':B,'d':d,'D':D,'Lw':Lw,'Dw':Dw,'r_roller':r_roller,'i':1,'alpha':0,'O1':self.O1,'oil_name':oil_name}
+            data={'typ':typ,'B':B,'d':d,'D':D,'Lw':Lw,'Dw':Dw,'r_roller':r_roller,'i':1,'alpha':0,'O1':self.O1,'oil_name':oil_name}
             liste_F=npy.arange(F_inter[0],F_inter[1],(F_inter[1]-F_inter[0])/10)
 #            sol=npy.array([[],[],[],[],[],[],[],[]])
             for f in liste_F:
@@ -393,6 +495,18 @@ class BearingCombination():
                 E=f+2*Dw+Gr
                 data['F']=f
                 data['E']=E
+                
+                d1=self.AnalyseSKFValueRules('F','d1',f)
+                D1=self.AnalyseSKFValueRules('E','D1',E)
+                if typ=='NU':
+                    data['d1']=f
+                else:
+                    data['d1']=d1
+                if typ=='N':
+                    data['D1']=E
+                else:
+                    data['D1']=D1
+                    
                 for Z in range(int(3/4*Zmax),Zmax+1):
                     data['Z']=Z
                     R1=RadialRollerBearing(**data)
@@ -406,7 +520,7 @@ class BearingCombination():
                     data_export['L10']=R1.L10
                     data_export['Lnm']=R1.Lnm
                     ll=[[ind]]
-                    ll_pos=['B','d','D','Lw','Dw','r_roller','i','alpha','E','F','Z','C0r','Cr','L10','Lnm']
+                    ll_pos=['B','d','D','d1','D1','Lw','Dw','r_roller','i','alpha','E','F','Z','C0r','Cr','L10','Lnm']
                     for key in ll_pos:
                         ll.append([data_export[key]])
                     try:
@@ -420,12 +534,19 @@ class BearingCombination():
             except UnboundLocalError:
                 liste_sort=npy.array(sol[:,li])
         li=self._AnalyseOptim(liste_sort,const,ll_pos,nb_sol=nb_sol+20)
-        solution={}
+        self.solution=[]
         for i in range(nb_sol):
-            solution[i]={}
-            for j in ll_pos:
-                solution[i][j]=liste_sort[ll_pos.index(j)+1,li[i]]
-        self.solution=solution
+            for k1 in data.keys():
+                try:
+                    data[k1]=liste_sort[ll_pos.index(k1)+1,li[i]]
+                except ValueError:
+                    pass
+            R1=RadialRollerBearing(**data)
+            R1.BaseDynamicLoad()
+            R1.BaseStaticLoad()
+            R1.BaseLifeTime(Fr=self.Fr)
+            R1.AdjustedLifeTime(Fr=self.Fr,n=self.n,Fa=self.Fa,S=S,T=T)
+            self.solution.append(R1)
 
     def _AnalyseOptim(self,matrix,const,ll,nb_sol=20):
         matrix1=matrix
@@ -497,6 +618,8 @@ class BearingCombination():
                 maxi=it['nom']
             elif 'mini'==it['type']:
                 mini=it['nom']
+            elif 'typ'==it['type']:
+                typ=it['nom']
 
         liste_ind=self.Analyze(limit=limit_ISO,grade=grade,Fr=Fr,Fa=Fa,n=n)
         print('Nombre de Solution ISO: ',len(liste_ind))
@@ -511,7 +634,7 @@ class BearingCombination():
         elif not mini==None:
             limit_sort.append({'type':'min','var':mini,'val':None})
             
-        self.SortBearing(liste_ind,const=limit_sort,S=S,T=T,oil_name=oil_name,nb_sol=nb_sol)
+        self.SortBearing(liste_ind,const=limit_sort,S=S,T=T,oil_name=oil_name,nb_sol=nb_sol,typ=typ)
                     
     
 # =============================================================

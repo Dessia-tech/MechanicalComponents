@@ -23,8 +23,10 @@ input_dict=(
           {'type':'T','nom':40},
           {'type':'oil_name','nom':'iso_vg_1000'},
           {'type':'nb_sol','nom':5},
-          {'type':'mini','nom':'C0r'}
+          {'type':'mini','nom':'C0r'},
+          {'type':'typ','nom':'N'}
           )
 C1.OptimizerBearing(input_dict)
+C1.solution[0].FreeCADExport('GearAssembly',['fcstd','stl'])
 
 print(C1.solution)

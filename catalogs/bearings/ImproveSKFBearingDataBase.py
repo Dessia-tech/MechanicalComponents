@@ -614,4 +614,22 @@ df_rule = pandas.concat([df_rule, df])
 df=D1.AddRule(curve2,var1,var2,'sup')
 df_rule = pandas.concat([df_rule, df])
 
+#rule 33
+var1='E'
+dat1=bearing_SKF[bearing_SKF.type!='N'].E
+var2='D1'
+dat2=bearing_SKF[bearing_SKF.type!='N'].D1
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 34
+var1='F'
+dat1=bearing_SKF[bearing_SKF.type!='NU'].F
+var2='d1'
+dat2=bearing_SKF[bearing_SKF.type!='NU'].d1
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
 df_rule.to_csv(chemin_catalogs+'rules_rlts_SKF.csv',index=False)
