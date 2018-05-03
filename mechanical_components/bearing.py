@@ -332,7 +332,7 @@ class RadialRollerBearing(persistent.Persistent):
         #roller
         ROL=self.RollerContour()
         rol=primitives3D.RevolvedProfile(vm.Point3D((0,self.F/2+self.jeu+self.Dw/2,0)),vm.Vector3D((0,0,1)),
-                                           vm.Vector3D((0,1,0)),[ERC],vm.Vector3D((0,self.F/2+self.jeu+self.Dw/2,0)),
+                                           vm.Vector3D((0,1,0)),[ROL],vm.Vector3D((0,self.F/2+self.jeu+self.Dw/2,0)),
                                            vm.Vector3D((0,0,1)),angle=2*math.pi,name='rol')
         
         total=[IRC,ERC,ROL]
