@@ -331,15 +331,20 @@ class RadialRollerBearing(persistent.Persistent):
                                            vm.Vector3D((0,0,1)),angle=2*math.pi,name='erc')
         #roller
         ROL=self.RollerContour()
-        rol=primitives3D.RevolvedProfile(vm.Point3D((0,0,0)),vm.Vector3D((0,0,-1)),
-                                           vm.Vector3D((0,1,0)),[ROL],vm.Vector3D((0,self.F/2+self.jeu+self.Dw/2,0)),
-                                           vm.Vector3D((0,0,-1)),angle=2*math.pi,name='rol')
+        radius=self.F/2+self.jeu+self.Dw/2
+        rol=[]
+        theta=2*npy.pi/self.Z
+        for z in range(int(self.Z)):
+            rol.append(primitives3D.RevolvedProfile(vm.Point3D((0,0,0)),vm.Vector3D((0,0,1)),
+                                               vm.Vector3D((0,1,0)),[ROL],vm.Vector3D((radius*npy.sin(z*theta),radius*npy.cos(z*theta),0)),
+                                               vm.Vector3D((0,0,1)),angle=2*math.pi,name='rol'))
         
-        total=[ROL]
-        G1=vm.Contour2D(total)
+#        total=[ROL]
+#        G1=vm.Contour2D(total)
 #        G1.MPLPlot()
         
-        model=vm.VolumeModel([irc,erc,rol])
+        tot=[irc,erc]+rol
+        model=vm.VolumeModel(tot)
 #        model=vm.VolumeModel([gear1,t1,gear2])
         model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
                 
