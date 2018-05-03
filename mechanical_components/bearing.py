@@ -336,7 +336,7 @@ class RadialRollerBearing(persistent.Persistent):
         theta=2*npy.pi/self.Z
         for z in range(int(self.Z)):
             rol.append(primitives3D.RevolvedProfile(vm.Point3D((0,0,0)),vm.Vector3D((0,0,1)),
-                                               vm.Vector3D((0,1,0)),[ROL],vm.Vector3D((radius*npy.sin(z*theta),radius*npy.cos(z*theta),0)),
+                                               vm.Vector3D((radius*npy.sin(z*theta),radius*npy.cos(z*theta),0)),[ROL],vm.Vector3D((radius*npy.sin(z*theta),radius*npy.cos(z*theta),0)),
                                                vm.Vector3D((0,0,1)),angle=2*math.pi,name='rol'))
         
 #        total=[ROL]
