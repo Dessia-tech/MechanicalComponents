@@ -331,11 +331,11 @@ class RadialRollerBearing(persistent.Persistent):
                                            vm.Vector3D((0,0,1)),angle=2*math.pi,name='erc')
         #roller
         ROL=self.RollerContour()
-        rol=primitives3D.RevolvedProfile(vm.Point3D((0,self.F/2+self.jeu+self.Dw/2,0)),vm.Vector3D((0,0,1)),
+        rol=primitives3D.RevolvedProfile(vm.Point3D((0,0,0)),vm.Vector3D((0,0,-1)),
                                            vm.Vector3D((0,1,0)),[ROL],vm.Vector3D((0,self.F/2+self.jeu+self.Dw/2,0)),
-                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='rol')
+                                           vm.Vector3D((0,0,-1)),angle=2*math.pi,name='rol')
         
-        total=[IRC,ERC,ROL]
+        total=[ROL]
         G1=vm.Contour2D(total)
 #        G1.MPLPlot()
         
