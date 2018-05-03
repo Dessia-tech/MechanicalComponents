@@ -365,7 +365,7 @@ class BearingCombination():
                 self.dic[d]=i
         
     def LoadSKFRules(self):
-        self.rules_rlts_skf=pandas.read_csv('../mechanical_components/catalogs/rules_rlts_skf.csv')
+        self.rules_rlts_skf=pandas.read_csv('../mechanical_components/catalogs/rules_rlts_SKF.csv')
         
     def Analyze(self,limit,Fr,n,grade=['Gr_gn'],Fa=0):
         # Combinatoire sur les dimensions externe ISO
