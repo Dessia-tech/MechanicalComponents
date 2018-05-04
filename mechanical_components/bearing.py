@@ -309,11 +309,11 @@ class RadialRollerBearing(persistent.Persistent):
         return ref
     
     def RollerContour(self):
-        p=[vm.Point2D((0,0))]
-        p.append(vm.Point2D((-self.Lw/2,0)))
+        p=[vm.Point2D((0,0.00001))]
+        p.append(vm.Point2D((-self.Lw/2,0.00001)))
         p.append(vm.Point2D((-self.Lw/2,self.Dw/2)))
         p.append(vm.Point2D((self.Lw/2,self.Dw/2)))
-        p.append(vm.Point2D((self.Lw/2,0)))
+        p.append(vm.Point2D((self.Lw/2,0.00001)))
         p.append(p[0])
         ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{2:self.r_roller,3:self.r_roller},False).primitives)
         return ref

@@ -27,6 +27,7 @@ input_dict=(
           {'type':'typ','nom':'N'}
           )
 C1.OptimizerBearing(input_dict)
-C1.solution[0].FreeCADExport('GearAssembly',['fcstd','stl'])
+for i,j in enumerate(C1.solution):
+    C1.solution[i].FreeCADExport('GearAssembly_{}'.format(i),['fcstd','stl'])
 
 print(C1.solution)
