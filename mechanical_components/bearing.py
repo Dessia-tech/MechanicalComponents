@@ -309,11 +309,11 @@ class RadialRollerBearing(persistent.Persistent):
         return ref
     
     def RollerContour(self):
-        p=[vm.Point2D((0,self.F/2+self.jeu))]
-        p.append(vm.Point2D((-self.Lw/2,self.F/2+self.jeu)))
-        p.append(vm.Point2D((-self.Lw/2,self.F/2+self.jeu+self.Dw)))
-        p.append(vm.Point2D((self.Lw/2,self.F/2+self.jeu+self.Dw)))
-        p.append(vm.Point2D((self.Lw/2,self.F/2+self.jeu)))
+        p=[vm.Point2D((0,-self.Dw/2))]
+        p.append(vm.Point2D((-self.Lw/2,-self.Dw/2)))
+        p.append(vm.Point2D((-self.Lw/2,self.Dw/2)))
+        p.append(vm.Point2D((self.Lw/2,self.Dw/2)))
+        p.append(vm.Point2D((self.Lw/2,-self.Dw/2)))
         p.append(p[0])
         ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
         return ref
@@ -335,7 +335,7 @@ class RadialRollerBearing(persistent.Persistent):
         rol=[]
         theta=2*npy.pi/self.Z
         for z in range(int(self.Z)):
-            rol.append(primitives3D.RevolvedProfile(vm.Point3D((0,0,0)),vm.Vector3D((0,0,1)),
+            rol.append(primitives3D.RevolvedProfile(vm.Point3D((radius*npy.sin(z*theta),radius*npy.cos(z*theta),0)),vm.Vector3D((0,0,1)),
                                                vm.Vector3D((radius*npy.sin(z*theta),radius*npy.cos(z*theta),0)),[ROL],vm.Vector3D((radius*npy.sin(z*theta),radius*npy.cos(z*theta),0)),
                                                vm.Vector3D((0,0,1)),angle=2*math.pi,name='rol'))
         
