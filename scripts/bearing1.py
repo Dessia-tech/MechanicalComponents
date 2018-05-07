@@ -22,7 +22,7 @@ input_dict=(
           {'type':'oil_name','nom':'iso_vg_100'},
           {'type':'nb_sol','nom':5},
           {'type':'mini','nom':'C0r'},
-          {'type':'typ','nom':'NU'}
+          {'type':'typ','nom':'NF'}
           )
 C1.OptimizerBearing(input_dict)
 for i,j in enumerate(C1.solution):

@@ -9,7 +9,6 @@ import math
 from scipy.linalg import norm
 from scipy.optimize import minimize,fsolve
 from scipy.interpolate import splprep, splev
-import cma
 #from sympy import *
 import itertools
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -272,7 +271,6 @@ class RadialRollerBearing(persistent.Persistent):
         return d
     
     def InternalRingContour(self):
-        
         if self.typ=='NU':
             p=[vm.Point2D((0,self.d/2))]
             p.append(vm.Point2D((-self.B/2,self.d/2)))
@@ -281,8 +279,7 @@ class RadialRollerBearing(persistent.Persistent):
             p.append(vm.Point2D((self.B/2,self.d/2)))
             p.append(p[0])
             ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
-        elif self.typ=='N':
-            
+        elif self.typ=='N' or self.typ=='NF':
             p=[vm.Point2D((0,self.d/2))]
             p.append(vm.Point2D((-self.B/2,self.d/2)))
             p.append(vm.Point2D((-self.B/2,self.d1/2)))
@@ -294,10 +291,19 @@ class RadialRollerBearing(persistent.Persistent):
             p.append(vm.Point2D((self.B/2,self.d/2)))
             p.append(p[0])
             ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
+        elif self.typ=='NJ':
+            p=[vm.Point2D((0,self.d/2))]
+            p.append(vm.Point2D((-self.B/2,self.d/2)))
+            p.append(vm.Point2D((-self.B/2,self.d1/2)))
+            p.append(vm.Point2D((-self.B/2+self.ep,self.d1/2)))
+            p.append(vm.Point2D((-self.B/2+self.ep,self.F/2)))
+            p.append(vm.Point2D((self.B/2,self.F/2)))
+            p.append(vm.Point2D((self.B/2,self.d/2)))
+            p.append(p[0])
+            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
         return ref
     
     def ExternalRingContour(self):
-        
         if self.typ=='N':
             p=[vm.Point2D((0,self.E/2))]
             p.append(vm.Point2D((-self.B/2,self.E/2)))
@@ -306,7 +312,7 @@ class RadialRollerBearing(persistent.Persistent):
             p.append(vm.Point2D((self.B/2,self.E/2)))
             p.append(p[0])
             ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
-        elif self.typ=='NU':
+        elif self.typ=='NU' or self.typ=='NJ':
             p=[vm.Point2D((0,self.E/2))]
             p.append(vm.Point2D((-self.B/2+self.ep,self.E/2)))
             p.append(vm.Point2D((-self.B/2+self.ep,self.D1/2)))
@@ -318,6 +324,16 @@ class RadialRollerBearing(persistent.Persistent):
             p.append(vm.Point2D((self.B/2-self.ep,self.E/2)))
             p.append(p[0])
             ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
+        elif self.typ=='NF':
+            p=[vm.Point2D((0,self.E/2))]
+            p.append(vm.Point2D((-self.B/2+self.ep,self.E/2)))
+            p.append(vm.Point2D((-self.B/2+self.ep,self.D1/2)))
+            p.append(vm.Point2D((-self.B/2,self.D1/2)))
+            p.append(vm.Point2D((-self.B/2,self.D/2)))
+            p.append(vm.Point2D((self.B/2,self.D/2)))
+            p.append(vm.Point2D((self.B/2,self.E/2)))
+            p.append(p[0])
+            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
         return ref
     
     def RollerContour(self):
