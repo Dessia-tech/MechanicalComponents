@@ -10,17 +10,18 @@ import mechanical_components.bearing as bearing
 
 C1=bearing.BearingCombination()
 input_dict=(
-          {'type':'d','min':0.01,'max':0.03},
-          {'type':'B','min':0.01,'max':0.03},
-          {'type':'D','min':0.03,'max':0.05},
+          {'type':'d','min':0.04,'max':0.07},
+          {'type':'B','min':0.02,'max':0.04},
+          {'type':'D','min':0.05,'max':0.1},
+          {'type':'L10','min':10,'max':10000000},
           {'type':'grade','nom':'Gr_gn'},
-          {'type':'Fr','nom':15000},
+          {'type':'Fr','nom':10000},
           {'type':'Fa','nom':0},
           {'type':'n','nom':100},
-          {'type':'S','nom':0.97},
+          {'type':'S','nom':0.90},
           {'type':'T','nom':40},
           {'type':'oil_name','nom':'iso_vg_100'},
-          {'type':'nb_sol','nom':5},
+          {'type':'nb_sol','nom':10},
           {'type':'mini','nom':'C0r'},
           {'type':'typ','nom':'NF'}
           )
