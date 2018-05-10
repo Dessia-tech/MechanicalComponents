@@ -6,9 +6,9 @@ Created on Tue May  1 17:13:16 2018
 @author: Pierrem
 """
 
-import mechanical_components.bearing as bearing
+import mechanical_components.bearings as bearings
 
-C1=bearing.BearingCombination()
+C1=bearings.BearingCombination()
 input_dict=(
           {'type':'d','min':0.04,'max':0.07},
           {'type':'B','min':0.02,'max':0.04},
@@ -26,7 +26,8 @@ input_dict=(
           {'type':'typ','nom':'NF'}
           )
 C1.OptimizerBearing(input_dict)
-for i,j in enumerate(C1.solution):
-    C1.solution[i].FreeCADExport('GearAssembly_{}'.format(i),['fcstd','stl'])
+for i,b in enumerate(C1.solution):
+    print(b)
+    b.FreeCADExport('Bearing_{}'.format(i),['fcstd','stl'])
 
 print(C1.solution)

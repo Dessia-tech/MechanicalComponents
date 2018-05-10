@@ -1722,7 +1722,9 @@ class GearAssemblyOptimizerWizard:
                     return False
                 
                     
-        dat=['Z1','Z2','center_distance','transverse_pressure_angle','helix_angle','coefficient_profile_shift1','coefficient_profile_shift2','gear_width','maximum_torque']
+        dat=['Z1','Z2','center_distance','transverse_pressure_angle','helix_angle',
+             'coefficient_profile_shift1','coefficient_profile_shift2','gear_width',
+             'maximum_torque']
         for i in dat:
             if 'nom' not in data[i]:
                 if 'min' not in data[i] or 'max' not in data[i]:
