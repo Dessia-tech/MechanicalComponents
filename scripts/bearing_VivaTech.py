@@ -8,7 +8,7 @@ Created on Tue May  1 17:13:16 2018
 
 import mechanical_components.bearings as bearings
 
-C1=bearing.BearingCombination()
+C1=bearings.BearingCombination()
 input_dict=(
           {'type':'d','min':0.04,'max':0.04},
           {'type':'B','min':0.018,'max':0.02},
