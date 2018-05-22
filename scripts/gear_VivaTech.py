@@ -1,4 +1,5 @@
 import mechanical_components.gears as gears
+import numpy as npy
 
 input_dict=(
           {'type':'ratio','nom':0.3,'erreur':0.04},
