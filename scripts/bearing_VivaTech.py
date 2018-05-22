@@ -6,7 +6,7 @@ Created on Tue May  1 17:13:16 2018
 @author: Pierrem
 """
 
-import mechanical_components.bearing as bearing
+import mechanical_components.bearings as bearings
 
 C1=bearing.BearingCombination()
 input_dict=(
@@ -25,6 +25,7 @@ input_dict=(
           {'type':'mini','nom':'C0r'},
           {'type':'typ','nom':'NF'}
           )
+
 C1.OptimizerBearing(input_dict)
 for i,j in enumerate(C1.solution):
     C1.solution[i].FreeCADExport('BearingAssembly_{}'.format(i),['fcstd','stl'])
