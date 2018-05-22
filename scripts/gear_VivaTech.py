@@ -11,11 +11,11 @@ input_dict=(
           {'type':'maximum_torque','nom':1},
           {'type':'coefficient_profile_shift1','min':-1,'max':1},
           {'type':'coefficient_profile_shift2','min':-1,'max':1},
-          {'type':'material1','nom':'hardened_alloy_steel'},
-          {'type':'material2','nom':'hardened_alloy_steel'},
-          {'type':'nb_cycle1','nom':10000000},
-#          {'type':'rim1','nom':'rim_gear'},
-#          {'type':'rim2','nom':'rim_gear'},
+#          {'type':'material1','nom':'hardened_alloy_steel'},
+#          {'type':'material2','nom':'hardened_alloy_steel'},
+#          {'type':'nb_cycle1','nom':10000000},
+          {'type':'rim1','nom':'shaft_gear'},
+          {'type':'rim2','nom':'shaft_gear'},
 #          {'type':'alpha_rim1','nom':1.1},
 #          {'type':'alpha_rim2','nom':1.1},
 #          {'type':'boring_diameter1','nom':10},
@@ -32,22 +32,19 @@ if GA_wizard.ok:
 
 ### Sorties Obj et CSV
 results=gears.GearAssemblyOptimizationResults(GA_wizard.solutions,input_dict)
-results.CSVExport('data.csv','w')
+#results.CSVExport('data.csv','w')
 
 ### Sorties graphiques SVG
-print('Nb solutions:',len(results.solutions))
+#print('Nb solutions:',len(results.solutions))
+min_backlash=[]
 for i,ga in enumerate(results.solutions):
-    ga.Gear1.rack.SVGExport(5,'rack1-s{}.html'.format(str(i)))
-    ga.Gear2.rack.SVGExport(5,'rack2-s{}.html'.format(str(i)))
-    ga.Gear1.GearGenerationSVGExport('Cremaillere_Z1-s{}.html'.format(str(i)))
-    ga.Gear2.GearGenerationSVGExport('Cremaillere_Z2-s{}.html'.format(str(i)))
-    ga.MeshingSVGExport('Creation_Dent1-s{}.html'.format(str(i)),'Z1')
-    ga.MeshingSVGExport('Creation_Dent2-s{}.html'.format(str(i)),'Z2')
-    ga.SVGExport('Gear-Assembly-s{}.html'.format(str(i)))
-    r=ga.FreeCADExport('GearAssembly_{}'.format(i),(0,0),(ga.center_distance,0),
-                     'python','/usr/lib/freecad/lib',['fcstd','stl'])
-    print(r)
+    min_backlash.append([i,ga.linear_backlash])
+sort=npy.argsort(min_backlash,0)
     
+solu=results.solutions[sort[0][1]]
+r=solu.FreeCADExport('GearAssembly',(0,0),(solu.center_distance,0),
+                 'python','/usr/lib/freecad/lib',['fcstd','stl'])
+
 
 d=results.Dict()
 #print(d)
