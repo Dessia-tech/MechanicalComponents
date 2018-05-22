@@ -337,11 +337,11 @@ class RadialRollerBearing(persistent.Persistent):
         return ref
     
     def RollerContour(self):
-        p=[vm.Point2D((0,0.00001))]
-        p.append(vm.Point2D((-self.Lw/2,0.00001)))
+        p=[vm.Point2D((0,0.))]
+        p.append(vm.Point2D((-self.Lw/2,0.)))
         p.append(vm.Point2D((-self.Lw/2,self.Dw/2)))
         p.append(vm.Point2D((self.Lw/2,self.Dw/2)))
-        p.append(vm.Point2D((self.Lw/2,0.00001)))
+        p.append(vm.Point2D((self.Lw/2,0.)))
         p.append(p[0])
         ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{2:self.r_roller,3:self.r_roller},False).primitives)
         return ref
@@ -367,23 +367,21 @@ class RadialRollerBearing(persistent.Persistent):
                                                vm.Vector3D((0,1,0)),[ROL],vm.Vector3D((radius*npy.sin(z*theta),radius*npy.cos(z*theta),0)),
                                                vm.Vector3D((0,0,1)),angle=2*math.pi,name='rol'))
         
-#        total=[ROL]
-#        G1=vm.Contour2D(total)
-#        G1.MPLPlot()
-        
         tot=[irc,erc]+rol
         model=vm.VolumeModel(tot)
-#        model=vm.VolumeModel([gear1,t1,gear2])
         model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
-                
-# =============================================================
-# Objet avec 3 fonctions de selection des roulements cylindriques
-#   - Combinatoire sur les dimensions externe ISO
-#   - Combinatoire en prenant en compte les règles SKF
-#   - Estimation des durées de vie et charge dynamique et fonction de tri
-# =============================================================
+        return model
+
+
         
 class BearingCombination():
+    """
+    Objet avec 3 fonctions de selection des roulements cylindriques
+   - Combinatoire sur les dimensions externe ISO
+   - Combinatoire en prenant en compte les règles SKF
+   - Estimation des durées de vie et charge dynamique et fonction de tri
+
+    """
     def __init__(self):
         self.tableau_serie=pandas.read_csv('../mechanical_components/catalogs/serie_rlts_iso.csv')
         self.roller=pandas.read_csv('../mechanical_components/catalogs/roller_iso.csv')
