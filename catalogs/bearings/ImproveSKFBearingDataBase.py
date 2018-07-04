@@ -22,7 +22,7 @@ import itertools
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 import mechanical_components.LibSvgD3 as LibSvg
-import mechanical_components.bearing as bearing
+import mechanical_components.bearings as bearings
 
 import persistent
 import pandas
@@ -311,356 +311,368 @@ D1=DataBaseBearing()
 
 bearing_SKF=D1.LoadSKFDataBase()
 
-var1='D'
-dat1=bearing_SKF.D
-var2='Dw'
-dat2=bearing_SKF.Dw
-curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),1)
+#rule 1
+var1='ep'
+dat1=bearing_SKF.ep
+var2='B'
+dat2=bearing_SKF.B
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df_rule=D1.AddRule(curve1,var1,var2,'inf')
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 2
+var1='Lw'
+dat1=bearing_SKF.Lw
+var2='B'
+dat2=bearing_SKF.B
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
 df=D1.AddRule(curve1,var1,var2,'inf')
 df_rule = pandas.concat([df_rule, df])
 df=D1.AddRule(curve2,var1,var2,'sup')
 df_rule = pandas.concat([df_rule, df])
 
-##rule 1
-#var1='ep'
-#dat1=bearing_SKF.ep
-#var2='B'
-#dat2=bearing_SKF.B
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df_rule=D1.AddRule(curve1,var1,var2,'inf')
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 2
-#var1='Lw'
-#dat1=bearing_SKF.Lw
-#var2='B'
-#dat2=bearing_SKF.B
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 3
-#var1='d'
-#dat1=bearing_SKF.d
-#var2='B'
-#dat2=bearing_SKF.B
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 4
-#var1='D'
-#dat1=bearing_SKF.D
-#var2='B'
-#dat2=bearing_SKF.B
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 5
-#var1='E'
-#dat1=bearing_SKF.E
-#var2='B'
-#dat2=bearing_SKF.B
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 6
-#var1='F'
-#dat1=bearing_SKF.F
-#var2='B'
-#dat2=bearing_SKF.B
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 7
-#var1='C0'
-#dat1=bearing_SKF.C0
-#var2='B'
-#dat2=bearing_SKF.B
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 7
-#var1='C0r'
-#dat1=bearing_SKF.C0r
-#var2='B'
-#dat2=bearing_SKF.B
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 8
-#var1='Z'
-#dat1=bearing_SKF.Z
-#var2='B'
-#dat2=bearing_SKF.B
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 9
-#var1='ep_ax'
-#dat1=bearing_SKF.ep_ax
-#var2='B'
-#dat2=bearing_SKF.B
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 10
-#var1='Dw'
-#dat1=bearing_SKF.Dw
-#var2='B'
-#dat2=bearing_SKF.B
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 11
-#var1='D'
-#dat1=bearing_SKF.D
-#var2='d'
-#dat2=bearing_SKF.d
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 12
-#var1='Lw'
-#dat1=bearing_SKF.Lw
-#var2='d'
-#dat2=bearing_SKF.d
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 13
-#var1='Dw'
-#dat1=bearing_SKF.Dw
-#var2='d'
-#dat2=bearing_SKF.d
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#
-##rule 14
-#var1='E'
-#dat1=bearing_SKF.E
-#var2='d'
-#dat2=bearing_SKF.d
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 15
-#var1='F'
-#dat1=bearing_SKF.F
-#var2='d'
-#dat2=bearing_SKF.d
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 16
-#var1='C0'
-#dat1=bearing_SKF.C0
-#var2='d'
-#dat2=bearing_SKF.d
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#
-##rule 17
-#var1='C0r'
-#dat1=bearing_SKF.C0r
-#var2='d'
-#dat2=bearing_SKF.d
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#
-##rule 18
-#var1='Z'
-#dat1=bearing_SKF.Z
-#var2='d'
-#dat2=bearing_SKF.d
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#
-##rule 19
-#var1='Lw'
-#dat1=bearing_SKF.Lw
-#var2='D'
-#dat2=bearing_SKF.D
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 20
-#var1='Dw'
-#dat1=bearing_SKF.Dw
-#var2='D'
-#dat2=bearing_SKF.D
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#
-##rule 21
-#var1='E'
-#dat1=bearing_SKF.E
-#var2='D'
-#dat2=bearing_SKF.D
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 22
-#var1='F'
-#dat1=bearing_SKF.F
-#var2='D'
-#dat2=bearing_SKF.D
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 23
-#var1='C0'
-#dat1=bearing_SKF.C0
-#var2='D'
-#dat2=bearing_SKF.D
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 24
-#var1='C0r'
-#dat1=bearing_SKF.C0r
-#var2='D'
-#dat2=bearing_SKF.D
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 25
-#var1='Dw'
-#dat1=bearing_SKF.Dw
-#var2='C0'
-#dat2=bearing_SKF.C0
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#
-##rule 26
-#var1='Lw'
-#dat1=bearing_SKF.Lw
-#var2='C0'
-#dat2=bearing_SKF.C0
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#
-##rule 27
-#var1='E'
-#dat1=bearing_SKF.E
-#var2='C0'
-#dat2=bearing_SKF.C0
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 28
-#var1='F'
-#dat1=bearing_SKF.F
-#var2='C0'
-#dat2=bearing_SKF.C0
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 29
-#var1='Dw'
-#dat1=bearing_SKF.Dw
-#var2='C0r'
-#dat2=bearing_SKF.C0r
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#
-##rule 30
-#var1='Lw'
-#dat1=bearing_SKF.Lw
-#var2='C0r'
-#dat2=bearing_SKF.C0r
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#
-##rule 31
-#var1='E'
-#dat1=bearing_SKF.E
-#var2='C0r'
-#dat2=bearing_SKF.C0r
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 32
-#var1='F'
-#dat1=bearing_SKF.F
-#var2='C0r'
-#dat2=bearing_SKF.C0r
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 33
-#var1='E'
-#dat1=bearing_SKF[bearing_SKF.type!='N'].E
-#var2='D1'
-#dat2=bearing_SKF[bearing_SKF.type!='N'].D1
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 34
-#var1='F'
-#dat1=bearing_SKF[bearing_SKF.type!='NU'].F
-#var2='d1'
-#dat2=bearing_SKF[bearing_SKF.type!='NU'].d1
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#df=D1.AddRule(curve2,var1,var2,'sup')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 35
-#var1='D_E'
-#dat1=bearing_SKF[bearing_SKF.type!='NU'].D-bearing_SKF[bearing_SKF.type!='NU'].E
-#var2='D'
-#dat2=bearing_SKF[bearing_SKF.type!='NU'].D
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
-#
-##rule 36
-#var1='F_d'
-#dat1=bearing_SKF[bearing_SKF.type!='NU'].F-bearing_SKF[bearing_SKF.type!='NU'].d
-#var2='d'
-#dat2=bearing_SKF[bearing_SKF.type!='NU'].d
-#curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
-#df=D1.AddRule(curve1,var1,var2,'inf')
-#df_rule = pandas.concat([df_rule, df])
+#rule 3
+var1='d'
+dat1=bearing_SKF.d
+var2='B'
+dat2=bearing_SKF.B
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 4
+var1='D'
+dat1=bearing_SKF.D
+var2='B'
+dat2=bearing_SKF.B
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 5
+var1='E'
+dat1=bearing_SKF.E
+var2='B'
+dat2=bearing_SKF.B
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 6
+var1='F'
+dat1=bearing_SKF.F
+var2='B'
+dat2=bearing_SKF.B
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 7
+var1='C0'
+dat1=bearing_SKF.C0
+var2='B'
+dat2=bearing_SKF.B
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 7
+var1='C0r'
+dat1=bearing_SKF.C0r
+var2='B'
+dat2=bearing_SKF.B
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 8
+var1='Z'
+dat1=bearing_SKF.Z
+var2='B'
+dat2=bearing_SKF.B
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 9
+var1='ep_ax'
+dat1=bearing_SKF.ep_ax
+var2='B'
+dat2=bearing_SKF.B
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 10
+var1='Dw'
+dat1=bearing_SKF.Dw
+var2='B'
+dat2=bearing_SKF.B
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 11
+var1='D'
+dat1=bearing_SKF.D
+var2='d'
+dat2=bearing_SKF.d
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 12
+var1='Lw'
+dat1=bearing_SKF.Lw
+var2='d'
+dat2=bearing_SKF.d
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 13
+var1='Dw'
+dat1=bearing_SKF.Dw
+var2='d'
+dat2=bearing_SKF.d
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+
+#rule 14
+var1='E'
+dat1=bearing_SKF.E
+var2='d'
+dat2=bearing_SKF.d
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 15
+var1='F'
+dat1=bearing_SKF.F
+var2='d'
+dat2=bearing_SKF.d
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 16
+var1='C0'
+dat1=bearing_SKF.C0
+var2='d'
+dat2=bearing_SKF.d
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+
+#rule 17
+var1='C0r'
+dat1=bearing_SKF.C0r
+var2='d'
+dat2=bearing_SKF.d
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+
+#rule 18
+var1='Z'
+dat1=bearing_SKF.Z
+var2='d'
+dat2=bearing_SKF.d
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+
+#rule 19
+var1='Lw'
+dat1=bearing_SKF.Lw
+var2='D'
+dat2=bearing_SKF.D
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 20
+var1='Dw'
+dat1=bearing_SKF.Dw
+var2='D'
+dat2=bearing_SKF.D
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+
+#rule 21
+var1='E'
+dat1=bearing_SKF.E
+var2='D'
+dat2=bearing_SKF.D
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 22
+var1='F'
+dat1=bearing_SKF.F
+var2='D'
+dat2=bearing_SKF.D
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 23
+var1='C0'
+dat1=bearing_SKF.C0
+var2='D'
+dat2=bearing_SKF.D
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 24
+var1='C0r'
+dat1=bearing_SKF.C0r
+var2='D'
+dat2=bearing_SKF.D
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 25
+var1='Dw'
+dat1=bearing_SKF.Dw
+var2='C0'
+dat2=bearing_SKF.C0
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+
+#rule 26
+var1='Lw'
+dat1=bearing_SKF.Lw
+var2='C0'
+dat2=bearing_SKF.C0
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+
+#rule 27
+var1='E'
+dat1=bearing_SKF.E
+var2='C0'
+dat2=bearing_SKF.C0
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 28
+var1='F'
+dat1=bearing_SKF.F
+var2='C0'
+dat2=bearing_SKF.C0
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 29
+var1='Dw'
+dat1=bearing_SKF.Dw
+var2='C0r'
+dat2=bearing_SKF.C0r
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+
+#rule 30
+var1='Lw'
+dat1=bearing_SKF.Lw
+var2='C0r'
+dat2=bearing_SKF.C0r
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+
+#rule 31
+var1='E'
+dat1=bearing_SKF.E
+var2='C0r'
+dat2=bearing_SKF.C0r
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 32
+var1='F'
+dat1=bearing_SKF.F
+var2='C0r'
+dat2=bearing_SKF.C0r
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 33
+var1='E'
+dat1=bearing_SKF[bearing_SKF.type!='N'].E
+var2='D1'
+dat2=bearing_SKF[bearing_SKF.type!='N'].D1
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 34
+var1='F'
+dat1=bearing_SKF[bearing_SKF.type!='NU'].F
+var2='d1'
+dat2=bearing_SKF[bearing_SKF.type!='NU'].d1
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 35
+var1='D_E'
+dat1=bearing_SKF[bearing_SKF.type!='NU'].D-bearing_SKF[bearing_SKF.type!='NU'].E
+var2='D'
+dat2=bearing_SKF[bearing_SKF.type!='NU'].D
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 36
+var1='F_d'
+dat1=bearing_SKF[bearing_SKF.type!='NU'].F-bearing_SKF[bearing_SKF.type!='NU'].d
+var2='d'
+dat2=bearing_SKF[bearing_SKF.type!='NU'].d
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 37
+var1='D'
+dat1=bearing_SKF.D
+var2='Dw'
+dat2=bearing_SKF.Dw
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 38
+var1='d'
+dat1=bearing_SKF.d
+var2='Dw'
+dat2=bearing_SKF.Dw
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
 
 df_rule.to_csv(chemin_catalogs+'rules_rlts_SKF.csv',index=False)
