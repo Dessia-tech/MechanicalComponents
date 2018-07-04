@@ -444,10 +444,10 @@ class BearingCombination():
                     ind_y=self.dic[var_y]
                     d_y=self.df[ind_y][var_y][item[ind_y]]
                     if typ=='inf':
-                        if d_y<(a*d_x+b)*0.8:
+                        if d_y<(a*d_x+b)*0.9:
                             drap=0
                     elif typ=='sup':
-                        if d_y>(a*d_x+b)*1.2:
+                        if d_y>(a*d_x+b)*1.1:
                             drap=0
             F_inter=self.AnalyseSKFInterRules(item,'F')
             Dw=self.AccesData('Dw',item)
