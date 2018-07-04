@@ -39,7 +39,7 @@ input_dict=(
                   {'type':'T','nom':40},
                   {'type':'oil_name','nom':'iso_vg_100'},
                   {'type':'nb_sol','nom':1},
-                  {'type':'mini','nom':'C0r'},
+                  {'type':'maxi','nom':'C0r'},
                   {'type':'typ','nom':'NF'}
                   )
 

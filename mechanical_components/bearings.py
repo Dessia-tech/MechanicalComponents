@@ -435,14 +435,31 @@ class BearingCombination():
             for k2,v2 in df_rules['type'].items():
                 var_x=df_rules['x'][k2]
                 var_y=df_rules['y'][k2]
-                a=df_rules['a'][k2]
-                b=df_rules['b'][k2]
-                if (var_x in self.dic.keys()) & (var_y in self.dic.keys()):
+                if (var_x not in ['ep','E','F','C0','C0r','Z','ep_ax','F_d','D_E']) and (var_y not in ['ep','E','F','C0','C0r','Z','ep_ax','F_d','D_E']):
+                    a=df_rules['a'][k2]
+                    b=df_rules['b'][k2]                    
+    #                if (var_x in self.dic.keys()) & (var_y in self.dic.keys()):
                     typ=df_rules['type'][k2]
-                    ind_x=self.dic[var_x]
-                    d_x=self.df[ind_x][var_x][item[ind_x]]
-                    ind_y=self.dic[var_y]
-                    d_y=self.df[ind_y][var_y][item[ind_y]]
+                    if len(var_x.split('_'))>1:
+                        var1=var_x.split('_')[0]
+                        var2=var_x.split('_')[1]
+                        ind1=self.dic[var1]
+                        ind2=self.dic[var2]
+                        d_x=self.df[ind1][var1][item[ind1]]-self.df[ind2][var2][item[ind2]]
+                    else:
+                        ind_x=self.dic[var_x]
+                        d_x=self.df[ind_x][var_x][item[ind_x]]
+                    if len(var_y.split('_'))>1:
+                        var1=var_y.split('_')[0]
+                        var2=var_y.split('_')[1]
+                        ind1=self.dic[var1]
+                        ind2=self.dic[var2]
+                        d_y=self.df[ind1][var1][item[ind1]]-self.df[ind2][var2][item[ind2]]
+                    else:
+                        ind_y=self.dic[var_y]
+                        d_y=self.df[ind_y][var_y][item[ind_y]]
+    #                ind_y=self.dic[var_y]
+    #                d_y=self.df[ind_y][var_y][item[ind_y]]
                     if typ=='inf':
                         if d_y<(a*d_x+b)*0.9:
                             drap=0
