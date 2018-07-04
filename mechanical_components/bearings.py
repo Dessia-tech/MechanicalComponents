@@ -1,30 +1,31 @@
 import numpy as npy
 import math as mt
 from scipy import interpolate
-import os
+#import os
 import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 import math
-from scipy.linalg import norm
-from scipy.optimize import minimize,fsolve
-from scipy.interpolate import splprep, splev
+#from scipy.linalg import norm
+#from scipy.optimize import minimize,fsolve
+#from scipy.interpolate import splprep, splev
 #from sympy import *
-import itertools
-from jinja2 import Environment, PackageLoader, select_autoescape
+#import itertools
+#from jinja2 import Environment, PackageLoader, select_autoescape
 
-import mechanical_components.LibSvgD3 as LibSvg
-import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
+#import mechanical_components.LibSvgD3 as LibSvg
+#import volmdlr as vm
+#import volmdlr.primitives3D as primitives3D
+#import volmdlr.primitives2D as primitives2D
 
+import pkg_resources
 import persistent
 import pandas
-from pandas.plotting import scatter_matrix
-import matplotlib.pyplot as plt
+#from pandas.plotting import scatter_matrix
+#import matplotlib.pyplot as plt
 #from dessia_common import ResultsDBClient
 #import pyDOE
-from operator import itemgetter
+#from operator import itemgetter
 
 # =============================================================
 # Object matériau (data huile) nécessaire pour le calcul de la durée de vie corrigée
@@ -195,10 +196,12 @@ class RadialRollerBearing(persistent.Persistent):
     def BaseStaticLoad(self):
         #le système d'unité en entrée est le SI
         self.C0r=44*(1-(self.Dw*1e3*npy.cos(self.alpha))/(self.Dpw*1e3))*self.i*self.Z*self.Lwe*1e3*self.Dw*1e3*npy.cos(self.alpha)
+    
     def EquivalentStaticLoad(self,Fr,Fa=None):
         x0=0.5*self.i
         y0=0.22*1/npy.tan(self.alpha)*self.i
         self.P0r=max(Fr,x0*Fr+y0*Fa)
+        
     def BaseDynamicLoad(self):
         mu=float((self.Dwe*1e3)*npy.cos(self.alpha)/(self.Dpw*1e3))
         delta=self.mu_delta/mu
@@ -221,6 +224,7 @@ class RadialRollerBearing(persistent.Persistent):
         self.BaseDynamicLoad()
         self.EquivalentDynamicLoad(Fr,Fa)
         self.L10=(self.Cr/self.Pr)**(10/3)
+        
     def AdjustedLifeTime(self,Fr,n,Fa=0,S=0.9,T=40):
         # Durée de vie corrigée en millions de tour associée à une fiabilité de S% pour un roulement tournant à la vitesse n (rad/s) et à la température de l'huile T
         self.a1=(1-self.c_gamma)*(npy.log(1/S)/npy.log(100/90))**(1/self.weibull_e)+self.c_gamma
@@ -346,32 +350,36 @@ class RadialRollerBearing(persistent.Persistent):
         ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{2:self.r_roller,3:self.r_roller},False).primitives)
         return ref
         
-    def FreeCADExport(self,file_path,export_types):
+        
+    def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
+        center = vm.Point3D(center)
+        x=vm.Vector3D(axis)
+        y=x.RandomUnitNormalVector()
+        z=vm.Vector3D(npy.cross(x.vector,y.vector))
         #bague interne
         IRC=self.InternalRingContour()        
-        irc=primitives3D.RevolvedProfile(vm.Point3D((0,0,0)),vm.Vector3D((0,0,1)),
-                                           vm.Vector3D((0,1,0)),[IRC],vm.Vector3D((0,0,0)),
-                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='irc')
+        irc=primitives3D.RevolvedProfile(center,x, z,[IRC], center, x,angle=2*math.pi,name='irc')
         #bague externe
         ERC=self.ExternalRingContour()
-        erc=primitives3D.RevolvedProfile(vm.Point3D((0,0,0)),vm.Vector3D((0,0,1)),
-                                           vm.Vector3D((0,1,0)),[ERC],vm.Vector3D((0,0,0)),
-                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='erc')
+        erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center, x, angle=2*math.pi,name='erc')
         #roller
         ROL=self.RollerContour()
         radius=self.F/2+self.jeu+self.Dw/2
         rol=[]
         theta=2*npy.pi/self.Z
-        for z in range(int(self.Z)):
-            rol.append(primitives3D.RevolvedProfile(vm.Point3D((radius*npy.sin(z*theta),radius*npy.cos(z*theta),0)),vm.Vector3D((0,0,1)),
-                                               vm.Vector3D((0,1,0)),[ROL],vm.Vector3D((radius*npy.sin(z*theta),radius*npy.cos(z*theta),0)),
-                                               vm.Vector3D((0,0,1)),angle=2*math.pi,name='rol'))
+        for zi in range(int(self.Z)):
+            center_roller = center + radius*math.sin(zi*theta) * y + radius*math.cos(zi*theta) * z
+            rol.append(primitives3D.RevolvedProfile(center_roller, x, z, [ROL],
+                                                    center_roller, x,
+                                                    angle=2*math.pi,name='rol'))
         
         tot=[irc,erc]+rol
         model=vm.VolumeModel(tot)
-        model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
         return model
 
+    def FreeCADExport(self,file_path,export_types):
+        model = self.VolumeModel()
+        model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
 
         
 class BearingCombination():
@@ -383,9 +391,18 @@ class BearingCombination():
 
     """
     def __init__(self):
-        self.tableau_serie=pandas.read_csv('../mechanical_components/catalogs/serie_rlts_iso.csv')
-        self.roller=pandas.read_csv('../mechanical_components/catalogs/roller_iso.csv')
-        self.radial_clearance=pandas.read_csv('../mechanical_components/catalogs/radial_clearance_iso.csv')
+        tableau_serie = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                                               'mechanical_components/catalogs/serie_rlts_iso.csv')
+        self.tableau_serie=pandas.read_csv(tableau_serie)
+        
+        roller = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                                               'mechanical_components/catalogs/roller_iso.csv')
+        self.roller=pandas.read_csv(roller)
+        
+        radial_clearance = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                                               'mechanical_components/catalogs/radial_clearance_iso.csv')
+        self.radial_clearance = pandas.read_csv(radial_clearance)
+        
         df1=self.tableau_serie.copy()
         df2=self.roller.copy()
         df3=self.radial_clearance.copy()
@@ -397,7 +414,9 @@ class BearingCombination():
         self.df_dict=[df1.to_dict(),df2.to_dict(),df3.to_dict()]
         
     def LoadSKFRules(self):
-        self.rules_rlts_skf=pandas.read_csv('../mechanical_components/catalogs/rules_rlts_SKF.csv')
+        rules_rlts_skf = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                                               'mechanical_components/catalogs/rules_rlts_SKF.csv')
+        self.rules_rlts_skf=pandas.read_csv(rules_rlts_skf)
         self.df_rules_dict=self.rules_rlts_skf.to_dict()
         
     def Analyze(self,limit,Fr,n,grade=['Gr_gn'],Fa=0):
@@ -621,7 +640,7 @@ class BearingCombination():
                 typ=it['nom']
 
         liste_ind=self.Analyze(limit=limit_ISO,grade=grade,Fr=Fr,Fa=Fa,n=n)
-        print('Nombre de Solution ISO: ',len(liste_ind))
+        print('Number of ISO solutions: ',len(liste_ind))
         liste_ind=self.AnalyseSKFRules(liste_ind)
         print('Nombre de Solution avec règles SKF: ',len(liste_ind))
         liste_ind=self.AnalyseDetail(liste_ind,typ=typ)
@@ -638,12 +657,5 @@ class BearingCombination():
         self.SortBearing(liste_ind,const=limit_sort,S=S,T=T,oil_name=oil_name,nb_sol=nb_sol,typ=typ)
         print('Nombre de Solution finale: ',len(self.solution))
                     
-    
-# =============================================================
-# Test sur un objet RadialRollerBearing
-# =============================================================
-
-        
-
 
 
