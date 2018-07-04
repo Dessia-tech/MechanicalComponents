@@ -24,7 +24,9 @@ from scipy.optimize import minimize
 
 import pkg_resources
 
-class Material:
+import persistent
+
+class Material(persistent.Persistent):
     def __init__(self, volumic_mass, young_modulus, poisson_ratio, Rm, d_min = 0.12*10**-3, d_max = 12*10**-3, cost_index = 10, name = ''):
         self.volumic_mass = volumic_mass
         self.young_modulus = young_modulus
@@ -79,7 +81,7 @@ diameters_mm = [0.12, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
 
 diameters_m = [d*10**-3 for d in diameters_mm]
 
-class Spring():
+class Spring(persistent.Persistent):
     def __init__(self, D = 0.0050, d = 0.0010, n = 5, l0 = 0.010, material = steel1):
         self.D = D
         self.d = d
@@ -113,6 +115,16 @@ class Spring():
         self.cost = self.Cost()
         
         self.contour = self.Contour()
+
+    def __getstate__(self):
+        d=self.__dict__.copy()
+        del d['contour']
+        return d
+    
+    def __setstate__(self,d):
+        self.__dict__=d
+        self.contour = self.Contour()
+        
 
     def Update(self, values):
         for key,value in values.items():
@@ -236,11 +248,12 @@ class Spring():
         for matching_product in self.matching_products:
             matching_products.append(matching_product.Dict())
         d['matching_products'] = matching_products
+        
         del d['contour']
         
         return d
     
-class SpringAssembly():
+class SpringAssembly(persistent.Persistent):
     def __init__(self, springs, geometry):
         self.springs = springs
         self.n_springs = len(springs)
@@ -307,7 +320,7 @@ class SpringAssembly():
                     products.append(product)
                     
         for product in products:
-            self.matching_product_assemblies.append(ProductAssembly([product]*self.n_springs))
+            self.matching_product_assemblies.append(ProductAssembly([product]*self.n_springs, self.geometry))
             
 #        for product_assembly in self.matching_product_assemblies:
 #            msa = product_assembly.Instantiate(self.geometry)
@@ -328,7 +341,7 @@ class SpringAssembly():
         d['matching_product_assemblies'] = matching_product_assemblies
         return d
         
-class SpringOptimizer():    
+class SpringOptimizer:    
     def __init__(self, spring, specs, F2):
         self.spring = spring
         self.specs = specs
@@ -401,7 +414,7 @@ class SpringOptimizer():
         return res
         
     
-class SpringDiscreteOptimizer():
+class SpringDiscreteOptimizer:
     def __init__(self, F1, F2, stroke, d, n, material = steel1):
         self.F1 = F1
         self.F2 = F2
@@ -474,7 +487,7 @@ class SpringDiscreteOptimizer():
         
         return l
     
-class SpringAssemblyOptimizer():
+class SpringAssemblyOptimizer:
     def __init__(self, F1, F2, stroke, n_springs, r1, r2, l1_max, pattern = 'circular'):
         self.F1 = F1
         self.F2 = F2
@@ -529,7 +542,7 @@ class SpringAssemblyOptimizer():
          
         return k
     
-class SpringAssemblyOptimizationResults():
+class SpringAssemblyOptimizationResults(persistent.Persistent):
     def __init__(self, assemblies, input_data):
         self.type='mc_spring_assembly'
         self.assemblies = assemblies
@@ -565,7 +578,7 @@ class SpringAssemblyOptimizationResults():
                                   spring_spec['pattern'].lower())
             
             dictionnary = {cat_name : co.opti_indices}
-        cor = CatalogOptimizationResults(dictionnary, list(catalogs.keys()), catalog_spec['prod_volume'])
+        cor = CatalogOptimizationResults(dictionnary, list(catalogs.keys()), self.input_data, catalog_spec['prod_volume'])
         
         return cor
         
@@ -600,6 +613,8 @@ class SpringAssemblyOptimizationResults():
         return p_frontX, p_frontY, index
     
     def Dict(self):
+        catalog_spec = self.input_data[1]
+        
         d={}
         assemblies=[]
         results = []
@@ -611,7 +626,7 @@ class SpringAssemblyOptimizationResults():
                 results.append(assembly_d)
                 
         for product_assembly in self.catalog_optimization_results.results:
-            product_assemblies.append(product_assembly.Dict())
+            product_assemblies.append(product_assembly.Dict(catalog_spec['prod_volume']))
                     
         d['assemblies'] = assemblies
         d['input_data'] = self.input_data
@@ -621,7 +636,7 @@ class SpringAssemblyOptimizationResults():
         return d
     
     
-class Catalog():
+class Catalog(persistent.Persistent):
     def __init__(self, csv_file, name = ''):
         self.csv_file = csv_file
         self.products = pd.read_csv(csv_file)
@@ -692,7 +707,7 @@ ferroflex_catalog = Catalog(ferroflex_file, 'Ferroflex')
 
 catalogs = {ferroflex_catalog.name : ferroflex_catalog}
 
-class Product():
+class Product(persistent.Persistent):
     def __init__(self, catalog_name, product_index):
         self.catalog_name = catalog_name
         if isinstance(product_index, npy.generic):
@@ -719,15 +734,24 @@ class Product():
         return spring
     
     def Dict(self):
-        return self.__dict__
+        d = self.__dict__
+        
+        spring = self.Instantiate()
+        d['k'] = spring.k
+        d['l0'] = spring.l0
+        d['D'] = spring.D
+        d['d'] = spring.d
+        
+        return d
 
-class ProductAssembly():
-    def __init__(self, products):
+class ProductAssembly(persistent.Persistent):
+    def __init__(self, products, geometry):
         self.products = products
         self.n_products = len(products)
+        self.geometry = geometry
         
         self.l0 = self.FreeLength()
-        
+                
     def Instantiate(self, geometry):
         springs = [product.Instantiate() for product in self.products]
         
@@ -749,16 +773,23 @@ class ProductAssembly():
         
         return assembly_price
     
-    def Dict(self):
+    def Dict(self, prod_volume = None):
         d = self.__dict__.copy()
         products = []
         for product in self.products:
             products.append(product.Dict())
         d['products'] = products
+        
+        if prod_volume is not None:
+            d['price'] = self.Price(prod_volume)
+        
+        spring_assembly = self.Instantiate(self.geometry)
+        d['k'] = spring_assembly.k
+        
         return d
     
         
-class CatalogOptimizer():
+class CatalogOptimizer:
     def __init__(self, catalog, F1, F2, stroke, target_stiffness_percentage,
                  max_l1, r1 = 0.090, r2 = 0.120, n_springs = [1], pattern = 'shaft mounted',
                  prod_volume = 50):
@@ -837,10 +868,11 @@ class CatalogOptimizer():
             
         return indices_dict
     
-class CatalogOptimizationResults():
-    def __init__(self, indices_dicts, catalogs_names, prod_volume = 50):
+class CatalogOptimizationResults(persistent.Persistent):
+    def __init__(self, indices_dicts, catalogs_names, input_data, prod_volume = 50):
         self.indices_dicts = indices_dicts
         self.catalogs_names = catalogs_names
+        spring_spec = input_data[0]
         
         self.X = []
         self.Y = []
@@ -849,8 +881,12 @@ class CatalogOptimizationResults():
         for cat_name, indices_dict in indices_dicts.items():
              for ns, indices in indices_dict.items():
                  for product_index in indices:
+                     geometry = {'pattern' : spring_spec['pattern'],
+                                 'radius' : (spring_spec['r1'] + spring_spec['r2'])/2,
+                                 'angle' : 2*math.pi/ns}
+                     
                      product = Product(cat_name, product_index)
-                     product_assembly = ProductAssembly([product]*ns)
+                     product_assembly = ProductAssembly([product]*ns, geometry)
                      
                      price = product_assembly.Price(prod_volume)
                      l0 = product_assembly.l0
