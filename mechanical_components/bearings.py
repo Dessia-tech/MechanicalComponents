@@ -192,6 +192,13 @@ class RadialRollerBearing(persistent.Persistent):
         self.O1=O1
         self.jeu=(self.E-self.F-2*self.Dw)/4
         self.ep=(self.B-self.Lw-2*self.jeu)/2
+        self.mass=self.Mass()
+    def Mass(self):
+        rho=7800
+        m=self.Z*npy.pi*(self.Dw)**2/4*self.Lw*rho
+        m+=(npy.pi*(self.D)**2/4-npy.pi*(self.E)**2/4)*self.B*rho
+        m+=(npy.pi*(self.F)**2/4-npy.pi*(self.d)**2/4)*self.B*rho
+        return m
     def BaseStaticLoad(self):
         #le système d'unité en entrée est le SI
         self.C0r=44*(1-(self.Dw*1e3*npy.cos(self.alpha))/(self.Dpw*1e3))*self.i*self.Z*self.Lwe*1e3*self.Dw*1e3*npy.cos(self.alpha)
@@ -512,6 +519,7 @@ class BearingCombination():
             r_roller=(rsmin+rsmax)/2
             
             D_E=self.AnalyseSKFValueRules('D','D_E',D,'inf')
+            D_E_2=self.AnalyseSKFValueRules('Dw','D_E',Dw,'inf')
             F_d=self.AnalyseSKFValueRules('d','F_d',d,'inf')
             
             Fmin=F_inter[0]
@@ -533,7 +541,8 @@ class BearingCombination():
                             d1=f
                         if typ=='N':
                             D1=E
-                        liste_out.append([item,{'Z':Zmax-1,'typ':typ,'F':f,'E':E,'B':B,'d':d,'D':D,'d1':d1,'D1':D1,'Lw':Lw,'Dw':Dw,'r_roller':r_roller}])
+                        if (D-E)>=D_E_2:
+                            liste_out.append([item,{'Z':Zmax-1,'typ':typ,'F':f,'E':E,'B':B,'d':d,'D':D,'d1':d1,'D1':D1,'Lw':Lw,'Dw':Dw,'r_roller':r_roller}])
         return liste_out
                 
         
