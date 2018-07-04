@@ -898,27 +898,19 @@ class GearAssembly(persistent.Persistent):
             TG.append(temp)
         return TG
         
-    def InitialPosition(self):
-        
+    def InitialPosition(self):        
         fun = (lambda tan_alpha : (norm(self.Gear1._Involute(tan_alpha))-(self.center_distance-self.DF2/2))**2)
-#        bnds = (0,1)
         sol=minimize(fun,[0.1], method='SLSQP', tol=1e-20)
         xsol=sol.x
         Angle1=xsol[0]-npy.arctan(xsol[0])
         fun = (lambda tan_alpha : (norm(self.Gear2._Involute(tan_alpha))-(self.DF2/2))**2)
-#        bnds = (0,1)
         sol=minimize(fun,[0.1], method='SLSQP', tol=1e-20)
         xsol=sol.x
-        Angle2=xsol[0]-npy.arctan(xsol[0])
-        
+        Angle2=xsol[0]-npy.arctan(xsol[0])        
         Angle1=npy.arccos(self.Gear1.base_diameter/self.DF1)
         Angle2=npy.arccos(self.Gear2.base_diameter/self.DF2)
-        
-        #Gear2Angle=-Angle2+npy.pi-Angle1*self.Z1/self.Z2
         Gear1Angle=-(npy.tan(Angle1)-Angle1)
-        Gear2Angle=-(npy.tan(Angle2)-Angle2)+npy.pi
-        #Gear1Angle=0
-        
+        Gear2Angle=-(npy.tan(Angle2)-Angle2)+npy.pi        
         return [Gear1Angle,Gear2Angle]
         
     ### Stress
