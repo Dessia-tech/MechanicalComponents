@@ -193,6 +193,13 @@ class RadialRollerBearing(persistent.Persistent):
         self.O1=O1
         self.jeu=(self.E-self.F-2*self.Dw)/4
         self.ep=(self.B-self.Lw-2*self.jeu)/2
+        self.mass=self.Mass()
+    def Mass(self):
+        rho=7800
+        m=self.Z*npy.pi*(self.Dw)**2/4*self.Lw*rho
+        m+=(npy.pi*(self.D)**2/4-npy.pi*(self.E)**2/4)*self.B*rho
+        m+=(npy.pi*(self.F)**2/4-npy.pi*(self.d)**2/4)*self.B*rho
+        return m
     def BaseStaticLoad(self):
         #le système d'unité en entrée est le SI
         self.C0r=44*(1-(self.Dw*1e3*npy.cos(self.alpha))/(self.Dpw*1e3))*self.i*self.Z*self.Lwe*1e3*self.Dw*1e3*npy.cos(self.alpha)
@@ -441,6 +448,7 @@ class BearingCombination():
             #choix des rouleaux
             data_roll=data_roll[(data_rlts.D[index[0]]-data_rlts.d[index[0]])/2 > data_roll.Dw]
             data_roll=data_roll[data_rlts.B[index[0]] > data_roll.Lw]
+            data_roll=data_roll[(data_rlts.B[index[0]]-data_roll.Lw)/2 > 4*data_rlts.rsmin[index[0]]]
             for j in list(data_roll.index):
                 liste3.append((index[0],j,index[1],index[2]))
         return liste3
@@ -455,18 +463,20 @@ class BearingCombination():
                 var_x=df_rules['x'][k2]
                 var_y=df_rules['y'][k2]
                 a=df_rules['a'][k2]
-                b=df_rules['b'][k2]
+                b=df_rules['b'][k2]                    
                 if (var_x in self.dic.keys()) & (var_y in self.dic.keys()):
-                    typ=df_rules['type'][k2]
+                    typ=df_rules['type'][k2]                    
                     ind_x=self.dic[var_x]
                     d_x=self.df[ind_x][var_x][item[ind_x]]
                     ind_y=self.dic[var_y]
                     d_y=self.df[ind_y][var_y][item[ind_y]]
+    #                ind_y=self.dic[var_y]
+    #                d_y=self.df[ind_y][var_y][item[ind_y]]
                     if typ=='inf':
-                        if d_y<(a*d_x+b)*0.8:
+                        if d_y<(a*d_x+b)*0.99:
                             drap=0
                     elif typ=='sup':
-                        if d_y>(a*d_x+b)*1.2:
+                        if d_y>(a*d_x+b)*1.01:
                             drap=0
             F_inter=self.AnalyseSKFInterRules(item,'F')
             Dw=self.AccesData('Dw',item)
@@ -476,6 +486,7 @@ class BearingCombination():
             E_min=F_inter[0]+2*Dw
             if E_min>D:
                 drap=0
+                
             if drap==1:
                 liste_out.append(item)
         return liste_out
@@ -528,6 +539,7 @@ class BearingCombination():
             r_roller=(rsmin+rsmax)/2
             
             D_E=self.AnalyseSKFValueRules('D','D_E',D,'inf')
+            D_E_2=self.AnalyseSKFValueRules('Dw','D_E',Dw,'inf')
             F_d=self.AnalyseSKFValueRules('d','F_d',d,'inf')
             
             Fmin=F_inter[0]
@@ -538,7 +550,7 @@ class BearingCombination():
                 Zmax=int(2*npy.pi/(2*npy.arcsin((Dw/2)/(f/2+Dw/2))))
                 E=f+2*Dw+Gr
                 if E<(D-D_E):
-                    if f>(F_d-d):
+                    if f>(F_d+d):
                         d1_i=self.AnalyseSKFValueRules('F','d1',f,'inf')
                         d1_s=self.AnalyseSKFValueRules('F','d1',f,'sup')
                         D1_i=self.AnalyseSKFValueRules('E','D1',E,'inf')
@@ -549,7 +561,8 @@ class BearingCombination():
                             d1=f
                         if typ=='N':
                             D1=E
-                        liste_out.append([item,{'Z':Zmax-1,'typ':typ,'F':f,'E':E,'B':B,'d':d,'D':D,'d1':d1,'D1':D1,'Lw':Lw,'Dw':Dw,'r_roller':r_roller}])
+                        if (D-E)>=D_E_2:
+                            liste_out.append([item,{'Z':Zmax-1,'typ':typ,'F':f,'E':E,'B':B,'d':d,'D':D,'d1':d1,'D1':D1,'Lw':Lw,'Dw':Dw,'r_roller':r_roller}])
         return liste_out
                 
         

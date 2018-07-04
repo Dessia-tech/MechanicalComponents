@@ -22,7 +22,7 @@ import itertools
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 import mechanical_components.LibSvgD3 as LibSvg
-import mechanical_components.bearing as bearing
+import mechanical_components.bearings as bearings
 
 import persistent
 import pandas
@@ -651,6 +651,28 @@ var2='d'
 dat2=bearing_SKF[bearing_SKF.type!='NU'].d
 curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
 df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 37
+var1='D_E'
+dat1=bearing_SKF[bearing_SKF.type!='NU'].D-bearing_SKF[bearing_SKF.type!='NU'].E
+var2='Dw'
+dat2=bearing_SKF.Dw
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
+df_rule = pandas.concat([df_rule, df])
+
+#rule 38
+var1='F_d'
+dat1=bearing_SKF[bearing_SKF.type!='NU'].F-bearing_SKF[bearing_SKF.type!='NU'].d
+var2='Dw'
+dat2=bearing_SKF.Dw
+curve1,curve2=D1.QuantileRegression(var1,var2,pandas.DataFrame({var1:dat1,var2:dat2}),0)
+df=D1.AddRule(curve1,var1,var2,'inf')
+df_rule = pandas.concat([df_rule, df])
+df=D1.AddRule(curve2,var1,var2,'sup')
 df_rule = pandas.concat([df_rule, df])
 
 df_rule.to_csv(chemin_catalogs+'rules_rlts_SKF.csv',index=False)
