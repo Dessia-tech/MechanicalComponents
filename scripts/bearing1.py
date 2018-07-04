@@ -27,14 +27,14 @@ C1=bearings.BearingCombination()
 #          )
 
 input_dict=(
-                  {'type':'d','min':0.04,'max':0.10},
-                  {'type':'B','min':0.01,'max':0.08},
-                  {'type':'D','min':0.04,'max':0.15},
-                  {'type':'L10','min':10, 'max':210000},
+                  {'type':'d','min':0.06,'max':0.15},
+                  {'type':'B','min':0.02,'max':0.06},
+                  {'type':'D','min':0.07,'max':0.15},
+                  {'type':'L10','min':10, 'max':2100000000},
                   {'type':'grade','nom':'Gr_gn'},
-                  {'type':'Fr','nom':1100},
+                  {'type':'Fr','nom':3000},
                   {'type':'Fa','nom':10},
-                  {'type':'n','nom':15000},
+                  {'type':'n','nom':1500},
                   {'type':'S','nom':0.90},
                   {'type':'T','nom':40},
                   {'type':'oil_name','nom':'iso_vg_100'},

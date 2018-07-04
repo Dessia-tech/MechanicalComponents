@@ -429,6 +429,7 @@ class BearingCombination():
             #choix des rouleaux
             data_roll=data_roll[(data_rlts.D[index[0]]-data_rlts.d[index[0]])/2 > data_roll.Dw]
             data_roll=data_roll[data_rlts.B[index[0]] > data_roll.Lw]
+            data_roll=data_roll[(data_rlts.B[index[0]]-data_roll.Lw)/2 > 4*data_rlts.rsmin[index[0]]]
             for j in list(data_roll.index):
                 liste3.append((index[0],j,index[1],index[2]))
         return liste3
@@ -453,10 +454,10 @@ class BearingCombination():
     #                ind_y=self.dic[var_y]
     #                d_y=self.df[ind_y][var_y][item[ind_y]]
                     if typ=='inf':
-                        if d_y<(a*d_x+b)*0.9:
+                        if d_y<(a*d_x+b)*0.99:
                             drap=0
                     elif typ=='sup':
-                        if d_y>(a*d_x+b)*1.1:
+                        if d_y>(a*d_x+b)*1.01:
                             drap=0
             F_inter=self.AnalyseSKFInterRules(item,'F')
             Dw=self.AccesData('Dw',item)
