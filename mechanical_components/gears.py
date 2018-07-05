@@ -1017,7 +1017,8 @@ class GearAssembly(persistent.Persistent):
     
     ### Export
     
-    def FreeCADExport(self,file_path,position1,position2,python_path,freecad_lib_path,export_types):
+    def VolumeModel(self, centers, axis = (1,0,0)):
+
         RIM1=self.Gear1.RimContour()
         RIM2=self.Gear2.RimContour()
 #        RIM1.MPLPlot()
@@ -1071,7 +1072,10 @@ class GearAssembly(persistent.Persistent):
         model=vm.VolumeModel([gear1,t1,gear2,t2])
 #        model=vm.VolumeModel([gear1,t1,gear2])
         model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
-    
+        
+    def FreeCADExport(self,file_path,position1,position2,python_path,freecad_lib_path,export_types):
+        model = self.VolumeModel(center)
+        
     def CSVExport(self):
         self.SigmaLewis()
         d=self.__dict__.copy()
