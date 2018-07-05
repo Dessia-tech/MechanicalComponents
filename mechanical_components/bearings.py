@@ -359,10 +359,12 @@ class RadialRollerBearing(persistent.Persistent):
         
         
     def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
-        center = vm.Point3D(center)
+        center = vm.Point3D(npy.round(center,6))
         x=vm.Vector3D(axis)
+        x.vector=x.vector/x.Norm()
         y=x.RandomUnitNormalVector()
-        z=vm.Vector3D(npy.cross(x.vector,y.vector))
+        y.vector=npy.round(y.vector,6)
+        z=vm.Vector3D(npy.round(npy.cross(x.vector,y.vector),6))
         #bague interne
         IRC=self.InternalRingContour()        
         irc=primitives3D.RevolvedProfile(center,x, z,[IRC], center, x,angle=2*math.pi,name='irc')
@@ -375,7 +377,7 @@ class RadialRollerBearing(persistent.Persistent):
         rol=[]
         theta=2*npy.pi/self.Z
         for zi in range(int(self.Z)):
-            center_roller = center + radius*math.sin(zi*theta) * y + radius*math.cos(zi*theta) * z
+            center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
             rol.append(primitives3D.RevolvedProfile(center_roller, x, z, [ROL],
                                                     center_roller, x,
                                                     angle=2*math.pi,name='rol'))
