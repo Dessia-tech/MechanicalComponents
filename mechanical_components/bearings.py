@@ -615,44 +615,49 @@ class BearingCombination():
             elif k1=='max':
                 self.solution=list(liste_solution[i] for i in add_sort[::-1][0:nb_sol])
     
-    def OptimizerBearing(self,input_dict):
-#        limit,grade,Fr,n=100,Fa=0,S=0.9,T=40,oil_name='iso_vg_100',nb_sol=10,maxi=None,mini=None
-        maxi=None
-        mini=None
+    def OptimizerBearing(self,d,D,B,Fr,Fa,n,L10=None,C0r=None,Cr=None,Lnm=None,grade=['Gr_gn'],
+                         S=0.9,T=40,oil_name='iso_vg_100',nb_sol=1,maxi=None,mini=None,rsmin=None,typ='NF'):
         
         self.O1=OilData()
         self.LoadSKFRules()
         limit_ISO={}
         limit_sort=[]
-        for it in input_dict:
-            if 'min' in it.keys():
-                if it['type'] in ['d','D','B','rsmin']:
-                    limit_ISO[it['type']]=[it['min'],it['max']]
-                elif it['type'] in ['L10','C0r','Cr','Lnm']:
-                    limit_sort.append({'type':'bound_inf','var':it['type'],'val':it['min']})
-                    limit_sort.append({'type':'bound_sup','var':it['type'],'val':it['max']})
-            elif 'grade'==it['type']:
-                grade=[it['nom']]
-            elif 'Fr'==it['type']:
-                Fr=it['nom']
-            elif 'Fa'==it['type']:
-                Fa=it['nom']
-            elif 'n'==it['type']:
-                n=it['nom']
-            elif 'S'==it['type']:
-                S=it['nom']
-            elif 'T'==it['type']:
-                T=it['nom']
-            elif 'oil_name'==it['type']:
-                oil_name=it['nom']
-            elif 'nb_sol'==it['type']:
-                nb_sol=it['nom']
-            elif 'maxi'==it['type']:
-                maxi=it['nom']
-            elif 'mini'==it['type']:
-                mini=it['nom']
-            elif 'typ'==it['type']:
-                typ=it['nom']
+        err_default=0.05
+        
+        def def_inter(data):
+            if data==None:
+                sol=[-npy.inf,npy.inf]
+            else:
+                if 'nom' in data.keys():
+                    if 'err' in data.keys():
+                        err=data['err']
+                    else:
+                        err=err_default
+                    sol=[data['nom']*(1-err),data['nom']*(1+err)]
+                elif 'min' in data.keys():
+                    sol=[data['min'],data['max']]
+            return sol
+        
+        limit_ISO['d']=def_inter(d)
+        limit_ISO['D']=def_inter(D)
+        limit_ISO['B']=def_inter(B)
+        limit_ISO['rsmin']=def_inter(rsmin)
+        
+        tL10=def_inter(L10)
+        limit_sort.append({'type':'bound_inf','var':'L10','val':tL10[0]})
+        limit_sort.append({'type':'bound_sup','var':'L10','val':tL10[1]})
+        
+        tC0r=def_inter(C0r)
+        limit_sort.append({'type':'bound_inf','var':'C0r','val':tC0r[0]})
+        limit_sort.append({'type':'bound_sup','var':'C0r','val':tC0r[1]})
+        
+        tCr=def_inter(Cr)
+        limit_sort.append({'type':'bound_inf','var':'Cr','val':tCr[0]})
+        limit_sort.append({'type':'bound_sup','var':'Cr','val':tCr[1]})
+        
+#        tLnm=def_inter(Lnm)
+#        limit_sort.append({'type':'bound_inf','var':'Lnm','val':tLnm[0]})
+#        limit_sort.append({'type':'bound_sup','var':'Lnm','val':tLnm[1]})
 
         liste_ind=self.Analyze(limit=limit_ISO,grade=grade,Fr=Fr,Fa=Fa,n=n)
         print('Number of ISO solutions: ',len(liste_ind))
@@ -661,13 +666,10 @@ class BearingCombination():
         liste_ind=self.AnalyseDetail(liste_ind,typ=typ)
         print('Nombre de Solution de détail: ',len(liste_ind))
         
-#        limit_sort.extend([{'type':'min','var':'B','val':None},
-#                            {'type':'min','var':'D','val':None},
-#                            {'type':'max','var':'d','val':None}])
         if not maxi==None:
-            limit_sort.append({'type':'max','var':maxi,'val':None})
+            limit_sort.append({'type':'max','var':maxi[0],'val':None})
         elif not mini==None:
-            limit_sort.append({'type':'min','var':mini,'val':None})
+            limit_sort.append({'type':'min','var':mini[0],'val':None})
             
         self.SortBearing(liste_ind,const=limit_sort,S=S,T=T,oil_name=oil_name,nb_sol=nb_sol,typ=typ)
         print('Nombre de Solution finale: ',len(self.solution))
