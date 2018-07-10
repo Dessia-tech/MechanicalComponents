@@ -366,68 +366,58 @@ class GearAssembly():
         Gear2Angle=-(npy.tan(Angle2)-Angle2)+npy.pi        
         return [Gear1Angle,Gear2Angle]
     
-#    def FreeCADExport(self,name,position,file_path,export_types):
-#
-#        RIM1=self.Gear1.RimContour()
-#        RIM2=self.Gear2.RimContour()
-##        RIM1.MPLPlot()
-##        RIM2.MPLPlot()
-#        gear1=primitives3D.RevolvedProfile(vm.Point3D((position1[0],position1[1],0.5*self.gear_width)),vm.Vector3D((0,0,1)),
-#                                           vm.Vector3D((0,1,0)),[RIM1],vm.Vector3D((position1[0],position1[1],0)),
-#                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='Rim1')
-#        gear2=primitives3D.RevolvedProfile(vm.Point3D((position2[0],position2[1],0.5*self.gear_width)),vm.Vector3D((0,0,1)),
-#                                           vm.Vector3D((0,1,0)),[RIM2],vm.Vector3D((position2[0],position2[1],0)),
-#                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='Rim2')
-#        
-#        # Teeth
-#        TG1=self.Gear1.GearContours(5)
-#        TG2=self.Gear2.GearContours(5)
-#        list_rot=self.InitialPosition()
-#        L1=self.GearAssemblyTrace([TG1,TG2],[position1,position2],list_rot)
-#        C1=vm.Contour2D(L1[0])
-#        C2=vm.Contour2D(L1[1])
-##        C1.MPLPlot()
-#        h1=0.5*self.Gear1.alpha_rim*(self.Gear1.outside_diameter-self.Gear1.root_diameter)
-#        h2=0.5*self.Gear2.alpha_rim*(self.Gear2.outside_diameter-self.Gear2.root_diameter)
-#        r1=self.Gear1.root_diameter/2-h1/2
-#        r2=self.Gear2.root_diameter/2-h2/2
-##        print(h1,h2,r1,r2)
-#        c1=primitives3D.Cylinder((position1[0],position1[1],0.48*self.gear_width),
-#                                 (0,0,1),r1,1.05*self.gear_width)
-#        c2=primitives3D.Cylinder((position2[0],position2[1],0.48*self.gear_width),
-#                                 (0,0,1),r2,1.05*self.gear_width)
-#        
-##        C1int=vm.Contour2D([vm.Circle2D(vm.Point2D(position1),r1)])
-##        C2int=vm.Contour2D([vm.Circle2D(vm.Point2D(position2),r2)])
-#        if self.helix_angle==0.:            
-#            t1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-#                                            vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width))
-#            t2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-#                                            vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width))
-#        else:
-#            t1=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-#                                                   vm.Vector3D((0,1,0)),(position1[0],position1[1],0),
-#                                                   (0,0,self.gear_width),self.DF1*mt.pi/mt.tan(self.helix_angle),
-#                                                   C1)
-#            t2=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-#                                                   vm.Vector3D((0,1,0)),(position2[0],position2[1],0),
-#                                                   (0,0,self.gear_width),-self.DF2*mt.pi/mt.tan(self.helix_angle),
-#                                                   C2)
-#
-#        # Creating holes in teeths
-#        t1=primitives3D.Cut(t1,c1,name='Teeth1')
-#        t2=primitives3D.Cut(t2,c2,name='Teeth2')
-#
-#        model=vm.VolumeModel([gear1,t1,gear2,t2])
-##        model=vm.VolumeModel([gear1,t1,gear2])
-#        model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
-    
-    def SVGGearSet(self,name,position):
-        #tuple1 et 2 correspondent a la position des centres
-#        TG1=self.gears[0].GearContours(5)
-#        G1=vm.Contour2D(TG1)
-#        G1.MPLPlot()
-            
+    def VolumeModel(self,name,position):
+        x_opt=self.PosAxis(position)
+        TG={}
+        L1=[]
+        Struct=[]
+        Rot={}
+        export_cad=[]
+        for num,en in enumerate(self.node_dfs):
+            ens=[self.list_gear.index(en[0]),self.list_gear.index(en[1])]
+            position1=(x_opt[2*ens[0]],x_opt[2*ens[0]+1])   
+            position2=(x_opt[2*ens[1]],x_opt[2*ens[1]+1])
+            #tuple1 et 2 correspondent a la position des centres
+            ne=self.gear_set.index(en)
+            Rot[ne]={}
+            if num==0:
+                TG[en[0]]=self.gears[ne][en[0]].GearContours(2)
+            Struct.append(vm.Circle2D(vm.Point2D(position1),self.DF[ne][en[0]]/2))
+            TG[en[1]]=self.gears[ne][en[1]].GearContours(2)
+            Struct.append(vm.Circle2D(vm.Point2D(position2),self.DF[ne][en[1]]/2))
+            #Definition de la position angulaire initiale
+            list_rot=self.InitialPosition(ne,en)
+            if position2[0]==position1[0]:
+                if position2[1]-position1[1]>0:
+                    angle=npy.pi/2
+                else:
+                    angle=-npy.pi/2
+            else:
+                angle=-npy.arctan((position2[1]-position1[1])/(position2[0]-position1[0]))
+            if num==0:
+                Rot[ne][en[0]]=list_rot[0]-angle
+                Rot[ne][en[1]]=list_rot[1]-angle
+            else:
+                for k1,v1 in Rot.items():
+                    if en[0] in v1.keys():
+                        Rot[ne][en[0]]=v1[en[0]]
+                        delta_rot=Rot[ne][en[0]]-(list_rot[0]-angle)
+                Rot[ne][en[1]]=list_rot[1]-angle-delta_rot*((self.gears[ne][en[0]].Z)/(self.gears[ne][en[1]].Z))
+            sol=self.GearAssemblyTrace([TG[en[0]],TG[en[1]]],[position1,position2],list_rot=[Rot[ne][en[0]],Rot[ne][en[1]]])
+        
+            C1=vm.Contour2D(sol[0])
+            C2=vm.Contour2D(sol[1])
+       
+            t1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+                                            vm.Vector3D((0,1,0)),[C1],(0,0,0.02))
+            t2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+                                            vm.Vector3D((0,1,0)),[C2],(0,0,0.02))
+            export_cad.extend([t1,t2])
+            print(export_cad)
+        model=vm.VolumeModel(export_cad)
+        return model
+        
+    def PosAxis(self,position):
         #optimisation pour le placement des axes des engrenages
         def fun(x):
             obj=0
@@ -460,7 +450,10 @@ class GearAssembly():
             if (min(ineg(res.x))>0) and (max(eg(res.x))<1e-7):
                 drap=0
         x_opt=res.x
-        
+        return x_opt
+    
+    def SVGGearSet(self,name,position):
+        x_opt=self.PosAxis(position)
         TG={}
         L1=[]
         Struct=[]
@@ -1009,10 +1002,10 @@ class GearAssemblyOptimizer:
             plex=i
             plex['gear_graph']=self.gear_graph
             A1=ContinuousGearAssemblyOptimizer(**plex)
-#            try:
-            A1.Optimize()
-#            except:
-#                print('Problème de convergence')
+            try:
+                A1.Optimize()
+            except:
+                print('Problème de convergence')
             if len(A1.solutions)>0:
                 xsol=A1.solutions[-1]
 #                print(11,xsol)
