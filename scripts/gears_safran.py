@@ -97,7 +97,7 @@ for ind in npy.argsort(sort_np[:,0]):
               {'type':'gear_set','data':list_gear_set},
               {'type':'center_distance','data':cd_input},
               {'type':'Z','data':Z_data},
-              {'type':'transverse_pressure_angle','data':[[15,30],[15,30],[15,30],[15,30],[15,30],[15,30]]},
+              {'type':'transverse_pressure_angle','data':[[15,30]*nb_gset]},
               {'type':'helix_angle','data':{'0':[20,30]}},
               {'type':'gear_width','data':{'0':[40,50]}},
               {'type':'frequency','data':[[0,0]]},
@@ -126,4 +126,6 @@ for ind in npy.argsort(sort_np[:,0]):
             print('Solution avec entraxe non conforme')
 
     
-solutions[-1].SVGGearSet('name.txt',{'0':[0,0],'2':[0.2,0],'6':[0.5,0]})
+#solutions[-1].SVGGearSet('name.txt',{'0':[0,0],'2':[0.3,0],'6':[0.8,0]})
+solutions[-1].FreeCADExport('GearAssembly',{'0':[0,0],'2':[0.3,0],'6':[0.8,0]},
+         '/usr/lib/freecad/lib',['fcstd','stl'])
