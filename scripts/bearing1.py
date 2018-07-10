@@ -10,51 +10,45 @@ import mechanical_components.bearings as bearings
 import numpy as npy
 
 C1=bearings.BearingCombination()
-#input_dict=(
-#                  {'type':'d','min':0.06,'max':0.15},
-#                  {'type':'B','min':0.02,'max':0.06},
-#                  {'type':'D','min':0.07,'max':0.15},
-#                  {'type':'L10','min':10, 'max':2100000000},
-#                  {'type':'grade','nom':'Gr_gn'},
-#                  {'type':'Fr','nom':3000},
-#                  {'type':'Fa','nom':10},
-#                  {'type':'n','nom':1500},
-#                  {'type':'S','nom':0.90},
-#                  {'type':'T','nom':40},
-#                  {'type':'oil_name','nom':'iso_vg_100'},
-#                  {'type':'nb_sol','nom':1},
-#                  {'type':'mini','nom':'mass'},
-#                  {'type':'typ','nom':'NF'}
-#                  )
 
+#Test 1
 Fa=1340.1788731883905
+Fa=3000
 Fr=3373.492621666226
 N=249.21560590286492 
-L10=356.97506017574415
-
-input_dict=(
-                  {'type':'d','min':0.04,'max':0.10},
-                  {'type':'B','min':0.01,'max':0.08},
-                  {'type':'D','min':0.04,'max':0.15},
-                  {'type':'L10','min':L10, 'max':1.20*L10},
-                  {'type':'grade','nom':'Gr_gn'},
-                  {'type':'Fr','nom':Fr},
-                  {'type':'Fa','nom':Fa},
-                  {'type':'n','nom':N},
-                  {'type':'S','nom':0.90},
-                  {'type':'T','nom':40},
-                  {'type':'oil_name','nom':'iso_vg_100'},
-                  {'type':'nb_sol','nom':1},
-                  {'type':'mini','nom':'mass'},
-                  {'type':'typ','nom':'NF'}
-                  )
-
-C1.OptimizerBearing(input_dict)
+L10=10
+C1.OptimizerBearing(d={'min':0.04,'max':0.10},D={'min':0.04,'max':0.15},B={'min':0.01,'max':0.08},
+                    L10={'min':L10,'max':1e10*L10},
+                    Fr=Fr,Fa=Fa,n=N,mini=['D'],typ='NF')
 for i,b in enumerate(C1.solution):
     print(b)
-
     v=b.VolumeModel(npy.random.random(3),npy.random.random(3))
     v.FreeCADExport('python','Bearing_{}'.format(i),'/usr/lib/freecad/lib')
-#    b.FreeCADExport('Bearing_{}'.format(i),['fcstd','stl'])
-
-print(C1.solution)
+    
+#Test 2
+Fa=1340.1788731883905
+Fa=3000
+Fr=3373.492621666226
+N=249.21560590286492 
+L10=10
+C1.OptimizerBearing(d={'nom':0.06,'err':0.03},D={'nom':0.1},B={'min':0.01,'max':0.08},
+                    L10={'min':L10,'max':1e10*L10},
+                    Fr=Fr,Fa=Fa,n=N,mini=['D'],typ='NF')
+for i,b in enumerate(C1.solution):
+    print(b)
+    v=b.VolumeModel(npy.random.random(3),npy.random.random(3))
+    v.FreeCADExport('python','Bearing_{}'.format(i),'/usr/lib/freecad/lib')
+    
+#Test 3
+Fa=1340.1788731883905
+Fa=3000
+Fr=3373.492621666226
+N=249.21560590286492 
+L10=10
+C1.OptimizerBearing(d={'nom':0.06,'err':0.3},D={'nom':0.1,'err':0.3},B={'min':0.01,'max':0.08},
+                    L10={'min':L10,'max':1e10*L10},
+                    Fr=Fr,Fa=Fa,n=N,mini=['mass'],typ='NF')
+for i,b in enumerate(C1.solution):
+    print(b)
+    v=b.VolumeModel(npy.random.random(3),npy.random.random(3))
+    v.FreeCADExport('python','Bearing_{}'.format(i),'/usr/lib/freecad/lib')
