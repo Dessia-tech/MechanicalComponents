@@ -252,11 +252,12 @@ class Gear():
         return d
 
 class GearAssembly():
-    def __init__(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness):
+    def __init__(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness,list_gear):
         self.center_distance=center_distance
         self.gear_set=gear_set
         self.transverse_pressure_angle=transverse_pressure_angle
         self.gear_graph=gear_graph
+        self.list_gear=list_gear
 
         self.DF,DB,self.node_dfs=self.GearAssemblyParam1(Z)
         #instantiation des objets Gears
@@ -266,12 +267,13 @@ class GearAssembly():
             for ng in ns:
                 z=Z[ng]
                 db=DB[ne][ng]
-                cp=coefficient_profile_shift[str(ng)]
-                tpa=transverse_pressure_angle_rack[ng]
-                cga=coeff_gear_addendum[ng]
-                cgd=coeff_gear_dedendum[ng]
-                crr=coeff_root_radius[ng]
-                cct=coeff_circular_tooth_thickness[ng]
+                cp=coefficient_profile_shift[ng]
+                ngp=self.list_gear.index(ng)
+                tpa=transverse_pressure_angle_rack[ngp]
+                cga=coeff_gear_addendum[ngp]
+                cgd=coeff_gear_dedendum[ngp]
+                crr=coeff_root_radius[ngp]
+                cct=coeff_circular_tooth_thickness[ngp]
                 self.gears[ne][ng]=Gear(z,db,cp,tpa,cga,cgd,crr,cct)
                 
 #        for g,z in Z.items():
@@ -280,7 +282,7 @@ class GearAssembly():
 #            self.gears[g]=Gear(z,db,cp)
         self.linear_backlash,self.radial_contact_ratio=self.GearAssemblyParam2(Z,coefficient_profile_shift,DB,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
             
-    def Update(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness):
+    def Update(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness,list_gear):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
         self.DF,DB,self.node_dfs=self.GearAssemblyParam1(Z)
@@ -291,12 +293,13 @@ class GearAssembly():
             for ng in ns:
                 z=Z[ng]
                 db=DB[ne][ng]
-                cp=coefficient_profile_shift[str(ng)]
-                tpa=transverse_pressure_angle_rack[ng]
-                cga=coeff_gear_addendum[ng]
-                cgd=coeff_gear_dedendum[ng]
-                crr=coeff_root_radius[ng]
-                cct=coeff_circular_tooth_thickness[ng]
+                cp=coefficient_profile_shift[ng]
+                ngp=self.list_gear.index(ng)
+                tpa=transverse_pressure_angle_rack[ngp]
+                cga=coeff_gear_addendum[ngp]
+                cgd=coeff_gear_dedendum[ngp]
+                crr=coeff_root_radius[ngp]
+                cct=coeff_circular_tooth_thickness[ngp]
                 self.gears[ne][ng].Update(z,db,cp,tpa,cga,cgd,crr,cct)
             
         linear_backlash=[]
@@ -363,61 +366,61 @@ class GearAssembly():
         Gear2Angle=-(npy.tan(Angle2)-Angle2)+npy.pi        
         return [Gear1Angle,Gear2Angle]
     
-    def FreeCADExport(self,name,position,file_path,export_types):
-
-        RIM1=self.Gear1.RimContour()
-        RIM2=self.Gear2.RimContour()
-#        RIM1.MPLPlot()
-#        RIM2.MPLPlot()
-        gear1=primitives3D.RevolvedProfile(vm.Point3D((position1[0],position1[1],0.5*self.gear_width)),vm.Vector3D((0,0,1)),
-                                           vm.Vector3D((0,1,0)),[RIM1],vm.Vector3D((position1[0],position1[1],0)),
-                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='Rim1')
-        gear2=primitives3D.RevolvedProfile(vm.Point3D((position2[0],position2[1],0.5*self.gear_width)),vm.Vector3D((0,0,1)),
-                                           vm.Vector3D((0,1,0)),[RIM2],vm.Vector3D((position2[0],position2[1],0)),
-                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='Rim2')
-        
-        # Teeth
-        TG1=self.Gear1.GearContours(5)
-        TG2=self.Gear2.GearContours(5)
-        list_rot=self.InitialPosition()
-        L1=self.GearAssemblyTrace([TG1,TG2],[position1,position2],list_rot)
-        C1=vm.Contour2D(L1[0])
-        C2=vm.Contour2D(L1[1])
-#        C1.MPLPlot()
-        h1=0.5*self.Gear1.alpha_rim*(self.Gear1.outside_diameter-self.Gear1.root_diameter)
-        h2=0.5*self.Gear2.alpha_rim*(self.Gear2.outside_diameter-self.Gear2.root_diameter)
-        r1=self.Gear1.root_diameter/2-h1/2
-        r2=self.Gear2.root_diameter/2-h2/2
-#        print(h1,h2,r1,r2)
-        c1=primitives3D.Cylinder((position1[0],position1[1],0.48*self.gear_width),
-                                 (0,0,1),r1,1.05*self.gear_width)
-        c2=primitives3D.Cylinder((position2[0],position2[1],0.48*self.gear_width),
-                                 (0,0,1),r2,1.05*self.gear_width)
-        
-#        C1int=vm.Contour2D([vm.Circle2D(vm.Point2D(position1),r1)])
-#        C2int=vm.Contour2D([vm.Circle2D(vm.Point2D(position2),r2)])
-        if self.helix_angle==0.:            
-            t1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-                                            vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width))
-            t2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-                                            vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width))
-        else:
-            t1=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-                                                   vm.Vector3D((0,1,0)),(position1[0],position1[1],0),
-                                                   (0,0,self.gear_width),self.DF1*mt.pi/mt.tan(self.helix_angle),
-                                                   C1)
-            t2=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-                                                   vm.Vector3D((0,1,0)),(position2[0],position2[1],0),
-                                                   (0,0,self.gear_width),-self.DF2*mt.pi/mt.tan(self.helix_angle),
-                                                   C2)
-
-        # Creating holes in teeths
-        t1=primitives3D.Cut(t1,c1,name='Teeth1')
-        t2=primitives3D.Cut(t2,c2,name='Teeth2')
-
-        model=vm.VolumeModel([gear1,t1,gear2,t2])
-#        model=vm.VolumeModel([gear1,t1,gear2])
-        model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
+#    def FreeCADExport(self,name,position,file_path,export_types):
+#
+#        RIM1=self.Gear1.RimContour()
+#        RIM2=self.Gear2.RimContour()
+##        RIM1.MPLPlot()
+##        RIM2.MPLPlot()
+#        gear1=primitives3D.RevolvedProfile(vm.Point3D((position1[0],position1[1],0.5*self.gear_width)),vm.Vector3D((0,0,1)),
+#                                           vm.Vector3D((0,1,0)),[RIM1],vm.Vector3D((position1[0],position1[1],0)),
+#                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='Rim1')
+#        gear2=primitives3D.RevolvedProfile(vm.Point3D((position2[0],position2[1],0.5*self.gear_width)),vm.Vector3D((0,0,1)),
+#                                           vm.Vector3D((0,1,0)),[RIM2],vm.Vector3D((position2[0],position2[1],0)),
+#                                           vm.Vector3D((0,0,1)),angle=2*math.pi,name='Rim2')
+#        
+#        # Teeth
+#        TG1=self.Gear1.GearContours(5)
+#        TG2=self.Gear2.GearContours(5)
+#        list_rot=self.InitialPosition()
+#        L1=self.GearAssemblyTrace([TG1,TG2],[position1,position2],list_rot)
+#        C1=vm.Contour2D(L1[0])
+#        C2=vm.Contour2D(L1[1])
+##        C1.MPLPlot()
+#        h1=0.5*self.Gear1.alpha_rim*(self.Gear1.outside_diameter-self.Gear1.root_diameter)
+#        h2=0.5*self.Gear2.alpha_rim*(self.Gear2.outside_diameter-self.Gear2.root_diameter)
+#        r1=self.Gear1.root_diameter/2-h1/2
+#        r2=self.Gear2.root_diameter/2-h2/2
+##        print(h1,h2,r1,r2)
+#        c1=primitives3D.Cylinder((position1[0],position1[1],0.48*self.gear_width),
+#                                 (0,0,1),r1,1.05*self.gear_width)
+#        c2=primitives3D.Cylinder((position2[0],position2[1],0.48*self.gear_width),
+#                                 (0,0,1),r2,1.05*self.gear_width)
+#        
+##        C1int=vm.Contour2D([vm.Circle2D(vm.Point2D(position1),r1)])
+##        C2int=vm.Contour2D([vm.Circle2D(vm.Point2D(position2),r2)])
+#        if self.helix_angle==0.:            
+#            t1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+#                                            vm.Vector3D((0,1,0)),[C1],(0,0,self.gear_width))
+#            t2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+#                                            vm.Vector3D((0,1,0)),[C2],(0,0,self.gear_width))
+#        else:
+#            t1=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+#                                                   vm.Vector3D((0,1,0)),(position1[0],position1[1],0),
+#                                                   (0,0,self.gear_width),self.DF1*mt.pi/mt.tan(self.helix_angle),
+#                                                   C1)
+#            t2=primitives3D.HelicalExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
+#                                                   vm.Vector3D((0,1,0)),(position2[0],position2[1],0),
+#                                                   (0,0,self.gear_width),-self.DF2*mt.pi/mt.tan(self.helix_angle),
+#                                                   C2)
+#
+#        # Creating holes in teeths
+#        t1=primitives3D.Cut(t1,c1,name='Teeth1')
+#        t2=primitives3D.Cut(t2,c2,name='Teeth2')
+#
+#        model=vm.VolumeModel([gear1,t1,gear2,t2])
+##        model=vm.VolumeModel([gear1,t1,gear2])
+#        model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
     
     def SVGGearSet(self,name,position):
         #tuple1 et 2 correspondent a la position des centres
@@ -429,21 +432,22 @@ class GearAssembly():
         def fun(x):
             obj=0
             for num,it in enumerate(self.gear_set):
-                eng1=it[0]
-                eng2=it[1]
+                eng1=(self.list_gear).index(it[0])
+                eng2=(self.list_gear).index(it[1])
                 obj+=(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-self.center_distance[num])**2
             return obj
         def eg(x):
             ine=[]
-            for key,val in position.items():
+            for k,val in position.items():
+                key=(self.list_gear).index(k)
                 ine.append(x[2*int(key)]-val[0])
                 ine.append(x[2*int(key)+1]-val[1])
             return ine
         def ineg(x):
             ine=[]
             for num,it in enumerate(self.gear_set):
-                eng1=it[0]
-                eng2=it[1]
+                eng1=(self.list_gear).index(it[0])
+                eng2=(self.list_gear).index(it[1])
                 ine.append(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-0.999*self.center_distance[num])
                 ine.append(1.001*self.center_distance[num]-((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5)
             return ine
@@ -461,19 +465,20 @@ class GearAssembly():
         L1=[]
         Struct=[]
         Rot={}
-        for num,ens in enumerate(self.node_dfs):
-            position1=(x_opt[2*ens[0]],x_opt[2*ens[0]+1])
+        for num,en in enumerate(self.node_dfs):
+            ens=[self.list_gear.index(en[0]),self.list_gear.index(en[1])]
+            position1=(x_opt[2*ens[0]],x_opt[2*ens[0]+1])   
             position2=(x_opt[2*ens[1]],x_opt[2*ens[1]+1])
             #tuple1 et 2 correspondent a la position des centres
-            ne=self.gear_set.index(ens)
+            ne=self.gear_set.index(en)
             Rot[ne]={}
             if num==0:
-                TG[ens[0]]=self.gears[ne][ens[0]].GearContours(5)
-            Struct.append(vm.Circle2D(vm.Point2D(position1),self.DF[ne][ens[0]]/2))
-            TG[ens[1]]=self.gears[ne][ens[1]].GearContours(5)
-            Struct.append(vm.Circle2D(vm.Point2D(position2),self.DF[ne][ens[1]]/2))
+                TG[en[0]]=self.gears[ne][en[0]].GearContours(5)
+            Struct.append(vm.Circle2D(vm.Point2D(position1),self.DF[ne][en[0]]/2))
+            TG[en[1]]=self.gears[ne][en[1]].GearContours(5)
+            Struct.append(vm.Circle2D(vm.Point2D(position2),self.DF[ne][en[1]]/2))
             #Definition de la position angulaire initiale
-            list_rot=self.InitialPosition(ne,ens)
+            list_rot=self.InitialPosition(ne,en)
             if position2[0]==position1[0]:
                 if position2[1]-position1[1]>0:
                     angle=npy.pi/2
@@ -482,15 +487,15 @@ class GearAssembly():
             else:
                 angle=-npy.arctan((position2[1]-position1[1])/(position2[0]-position1[0]))
             if num==0:
-                Rot[ne][ens[0]]=list_rot[0]-angle
-                Rot[ne][ens[1]]=list_rot[1]-angle
+                Rot[ne][en[0]]=list_rot[0]-angle
+                Rot[ne][en[1]]=list_rot[1]-angle
             else:
                 for k1,v1 in Rot.items():
-                    if ens[0] in v1.keys():
-                        Rot[ne][ens[0]]=v1[ens[0]]
-                        delta_rot=Rot[ne][ens[0]]-(list_rot[0]-angle)
-                Rot[ne][ens[1]]=list_rot[1]-angle-delta_rot*((self.gears[ne][ens[0]].Z)/(self.gears[ne][ens[1]].Z))
-            sol=self.GearAssemblyTrace([TG[ens[0]],TG[ens[1]]],[position1,position2],list_rot=[Rot[ne][ens[0]],Rot[ne][ens[1]]])
+                    if en[0] in v1.keys():
+                        Rot[ne][en[0]]=v1[en[0]]
+                        delta_rot=Rot[ne][en[0]]-(list_rot[0]-angle)
+                Rot[ne][en[1]]=list_rot[1]-angle-delta_rot*((self.gears[ne][en[0]].Z)/(self.gears[ne][en[1]].Z))
+            sol=self.GearAssemblyTrace([TG[en[0]],TG[en[1]]],[position1,position2],list_rot=[Rot[ne][en[0]],Rot[ne][en[1]]])
             if num==0:
                 L1.extend(sol[0])
             L1.extend(sol[1])
@@ -516,21 +521,23 @@ class GearAssembly():
         return d
 
 class ContinuousGearAssemblyOptimizer:
-    def __init__(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,cond_init,rack_list,rack_choice):
+    def __init__(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,
+                 gear_graph,cond_init,rack_list,rack_choice,list_gear):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
         self.coefficient_profile_shift=coefficient_profile_shift
         self.cond_init=cond_init
         self.rack_list=rack_list
         self.rack_choice=rack_choice
+        self.list_gear=list_gear
         Bounds=list(center_distance)
         Bounds.extend(transverse_pressure_angle)
         tp=len(coefficient_profile_shift.keys())
-        for i in range(tp):
-            Bounds.append(coefficient_profile_shift[str(i)])
+        for i in self.list_gear:
+            Bounds.append(coefficient_profile_shift[i])
         self.solutions=[]
         
-        self.xi={'Z':Z,'gear_set':gear_set,'gear_graph':gear_graph}
+        self.xi={'Z':Z,'gear_set':gear_set,'gear_graph':gear_graph,'list_gear':list_gear}
         self.xj,self.dict_xu=self._init()
         self.xt=dict(list(self.xi.items())+list(self.xj.items()))
         
@@ -560,7 +567,8 @@ class ContinuousGearAssemblyOptimizer:
                     else:
                         x_list[i][k]=(v[1]-v[0])*float(npy.random.random(1))+v[0]
                         dict_xu.append((k,i))
-        for k in sorted(list(self.rack_choice.keys())):
+#        for k in sorted(list(self.rack_choice.keys())):
+        for k in self.list_gear:
             v=self.rack_choice[k]
             for k2,v2 in self.rack_list[v].items():
                 if k2 not in ['type','name','module']:
@@ -571,8 +579,8 @@ class ContinuousGearAssemblyOptimizer:
         sol=xj['center_distance'].copy()
         sol.extend(xj['transverse_pressure_angle'])
         tp=len(xj['coefficient_profile_shift'].keys())
-        for key in range(tp):
-            sol.append(xj['coefficient_profile_shift'][str(key)])
+        for key in self.list_gear:
+            sol.append(xj['coefficient_profile_shift'][key])
         for k,v in self.dict_xu:
             for k2 in sorted(list(self.rack_choice.keys())):
                 v2=self.rack_choice[k2]
@@ -590,8 +598,9 @@ class ContinuousGearAssemblyOptimizer:
         xj['center_distance']=X[0:tp1]
         xj['transverse_pressure_angle']=X[tp1:tp1+tp2]
         xj['coefficient_profile_shift']={}
-        for i in range(tp3):
-            xj['coefficient_profile_shift'][str(i)]=X[tp1+tp2+i]
+        for i in self.list_gear:
+            j=self.list_gear.index(i)
+            xj['coefficient_profile_shift'][i]=X[tp1+tp2+j]
 #        xj['transverse_pressure_angle_rack']=[0]*len(self.rack_choice.keys())
 #        xj['coeff_gear_addendum']=[0]*len(self.rack_choice.keys())
 #        xj['coeff_gear_dedendum']=[0]*len(self.rack_choice.keys())
@@ -666,7 +675,8 @@ class ContinuousGearAssemblyOptimizer:
         x=self._convert_Xu2xj(X)
         x=self.Update(x)
         eq=[]
-        for ng in range(self.GearAssembly.gear_graph.number_of_nodes()):
+#        for ng in range(self.GearAssembly.gear_graph.number_of_nodes()):
+        for ng in self.list_gear:
             nel=list(self.GearAssembly.gear_graph.edges(ng))
             if len(nel)>1:
                 list_db=[]
@@ -736,21 +746,23 @@ class ContinuousGearAssemblyOptimizer:
 
 
 class GearAssemblyOptimizer:
-    def __init__(self,gear_width,center_distance,coefficient_profile_shift,gear_speed,Z,gear_set,transverse_pressure_angle,helix_angle,frequency,rack_list,rack_choice):
-        self.Z=Z['data']
-        self.gear_set=gear_set['data']
-        self.gear_speed=gear_speed['data']
-        self.frequency=frequency['data']
-        self.center_distance=center_distance['data']
-        self.transverse_pressure_angle=transverse_pressure_angle['data']
-        self.coefficient_profile_shift=coefficient_profile_shift['data']
-        self.rack_list=rack_list['data']
-        self.rack_choice=rack_choice['data']
+    def __init__(self,gear_width,center_distance,coefficient_profile_shift,gear_speed,Z,gear_set,
+                 transverse_pressure_angle,helix_angle,frequency,rack_list,rack_choice,
+                 list_gear):
+        self.Z=Z
+        self.gear_set=gear_set
+        self.gear_speed=gear_speed
+        self.frequency=frequency
+        self.center_distance=center_distance
+        self.transverse_pressure_angle=transverse_pressure_angle
+        self.coefficient_profile_shift=coefficient_profile_shift
+        self.rack_list=rack_list
+        self.rack_choice=rack_choice
+        self.list_gear=list_gear
 
-        self.nb_gear=npy.array(self.gear_set).max()+1
-        self.nb_gear=len(self.gear_speed.keys())
+        self.nb_gear=len(list_gear)
         gear_graph=nx.Graph()
-        gear_graph.add_nodes_from(range(self.nb_gear))
+        gear_graph.add_nodes_from(list_gear)
         gear_graph.add_edges_from(self.gear_set)
         self.gear_graph=gear_graph
         
@@ -759,20 +771,52 @@ class GearAssemblyOptimizer:
         self.node_init=int(list(self.gear_speed.keys())[0])
         self.node_dfs=list(nx.dfs_edges(gear_graph,self.node_init))
         
+        if self.Z=={}:
+            self.Z=self.AnalyseZ()
         self.AnalyzeCombination()
         self.solutions=[]
         self.solutions_search=[]
         self.analyse=[]
+        
+    def AnalyseZ(self):
+        #nombre de dents adaptatif
+        Z=self.Z
+        for i,gs in enumerate(self.gear_set):
+            cd_min=self.center_distance[i][0]
+            cd_max=self.center_distance[i][1]
+            module1_min=self.rack_list[self.rack_choice[gs[0]]]['module'][0]
+            module1_max=self.rack_list[self.rack_choice[gs[0]]]['module'][1]
+            module2_min=self.rack_list[self.rack_choice[gs[1]]]['module'][0]
+            module2_max=self.rack_list[self.rack_choice[gs[1]]]['module'][1]
+            demul_min=self.gear_speed[gs[0]][0]/self.gear_speed[gs[1]][1]
+            demul_max=self.gear_speed[gs[0]][1]/self.gear_speed[gs[1]][0]
+            DF1_max=2*cd_max/(1+demul_min)
+            Z1_max=int(DF1_max/module1_min)+1
+            DF2_max=2*cd_max*demul_max/(1+demul_max)
+            Z2_max=int(DF2_max/module2_min)+1
+            DF1_min=2*cd_min/(1+demul_max)
+            Z1_min=int(DF1_min/module1_max)-1
+            DF2_min=2*cd_min*demul_min/(1+demul_min)
+            Z2_min=int(DF2_min/module2_max)-1
+            if gs[0] not in Z.keys():
+                Z[gs[0]]=[Z1_min,Z1_max]
+            else:
+                Z[gs[0]]=[min(Z1_min,Z[gs[0]][0]),max(Z1_max,Z[gs[0]][1])]
+            if gs[1] not in Z.keys():
+                Z[gs[1]]=[Z2_min,Z2_max]
+            else:
+                Z[gs[1]]=[min(Z2_min,Z[gs[1]][0]),max(Z2_max,Z[gs[1]][1])]
+        return Z
 
     def AnalyzeCombination(self):
         #recherche des Zmin et Zmax
         Zmin=npy.inf
         Zmax=0
         for n1,n2 in self.gear_set:
-            if min(self.Z[str(n1)][0],self.Z[str(n2)][0])<Zmin:
-                Zmin=min(self.Z[str(n1)][0],self.Z[str(n2)][0])
-            if max(self.Z[str(n1)][1],self.Z[str(n2)][1])>Zmax:
-                Zmax=max(self.Z[str(n1)][1],self.Z[str(n2)][1])
+            if min(self.Z[n1][0],self.Z[n2][0])<Zmin:
+                Zmin=min(self.Z[n1][0],self.Z[n2][0])
+            if max(self.Z[n1][1],self.Z[n2][1])>Zmax:
+                Zmax=max(self.Z[n1][1],self.Z[n2][1])
         np=[Zmax+1-Zmin]*self.nb_gear+[self.nb_rack]*self.nb_gear
         liste_gear=npy.arange(Zmin,Zmax+1)
         liste_rack=list(self.rack_list.keys())
@@ -803,7 +847,7 @@ class GearAssemblyOptimizer:
             #Analyse du Z initial
             if dt.current_depth==0:
                 z=liste_gear[dt.current_node[0]]
-                if (z<self.Z[str(liste_node[0])][0]) or (z>self.Z[str(liste_node[0])][1]):
+                if (z<self.Z[liste_node[0]][0]) or (z>self.Z[liste_node[0]][1]):
                     valid=False
             if dt.current_depth>0:
                 if dt.current_depth<=(self.nb_gear-1):
@@ -823,7 +867,7 @@ class GearAssemblyOptimizer:
                         valid=False
                 #Analyse des bornes sur Z
                 if (valid) & (dt.current_depth<=(self.nb_gear-1)):
-                    if (z2<self.Z[str(n2)][0]) or (z2>self.Z[str(n2)][1]):
+                    if (z2<self.Z[n2][0]) or (z2>self.Z[n2][1]):
                         valid=False
                 #analyse ACV de l'ensemble des engrenages entre eux
 #                if (valid) & (dt.current_depth<=(self.nb_gear-1)):
@@ -834,15 +878,15 @@ class GearAssemblyOptimizer:
 #                            valid=False
                 #analyse des vitesses du CDC
                 if (valid) & (dt.current_depth<=(self.nb_gear-1)):
-                    v1=self.gear_speed[str(liste_node[0])][0]
-                    v2=self.gear_speed[str(liste_node[0])][1]
+                    v1=self.gear_speed[liste_node[0]][0]
+                    v2=self.gear_speed[liste_node[0]][1]
                     for n in liste_node[1:dt.current_depth+1]:
                         if valid==True:
                             i=liste_node.index(n)
-                            if str(n) in self.gear_speed.keys():
+                            if n in self.gear_speed.keys():
                                 demul=liste_gear[dt.current_node[0]]/liste_gear[dt.current_node[i]]
-                                v1p=self.gear_speed[str(n)][0]/demul
-                                v2p=self.gear_speed[str(n)][1]/demul
+                                v1p=self.gear_speed[n][0]/demul
+                                v2p=self.gear_speed[n][1]/demul
                                 v1=max(v1,v1p)
                                 v2=min(v2,v2p)
                                 if (v1>v2):
@@ -948,6 +992,7 @@ class GearAssemblyOptimizer:
                 Temp['cond_init']=0
                 Temp['rack_list']=self.rack_list
                 Temp['rack_choice']=rack
+                Temp['list_gear']=self.list_gear
                 self.plex_calcul.append(Temp)
                 incr+=1
 #                if incr==3:
@@ -964,10 +1009,10 @@ class GearAssemblyOptimizer:
             plex=i
             plex['gear_graph']=self.gear_graph
             A1=ContinuousGearAssemblyOptimizer(**plex)
-            try:
-                A1.Optimize()
-            except:
-                print('Problème de convergence')
+#            try:
+            A1.Optimize()
+#            except:
+#                print('Problème de convergence')
             if len(A1.solutions)>0:
                 xsol=A1.solutions[-1]
 #                print(11,xsol)
@@ -976,7 +1021,9 @@ class GearAssemblyOptimizer:
                 self.solutions.append(GearAssembly(**xt))
 #                break
                 
-    def SearchCenterLine(self,callback=lambda x:x):
+    def SearchCenterLine(self,nb_sol,callback=lambda x:x):
+        #recherche de l'ensemble des entraxes
+        search1=[]
         for ipl,pl in enumerate(self.plex_calcul):
             pl['DF']={}
             pl['Z_data']={}
@@ -985,35 +1032,108 @@ class GearAssemblyOptimizer:
                 mod=pl['rack_list'][nr]['module']
                 module=(mod[0]+mod[1])/2
                 pl['DF'][k]=module*v
-                pl['Z_data'][str(k)]=[v,v]
+                pl['Z_data'][k]=[v,v]
             pl['center_distance']=[]
             for ne in self.gear_set:
                 t1=(pl['DF'][ne[0]]+pl['DF'][ne[1]])/2
-                pl['center_distance'].append([1e3*t1,1e3*t1])
+                pl['center_distance'].append([t1,t1])
             del pl['DF']
-            self.solutions_search.append(pl)
-                
-            
+            search1.append(pl)
+        #selection des solutions avec entraxes compatible au CDC
+        compt=0
+        search2=[]
+        for i,el in enumerate(search1):
+            Z_data=search1[i]['Z_data'].copy()
+            cd_data=search1[i]['center_distance'].copy()
+            valid=True
+            cd_input=[]
+            fonctionnel=0
+            for j,cd in enumerate(self.center_distance):
+                if (cd_data[j][0]*0.99)<(cd[0]):
+                    valid=False
+                fonctionnel+=cd_data[j][0]-cd[0]
+                cd_input.append([cd_data[j][0]*(0.99),cd_data[j][0]*1.1])
+            if valid:
+                search2.append([fonctionnel,cd_input,Z_data])
+                compt+=1
+        print('Nombre de solution avec entraxe supérieur au CDC:',compt)
+        #Optimisation des nb_sol premières solutions
+        search2_np=npy.array(search2)
+        compt=0
+        for ind in npy.argsort(search2_np[:,0]):
+            cd_input=search2_np[ind][1]
+            Z_data=search2_np[ind][2]
+            ga=GearAssemblyOptimizerWizard(gear_set=self.gear_set,gear_speed=self.gear_speed,
+                                            center_distance=cd_input,Z=Z_data,rack_list=self.rack_list,
+                                            rack_choice=self.rack_choice)
+            ga.Optimize()
+            if len(ga.solutions)>0:
+                valid2=True
+                for j,v in enumerate(self.center_distance):
+                    if (ga.solutions[-1].center_distance[j]*1e3)<(v[0]):
+                        valid2=False
+                if valid2:
+                    self.solutions_search.append(ga.solutions[-1])
+                    compt+=1
+                    if compt==nb_sol:
+                        break
 
 
 class GearAssemblyOptimizerWizard:
 
-    def __init__(self,data):
-        dico={}
-        for lign in data:
-            dico[lign['type']]={}
-            for key,val in lign.items():
-                if 'type' not in key:
-                    dico[lign['type']][key]=val
+    def __init__(self,gear_set,gear_speed,center_distance,Z={},transverse_pressure_angle=None,
+                 helix_angle=None,gear_width=None,frequency=[[0,0]],coefficient_profile_shift=None,
+                 rack_list=None,rack_choice=None):
 
-        #passage en unité SI
-        dico['center_distance']['data']=tuple([[0.001*p[0],0.001*p[1]] for p in dico['center_distance']['data']])
-        dico['transverse_pressure_angle']['data']=tuple([[npy.pi/180*p[0],npy.pi/180*p[1]] for p in dico['transverse_pressure_angle']['data']])
-        dico['helix_angle']['data']={k:[npy.pi/180*dico['helix_angle']['data'][k][0],npy.pi/180*dico['helix_angle']['data'][k][1]] for k in dico['helix_angle']['data'].keys()}
-        dico['gear_speed']['data']={k:[2*npy.pi/60*dico['gear_speed']['data'][k][0],2*npy.pi/60*dico['gear_speed']['data'][k][1]] for k in dico['gear_speed']['data'].keys()}
-        dico['rack_list']['data']={k:{'type':dico['rack_list']['data'][k]['type'],'name':dico['rack_list']['data'][k]['name'],'module':[dico['rack_list']['data'][k]['module'][0]*(1e-3),dico['rack_list']['data'][k]['module'][1]*(1e-3)],'transverse_pressure_angle_rack':[dico['rack_list']['data'][k]['transverse_pressure_angle_rack'][0]/180*npy.pi,dico['rack_list']['data'][k]['transverse_pressure_angle_rack'][1]/180*npy.pi],'coeff_gear_addendum':dico['rack_list']['data'][k]['coeff_gear_addendum'],'coeff_gear_dedendum':dico['rack_list']['data'][k]['coeff_gear_dedendum'],'coeff_root_radius':dico['rack_list']['data'][k]['coeff_root_radius'],'coeff_circular_tooth_thickness':dico['rack_list']['data'][k]['coeff_circular_tooth_thickness']} for k in dico['rack_list']['data'].keys()}
+        list_gear=[]
+        for gs in gear_set:
+            for g in gs:
+                if g not in list_gear:
+                    list_gear.append(g)
+        nb_gear=len(list_gear)
+        nb_set=len(gear_set)
+                    
+        if transverse_pressure_angle==None:
+            transverse_pressure_angle=[]
+            for i in range(nb_set):
+                transverse_pressure_angle.append([15/180*npy.pi,30/180*npy.pi])
+            
+        if helix_angle==None:
+            helix_angle={list_gear[0]:[15/180*npy.pi,30/180*npy.pi]}
+        
+        if gear_width==None:
+            gear_width={list_gear[0]:[15*1e-3,25*1e-3]}
+        gw_min=npy.inf
+        gw_max=-npy.inf
+        for ne in gear_width.keys():
+            if gear_width[ne][0]<gw_min:
+                gw_min=gear_width[ne][0]
+            if gear_width[ne][1]>gw_max:
+                gw_max=gear_width[ne][1]
+        for ne in list_gear:
+            if ne not in gear_width.keys():
+                gear_width[ne]=[gw_min,gw_max]
+                
+        if coefficient_profile_shift==None:
+            coefficient_profile_shift={list_gear[0]:[-1.2,1.2]}
+        for ne in list_gear:
+            if ne not in coefficient_profile_shift.keys():
+                coefficient_profile_shift[ne]=[-1.2,1.2]
+                
+        if rack_list==None:
+            rack_list={0:{'name':'Optim_Module','module':[1*1e-3,2*1e-3],'transverse_pressure_angle_rack':[2*npy.pi0,20*npy.pi],'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
+            
+        if rack_choice==None:
+            rack_choice={list_gear[0]:list(rack_list.keys())[0]}
+        for ne in list_gear:
+            if ne not in rack_choice.keys():
+                rack_choice[ne]=list(rack_list.keys())[0]
+                
+        dico={'gear_set':gear_set,'gear_speed':gear_speed,'center_distance':center_distance,
+              'Z':Z,'transverse_pressure_angle':transverse_pressure_angle,'helix_angle':helix_angle,
+              'gear_width':gear_width,'frequency':frequency,'coefficient_profile_shift':coefficient_profile_shift,
+              'rack_list':rack_list,'rack_choice':rack_choice,'list_gear':list_gear}
 
-        dico=self.DefaultDataSet(dico)
         self.dico_gear_assembly_optimizer=dico
 
 
@@ -1023,62 +1143,9 @@ class GearAssemblyOptimizerWizard:
         M1.Optimize()
         self.solutions=M1.solutions
         
-    def SearchCenterLine(self):
+    def SearchCenterLine(self,nb_sol=1):
         M1=GearAssemblyOptimizer(**self.dico_gear_assembly_optimizer)
         self.analyse=M1
-        M1.SearchCenterLine()
+        M1.SearchCenterLine(nb_sol)
         self.solutions_search=M1.solutions_search
 
-    def DefaultDataSet(self,dico):
-
-        #consolidation Z et coefficient_profile_shift
-        nb_gear=npy.array(dico['gear_set']['data']).max()+1
-        for i in range(nb_gear):
-            if str(i) not in dico['Z']['data'].keys():
-                dico['Z']['data'][str(i)]=[20,80]
-            if str(i) not in dico['coefficient_profile_shift']['data'].keys():
-                dico['coefficient_profile_shift']['data'][str(i)]=[-1.2,1.2]
-
-        #consolidation gear_width
-        nb_gear_set=len(dico['gear_set']['data'])
-        parcourt={}
-        for i in range(nb_gear):
-            parcourt[str(i)]=[]
-        for it1,it2 in dico['gear_set']['data']:
-            parcourt[str(it1)].append(str(it2))
-            parcourt[str(it2)].append(str(it1))
-        know_gw=dico['gear_width']['data'].keys()
-        for i in range(nb_gear):
-            if str(i) not in know_gw:
-                temp=[0,0]
-                for j in know_gw:
-                    drap=0
-                    ptm=j
-                    ptmm=j
-                    while drap==0:
-                        ptp=[]
-                        for pt in ptm:
-                            ptp=ptp+parcourt[pt]
-                            try:
-                                ptp.remove(pt)
-                            except:
-                                pass
-                        for pt in ptmm:
-                            try:
-                                ptp.remove(pt)
-                            except:
-                                pass
-                        if str(i) in ptp:
-                            drap=2
-                        if ptp==ptmm:
-                            drap=1
-                        ptmm=ptm
-                        ptm=ptp
-                    if drap==2:
-                        temp[0]=max(temp[0],dico['gear_width']['data'][j][0])
-                        temp[1]=max(temp[1],dico['gear_width']['data'][j][1])
-                if temp!=[0,0]:
-                    dico['gear_width']['data'][str(i)]=temp
-                else:
-                    dico['gear_width']['data'][str(i)]=[0.02,0.03]
-        return dico
