@@ -906,7 +906,7 @@ class GearAssembly(persistent.Persistent):
         fun = (lambda tan_alpha : (norm(self.Gear2._Involute(tan_alpha))-(self.DF2/2))**2)
         sol=minimize(fun,[0.1], method='SLSQP', tol=1e-20)
         xsol=sol.x
-        Angle2=xsol[0]-npy.arctan(xsol[0])        
+        Angle2=xsol[0]-npy.arctan(xsol[0])
         Angle1=npy.arccos(self.Gear1.base_diameter/self.DF1)
         Angle2=npy.arccos(self.Gear2.base_diameter/self.DF2)
         Gear1Angle=-(npy.tan(Angle1)-Angle1)
