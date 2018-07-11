@@ -15,7 +15,6 @@ list_rack_choice={0:0,1:0}
 list_helix_angle={0:[0,0]}
 
 
-
 GA_wizard=gears.GearAssemblyOptimizerWizard(gear_set=list_gear_set,gear_speed=list_speed,
                                             center_distance=list_cd,rack_list=list_rack,
                                             rack_choice=list_rack_choice,helix_angle=list_helix_angle,Z=list_Z)

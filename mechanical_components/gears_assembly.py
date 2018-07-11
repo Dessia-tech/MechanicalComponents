@@ -19,106 +19,8 @@ import networkx as nx
 import mechanical_components.LibSvgD3 as LibSvg
 import powertransmission.tools as tools
 
-import persistent
 #from dessia_common import ResultsDBClient
 #import pyDOE
-
-class ww(persistent.Persistent):
-    
-    def __init__(self,YB,wholer,):
-        
-        data_array,dico_axis,dico_nom,type_axis=self.DataCoeffYBIso()
-        self.data_coeff_YB_Iso=self.GenereCoeff(data_array,dico_axis,dico_nom,type_axis)
-    
-        data_array,dico_axis,dico_nom,type_axis=self.DataWholerCurve()
-        self.data_wholer_curve=self.GenereCoeff(data_array,dico_axis,dico_nom,type_axis)
-        
-        data_array,dico_axis,dico_nom,type_axis=self.DataGearMaterial()
-        self.data_gear_material=self.GenereCoeff(data_array,dico_axis,dico_nom,type_axis)
-        
-    def GenereCoeff(self,data_array,dico_axis,dico_nom,type_axis):
-        structure={}
-        vect_x=npy.linspace(data_array[dico_nom['x']][0,0],data_array[dico_nom['x']][-1,0],len(data_array[dico_nom['x']][:,0]))
-        vect_y=npy.linspace(data_array[dico_nom['y']][0,1],data_array[dico_nom['y']][-1,1],len(data_array[dico_nom['y']][:,1]))
-        
-        for i,j in type_axis.items():
-            if j=='Log':
-                axe_reel=[mt.log10(dico_axis[i][0]),mt.log10(dico_axis[i][-1])]
-            if j=='Linear':
-                axe_reel=dico_axis[i]
-            if i=='x':
-                ax,bx=self.AxisLinear(axe_reel,vect_x)
-            if i=='y':
-                ay,by=self.AxisLinear(axe_reel,vect_y)
-        
-        for key,data in dico_nom.items():
-            if not key in ['x','y']:
-                export=[]
-                for item in data_array[data]:
-                    data_x=item[0]*ax+bx
-                    data_y=item[1]*ay+by
-                    export.append([data_x,data_y])
-                export=npy.array(export)
-                structure[key]=export
-        structure['x']=type_axis['x']
-        structure['y']=type_axis['y']
-        return structure
-    
-    def DataCoeffYBIso(self):
-        data_svg=['56.097561,477.97196 81.707319,-1.21951 81.70732,1.21951 82.92682,0 79.2683,-1.21951 82.92683,0 81.70731,-1.21951 81.70732,0 81.70732,1.21951',
-                               '57.317073,476.75245 -1.219512,-82.92683 0,-82.92683 1.219512,-84.14634 0,-82.92683 1.219512,-82.92683',
-                               '56.097561,58.459766 76.829269,59.756094 71.95122,43.90244 89.02439,45.12195 78.04878,32.92683 75.60976,19.5122 74.39024,7.31707 90.2439,1.21951 97.56098,1.21952']
-        dico_nom={'evol_coeff_yb_iso':2,'x':0,'y':1}
-        dico_axis={'x':[0,5,10,15,20,25,30,35,40],'y':[0.5,0.6,0.7,0.8,0.9,1]}
-        type_axis={'x':'Linear','y':'Linear'}
-        data_array=self.SVG2Array(data_svg)
-        return data_array,dico_axis,dico_nom,type_axis
-    
-    def DataWholerCurve(self):
-        data_svg=['199.46895,423.19149 0,-42.67247 -0.99238,-41.68007 0.99238,-31.75625 -0.99238,-28.77911 0,-20.84004 0,-19.84765 0,-20.84004 0,-18.85528 0.99238,-17.86289 0,-14.88574 0,-16.87051 0,-12.90098 0,-9.92382 0,-11.9086 0,-11.90859 0,-10.916213','200.46133,423.19149 34.7334,-0.99239 20.84004,0.99239 14.88574,-0.99239 11.9086,0 36.29445,0.74708 36.12719,-0.80283 21.67632,0.80283 14.45088,0 11.23957,0 38.93709,-0.40141 36.1272,0.40141 21.67631,0 16.85936,-0.40141 11.23957,0 36.1272,-0.40142 37.33143,-0.40141 19.26784,0.40141 14.04947,0.80283 9.2325,0 36.93002,-0.40141','236,100.3622 63.42857,18.28572 61.14286,15.42857 93.71428,21.71429 57.71429,3.42857 65.71429,1.14285 65.71428,0.57143 38.28572,0','213.04348,126.27525 55.65217,34.78261 38.26087,22.60869 66.08696,6.95652 115.65217,-0.86956 103.47826,0 86.95652,-0.86957','221.14286,140.3622 60.57143,46.28572 34.85714,26.85714 43.42857,27.42857 13.14286,5.71429 78.28571,-0.57143 125.71429,1.14286 103.42857,-2.28572','234.28571,204.3622 50.28572,29.14286 37.71428,21.14286 41.14286,21.14286 31.42857,12 48,5.14285 65.71429,0 83.42857,-1.14285 88,0','237.3913,261.05786 112.17392,50.43478 83.47826,31.30435 69.56522,18.26087 84.34782,-0.86957 92.17391,-0.86956']
-        dico_nom={'hardened_alloy_steel':2,'nitrided_alloy_steel':3,'through_hardened_steel':4,'surface_hardened_steel':5,'x':1,'y':0,'carbon_steel':6,'cast_iron':6,'bronze':6,'grey_iron':6}
-        dico_axis={'x':[10000,100000000],'y':[20,100]}
-        type_axis={'x':'Log','y':'Log'}
-        data_array=self.SVG2Array(data_svg)
-        return data_array,dico_axis,dico_nom,type_axis
-    
-    def DataGearMaterial(self):
-        data_svg=['76.2931,579.71715 91.17956,0.9304 59.54583,0.9304 47.45059,-0.9304 134.90853,0 110.71804,-0.9304','76.2931,579.71715 0,-148.86459 -0.930404,-90.24915 0,-240.974553','350.76218,194.53003 53.96341,-28.84251 56.75463,-29.77292 40.93776,-22.32969','352.62299,209.41649 49.31139,-26.98171 39.07695,-19.53847 54.89382,-29.77292','319.12846,281.05757 71.64108,-46.52018 56.75462,-39.07696 66.98906,-45.58977','345.17976,370.37632 51.1722,-42.79857 53.96341,-42.79856','267.02585,377.81955 43.72897,-36.28574 38.14655,-33.49453 23.26009,-20.46888','163.75104,467.1383 37.21615,-30.70332 30.70332,-25.1209 16.74727,-17.67767','82.805926,535.98817 38.146554,-31.63372 20.46888,-15.81686 13.02565,-14.88646','103.27481,574.13472 37.21614,-33.49453 33.49453,-35.35534 25.1209,-26.0513 14.88646,-17.67767']
-        dico_nom={'hardened_alloy_steel':2,'nitrided_alloy_steel':3,'through_hardened_steel':4,'surface_hardened_steel':5,'carbon_steel':6,'cast_iron':7,'bronze':8,'grey_iron':9,'x':0,'y':1}
-        dico_axis={'x':[20,150],'y':[5,45]}
-        type_axis={'x':'Log','y':'Log'}
-        data_array=self.SVG2Array(data_svg)
-        return data_array,dico_axis,dico_nom,type_axis
-    
-    def FunCoeff(self,x,data,type_x='Linear',type_y='Linear'):
-        if type_x=='Log': 
-            x=npy.log10(x)
-        f = interpolate.interp1d(list(data[:,0]),list(data[:,1]), fill_value='extrapolate')
-        sol=float(f(x))
-        if type_y=='Log':
-            sol=10**sol
-        return sol
-    
-    def AxisLinear(self,axe,vect):
-        a=(axe[0]-axe[-1])/(vect[0]-vect[-1])
-        b=axe[0]-a*vect[0]
-        return a,b
-    
-    def SVG2Array(self,data):
-        # en entrée une liste de data SVG positionnee en relatif et 
-        # en sortie liste Array avec positionnement en absolu
-        export={}
-        for i,dat in enumerate(data):
-            data_temp=[]
-            sol=dat.split(' ')
-            for item in sol:
-                temp=item.split(',')
-                data_temp.append([float(temp[0]),float(temp[1])])
-            export_temp=[data_temp[0]]
-            for item in data_temp[1::]:
-                export_temp.append([item[0]+export_temp[-1][0],item[1]+export_temp[-1][1]])
-            export[i]=npy.array(export_temp)
-        return export
 
 class Rack():
     def __init__(self,transverse_pressure_angle):
@@ -163,14 +65,26 @@ class Rack():
         return list(d.keys()),list(d.values())
 
 class Gear():
-    def __init__(self,z,db,cp,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness):
+    def __init__(self, z, db, cp, transverse_pressure_angle_rack,
+                 coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
+                 coeff_circular_tooth_thickness):
+        
         self.rack=Rack(transverse_pressure_angle_rack)
-        self.GearParam(z,db,cp,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
+        self.GearParam(z,db,cp,transverse_pressure_angle_rack,
+                       coeff_gear_addendum, coeff_gear_dedendum, 
+                       coeff_root_radius, coeff_circular_tooth_thickness)
         
-    def Update(self,z,db,cp,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness):
-        self.GearParam(z,db,cp,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
+    def Update(self,z,db,cp,transverse_pressure_angle_rack,
+               coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,
+               coeff_circular_tooth_thickness):
+        self.GearParam(z,db,cp, transverse_pressure_angle_rack,
+                       coeff_gear_addendum, coeff_gear_dedendum,
+                       coeff_root_radius, coeff_circular_tooth_thickness)
         
-    def GearParam(self,z,db,cp,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness):
+    def GearParam(self,z, db, cp, transverse_pressure_angle_rack,
+                  coeff_gear_addendum, coeff_gear_dedendum,
+                  coeff_root_radius, coeff_circular_tooth_thickness):
+        
         self.Z=z
         self.DB=db
         self.DFF=self.DB/npy.cos(transverse_pressure_angle_rack)
@@ -207,7 +121,7 @@ class Gear():
         root_diameter_active=2*norm(self._Trochoide(phi))
         return root_diameter_active,phi
     
-    def GearContours(self,discret=10,list_number=[None]):
+    def Contour(self,discret=10,list_number=[None]):
         #Analytical tooth profil
         if list_number==[None]:
             list_number=npy.arange(int(self.Z))
@@ -349,7 +263,11 @@ class Gear():
         return d
 
 class GearAssembly():
-    def __init__(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness,list_gear):
+    def __init__(self,Z, center_distance, gear_set,transverse_pressure_angle,
+                 coefficient_profile_shift,gear_graph, transverse_pressure_angle_rack,
+                 coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,
+                 coeff_circular_tooth_thickness,list_gear):
+        
         self.center_distance=center_distance
         self.gear_set=gear_set
         self.transverse_pressure_angle=transverse_pressure_angle
@@ -385,7 +303,11 @@ class GearAssembly():
         self.DF,DB,self.node_dfs=self.GearAssemblyParam1(Z)
         self.linear_backlash,self.radial_contact_ratio=self.GearAssemblyParam2(Z,coefficient_profile_shift,DB,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
         
-    def GearAssemblyParam2(self,Z,coefficient_profile_shift,DB,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness):
+    def GearAssemblyParam2(self,Z,coefficient_profile_shift,DB,
+                           transverse_pressure_angle_rack,coeff_gear_addendum,
+                           coeff_gear_dedendum,coeff_root_radius,
+                           coeff_circular_tooth_thickness):
+        
         for ne,ns in enumerate(self.gear_set):
             for ng in ns:
                 z=Z[ng]
@@ -439,11 +361,11 @@ class GearAssembly():
     
     def GearAssemblyTrace(self,list_gear,list_center,list_rot):
         TG=[]
-        for (i,j,k) in zip(list_gear,list_center,list_rot):
+        for (i,center,k) in zip(list_gear,list_center,list_rot):
             temp=[]
             for m in i:
-                temp1=m.Translation(j)
-                temp2=temp1.Rotation(vm.Point2D(j),k)
+                temp1=m.Translation(center)
+                temp2=temp1.Rotation(vm.Point2D(center),k)
                 temp.append(temp2)
             TG.append(temp)
         return TG
@@ -463,27 +385,44 @@ class GearAssembly():
         Gear2Angle=-(npy.tan(Angle2)-Angle2)+npy.pi        
         return [Gear1Angle,Gear2Angle]
     
-    def VolumeModel(self,name,position):
-        x_opt=self.PosAxis(position)
-        TG={}
-        L1=[]
+    def VolumeModel(self, centers = [], axis = (1,0,0), name = ''):
+        
+        x = vm.Vector3D(axis)
+        y = x.RandomUnitNormalVector()
+        print(x,y)
+        z = vm.Vector3D(npy.cross(x.vector, y.vector))  
+        
+        if len(centers)==0:
+            centers = []
+            pos_axis = self.PosAxis({0:(0,0)})
+            for i in range(len(pos_axis)/2):
+                centers.append((0, pos_axis[2*i], pos_axis[2*i+1]))
+            
+        TG={}#
         Struct=[]
         Rot={}
-        export_cad=[]
+        primitives=[]
+        
+#        angles=[0]
+        
         for num,en in enumerate(self.node_dfs):
+            
             ens=[self.list_gear.index(en[0]),self.list_gear.index(en[1])]
-            position1=(x_opt[2*ens[0]],x_opt[2*ens[0]+1])   
-            position2=(x_opt[2*ens[1]],x_opt[2*ens[1]+1])
+            print(centers, ens)
+            position1 = centers[ens[0]]
+            position2 = centers[ens[1]]
+            
             #tuple1 et 2 correspondent a la position des centres
             ne=self.gear_set.index(en)
             Rot[ne]={}
             if num==0:
-                TG[en[0]]=self.gears[ne][en[0]].GearContours(4)
+                TG[en[0]]=self.gears[ne][en[0]].Contour(3)
             Struct.append(vm.Circle2D(vm.Point2D(position1),self.DF[ne][en[0]]/2))
-            TG[en[1]]=self.gears[ne][en[1]].GearContours(4)
+            TG[en[1]]=self.gears[ne][en[1]].Contour(3)
             Struct.append(vm.Circle2D(vm.Point2D(position2),self.DF[ne][en[1]]/2))
             #Definition de la position angulaire initiale
             list_rot=self.InitialPosition(ne,en)
+            
             if position2[0]==position1[0]:
                 if position2[1]-position1[1]>0:
                     angle=npy.pi/2
@@ -500,18 +439,29 @@ class GearAssembly():
                         Rot[ne][en[0]]=v1[en[0]]
                         delta_rot=Rot[ne][en[0]]-(list_rot[0]-angle)
                 Rot[ne][en[1]]=list_rot[1]-angle-delta_rot*((self.gears[ne][en[0]].Z)/(self.gears[ne][en[1]].Z))
-            sol=self.GearAssemblyTrace([TG[en[0]],TG[en[1]]],[position1,position2],list_rot=[Rot[ne][en[0]],Rot[ne][en[1]]])
+            sol=self.GearAssemblyTrace([TG[en[0]],TG[en[1]]],[(0,0),(0,0)],
+                                       list_rot=[Rot[ne][en[0]],Rot[ne][en[1]]])
         
             C1=vm.Contour2D(sol[0])
             C2=vm.Contour2D(sol[1])
-       
-            t1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-                                            vm.Vector3D((0,1,0)),[C1],(0,0,0.02))
-            t2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Vector3D((1,0,0)),
-                                            vm.Vector3D((0,1,0)),[C2],(0,0,0.02))
-            export_cad.extend([t1,t2])
-        model=vm.VolumeModel(export_cad)
+            
+            extrusion_vector = (0.02*x).vector
+            
+            if num==0:
+                t1=primitives3D.ExtrudedProfile(vm.Vector3D(position1),y,z,[C1],extrusion_vector)
+                primitives.append(t1)
+        
+            t2=primitives3D.ExtrudedProfile(vm.Vector3D(position2),y,z,[C2],extrusion_vector)
+            primitives.append(t2)
+#            print(primitives)
+        model=vm.VolumeModel(primitives)
         return model
+
+    def FreeCADExport(self, file_path, export_types, python_path = 'python',
+                      freecad_path = '/usr/lib/freecad/lib'):
+        
+        model = self.VolumeModel()
+        model.FreeCADExport(python_path ,file_path, freecad_path, export_types)
         
     def PosAxis(self,position):
         #optimisation pour le placement des axes des engrenages
@@ -562,9 +512,9 @@ class GearAssembly():
             ne=self.gear_set.index(en)
             Rot[ne]={}
             if num==0:
-                TG[en[0]]=self.gears[ne][en[0]].GearContours(5)
+                TG[en[0]]=self.gears[ne][en[0]].Contour(5)
             Struct.append(vm.Circle2D(vm.Point2D(position1),self.DF[ne][en[0]]/2))
-            TG[en[1]]=self.gears[ne][en[1]].GearContours(5)
+            TG[en[1]]=self.gears[ne][en[1]].Contour(5)
             Struct.append(vm.Circle2D(vm.Point2D(position2),self.DF[ne][en[1]]/2))
             #Definition de la position angulaire initiale
             list_rot=self.InitialPosition(ne,en)
@@ -1091,7 +1041,7 @@ class GearAssemblyOptimizer:
 #                if incr==3:
 #                    break
             dt.NextNode(valid)
-        print('Nombre de combinaison trouvées: {}'.format(incr))
+#        print('Nombre de combinaison trouvées: {}'.format(incr))
 
 
     def Optimize(self,callback=lambda x:x):
@@ -1113,7 +1063,7 @@ class GearAssemblyOptimizer:
 #                print(22,A1.xj)
                 xt=dict(list(A1.xi.items())+list(xsol.items()))
                 self.solutions.append(GearAssembly(**xt))
-#                break
+                break
                 
     def SearchCenterLine(self,nb_sol,callback=lambda x:x):
         #recherche de l'ensemble des entraxes
@@ -1215,7 +1165,7 @@ class GearAssemblyOptimizerWizard:
                 coefficient_profile_shift[ne]=[-1.2,1.2]
                 
         if rack_list==None:
-            rack_list={0:{'name':'Optim_Module','module':[1*1e-3,2*1e-3],'transverse_pressure_angle_rack':[2*npy.pi,20*npy.pi],'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
+            rack_list={0:{'name':'Optim_Module','module':[0.5*1e-3,3*1e-3],'transverse_pressure_angle_rack':[2*npy.pi,20*npy.pi],'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
             
         if rack_choice==None:
             rack_choice={list_gear[0]:list(rack_list.keys())[0]}
