@@ -598,7 +598,8 @@ class BearingCombination():
             R1=RadialRollerBearing(**data)
             R1.BaseDynamicLoad()
             R1.BaseStaticLoad()
-            R1.BaseLifeTime(Fr=self.Fr)
+            R1.BaseLifeTime(Fr=self.Fr,Fa=self.Fa)
+            R1.AdjustedLifeTime(Fr=self.Fr,Fa=self.Fa,n=self.n)
             for k1,v1 in liste_inf.items():
                 if getattr(R1,k1)<v1:
                     convergence=0
@@ -659,9 +660,9 @@ class BearingCombination():
         limit_sort.append({'type':'bound_inf','var':'Cr','val':tCr[0]})
         limit_sort.append({'type':'bound_sup','var':'Cr','val':tCr[1]})
         
-#        tLnm=def_inter(Lnm)
-#        limit_sort.append({'type':'bound_inf','var':'Lnm','val':tLnm[0]})
-#        limit_sort.append({'type':'bound_sup','var':'Lnm','val':tLnm[1]})
+        tLnm=def_inter(Lnm)
+        limit_sort.append({'type':'bound_inf','var':'Lnm','val':tLnm[0]})
+        limit_sort.append({'type':'bound_sup','var':'Lnm','val':tLnm[1]})
 
         liste_ind=self.Analyze(limit=limit_ISO,grade=grade,Fr=Fr,Fa=Fa,n=n)
         print('Number of ISO solutions: ',len(liste_ind))
