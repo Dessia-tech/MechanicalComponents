@@ -31,7 +31,7 @@ setup(name='mechanical_components',
       author_email='masfaraud@dessia.tech',
       packages=['mechanical_components'],
       setup_requires=['numpy'],
-      install_requires=['scipy','volmdlr','persistent'],
+      install_requires=['scipy','volmdlr','persistent', 'pandas'],
       data_files=[('mechanical_components/catalogs',['mechanical_components/catalogs/ferroflex.csv'])]
       )
 
