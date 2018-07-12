@@ -128,25 +128,56 @@ class Material():
     
 M1=Material()
 fichier=open('GenerateDataSigmaISO.txt','w')
-fichier.write("#data_coeff_YB_Iso\n")
-fichier.write('{')
-for k,v in M1.data_coeff_YB_Iso.items():
-    print(k,v)
-    fichier.write('\''+k+'\''+':')
-    print(v.__class__)
-    if 'str' not in str(v.__class__):
-        fichier.write('[')
-        for ligne in v[:-1]:
-            fichier.write('[{},{}]'.format(*tuple(ligne)))
-            fichier.write(',')
-        fichier.write('[{},{}]'.format(*tuple(v[-1])))
-        fichier.write(']')
-    else:
-        fichier.write('\'{}\''.format(v))
-    fichier.write(',')
-            
 
-fichier.write('}')    
-#fichier.write(M1.data_coeff_YB_Iso)
+fichier.write("#data_coeff_YB_Iso\n")
+for k,v in M1.data_coeff_YB_Iso.items():
+    if k not in ['x','y']:
+        fichier.write(k+'={')
+        if 'str' not in str(v.__class__):
+            fichier.write('\'data\':[')
+            for ligne in v[:-1]:
+                fichier.write('[{},{}]'.format(*tuple(ligne)))
+                fichier.write(',')
+            fichier.write('[{},{}]'.format(*tuple(v[-1])))
+            fichier.write(']')
+        else:
+            fichier.write('\'{}\''.format(v))
+        fichier.write(',\'x\':\'{}\''.format(M1.data_coeff_YB_Iso['x']))
+        fichier.write(',\'y\':\'{}\''.format(M1.data_coeff_YB_Iso['y']))
+fichier.write('}\n')    
+
+fichier.write("#data_wholer_curve\n")
+for k,v in M1.data_wholer_curve.items():
+    if k not in ['x','y']:
+        fichier.write('wholer_'+k+'={')
+        if 'str' not in str(v.__class__):
+            fichier.write('\'data\':[')
+            for ligne in v[:-1]:
+                fichier.write('[{},{}]'.format(*tuple(ligne)))
+                fichier.write(',')
+            fichier.write('[{},{}]'.format(*tuple(v[-1])))
+            fichier.write(']')
+        else:
+            fichier.write('\'{}\''.format(v))
+        fichier.write(',\'x\':\'{}\''.format(M1.data_wholer_curve['x']))
+        fichier.write(',\'y\':\'{}\''.format(M1.data_wholer_curve['y']))
+        fichier.write('}\n') 
+
+fichier.write("#data_gear_material\n")
+for k,v in M1.data_gear_material.items():
+    if k not in ['x','y']:
+        fichier.write('sigma_'+k+'={')
+        if 'str' not in str(v.__class__):
+            fichier.write('\'data\':[')
+            for ligne in v[:-1]:
+                fichier.write('[{},{}]'.format(*tuple(ligne)))
+                fichier.write(',')
+            fichier.write('[{},{}]'.format(*tuple(v[-1])))
+            fichier.write(']')
+        else:
+            fichier.write('\'{}\''.format(v))
+        fichier.write(',\'x\':\'{}\''.format(M1.data_gear_material['x']))
+        fichier.write(',\'y\':\'{}\''.format(M1.data_gear_material['y']))
+        fichier.write('}\n') 
 
 fichier.close()
