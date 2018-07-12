@@ -938,7 +938,7 @@ class ContinuousGearAssemblyOptimizer:
         for ne,gs in enumerate(self.GearAssembly.gear_set):
             for g in gs:
                 mo=self.GearAssembly.gears[ne][g].rack.module
-                obj+=100*(mo-3*1e-3)**2
+                obj+=100*(1/mo)**2
                 
         for lb in self.GearAssembly.linear_backlash:
             obj+=100*((1e-4)-lb)**2
