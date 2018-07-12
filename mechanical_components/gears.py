@@ -898,27 +898,19 @@ class GearAssembly(persistent.Persistent):
             TG.append(temp)
         return TG
         
-    def InitialPosition(self):
-        
+    def InitialPosition(self):        
         fun = (lambda tan_alpha : (norm(self.Gear1._Involute(tan_alpha))-(self.center_distance-self.DF2/2))**2)
-#        bnds = (0,1)
         sol=minimize(fun,[0.1], method='SLSQP', tol=1e-20)
         xsol=sol.x
         Angle1=xsol[0]-npy.arctan(xsol[0])
         fun = (lambda tan_alpha : (norm(self.Gear2._Involute(tan_alpha))-(self.DF2/2))**2)
-#        bnds = (0,1)
         sol=minimize(fun,[0.1], method='SLSQP', tol=1e-20)
         xsol=sol.x
         Angle2=xsol[0]-npy.arctan(xsol[0])
-        
         Angle1=npy.arccos(self.Gear1.base_diameter/self.DF1)
         Angle2=npy.arccos(self.Gear2.base_diameter/self.DF2)
-        
-        #Gear2Angle=-Angle2+npy.pi-Angle1*self.Z1/self.Z2
         Gear1Angle=-(npy.tan(Angle1)-Angle1)
-        Gear2Angle=-(npy.tan(Angle2)-Angle2)+npy.pi
-        #Gear1Angle=0
-        
+        Gear2Angle=-(npy.tan(Angle2)-Angle2)+npy.pi        
         return [Gear1Angle,Gear2Angle]
         
     ### Stress
@@ -1025,7 +1017,8 @@ class GearAssembly(persistent.Persistent):
     
     ### Export
     
-    def FreeCADExport(self,file_path,position1,position2,python_path,freecad_lib_path,export_types):
+    def VolumeModel(self, centers, axis = (1,0,0)):
+
         RIM1=self.Gear1.RimContour()
         RIM2=self.Gear2.RimContour()
 #        RIM1.MPLPlot()
@@ -1076,10 +1069,17 @@ class GearAssembly(persistent.Persistent):
         t1=primitives3D.Cut(t1,c1,name='Teeth1')
         t2=primitives3D.Cut(t2,c2,name='Teeth2')
 
+#        model = self.VolumeModel(center)
         model=vm.VolumeModel([gear1,t1,gear2,t2])
-#        model=vm.VolumeModel([gear1,t1,gear2])
+
+        return model
+
+        
+    def FreeCADExport(self,file_path,position1,position2,python_path,freecad_lib_path,export_types):
+        
+        model = self.VolumeModel()
         model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
-    
+        
     def CSVExport(self):
         self.SigmaLewis()
         d=self.__dict__.copy()
