@@ -372,8 +372,6 @@ class GearAssembly():
         self.transverse_pressure_angle=transverse_pressure_angle
         self.DF,DB,self.gear_set_dfs=self.GearGeometryParameter(Z)
         self.linear_backlash,self.radial_contact_ratio=self.GearContactRatioParameter(Z,coefficient_profile_shift,DB,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
-        self.torque1,self.normal_load,self.tangential_load,self.radial_load=self.GearTorque(Z,torque,DB)
-        self.gear_width,self.sigma_iso,self.sigma_lim=self.GearWidthDefinition()
         
     def GearContactRatioParameter(self,Z,coefficient_profile_shift,DB,
                            transverse_pressure_angle_rack,coeff_gear_addendum,
@@ -1071,6 +1069,7 @@ class GearAssemblyOptimizer:
         
         if self.Z=={}:
             self.Z=self.AnalyseZ()
+        print(self.Z)
         self.AnalyzeCombination()
         self.solutions=[]
         self.solutions_search=[]
@@ -1116,8 +1115,10 @@ class GearAssemblyOptimizer:
             if max(self.Z[n1][1],self.Z[n2][1])>Zmax:
                 Zmax=max(self.Z[n1][1],self.Z[n2][1])
         np=[Zmax+1-Zmin]*self.nb_gear+[self.nb_rack]*self.nb_gear
+        print(np)
         liste_gear=npy.arange(Zmin,Zmax+1)
         liste_rack=list(self.rack_list.keys())
+        print(liste_gear,liste_rack)
         
         demul_int_min=1/1.9
         demul_int_max=1.9
@@ -1158,14 +1159,14 @@ class GearAssemblyOptimizer:
                 #analyse ACV engrenage 2 à 2
                 if (pgcd(z1,z2)!=1) & (dt.current_depth<=(self.nb_gear-1)):
                     valid=False
+                #Analyse des bornes sur Z
+                if (valid) & (dt.current_depth<=(self.nb_gear-1)):
+                    if (z2<self.Z[n2][0]) or (z2>self.Z[n2][1]):
+                        valid=False
                 #analyse demul interne
                 if (valid) & (dt.current_depth<=(self.nb_gear-1)):
                     demul=liste_gear[dt.current_node[i1]]/liste_gear[dt.current_node[i2]]
                     if (demul > demul_int_max) or (demul < demul_int_min):
-                        valid=False
-                #Analyse des bornes sur Z
-                if (valid) & (dt.current_depth<=(self.nb_gear-1)):
-                    if (z2<self.Z[n2][0]) or (z2>self.Z[n2][1]):
                         valid=False
                 #analyse ACV de l'ensemble des engrenages entre eux
 #                if (valid) & (dt.current_depth<=(self.nb_gear-1)):
@@ -1282,18 +1283,9 @@ class GearAssemblyOptimizer:
                     
                 Temp={}
                 Temp['Z']=gear
-                Temp['gear_set']=self.gear_set
-                Temp['center_distance']=self.center_distance
-                Temp['transverse_pressure_angle']=self.transverse_pressure_angle
-                Temp['coefficient_profile_shift']=self.coefficient_profile_shift
 #                Temp['cond_init']=res.x
                 Temp['cond_init']=0
-                Temp['rack_list']=self.rack_list
                 Temp['rack_choice']=rack
-                Temp['list_gear']=self.list_gear
-                Temp['material']=self.material
-                Temp['torque']=self.torque
-                Temp['cycle']=self.cycle
                 self.plex_calcul.append(Temp)
                 incr+=1
 #                if incr==3:
@@ -1309,6 +1301,15 @@ class GearAssemblyOptimizer:
             callback(ii/lpx)
             plex=i
             plex['gear_graph']=self.gear_graph
+            plex['rack_list']=self.rack_list
+            plex['list_gear']=self.list_gear
+            plex['material']=self.material
+            plex['torque']=self.torque
+            plex['cycle']=self.cycle
+            plex['gear_set']=self.gear_set
+            plex['center_distance']=self.center_distance
+            plex['transverse_pressure_angle']=self.transverse_pressure_angle
+            plex['coefficient_profile_shift']=self.coefficient_profile_shift
             A1=ContinuousGearAssemblyOptimizer(**plex)
             try:
                 A1.Optimize()
