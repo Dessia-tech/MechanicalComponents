@@ -14,7 +14,7 @@ list_rack={0:{'name':'Catalogue_A','module':[1*1e-3,2*1e-3],
 list_rack_choice={0:0,1:0}
 list_helix_angle={0:[0,0]}
 list_material={0:gears.hardened_alloy_steel,1:gears.hardened_alloy_steel}
-list_torque={0:100}
+list_torque={0:200}
 list_cycle={0:1e6}
 
 GA_wizard=gears.GearAssemblyOptimizer(gear_set=list_gear_set,gear_speed=list_speed,
@@ -24,6 +24,6 @@ GA_wizard=gears.GearAssemblyOptimizer(gear_set=list_gear_set,gear_speed=list_spe
 GA_wizard.Optimize()
 sol=GA_wizard.solutions[-1]
 
-sol.SVGGearSet('name.txt',{0:[0,0]})
-#v=sol.VolumeModel('3D',{7:[0,0],2:[0.2,0],6:[0.6,0]})
-#v.FreeCADExport('python','Gears','/usr/lib/freecad/lib')
+#sol.SVGExport('name.txt',{0:[0,0]})
+#v=sol.VolumeModel()
+sol.FreeCADExport('Gear')

@@ -365,7 +365,7 @@ class GearAssembly():
                 self.gears[ne][ng]=Gear(z,db,cp,tpa,cga,cgd,crr,cct)
                 
         self.linear_backlash,self.radial_contact_ratio=self.GearContactRatioParameter(Z,coefficient_profile_shift,DB,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
-        self.gear_width,self.sigma_iso,self.sigma_lim=self.SigmaISO()
+        self.gear_width,self.sigma_iso,self.sigma_lim=self.GearWidthDefinition()
             
     def Update(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness,list_gear,material,torque,cycle):
         self.center_distance=center_distance
@@ -373,7 +373,7 @@ class GearAssembly():
         self.DF,DB,self.gear_set_dfs=self.GearGeometryParameter(Z)
         self.linear_backlash,self.radial_contact_ratio=self.GearContactRatioParameter(Z,coefficient_profile_shift,DB,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
         self.torque1,self.normal_load,self.tangential_load,self.radial_load=self.GearTorque(Z,torque,DB)
-        self.gear_width,self.sigma_iso,self.sigma_lim=self.SigmaISO()
+        self.gear_width,self.sigma_iso,self.sigma_lim=self.GearWidthDefinition()
         
     def GearContactRatioParameter(self,Z,coefficient_profile_shift,DB,
                            transverse_pressure_angle_rack,coeff_gear_addendum,
@@ -470,7 +470,7 @@ class GearAssembly():
         self.sigma_lewis_maximum1=6*self.tangential_load*self.gear_height_lewis1/(self.gear_width*self.Gear1.root_gear_length**2)
         self.sigma_lewis_maximum2=6*self.tangential_load*self.gear_height_lewis2/(self.gear_width*self.Gear2.root_gear_length**2)
         
-    def SigmaISO(self):
+    def GearWidthDefinition(self):
         coeff_yf_iso=self._CoeffYFIso()
         coeff_ye_iso=self._CoeffYEIso()
         coeff_yb_iso=self._CoeffYBIso()
@@ -479,8 +479,11 @@ class GearAssembly():
         for eng in self.list_gear:
             gear_width[eng]=0
         for ne,(eng1,eng2) in enumerate(self.gear_set):
-            gear_width[eng1]=max(gear_width[eng1],abs(self.tangential_load[ne]/(sigma_lim[ne][eng1]*self.gears[ne][eng1].rack.module)*coeff_yf_iso[ne][eng1]*coeff_ye_iso[ne]*coeff_yb_iso[ne][eng1]))
-            gear_width[eng2]=max(gear_width[eng2],abs(self.tangential_load[ne]/(sigma_lim[ne][eng2]*self.gears[ne][eng2].rack.module)*coeff_yf_iso[ne][eng2]*coeff_ye_iso[ne]*coeff_yb_iso[ne][eng2]))
+            gear_width1=abs(self.tangential_load[ne]/(sigma_lim[ne][eng1]*self.gears[ne][eng1].rack.module)*coeff_yf_iso[ne][eng1]*coeff_ye_iso[ne]*coeff_yb_iso[ne][eng1])
+            gear_width2=abs(self.tangential_load[ne]/(sigma_lim[ne][eng2]*self.gears[ne][eng2].rack.module)*coeff_yf_iso[ne][eng2]*coeff_ye_iso[ne]*coeff_yb_iso[ne][eng2])
+            gear_width_set=max(gear_width1,gear_width2)
+            gear_width[eng1]=max(gear_width[eng1],gear_width_set)
+            gear_width[eng2]=max(gear_width[eng2],gear_width_set)
         sigma_iso=sigma_lim
         return gear_width,sigma_iso,sigma_lim
         
@@ -541,16 +544,16 @@ class GearAssembly():
         
     ### Fonction de trace et export
     
-    def GearAssemblyTrace(self,list_gear,list_center,list_rot):
-        TG=[]
+    def GearRotate(self,list_gear,list_center,list_rot):
+        export=[]
         for (i,center,k) in zip(list_gear,list_center,list_rot):
-            temp=[]
+            model_export=[]
             for m in i:
-                temp1=m.Translation(center)
-                temp2=temp1.Rotation(vm.Point2D(center),k)
-                temp.append(temp2)
-            TG.append(temp)
-        return TG
+                model_trans=m.Translation(center)
+                model_trans_rot=model_trans.Rotation(vm.Point2D(center),k)
+                model_export.append(model_trans_rot)
+            export.append(model_export)
+        return export
     
     def InitialPosition(self,ne,ens):        
         fun = (lambda tan_alpha : (norm(self.gears[ne][ens[0]]._Involute(tan_alpha))-(self.center_distance[ne]-self.DF[ne][ens[1]]/2))**2)
@@ -571,13 +574,12 @@ class GearAssembly():
         
         x = vm.Vector3D(axis)
         y = x.RandomUnitNormalVector()
-        print(x,y)
         z = vm.Vector3D(npy.cross(x.vector, y.vector))  
         
         if len(centers)==0:
             centers = []
-            pos_axis = self.PosAxis({0:(0,0)})
-            for i in range(len(pos_axis)/2):
+            pos_axis = self.PosAxis({self.list_gear[0]:[0,0]})
+            for i in range(int(len(pos_axis)/2)):
                 centers.append((0, pos_axis[2*i], pos_axis[2*i+1]))
             
         TG={}#
@@ -590,7 +592,6 @@ class GearAssembly():
         for num,en in enumerate(self.gear_set_dfs):
             
             ens=[self.list_gear.index(en[0]),self.list_gear.index(en[1])]
-            print(centers, ens)
             position1 = centers[ens[0]]
             position2 = centers[ens[1]]
             
@@ -605,13 +606,13 @@ class GearAssembly():
             #Definition de la position angulaire initiale
             list_rot=self.InitialPosition(ne,en)
             
-            if position2[0]==position1[0]:
-                if position2[1]-position1[1]>0:
+            if position2[1]==position1[1]:
+                if position2[2]-position1[2]>0:
                     angle=npy.pi/2
                 else:
                     angle=-npy.pi/2
             else:
-                angle=-npy.arctan((position2[1]-position1[1])/(position2[0]-position1[0]))
+                angle=-npy.arctan((position2[2]-position1[2])/(position2[1]-position1[1]))
             if num==0:
                 Rot[ne][en[0]]=list_rot[0]-angle
                 Rot[ne][en[1]]=list_rot[1]-angle
@@ -621,7 +622,7 @@ class GearAssembly():
                         Rot[ne][en[0]]=v1[en[0]]
                         delta_rot=Rot[ne][en[0]]-(list_rot[0]-angle)
                 Rot[ne][en[1]]=list_rot[1]-angle-delta_rot*((self.gears[ne][en[0]].Z)/(self.gears[ne][en[1]].Z))
-            sol=self.GearAssemblyTrace([TG[en[0]],TG[en[1]]],[(0,0),(0,0)],
+            sol=self.GearRotate([TG[en[0]],TG[en[1]]],[(position1[1::]),(position2[1::])],
                                        list_rot=[Rot[ne][en[0]],Rot[ne][en[1]]])
         
             C1=vm.Contour2D(sol[0])
@@ -631,16 +632,16 @@ class GearAssembly():
             extrusion_vector2 = (self.gear_width[en[1]]*x).vector
             
             if num==0:
-                t1=primitives3D.ExtrudedProfile(vm.Vector3D(position1),y,z,[C1],extrusion_vector1)
+                t1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),y,z,[C1],extrusion_vector1)
                 primitives.append(t1)
         
-            t2=primitives3D.ExtrudedProfile(vm.Vector3D(position2),y,z,[C2],extrusion_vector2)
+            t2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),y,z,[C2],extrusion_vector2)
             primitives.append(t2)
 #            print(primitives)
         model=vm.VolumeModel(primitives)
         return model
 
-    def FreeCADExport(self, file_path, export_types, python_path = 'python',
+    def FreeCADExport(self, file_path, export_types=['fcstd'], python_path = 'python',
                       freecad_path = '/usr/lib/freecad/lib'):
         
         model = self.VolumeModel()
@@ -681,7 +682,7 @@ class GearAssembly():
         x_opt=res.x
         return x_opt
     
-    def SVGGearSet(self,name,position):
+    def SVGExport(self,name,position):
         x_opt=self.PosAxis(position)
         TG={}
         L1=[]
@@ -717,7 +718,7 @@ class GearAssembly():
                         Rot[ne][en[0]]=v1[en[0]]
                         delta_rot=Rot[ne][en[0]]-(list_rot[0]-angle)
                 Rot[ne][en[1]]=list_rot[1]-angle-delta_rot*((self.gears[ne][en[0]].Z)/(self.gears[ne][en[1]].Z))
-            sol=self.GearAssemblyTrace([TG[en[0]],TG[en[1]]],[position1,position2],list_rot=[Rot[ne][en[0]],Rot[ne][en[1]]])
+            sol=self.GearRotate([TG[en[0]],TG[en[1]]],[position1,position2],list_rot=[Rot[ne][en[0]],Rot[ne][en[1]]])
             if num==0:
                 L1.extend(sol[0])
             L1.extend(sol[1])
@@ -1309,6 +1310,7 @@ class GearAssemblyOptimizer:
 #                print(22,A1.xj)
                 xt=dict(list(A1.xi.items())+list(xsol.items()))
                 self.solutions.append(GearAssembly(**xt))
+                print(self.solutions[-1].gear_width)
                 break
                 
     def SearchCenterLine(self,nb_sol,callback=lambda x:x):
