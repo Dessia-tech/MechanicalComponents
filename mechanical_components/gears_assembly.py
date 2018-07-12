@@ -490,7 +490,7 @@ class GearAssembly():
         return gear_width,sigma_iso,sigma_lim
         
     def SigmaMaterialISO(self):
-        safety_factor=1
+        safety_factor=4
         angle=30/180*npy.pi
         sigma_lim={}
         for ne,(eng1,eng2) in enumerate(self.gear_set):
@@ -932,11 +932,11 @@ class ContinuousGearAssemblyOptimizer:
         fineq=self.Fineq(X)
         feq=self.Feq(X)
         obj=0
-        #Maximisation du module pour avoir des pignons avec un faible gear_width
-        for ne,gs in enumerate(self.GearAssembly.gear_set):
-            for g in gs:
-                mo=self.GearAssembly.gears[ne][g].rack.module
-                obj+=100*(1/mo)**2
+#        #Maximisation du module pour avoir des pignons avec un faible gear_width
+#        for ne,gs in enumerate(self.GearAssembly.gear_set):
+#            for g in gs:
+#                mo=self.GearAssembly.gears[ne][g].rack.module
+#                obj+=100*(1/mo)**2
                 
         for lb in self.GearAssembly.linear_backlash:
             obj+=100*((1e-4)-lb)**2
@@ -1067,10 +1067,23 @@ class GearAssemblyOptimizer:
         self.node_init=int(list(self.gear_speed.keys())[0])
         self.gear_set_dfs=list(nx.dfs_edges(gear_graph,self.node_init))
         
-        if self.Z=={}:
-            self.Z=self.AnalyseZ()
-        print(self.Z)
+        self.Z=self.AnalyseZ()
+        
         self.AnalyzeCombination()
+        for i,plex in enumerate(self.plex_calcul):
+            plex['gear_graph']=self.gear_graph
+            plex['rack_list']=self.rack_list
+            plex['list_gear']=self.list_gear
+            plex['material']=self.material
+            plex['torque']=self.torque
+            plex['cycle']=self.cycle
+            plex['gear_set']=self.gear_set
+            plex['center_distance']=self.center_distance
+            plex['transverse_pressure_angle']=self.transverse_pressure_angle
+            plex['coefficient_profile_shift']=self.coefficient_profile_shift
+            self.plex_calcul[i]=plex
+            
+            
         self.solutions=[]
         self.solutions_search=[]
         self.analyse=[]
@@ -1115,10 +1128,8 @@ class GearAssemblyOptimizer:
             if max(self.Z[n1][1],self.Z[n2][1])>Zmax:
                 Zmax=max(self.Z[n1][1],self.Z[n2][1])
         np=[Zmax+1-Zmin]*self.nb_gear+[self.nb_rack]*self.nb_gear
-        print(np)
         liste_gear=npy.arange(Zmin,Zmax+1)
         liste_rack=list(self.rack_list.keys())
-        print(liste_gear,liste_rack)
         
         demul_int_min=1/1.9
         demul_int_max=1.9
@@ -1291,7 +1302,8 @@ class GearAssemblyOptimizer:
 #                if incr==3:
 #                    break
             dt.NextNode(valid)
-        print('Nombre de combinaison trouvées: {}'.format(incr))
+        if incr>1:
+            print('Nombre de combinaison trouvées: {}'.format(incr))
 
 
     def Optimize(self,callback=lambda x:x):
@@ -1300,16 +1312,7 @@ class GearAssemblyOptimizer:
 #            print('{}%'.format(ii/lpx*100))
             callback(ii/lpx)
             plex=i
-            plex['gear_graph']=self.gear_graph
-            plex['rack_list']=self.rack_list
-            plex['list_gear']=self.list_gear
-            plex['material']=self.material
-            plex['torque']=self.torque
-            plex['cycle']=self.cycle
-            plex['gear_set']=self.gear_set
-            plex['center_distance']=self.center_distance
-            plex['transverse_pressure_angle']=self.transverse_pressure_angle
-            plex['coefficient_profile_shift']=self.coefficient_profile_shift
+            
             A1=ContinuousGearAssemblyOptimizer(**plex)
             try:
                 A1.Optimize()
