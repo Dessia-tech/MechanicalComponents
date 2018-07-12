@@ -934,7 +934,12 @@ class ContinuousGearAssemblyOptimizer:
         fineq=self.Fineq(X)
         feq=self.Feq(X)
         obj=0
-        
+        #Maximisation du module pour avoir des pignons avec un faible gear_width
+        for ne,gs in enumerate(self.GearAssembly.gear_set):
+            for g in gs:
+                mo=self.GearAssembly.gears[ne][g].rack.module
+                obj+=100*(mo-3*1e-3)**2
+                
         for lb in self.GearAssembly.linear_backlash:
             obj+=100*((1e-4)-lb)**2
             
