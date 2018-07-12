@@ -296,10 +296,10 @@ class Gear():
     
     ### Stress
     
-    def _CoeffYSIso(self):
+    def _CoeffYSIso(self,s_thickness_iso):
         #facteur de concentration de contrainte en pied de dent
-        rho_f=self.rack.root_radius_T+self.rack.b**2/(self.pitch_diameter_factory/2+self.rack.b)
-        coeff_ys_iso=1+0.15*self.s_thickness_iso/rho_f
+        rho_f=self.rack.root_radius+self.rack.b**2/(self.DFF/2+self.rack.b)
+        coeff_ys_iso=1+0.15*s_thickness_iso/rho_f
         return coeff_ys_iso
     
     def GearSectionISO(self,angle):
@@ -334,7 +334,7 @@ class GearAssembly():
     def __init__(self,Z, center_distance, gear_set,transverse_pressure_angle,
                  coefficient_profile_shift,gear_graph, transverse_pressure_angle_rack,
                  coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,
-                 coeff_circular_tooth_thickness,list_gear,material,torque):
+                 coeff_circular_tooth_thickness,list_gear,material,torque,cycle):
         
         self.center_distance=center_distance
         self.gear_set=gear_set
@@ -342,9 +342,12 @@ class GearAssembly():
         self.gear_graph=gear_graph
         self.list_gear=list_gear
         self.material=material
+        self.helix_angle=0
 
         self.DF,DB,self.gear_set_dfs=self.GearGeometryParameter(Z)
-        self.torque=self.GearTorque(Z,torque)
+        self.cycle=self.CycleParameter(cycle,Z)
+        self.torque1,self.normal_load,self.tangential_load,self.radial_load=self.GearTorque(Z,torque,DB)
+        
         #instantiation des objets Gears
         self.gears={}
         for ne,ns in enumerate(self.gear_set):
@@ -361,18 +364,16 @@ class GearAssembly():
                 cct=coeff_circular_tooth_thickness[ngp]
                 self.gears[ne][ng]=Gear(z,db,cp,tpa,cga,cgd,crr,cct)
                 
-#        for g,z in Z.items():
-#            db=DB[g]
-#            cp=coefficient_profile_shift[str(g)]
-#            self.gears[g]=Gear(z,db,cp)
         self.linear_backlash,self.radial_contact_ratio=self.GearContactRatioParameter(Z,coefficient_profile_shift,DB,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
+        self.gear_width,self.sigma_iso,self.sigma_lim=self.SigmaISO()
             
-    def Update(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness,list_gear,material,torque):
+    def Update(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness,list_gear,material,torque,cycle):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
         self.DF,DB,self.gear_set_dfs=self.GearGeometryParameter(Z)
         self.linear_backlash,self.radial_contact_ratio=self.GearContactRatioParameter(Z,coefficient_profile_shift,DB,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
-        self.torque=self.GearTorque(Z,torque)
+        self.torque1,self.normal_load,self.tangential_load,self.radial_load=self.GearTorque(Z,torque,DB)
+        self.gear_width,self.sigma_iso,self.sigma_lim=self.SigmaISO()
         
     def GearContactRatioParameter(self,Z,coefficient_profile_shift,DB,
                            transverse_pressure_angle_rack,coeff_gear_addendum,
@@ -430,14 +431,38 @@ class GearAssembly():
 
         return DF,DB,gear_set_dfs
     
-    def GearTorque(self,Z,torque):
-#        ggd=self.gear_graph.degree(self.list_gear)
-#        for k,v in ggd.items():
-#            if (k in torque.keys()) and (v==1):
-#                print(k,v)
-        torque=1
-        return torque
+    def GearTorque(self,Z,torque,DB):
+        ggd=self.gear_graph.degree(self.list_gear)
+        for ne,nb_connexion in ggd:
+            if (ne in torque.keys()) and (nb_connexion==1):
+                ne_init=ne
+        gs_init=list(self.gear_graph.edges(ne_init))[0]
+        gs_torque_dfs=list(nx.edge_dfs(self.gear_graph, gs_init))
+        torque1={}
+        normal_load=[]
+        tangential_load=[]
+        radial_load=[]
+        torque_input_m=torque[ne_init]
+        for (eng1,eng2) in gs_torque_dfs:
+            torque2=-torque_input_m*Z[eng2]/Z[eng1]
+            if eng2 in torque.keys():
+                torque2+=torque[eng2]
+            torque1[eng1]=torque_input_m
+            torque_input_m=torque2
+        for ne,(eng1,eng2) in enumerate(self.gear_set):
+            tq1=torque1[eng1]
+            normal_load.append(abs(tq1)*2/(DB[ne][eng1]))
+            tangential_load.append(abs(tq1)*2/(self.DF[ne][eng1]))
+            radial_load.append(npy.tan(self.transverse_pressure_angle[ne])*tangential_load[-1])
+        return torque1,normal_load,tangential_load,radial_load
     
+    def CycleParameter(self,cycle,Z):
+        eng_init=list(cycle.keys())[0]
+        for eng in self.list_gear:
+            if eng not in cycle.keys():
+                cycle[eng]=cycle[eng_init]*Z[eng_init]/Z[eng]
+        return cycle
+                    
     ### Stress
     
     def SigmaLewis(self):
@@ -446,47 +471,73 @@ class GearAssembly():
         self.sigma_lewis_maximum2=6*self.tangential_load*self.gear_height_lewis2/(self.gear_width*self.Gear2.root_gear_length**2)
         
     def SigmaISO(self):
-        
-        self._CoeffYFIso()
-        self._CoeffYEIso()
-        self._CoeffYBIso()
-        self.sigma_iso_1=abs(self.tangential_load/(self.gear_width*self.Gear1.rack.module)*self.coeff_yf_iso1*self.coeff_ye_iso*self.coeff_yb_iso)
-        self.sigma_iso_2=abs(self.tangential_load/(self.gear_width*self.Gear2.rack.module)*self.coeff_yf_iso2*self.coeff_ye_iso*self.coeff_yb_iso)
+        coeff_yf_iso=self._CoeffYFIso()
+        coeff_ye_iso=self._CoeffYEIso()
+        coeff_yb_iso=self._CoeffYBIso()
+        sigma_lim=self.SigmaMaterialISO()
+        gear_width={}
+        for eng in self.list_gear:
+            gear_width[eng]=0
+        for ne,(eng1,eng2) in enumerate(self.gear_set):
+            gear_width[eng1]=max(gear_width[eng1],abs(self.tangential_load[ne]/(sigma_lim[ne][eng1]*self.gears[ne][eng1].rack.module)*coeff_yf_iso[ne][eng1]*coeff_ye_iso[ne]*coeff_yb_iso[ne][eng1]))
+            gear_width[eng2]=max(gear_width[eng2],abs(self.tangential_load[ne]/(sigma_lim[ne][eng2]*self.gears[ne][eng2].rack.module)*coeff_yf_iso[ne][eng2]*coeff_ye_iso[ne]*coeff_yb_iso[ne][eng2]))
+        sigma_iso=sigma_lim
+        return gear_width,sigma_iso,sigma_lim
         
     def SigmaMaterialISO(self):
-        
         safety_factor=1
-        data=self.material.data_wholer_curve
-        sgl1=self.material.FunCoeff(self.nb_cycle1,data[self.material1],data['x'],data['y'])
-        data=self.material.data_gear_material
-        sgl1=self.material.FunCoeff(sgl1,data[self.material1],data['x'],data['y'])
-        self.Gear1._CoeffYSIso()
-        self.sigma_lim1=(sgl1/(safety_factor*self.Gear1.coeff_ys_iso))*10**7
-        
-        data=self.material.data_wholer_curve
-        sgl2=self.material.FunCoeff(self.nb_cycle1*self.Z1/self.Z2,data[self.material2],data['x'],data['y'])
-        data=self.material.data_gear_material
-        sgl2=self.material.FunCoeff(sgl2,data[self.material2],data['x'],data['y'])
-        self.Gear2._CoeffYSIso()
-        self.sigma_lim2=(sgl2/(safety_factor*self.Gear2.coeff_ys_iso))*10**7
+        angle=30/180*npy.pi
+        sigma_lim={}
+        for ne,(eng1,eng2) in enumerate(self.gear_set):
+            sigma_lim[ne]={}
+            
+            matrice_wholer=self.material[eng1].data_wholer_curve
+            matrice_material=self.material[eng1].data_gear_material
+            sgla=self.material[eng1].FunCoeff(self.cycle[eng1],npy.array(matrice_wholer['data']),matrice_wholer['x'],matrice_wholer['y'])
+            sgl1=self.material[eng1].FunCoeff(sgla,npy.array(matrice_material['data']),matrice_material['x'],matrice_material['y'])
+            s_thickness_iso_1,h_height_iso_1=self.gears[ne][eng1].GearSectionISO(angle)
+            coeff_ys_iso=self.gears[ne][eng1]._CoeffYSIso(s_thickness_iso_1)
+            sigma_lim[ne][eng1]=(sgl1/(safety_factor*coeff_ys_iso))*10**7
+            
+            matrice_wholer=self.material[eng2].data_wholer_curve
+            matrice_material=self.material[eng2].data_gear_material
+            sglb=self.material[eng2].FunCoeff(self.cycle[eng2],npy.array(matrice_wholer['data']),matrice_wholer['x'],matrice_wholer['y'])
+            sgl2=self.material[eng2].FunCoeff(sglb,npy.array(matrice_material['data']),matrice_material['x'],matrice_material['y'])
+            s_thickness_iso_2,h_height_iso_2=self.gears[ne][eng2].GearSectionISO(angle)
+            coeff_ys_iso=self.gears[ne][eng2]._CoeffYSIso(s_thickness_iso_2)
+            sigma_lim[ne][eng2]=(sgl2/(safety_factor*coeff_ys_iso))*10**7
+        return sigma_lim
+
         
     def _CoeffYFIso(self):
         #facteur de forme pour la contrainte ISO
         angle=30/180*npy.pi
-        self.Gear1.GearSectionISO(angle)
-        self.Gear2.GearSectionISO(angle)
-        self.coeff_yf_iso1=(6*(self.Gear1.h_height_iso/self.Gear1.rack.module)*npy.cos(self.transverse_pressure_angle))/((self.Gear1.s_thickness_iso/self.Gear1.rack.module)**2*npy.cos(self.Gear1.rack.transverse_pressure_angle_T))
-        self.coeff_yf_iso2=(6*(self.Gear2.h_height_iso/self.Gear2.rack.module)*npy.cos(self.transverse_pressure_angle))/((self.Gear2.s_thickness_iso/self.Gear2.rack.module)**2*npy.cos(self.Gear2.rack.transverse_pressure_angle_T))
+        coeff_yf_iso={}
+        for ne,(eng1,eng2) in enumerate(self.gear_set):
+            coeff_yf_iso[ne]={}
+            s_thickness_iso_1,h_height_iso_1=self.gears[ne][eng1].GearSectionISO(angle)
+            s_thickness_iso_2,h_height_iso_2=self.gears[ne][eng2].GearSectionISO(angle)
+            coeff_yf_iso[ne][eng1]=(6*(h_height_iso_1/self.gears[ne][eng1].rack.module)*npy.cos(self.transverse_pressure_angle[ne]))/((s_thickness_iso_1/self.gears[ne][eng1].rack.module)**2*npy.cos(self.gears[ne][eng1].rack.transverse_pressure_angle))
+            coeff_yf_iso[ne][eng2]=(6*(h_height_iso_2/self.gears[ne][eng2].rack.module)*npy.cos(self.transverse_pressure_angle[ne]))/((s_thickness_iso_2/self.gears[ne][eng2].rack.module)**2*npy.cos(self.gears[ne][eng2].rack.transverse_pressure_angle))
+        return coeff_yf_iso
         
     def _CoeffYEIso(self):
         #facteur de conduite pour la contrainte ISO
-        self.coeff_ye_iso=1/self.radial_contact_ratio
+        coeff_ye_iso=[]
+        for ne,eng in enumerate(self.gear_set):
+            coeff_ye_iso.append(1/self.radial_contact_ratio[ne])
+        return coeff_ye_iso
         
     def _CoeffYBIso(self):
         #facteur de contrefort pour la contrainte ISO
-        data=self.material.data_coeff_YB_Iso
-        self.coeff_yb_iso=self.material.FunCoeff(self.helix_angle,data['evol_coeff_yb_iso'],data['x'],data['y'])
-#        self.coeff_yb_iso=float(self.fun_coeff_yb_iso(self.helix_angle)[1])
+        coeff_yb_iso={}
+        for ne,(eng1,eng2) in enumerate(self.gear_set):
+            coeff_yb_iso[ne]={}
+            matrice_YB=self.material[eng1].data_coeff_YB_Iso
+            coeff_yb_iso[ne][eng1]=self.material[eng1].FunCoeff(self.helix_angle,npy.array(matrice_YB['data']),matrice_YB['x'],matrice_YB['y'])
+            matrice_YB=self.material[eng2].data_coeff_YB_Iso
+            coeff_yb_iso[ne][eng2]=self.material[eng2].FunCoeff(self.helix_angle,npy.array(matrice_YB['data']),matrice_YB['x'],matrice_YB['y'])
+        return coeff_yb_iso
         
     ### Fonction de trace et export
     
@@ -576,13 +627,14 @@ class GearAssembly():
             C1=vm.Contour2D(sol[0])
             C2=vm.Contour2D(sol[1])
             
-            extrusion_vector = (0.02*x).vector
+            extrusion_vector1 = (self.gear_width[en[0]]*x).vector
+            extrusion_vector2 = (self.gear_width[en[1]]*x).vector
             
             if num==0:
-                t1=primitives3D.ExtrudedProfile(vm.Vector3D(position1),y,z,[C1],extrusion_vector)
+                t1=primitives3D.ExtrudedProfile(vm.Vector3D(position1),y,z,[C1],extrusion_vector1)
                 primitives.append(t1)
         
-            t2=primitives3D.ExtrudedProfile(vm.Vector3D(position2),y,z,[C2],extrusion_vector)
+            t2=primitives3D.ExtrudedProfile(vm.Vector3D(position2),y,z,[C2],extrusion_vector2)
             primitives.append(t2)
 #            print(primitives)
         model=vm.VolumeModel(primitives)
@@ -692,7 +744,7 @@ class GearAssembly():
 
 class ContinuousGearAssemblyOptimizer:
     def __init__(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,
-                 gear_graph,cond_init,rack_list,rack_choice,list_gear,material,torque):
+                 gear_graph,cond_init,rack_list,rack_choice,list_gear,material,torque,cycle):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
         self.coefficient_profile_shift=coefficient_profile_shift
@@ -707,7 +759,7 @@ class ContinuousGearAssemblyOptimizer:
             Bounds.append(coefficient_profile_shift[i])
         self.solutions=[]
         
-        self.xi={'Z':Z,'gear_set':gear_set,'gear_graph':gear_graph,'list_gear':list_gear,'material':material,'torque':torque}
+        self.xi={'Z':Z,'gear_set':gear_set,'gear_graph':gear_graph,'list_gear':list_gear,'material':material,'torque':torque,'cycle':cycle}
         self.xj,self.dict_xu=self._init()
         self.xt=dict(list(self.xi.items())+list(self.xj.items()))
         
@@ -922,7 +974,7 @@ class ContinuousGearAssemblyOptimizer:
 class GearAssemblyOptimizer:
     def __init__(self,gear_set,gear_speed,center_distance,Z={},transverse_pressure_angle=None,
                  helix_angle=None,gear_width=None,frequency=[[0,0]],coefficient_profile_shift=None,
-                 rack_list=None,rack_choice=None,material=None,torque=None):
+                 rack_list=None,rack_choice=None,material=None,torque=None,cycle=None):
         
         # Initialisation
         list_gear=[]
@@ -955,10 +1007,10 @@ class GearAssemblyOptimizer:
                 gear_width[ne]=[gw_min,gw_max]
                 
         if coefficient_profile_shift==None:
-            coefficient_profile_shift={list_gear[0]:[-1.2,1.2]}
+            coefficient_profile_shift={list_gear[0]:[-1,1]}
         for ne in list_gear:
             if ne not in coefficient_profile_shift.keys():
-                coefficient_profile_shift[ne]=[-1.2,1.2]
+                coefficient_profile_shift[ne]=[-1,1]
                 
         if rack_list==None:
             rack_list={0:{'name':'Optim_Module','module':[0.5*1e-3,3*1e-3],'transverse_pressure_angle_rack':[2*npy.pi,20*npy.pi],'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
@@ -977,6 +1029,9 @@ class GearAssemblyOptimizer:
         
         if torque==None:
             torque={list_gear[0]:100}
+            
+        if cycle==None:
+            cycle={list_gear[0]:1e6}
         
         self.Z=Z
         self.gear_set=gear_set
@@ -990,6 +1045,7 @@ class GearAssemblyOptimizer:
         self.list_gear=list_gear
         self.material=material
         self.torque=torque
+        self.cycle=cycle
 
         self.nb_gear=len(list_gear)
         gear_graph=nx.Graph()
@@ -1226,6 +1282,7 @@ class GearAssemblyOptimizer:
                 Temp['list_gear']=self.list_gear
                 Temp['material']=self.material
                 Temp['torque']=self.torque
+                Temp['cycle']=self.cycle
                 self.plex_calcul.append(Temp)
                 incr+=1
 #                if incr==3:
