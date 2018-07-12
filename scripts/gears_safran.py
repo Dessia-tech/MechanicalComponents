@@ -21,7 +21,7 @@ list_rack={0:{'name':'Catalogue_A','module':[2.54*1e-3,2.54*1e-3],
 list_rack_choice={7:0,1:0,2:0,3:0,4:0,5:0,6:0}
 list_helix_angle={7:[0,0]}
 list_material={7:gears.hardened_alloy_steel,1:gears.hardened_alloy_steel}
-list_torque={7:100}
+list_torque={7:1000,3:500,6:300}
 list_cycle={7:1e6}
 
 GA_wizard=gears.GearAssemblyOptimizer(gear_set=list_gear_set,gear_speed=list_speed,

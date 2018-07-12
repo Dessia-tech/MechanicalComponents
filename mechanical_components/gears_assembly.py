@@ -449,7 +449,11 @@ class GearAssembly():
                 torque2+=torque[eng2]
             torque1[eng1]=torque_input_m
             torque_input_m=torque2
-        for ne,(eng1,eng2) in enumerate(self.gear_set):
+        for i,(eng1,eng2) in enumerate(gs_torque_dfs):
+            try:
+                ne=self.gear_set.index((eng1,eng2))
+            except:
+                ne=self.gear_set.index((eng2,eng1))
             tq1=torque1[eng1]
             normal_load.append(abs(tq1)*2/(DB[ne][eng1]))
             tangential_load.append(abs(tq1)*2/(self.DF[ne][eng1]))
@@ -885,13 +889,14 @@ class ContinuousGearAssemblyOptimizer:
         for ne,gs in enumerate(self.GearAssembly.gear_set):
             rca=self.GearAssembly.radial_contact_ratio[ne]
             ineq.append(rca-1)
+        #contrainte sur le module
         for ne,gs in enumerate(self.GearAssembly.gear_set):
             for g in gs:
                 mo=self.GearAssembly.gears[ne][g].rack.module
-                lm=self.rack_list[self.rack_choice[g]]['module']
+                list_module=self.rack_list[self.rack_choice[g]]['module']
 #                if lm[0]<lm[1]:
-                ineq.append(mo-lm[0])
-                ineq.append(lm[1]-mo)
+                ineq.append(mo-list_module[0])
+                ineq.append(list_module[1]-mo)
         return ineq
     
     def Feq(self,X):
@@ -931,7 +936,7 @@ class ContinuousGearAssemblyOptimizer:
         obj=0
         
         for lb in self.GearAssembly.linear_backlash:
-            obj+=1000*((1e-4)-lb)**2
+            obj+=100*((1e-4)-lb)**2
             
         for i in fineq:
             if i < 0:
@@ -1289,7 +1294,7 @@ class GearAssemblyOptimizer:
 #                if incr==3:
 #                    break
             dt.NextNode(valid)
-#        print('Nombre de combinaison trouvées: {}'.format(incr))
+        print('Nombre de combinaison trouvées: {}'.format(incr))
 
 
     def Optimize(self,callback=lambda x:x):
@@ -1300,17 +1305,19 @@ class GearAssemblyOptimizer:
             plex=i
             plex['gear_graph']=self.gear_graph
             A1=ContinuousGearAssemblyOptimizer(**plex)
-#            try:
-            A1.Optimize()
-#            except:
-#                print('Problème de convergence')
+            try:
+                A1.Optimize()
+            except:
+                print('Problème de convergence')
             if len(A1.solutions)>0:
                 xsol=A1.solutions[-1]
 #                print(11,xsol)
 #                print(22,A1.xj)
                 xt=dict(list(A1.xi.items())+list(xsol.items()))
                 self.solutions.append(GearAssembly(**xt))
-                print(self.solutions[-1].gear_width)
+                print('Largueur denture des dentures convergées: {}'.format(self.solutions[-1].gear_width))
+                print('Nombre de dent des dentures convergées: {}'.format(plex['Z']))
+                print('Entraxe des dentures convergées: {}'.format(self.solutions[-1].center_distance))
                 break
                 
     def SearchCenterLine(self,nb_sol,callback=lambda x:x):
@@ -1357,7 +1364,8 @@ class GearAssemblyOptimizer:
             Z_data=search2_np[ind][2]
             ga=GearAssemblyOptimizer(gear_set=self.gear_set,gear_speed=self.gear_speed,
                                             center_distance=cd_input,Z=Z_data,rack_list=self.rack_list,
-                                            rack_choice=self.rack_choice)
+                                            rack_choice=self.rack_choice,
+                                            torque=self.torque,cycle=self.cycle,material=self.material)
             ga.Optimize()
             if len(ga.solutions)>0:
                 valid2=True
