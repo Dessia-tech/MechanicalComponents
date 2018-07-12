@@ -1377,3 +1377,4 @@ class GearAssemblyOptimizer:
                     compt+=1
                     if compt==nb_sol:
                         break
+

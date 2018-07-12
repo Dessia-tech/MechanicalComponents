@@ -216,16 +216,19 @@ class RadialRollerBearing(persistent.Persistent):
         self.Cr=self.fc*self.bm*self.i*((self.Lwe*1e3)*npy.cos(self.alpha))**((self.weibull_c-self.weibull_h-1)/(self.weibull_c-self.weibull_h+1))*self.Z**((self.weibull_c-self.weibull_h-2*self.weibull_e+1)/(self.weibull_c-self.weibull_h+1))*(self.Dwe*1e3)**((self.weibull_c-self.weibull_h-3)/(self.weibull_c-self.weibull_h+1))
     def EquivalentDynamicLoad(self,Fr,Fa=0):
         e=1.5*npy.tan(self.alpha)
-        if self.i==1:
-            if Fa/Fr<=e:
-                self.Pr=Fr
-            else:
-                self.Pr=0.4*Fr+0.4/(npy.tan(self.alpha))*Fa
-        elif self.i==2:
-            if Fa/Fr<=e:
-                self.Pr=Fr+0.45/(npy.tan(self.alpha))*Fa
-            else:
-                self.Pr=0.67*Fr+0.67/(npy.tan(self.alpha))*Fa
+        if self.alpha!=0:
+            if self.i==1:
+                if Fa/Fr<=e:
+                    self.Pr=Fr
+                else:
+                    self.Pr=0.4*Fr+0.4/(npy.tan(self.alpha))*Fa
+            elif self.i==2:
+                if Fa/Fr<=e:
+                    self.Pr=Fr+0.45/(npy.tan(self.alpha))*Fa
+                else:
+                    self.Pr=0.67*Fr+0.67/(npy.tan(self.alpha))*Fa
+        else:
+            self.Pr=Fr
     def BaseLifeTime(self,Fr,Fa=0):
         # Durée de vie en millions de tour associée à une fiabilité de 90%
         self.BaseDynamicLoad()
@@ -390,7 +393,7 @@ class RadialRollerBearing(persistent.Persistent):
         model=vm.VolumeModel(tot)
         return model
 
-    def FreeCADExport(self,file_path,export_types):
+    def FreeCADExport(self,file_path,export_types=['fcstd']):
         model = self.VolumeModel()
         model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
 
@@ -598,7 +601,8 @@ class BearingCombination():
             R1=RadialRollerBearing(**data)
             R1.BaseDynamicLoad()
             R1.BaseStaticLoad()
-            R1.BaseLifeTime(Fr=self.Fr)
+            R1.BaseLifeTime(Fr=self.Fr,Fa=self.Fa)
+            R1.AdjustedLifeTime(Fr=self.Fr,Fa=self.Fa,n=self.n)
             for k1,v1 in liste_inf.items():
                 if getattr(R1,k1)<v1:
                     convergence=0
@@ -659,9 +663,9 @@ class BearingCombination():
         limit_sort.append({'type':'bound_inf','var':'Cr','val':tCr[0]})
         limit_sort.append({'type':'bound_sup','var':'Cr','val':tCr[1]})
         
-#        tLnm=def_inter(Lnm)
-#        limit_sort.append({'type':'bound_inf','var':'Lnm','val':tLnm[0]})
-#        limit_sort.append({'type':'bound_sup','var':'Lnm','val':tLnm[1]})
+        tLnm=def_inter(Lnm)
+        limit_sort.append({'type':'bound_inf','var':'Lnm','val':tLnm[0]})
+        limit_sort.append({'type':'bound_sup','var':'Lnm','val':tLnm[1]})
 
         liste_ind=self.Analyze(limit=limit_ISO,grade=grade,Fr=Fr,Fa=Fa,n=n)
         print('Number of ISO solutions: ',len(liste_ind))
@@ -677,6 +681,9 @@ class BearingCombination():
             
         self.SortBearing(liste_ind,const=limit_sort,S=S,T=T,oil_name=oil_name,nb_sol=nb_sol,typ=typ)
         print('Nombre de Solution finale: ',len(self.solution))
+        s=self.solution[-1]
+        print('Grandeurs élémentaires du rlts:(\'D\':{},\'d\':{},\'B\':{},\'L10\':{},\'Lnm\':{},\'mass\':{})'.format(s.D,s.d,s.B,s.L10,s.Lnm,s.mass))
+        
                     
 
 
