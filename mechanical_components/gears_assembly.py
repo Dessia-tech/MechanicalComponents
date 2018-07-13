@@ -334,7 +334,7 @@ class GearAssembly():
     def __init__(self,Z, center_distance, gear_set,transverse_pressure_angle,
                  coefficient_profile_shift,gear_graph, transverse_pressure_angle_rack,
                  coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,
-                 coeff_circular_tooth_thickness,list_gear,material,torque,cycle):
+                 coeff_circular_tooth_thickness,list_gear,material,torque,cycle,safety_factor):
         
         self.center_distance=center_distance
         self.gear_set=gear_set
@@ -365,9 +365,9 @@ class GearAssembly():
                 self.gears[ne][ng]=Gear(z,db,cp,tpa,cga,cgd,crr,cct)
                 
         self.linear_backlash,self.radial_contact_ratio=self.GearContactRatioParameter(Z,coefficient_profile_shift,DB,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
-        self.gear_width,self.sigma_iso,self.sigma_lim=self.GearWidthDefinition()
+        self.gear_width,self.sigma_iso,self.sigma_lim=self.GearWidthDefinition(safety_factor)
             
-    def Update(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness,list_gear,material,torque,cycle):
+    def Update(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness,list_gear,material,torque,cycle,safety_factor):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
         self.DF,DB,self.gear_set_dfs=self.GearGeometryParameter(Z)
@@ -472,11 +472,11 @@ class GearAssembly():
         self.sigma_lewis_maximum1=6*self.tangential_load*self.gear_height_lewis1/(self.gear_width*self.Gear1.root_gear_length**2)
         self.sigma_lewis_maximum2=6*self.tangential_load*self.gear_height_lewis2/(self.gear_width*self.Gear2.root_gear_length**2)
         
-    def GearWidthDefinition(self):
+    def GearWidthDefinition(self,safety_factor):
         coeff_yf_iso=self._CoeffYFIso()
         coeff_ye_iso=self._CoeffYEIso()
         coeff_yb_iso=self._CoeffYBIso()
-        sigma_lim=self.SigmaMaterialISO()
+        sigma_lim=self.SigmaMaterialISO(safety_factor)
         gear_width={}
         for eng in self.list_gear:
             gear_width[eng]=0
@@ -489,8 +489,7 @@ class GearAssembly():
         sigma_iso=sigma_lim
         return gear_width,sigma_iso,sigma_lim
         
-    def SigmaMaterialISO(self):
-        safety_factor=4
+    def SigmaMaterialISO(self,safety_factor):
         angle=30/180*npy.pi
         sigma_lim={}
         for ne,(eng1,eng2) in enumerate(self.gear_set):
@@ -752,7 +751,7 @@ class GearAssembly():
 
 class ContinuousGearAssemblyOptimizer:
     def __init__(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,
-                 gear_graph,cond_init,rack_list,rack_choice,list_gear,material,torque,cycle):
+                 gear_graph,cond_init,rack_list,rack_choice,list_gear,material,torque,cycle,safety_factor):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
         self.coefficient_profile_shift=coefficient_profile_shift
@@ -767,7 +766,8 @@ class ContinuousGearAssemblyOptimizer:
             Bounds.append(coefficient_profile_shift[i])
         self.solutions=[]
         
-        self.xi={'Z':Z,'gear_set':gear_set,'gear_graph':gear_graph,'list_gear':list_gear,'material':material,'torque':torque,'cycle':cycle}
+        self.xi={'Z':Z,'gear_set':gear_set,'gear_graph':gear_graph,'list_gear':list_gear,
+                 'material':material,'torque':torque,'cycle':cycle,'safety_factor':safety_factor}
         self.xj,self.dict_xu=self._init()
         self.xt=dict(list(self.xi.items())+list(self.xj.items()))
         
@@ -937,11 +937,13 @@ class ContinuousGearAssemblyOptimizer:
         fineq=self.Fineq(X)
         feq=self.Feq(X)
         obj=0
-#        #Maximisation du module pour avoir des pignons avec un faible gear_width
-#        for ne,gs in enumerate(self.GearAssembly.gear_set):
-#            for g in gs:
-#                mo=self.GearAssembly.gears[ne][g].rack.module
-#                obj+=100*(1/mo)**2
+        #Maximisation du module pour avoir des pignons avec un faible gear_width
+        for ne,gs in enumerate(self.GearAssembly.gear_set):
+            for g in gs:
+                mo=self.GearAssembly.gears[ne][g].rack.module
+                list_module=self.rack_list[self.rack_choice[g]]['module']
+                if list_module[0]<list_module[1]:
+                    obj+=100*(1/mo)**2
                 
         for lb in self.GearAssembly.linear_backlash:
             obj+=100*((1e-4)-lb)**2
@@ -988,7 +990,7 @@ class ContinuousGearAssemblyOptimizer:
 class GearAssemblyOptimizer:
     def __init__(self,gear_set,gear_speed,center_distance,Z={},transverse_pressure_angle=None,
                  helix_angle=None,gear_width=None,frequency=[[0,0]],coefficient_profile_shift=None,
-                 rack_list=None,rack_choice=None,material=None,torque=None,cycle=None):
+                 rack_list=None,rack_choice=None,material=None,torque=None,cycle=None,safety_factor=1):
         
         # Initialisation
         list_gear=[]
@@ -1021,7 +1023,7 @@ class GearAssemblyOptimizer:
                 gear_width[ne]=[gw_min,gw_max]
                 
         if coefficient_profile_shift==None:
-            coefficient_profile_shift={list_gear[0]:[-1,1]}
+            coefficient_profile_shift={list_gear[0]:[-0.8,0.8]}
         for ne in list_gear:
             if ne not in coefficient_profile_shift.keys():
                 coefficient_profile_shift[ne]=[-1,1]
@@ -1060,6 +1062,7 @@ class GearAssemblyOptimizer:
         self.material=material
         self.torque=torque
         self.cycle=cycle
+        self.safety_factor=safety_factor
 
         self.nb_gear=len(list_gear)
         gear_graph=nx.Graph()
@@ -1087,6 +1090,7 @@ class GearAssemblyOptimizer:
             plex['center_distance']=self.center_distance
             plex['transverse_pressure_angle']=self.transverse_pressure_angle
             plex['coefficient_profile_shift']=self.coefficient_profile_shift
+            plex['safety_factor']=safety_factor
             self.plex_calcul[i]=plex
             
             
@@ -1097,6 +1101,8 @@ class GearAssemblyOptimizer:
     def AnalyseZ(self):
         #nombre de dents adaptatif
         Z=self.Z
+        Zmin_default=35
+        Zmax_default=85
         for i,gs in enumerate(self.gear_set):
             cd_min=self.center_distance[i][0]
             cd_max=self.center_distance[i][1]
@@ -1108,12 +1114,17 @@ class GearAssemblyOptimizer:
             demul_max=self.gear_speed[gs[0]][1]/self.gear_speed[gs[1]][0]
             DF1_max=2*cd_max/(1+demul_min)
             Z1_max=int(DF1_max/module1_min)+1
+            Z1_max=min(Zmax_default,Z1_max)
             DF2_max=2*cd_max*demul_max/(1+demul_max)
             Z2_max=int(DF2_max/module2_min)+1
+            Z2_max=min(Zmax_default,Z2_max)
             DF1_min=2*cd_min/(1+demul_max)
             Z1_min=int(DF1_min/module1_max)-1
+            Z1_min=max(Zmin_default,Z1_min)
             DF2_min=2*cd_min*demul_min/(1+demul_min)
             Z2_min=int(DF2_min/module2_max)-1
+            Z2_min=max(Zmin_default,Z2_min)
+            
             if gs[0] not in Z.keys():
                 Z[gs[0]]=[Z1_min,Z1_max]
             else:
@@ -1141,7 +1152,7 @@ class GearAssemblyOptimizer:
         demul_int_max=1.9
         demul_int_min=1/3.
         demul_int_max=3
-        print('np: ', np)
+        
         dt=tools.RegularDecisionTree(np)
         node=dt.current_node
         n1=self.node_init
@@ -1173,15 +1184,16 @@ class GearAssemblyOptimizer:
                     i2=liste_node.index(n2)
                     z1=liste_gear[dt.current_node[i1]]
                     z2=liste_gear[dt.current_node[i2]]
-                #analyse ACV engrenage 2 à 2
-                if (pgcd(z1,z2)!=1) & (dt.current_depth<=(self.nb_gear-1)):
-                    valid=False
+                
                 #Analyse des bornes sur Z
-                if (valid) & (dt.current_depth<=(self.nb_gear-1)):
+                if (valid) and (dt.current_depth<=(self.nb_gear-1)):
                     if (z2<self.Z[n2][0]) or (z2>self.Z[n2][1]):
                         valid=False
+                #analyse ACV engrenage 2 à 2
+                if (pgcd(z1,z2)!=1) and (dt.current_depth<=(self.nb_gear-1)):
+                    valid=False
                 #analyse demul interne
-                if (valid) & (dt.current_depth<=(self.nb_gear-1)):
+                if (valid) and (dt.current_depth<=(self.nb_gear-1)):
                     demul=liste_gear[dt.current_node[i1]]/liste_gear[dt.current_node[i2]]
                     if (demul > demul_int_max) or (demul < demul_int_min):
                         valid=False
@@ -1193,7 +1205,7 @@ class GearAssemblyOptimizer:
 #                        if pgcd(z,z2)!=1:
 #                            valid=False
                 #analyse des vitesses du CDC
-                if (valid) & (dt.current_depth<=(self.nb_gear-1)):
+                if (valid) and (dt.current_depth<=(self.nb_gear-1)):
                     v1=self.gear_speed[liste_node[0]][0]
                     v2=self.gear_speed[liste_node[0]][1]
                     for n in liste_node[1:dt.current_depth+1]:
@@ -1207,16 +1219,16 @@ class GearAssemblyOptimizer:
                                 v2=min(v2,v2p)
                                 if (v1>v2):
                                     valid=False
-                #analyse frequence
-                if (valid) & (dt.current_depth<=(self.nb_gear-1)):
-                    for freq in self.frequency:
-                        zm=liste_gear[dt.current_node[0]]
-                        for i in dt.current_node:
-                            f1=(60*v1*zm/liste_gear[i])/liste_gear[i]
-                            f2=(60*v2*zm/liste_gear[i])/liste_gear[i]
-                            zm=liste_gear[i]
-                            if (max(f1,f2)>freq[0]) and (min(f1,f2)<freq[1]):
-                                valid=False
+#                #analyse frequence
+#                if (valid) and (dt.current_depth<=(self.nb_gear-1)):
+#                    for freq in self.frequency:
+#                        zm=liste_gear[dt.current_node[0]]
+#                        for i in dt.current_node:
+#                            f1=(60*v1*zm/liste_gear[i])/liste_gear[i]
+#                            f2=(60*v2*zm/liste_gear[i])/liste_gear[i]
+#                            zm=liste_gear[i]
+#                            if (max(f1,f2)>freq[0]) and (min(f1,f2)<freq[1]):
+#                                valid=False
 #                #analyse faisabilité DF et DB
 #                if (valid) & (dt.current_depth==(self.nb_gear-1)):
 #                    #optimisation pour le placement des axes des engrenages
@@ -1380,7 +1392,7 @@ class GearAssemblyOptimizer:
             ga=GearAssemblyOptimizer(gear_set=self.gear_set,gear_speed=self.gear_speed,
                                             center_distance=cd_input,Z=Z_data,rack_list=self.rack_list,
                                             rack_choice=self.rack_choice,
-                                            torque=self.torque,cycle=self.cycle,material=self.material)
+                                            torque=self.torque,cycle=self.cycle,material=self.material,safety_factor=self.safety_factor)
             ga.Optimize()
             if len(ga.solutions)>0:
                 valid2=True
