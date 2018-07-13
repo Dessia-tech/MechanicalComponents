@@ -582,7 +582,12 @@ class GearAssembly():
             centers = []
             pos_axis = self.PosAxis({self.list_gear[0]:[0,0]})
             for i in range(int(len(pos_axis)/2)):
-                centers.append((0, pos_axis[2*i], pos_axis[2*i+1]))
+                centers.append(tuple(pos_axis[2*i]*y.vector+pos_axis[2*i+1]*z.vector))
+        else:
+            center_var=[]
+            for c in centers:
+                center_var.append(tuple(0,npy.dot(c,y.vector),npy.dot(c,z.vector)))
+            centers=center_var
             
         TG={}#
         Struct=[]
