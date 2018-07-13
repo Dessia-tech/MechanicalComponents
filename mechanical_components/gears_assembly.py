@@ -586,7 +586,7 @@ class GearAssembly():
         else:
             center_var=[]
             for c in centers:
-                center_var.append(tuple(0,npy.dot(c,y.vector),npy.dot(c,z.vector)))
+                center_var.append((0,npy.dot(c,y.vector),npy.dot(c,z.vector)))
             centers=center_var
             
         TG={}#
@@ -1141,7 +1141,7 @@ class GearAssemblyOptimizer:
         demul_int_max=1.9
         demul_int_min=1/3.
         demul_int_max=3
-
+        print('np: ', np)
         dt=tools.RegularDecisionTree(np)
         node=dt.current_node
         n1=self.node_init
