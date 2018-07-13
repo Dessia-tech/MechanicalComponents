@@ -1067,7 +1067,8 @@ class GearAssemblyOptimizer:
         self.node_init=int(list(self.gear_speed.keys())[0])
         self.gear_set_dfs=list(nx.dfs_edges(gear_graph,self.node_init))
         
-        self.Z=self.AnalyseZ()
+        if self.Z=={}:
+            self.Z=self.AnalyseZ()
         
         self.AnalyzeCombination()
         for i,plex in enumerate(self.plex_calcul):
