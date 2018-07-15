@@ -346,7 +346,7 @@ class GearAssembly():
 
         self.DF,DB,self.gear_set_dfs=self.GearGeometryParameter(Z)
         self.cycle=self.CycleParameter(cycle,Z)
-        self.torque1,self.normal_load,self.tangential_load,self.radial_load=self.GearTorque(Z,torque,DB)
+        self.torque1,self.torque2,self.normal_load,self.tangential_load,self.radial_load=self.GearTorque(Z,torque,DB)
         
         #instantiation des objets Gears
         self.gears={}
@@ -431,32 +431,50 @@ class GearAssembly():
     
     def GearTorque(self,Z,torque,DB):
         ggd=self.gear_graph.degree(self.list_gear)
+        liste_node_init=[]
         for ne,nb_connexion in ggd:
-            if (ne in torque.keys()) and (nb_connexion==1):
-                ne_init=ne
-        gs_init=list(self.gear_graph.edges(ne_init))[0]
-        gs_torque_dfs=list(nx.edge_dfs(self.gear_graph, gs_init))
+            if (nb_connexion==1) and (torque[ne]!='output'):
+                liste_node_init.append(ne)
+        for ne,tq in torque.items():
+            if tq=='output':
+                node_output=ne
+        if 'output' not in torque.values():
+            path_list=[nx.shortest_path(self.gear_graph,source=liste_node_init[0],target=liste_node_init[1])]
+        else:
+            path_list=[nx.shortest_path(self.gear_graph,source=liste_node_init[0],target=node_output)]
+            for nd_init in liste_node_init[1:]:
+                path_list.append(nx.shortest_path(self.gear_graph,source=nd_init,target=node_output))
+        
+#        gs_init=list(self.gear_graph.edges(ne_init))[0]
+#        gs_torque_dfs=list(nx.edge_dfs(self.gear_graph, gs_init))
         torque1={}
-        normal_load=[]
-        tangential_load=[]
-        radial_load=[]
-        torque_input_m=torque[ne_init]
-        for (eng1,eng2) in gs_torque_dfs:
-            torque2=-torque_input_m*Z[eng2]/Z[eng1]
-            if eng2 in torque.keys():
-                torque2+=torque[eng2]
-            torque1[eng1]=torque_input_m
-            torque_input_m=torque2
-        for i,(eng1,eng2) in enumerate(gs_torque_dfs):
-            try:
-                ne=self.gear_set.index((eng1,eng2))
-            except:
-                ne=self.gear_set.index((eng2,eng1))
-            tq1=torque1[eng1]
-            normal_load.append(abs(tq1)*2/(DB[ne][eng1]))
-            tangential_load.append(abs(tq1)*2/(self.DF[ne][eng1]))
-            radial_load.append(npy.tan(self.transverse_pressure_angle[ne])*tangential_load[-1])
-        return torque1,normal_load,tangential_load,radial_load
+        normal_load={}
+        tangential_load={}
+        radial_load={}
+        for node_init,path in zip(liste_node_init,path_list):
+            torque_moteur_m=torque[node_init]
+            for i,eng1 in enumerate(path[0:-1]):
+                eng2=path[i+1]
+                torque_recepteur=-torque_moteur_m*Z[eng2]/Z[eng1]
+                if (eng2 in torque.keys()) and (torque[eng2]!='output'):
+                    torque_recepteur+=torque[eng2]
+                torque1[eng1]=torque_moteur_m
+                torque2={}
+                torque2[eng2]=torque_recepteur
+                torque_input_m=torque_recepteur
+        for node_init,path in zip(liste_node_init,path_list):
+            torque_moteur_m=torque[node_init]
+            for i,eng1 in enumerate(path[0:-1]):
+                eng2=path[i+1]
+                try:
+                    ne=self.gear_set.index((eng1,eng2))
+                except:
+                    ne=self.gear_set.index((eng2,eng1))
+                tq1=torque1[eng1]
+                normal_load[ne]=abs(tq1)*2/(DB[ne][eng1])
+                tangential_load[ne]=abs(tq1)*2/(self.DF[ne][eng1])
+                radial_load[ne]=npy.tan(self.transverse_pressure_angle[ne])*tangential_load[ne]
+        return torque1,torque2,normal_load,tangential_load,radial_load
     
     def CycleParameter(self,cycle,Z):
         eng_init=list(cycle.keys())[0]
@@ -647,10 +665,10 @@ class GearAssembly():
         model=vm.VolumeModel(primitives)
         return model
 
-    def FreeCADExport(self, file_path, export_types=['fcstd'], python_path = 'python',
+    def FreeCADExport(self, file_path, centers, export_types=['fcstd'], python_path = 'python',
                       freecad_path = '/usr/lib/freecad/lib'):
         
-        model = self.VolumeModel()
+        model = self.VolumeModel(centers)
         model.FreeCADExport(python_path ,file_path, freecad_path, export_types)
         
     def PosAxis(self,position):
@@ -1389,6 +1407,7 @@ class GearAssemblyOptimizer:
         for ind in npy.argsort(search2_np[:,0]):
             cd_input=search2_np[ind][1]
             Z_data=search2_np[ind][2]
+            print(self.torque)
             ga=GearAssemblyOptimizer(gear_set=self.gear_set,gear_speed=self.gear_speed,
                                             center_distance=cd_input,Z=Z_data,rack_list=self.rack_list,
                                             rack_choice=self.rack_choice,
