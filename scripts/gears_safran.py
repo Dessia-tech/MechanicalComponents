@@ -165,10 +165,10 @@ for node,composants in position_composant.items():
     diam_max[node]=dia_max
 print(diam_max)
     
-ordre_rangement=nx.dfs_edges(gear_graph_totale,2)
+ordre_rangement=[2,4,6,7,0,3,5,1]
 
-Rint=2
-Rext=2.6
+Rint=1
+Rext=1.3
 def fun(x):
     obj=0
     ine=ineg(x)
@@ -180,7 +180,7 @@ def eg(x):
     for i,ne in enumerate(list_gear_complete):
         if ne==ne_output:
             ine.append(x[2*int(i)]-0)
-            ine.append(x[2*int(i)+1]+2.3)
+            ine.append(x[2*int(i)+1]+1.15)
     return ine
 def ineg(x):
     ine=[]
@@ -193,14 +193,12 @@ def ineg(x):
             eng2=(list_gear_complete).index(it[1])
             ine.append(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-0.99999*list_cd[num])
             ine.append(1.00001*list_cd[num]-((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5)
-#    for it1,it2 in itertools.combinations(list_gear_complete,2):
-#        eng1=(list_gear_complete).index(it1)
-#        eng2=(list_gear_complete).index(it2)
-#        ine.append(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-(diam_max[it1]/2+diam_max[it2]/2))
-    for (it1,it2) in ordre_rangement:
+    for i,it1 in enumerate(ordre_rangement[0:-1]):
+        it2=ordre_rangement[i+1]
         eng1=(list_gear_complete).index(it1)
         eng2=(list_gear_complete).index(it2)
-        ine.append(x[2*eng2]-x[2*eng1])
+        sol=x[2*eng2]-x[2*eng1]
+        ine.append(sol)
     for eng,node in enumerate(list_gear_complete):
         ine.append(((x[2*eng])**2+(x[2*eng+1])**2)**0.5-Rint)
         ine.append(Rext-((x[2*eng])**2+(x[2*eng+1])**2)**0.5)
@@ -208,8 +206,8 @@ def ineg(x):
 cons = ({'type': 'eq','fun' : eg},{'type': 'ineq','fun' : ineg})
 drap=1
 while drap==1:
-    x0=tuple(npy.random.random(2*nb_eng_total)*3)
-    Bound=[[-1,1],[-2.6,-1.5]]*(nb_eng_total)
+    x0=tuple(npy.random.random(2*nb_eng_total)*4-2)
+    Bound=[[-1,1],[-1.3,0]]*(nb_eng_total)
     res = minimize(fun,x0, method='SLSQP', bounds=Bound,constraints=cons)
     if (min(ineg(res.x))>0) and (max(eg(res.x))<1e-7):
         drap=0
@@ -237,6 +235,8 @@ primitives=primitives1
 primitives.extend(primitives2)
 model=vm.VolumeModel(primitives)
 model.FreeCADExport('python' ,'Gears1', '/usr/lib/freecad/lib', ['fcstd'])
+
+
 #sol_eng[0].FreeCADExport('Gears1',centers)
 
 ##construction du premier plan d'engrenement
