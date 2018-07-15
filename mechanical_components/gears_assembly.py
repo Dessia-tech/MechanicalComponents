@@ -663,12 +663,12 @@ class GearAssembly():
             primitives.append(t2)
 #            print(primitives)
         model=vm.VolumeModel(primitives)
-        return model
+        return model,primitives
 
     def FreeCADExport(self, file_path, centers, export_types=['fcstd'], python_path = 'python',
                       freecad_path = '/usr/lib/freecad/lib'):
         
-        model = self.VolumeModel(centers)
+        model,primitives = self.VolumeModel(centers)
         model.FreeCADExport(python_path ,file_path, freecad_path, export_types)
         
     def PosAxis(self,position):

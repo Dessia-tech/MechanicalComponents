@@ -2,6 +2,8 @@ import mechanical_components.gears_assembly as gears
 import numpy as npy
 import networkx as nx
 from scipy.optimize import minimize,fsolve
+import itertools
+import volmdlr as vm
 
 ##########################
 # script pour AGB Safran
@@ -153,6 +155,18 @@ for i in list_gear_totale:
         if j not in list_gear_complete:
             list_gear_complete.append(j)
     
+diam_max={}
+for node,composants in position_composant.items():
+    dia_max=0.1
+    if 0 in composants.keys():
+        dia_max=max(dia_max,composants_externe[composants[0]]['diam'])
+    if 5 in composants.keys():
+        dia_max=max(dia_max,composants_externe[composants[5]]['diam'])
+    diam_max[node]=dia_max
+print(diam_max)
+    
+ordre_rangement=nx.dfs_edges(gear_graph_totale,2)
+
 Rint=2
 Rext=2.6
 def fun(x):
@@ -179,6 +193,17 @@ def ineg(x):
             eng2=(list_gear_complete).index(it[1])
             ine.append(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-0.99999*list_cd[num])
             ine.append(1.00001*list_cd[num]-((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5)
+#    for it1,it2 in itertools.combinations(list_gear_complete,2):
+#        eng1=(list_gear_complete).index(it1)
+#        eng2=(list_gear_complete).index(it2)
+#        ine.append(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-(diam_max[it1]/2+diam_max[it2]/2))
+    for (it1,it2) in ordre_rangement:
+        eng1=(list_gear_complete).index(it1)
+        eng2=(list_gear_complete).index(it2)
+        ine.append(x[2*eng2]-x[2*eng1])
+    for eng,node in enumerate(list_gear_complete):
+        ine.append(((x[2*eng])**2+(x[2*eng+1])**2)**0.5-Rint)
+        ine.append(Rext-((x[2*eng])**2+(x[2*eng+1])**2)**0.5)
     return ine
 cons = ({'type': 'eq','fun' : eg},{'type': 'ineq','fun' : ineg})
 drap=1
@@ -198,8 +223,21 @@ list_gear=sol_eng[0].list_gear
 centers=[]
 for ne in list_gear:
     centers.append(data_SVG[ne])
-#sol_eng[0].SVGExport('name.txt',data_trace)
-sol_eng[0].FreeCADExport('Gears1',centers)
+model,primitives1=sol_eng[0].VolumeModel(centers)
+
+list_gear=sol_eng[1].list_gear
+centers=[]
+for ne in list_gear:
+    t1=data_SVG[ne]
+    t1[0]=0.05
+    centers.append(t1)
+model,primitives2=sol_eng[1].VolumeModel(centers)
+
+primitives=primitives1
+primitives.extend(primitives2)
+model=vm.VolumeModel(primitives)
+model.FreeCADExport('python' ,'Gears1', '/usr/lib/freecad/lib', ['fcstd'])
+#sol_eng[0].FreeCADExport('Gears1',centers)
 
 ##construction du premier plan d'engrenement
 #erreur=0.02
