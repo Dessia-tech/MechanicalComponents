@@ -184,7 +184,7 @@ cons = ({'type': 'eq','fun' : eg},{'type': 'ineq','fun' : ineg})
 drap=1
 while drap==1:
     x0=tuple(npy.random.random(2*nb_eng_total)*3)
-    Bound=[[0,3]]*(nb_eng_total*2)
+    Bound=[[-1,1],[-2.6,-1.5]]*(nb_eng_total)
     res = minimize(fun,x0, method='SLSQP', bounds=Bound,constraints=cons)
     if (min(ineg(res.x))>0) and (max(eg(res.x))<1e-7):
         drap=0
@@ -192,7 +192,7 @@ x_opt=res.x
 
 data_SVG={}
 for i,ne in enumerate(list_gear_complete):
-    data_SVG[ne]=[0,x_opt[2*i],x_opt[2*i]]
+    data_SVG[ne]=[0,x_opt[2*i],x_opt[2*i+1]]
 
 list_gear=sol_eng[0].list_gear
 centers=[]
