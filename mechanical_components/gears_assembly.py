@@ -638,10 +638,10 @@ class GearAssembly():
             extrusion_vector2 = (self.gear_width[en[1]]*x).vector
             
             if num==0:
-                t1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),y,z,[C1],extrusion_vector1)
+                t1=primitives3D.ExtrudedProfile(-0.5*self.gear_width[en[0]]*x,y,z,[C1],extrusion_vector1)
                 primitives.append(t1)
         
-            t2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),y,z,[C2],extrusion_vector2)
+            t2=primitives3D.ExtrudedProfile(-0.5*self.gear_width[en[1]]*x,y,z,[C2],extrusion_vector2)
             primitives.append(t2)
 #            print(primitives)
         model=vm.VolumeModel(primitives)
@@ -1104,6 +1104,7 @@ class GearAssemblyOptimizer:
         Zmin_default=35
         Zmax_default=85
         for i,gs in enumerate(self.gear_set):
+            print(gs)
             cd_min=self.center_distance[i][0]
             cd_max=self.center_distance[i][1]
             module1_min=self.rack_list[self.rack_choice[gs[0]]]['module'][0]
@@ -1154,7 +1155,7 @@ class GearAssemblyOptimizer:
         demul_int_max=3
         
         dt=tools.RegularDecisionTree(np)
-        node=dt.current_node
+#        node=dt.current_node
         n1=self.node_init
         liste_node=[n1]
 
@@ -1325,7 +1326,9 @@ class GearAssemblyOptimizer:
 
 
     def Optimize(self,callback=lambda x:x):
+        print('optimizing gear')
         lpx=len(self.plex_calcul)
+        print(lpx)
         for ii,i in enumerate(self.plex_calcul):
 #            print('{}%'.format(ii/lpx*100))
             callback(ii/lpx)
