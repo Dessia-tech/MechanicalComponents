@@ -391,10 +391,10 @@ class RadialRollerBearing(persistent.Persistent):
         
         tot=[irc,erc]+rol
         model=vm.VolumeModel(tot)
-        return model
+        return model,tot
 
     def FreeCADExport(self,file_path,export_types=['fcstd']):
-        model = self.VolumeModel()
+        model,primitives = self.VolumeModel()
         model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
 
         

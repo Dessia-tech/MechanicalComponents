@@ -1,4 +1,5 @@
 import mechanical_components.gears_assembly as gears
+import mechanical_components.bearings as bearings
 import numpy as npy
 import networkx as nx
 from scipy.optimize import minimize,fsolve
@@ -233,6 +234,19 @@ model,primitives2=sol_eng[1].VolumeModel(centers)
 
 primitives=primitives1
 primitives.extend(primitives2)
+
+
+C1=bearings.BearingCombination()
+Fa=0
+Fr=3368
+N=249
+L10=10
+C1.OptimizerBearing(d={'min':0.04,'max':0.10},D={'min':0.04,'max':0.15},B={'min':0.01,'max':0.08},
+                    Lnm={'min':L10,'max':100000*L10},
+                    Fr=Fr,Fa=Fa,n=N,mini=['D'],typ='NF')
+model,primitives3=C1.solution[0].VolumeModel((0,0,0))
+primitives.extend(primitives3)
+
 model=vm.VolumeModel(primitives)
 model.FreeCADExport('python' ,'Gears1', '/usr/lib/freecad/lib', ['fcstd'])
 

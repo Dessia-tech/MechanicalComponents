@@ -603,7 +603,7 @@ class GearAssembly():
         else:
             center_var=[]
             for c in centers:
-                center_var.append((0,npy.dot(c,y.vector),npy.dot(c,z.vector)))
+                center_var.append((npy.dot(c,x.vector),npy.dot(c,y.vector),npy.dot(c,z.vector)))
             centers=center_var
             
         TG={}#

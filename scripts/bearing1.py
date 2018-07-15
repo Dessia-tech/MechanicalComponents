@@ -20,11 +20,12 @@ L10=63.71767661468127
 Fa=0
 Fr=3368
 N=249
-L10=107
+L10=10
 
 C1.OptimizerBearing(d={'min':0.04,'max':0.10},D={'min':0.04,'max':0.15},B={'min':0.01,'max':0.08},
                     Lnm={'min':L10,'max':100000*L10},
                     Fr=Fr,Fa=Fa,n=N,mini=['D'],typ='NF')
+
 for i,b in enumerate(C1.solution):
     print(b)
 #    v=b.VolumeModel()
