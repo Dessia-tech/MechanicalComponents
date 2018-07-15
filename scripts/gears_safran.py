@@ -197,7 +197,7 @@ def ineg(x):
         it2=ordre_rangement[i+1]
         eng1=(list_gear_complete).index(it1)
         eng2=(list_gear_complete).index(it2)
-        sol=x[2*eng2]-x[2*eng1]
+        sol=x[2*eng2]-x[2*eng1]-0.1
         ine.append(sol)
     for eng,node in enumerate(list_gear_complete):
         ine.append(((x[2*eng])**2+(x[2*eng+1])**2)**0.5-Rint)
