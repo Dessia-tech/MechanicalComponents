@@ -1,6 +1,7 @@
 import mechanical_components.gears_assembly as gears
 import numpy as npy
 import networkx as nx
+from scipy.optimize import minimize,fsolve
 
 ##########################
 # script pour AGB Safran
@@ -137,7 +138,7 @@ for i,(num_plan,node_output) in enumerate(zip(ordre_calcul,liste_node_fin)):
     GA1=gears.GearAssemblyOptimizer(gear_set=list_gear_set,gear_speed=list_speed,Z={},
                                             center_distance=list_cd,rack_list=list_rack,
                                             rack_choice=list_rack_choice,helix_angle=list_helix_angle,
-                                            material=list_material,torque=list_torque,cycle=list_cycle,
+                                            torque=list_torque,cycle=list_cycle,
                                             safety_factor=4)
     GA1.SearchCenterLine(nb_sol=1)
     sol_eng[num_plan]=GA1.solutions_search[-1]
@@ -152,6 +153,8 @@ for i in list_gear_totale:
         if j not in list_gear_complete:
             list_gear_complete.append(j)
     
+Rint=2
+Rext=2.6
 def fun(x):
     obj=0
     ine=ineg(x)
@@ -163,7 +166,7 @@ def eg(x):
     for i,ne in enumerate(list_gear_complete):
         if ne==ne_output:
             ine.append(x[2*int(i)]-0)
-            ine.append(x[2*int(i)+1]-0)
+            ine.append(x[2*int(i)+1]+2.3)
     return ine
 def ineg(x):
     ine=[]
@@ -189,11 +192,11 @@ x_opt=res.x
 
 data_SVG={}
 for i,ne in enumerate(list_gear_complete):
-    data_SVG[ne]=[x_opt[2*i],x_opt[2*i]]
+    data_SVG[ne]=[0,x_opt[2*i],x_opt[2*i]]
 
 list_gear=sol_eng[0].list_gear
 centers=[]
-for i,ne in enumerate(list_gear):
+for ne in list_gear:
     centers.append(data_SVG[ne])
 #sol_eng[0].SVGExport('name.txt',data_trace)
 sol_eng[0].FreeCADExport('Gears1',centers)
