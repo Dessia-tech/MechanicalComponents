@@ -656,10 +656,10 @@ class GearAssembly():
             extrusion_vector2 = (self.gear_width[en[1]]*x).vector
             
             if num==0:
-                t1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),y,z,[C1],extrusion_vector1)
+                t1=primitives3D.ExtrudedProfile(vm.Point3D(npy.dot(position1,x.vector)),y,z,[C1],extrusion_vector1)
                 primitives.append(t1)
         
-            t2=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),y,z,[C2],extrusion_vector2)
+            t2=primitives3D.ExtrudedProfile(vm.Point3D(npy.dot(position1,x.vector)),y,z,[C2],extrusion_vector2)
             primitives.append(t2)
 #            print(primitives)
         model=vm.VolumeModel(primitives)
