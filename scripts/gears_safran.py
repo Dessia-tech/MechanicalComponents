@@ -233,7 +233,7 @@ for ne in list_gear:
 model,primitives2=sol_eng[1].VolumeModel(centers)
 
 primitives=primitives1
-primitives=primitives.extend(primitives2)
+primitives.extend(primitives2)
 
 
 C1=bearings.BearingCombination()
@@ -248,10 +248,10 @@ for k,ctr in data_SVG.items():
     centers=ctr
     centers[0]=-0.05    
     model,primitives3=C1.solution[0].VolumeModel(centers)
-    primitives=primitives.extend(primitives3)
+    primitives.extend(primitives3)
     centers[0]=0.1    
     model,primitives3=C1.solution[0].VolumeModel(centers)
-    primitives=primitives.extend(primitives3)
+    primitives.extend(primitives3)
 
 model=vm.VolumeModel(primitives)
 model.FreeCADExport('python' ,'Gears1', '/usr/lib/freecad/lib', ['fcstd'])
