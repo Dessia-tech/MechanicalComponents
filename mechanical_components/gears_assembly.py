@@ -664,12 +664,12 @@ class GearAssembly():
             primitives.append(t2)
 
         model=vm.VolumeModel(primitives)
-        return model,primitives
+        return model
 
-    def FreeCADExport(self, file_path, centers, export_types=['fcstd'], python_path = 'python',
+    def FreeCADExport(self, file_path, export_types=['fcstd'], python_path = 'python',
                       freecad_path = '/usr/lib/freecad/lib'):
         
-        model,primitives = self.VolumeModel(centers)
+        model = self.VolumeModel()
         model.FreeCADExport(python_path ,file_path, freecad_path, export_types)
         
     def PosAxis(self,position):
@@ -962,8 +962,12 @@ class ContinuousGearAssemblyOptimizer:
                 mo=self.GearAssembly.gears[ne][g].rack.module
                 list_module=self.rack_list[self.rack_choice[g]]['module']
                 if list_module[0]<list_module[1]:
-                    obj+=100*(list_module[1]-mo)**2
+                    obj+=1*(list_module[1]-mo)**2
                 
+        #Minimisation des entraxes sur la borne inf
+        for num_engr,list_cd in enumerate(self.center_distance):
+            obj+=(list_cd[0]-self.GearAssembly.center_distance[num_engr])**2
+            
         for lb in self.GearAssembly.linear_backlash:
             obj+=100*(lb)**2
             
@@ -1022,7 +1026,7 @@ class GearAssemblyOptimizer:
                 transverse_pressure_angle.append([15/180*npy.pi,30/180*npy.pi])
             
         if helix_angle==None:
-            helix_angle={list_gear[0]:[15/180*npy.pi,30/180*npy.pi]}
+            helix_angle={list_gear[0]:[15/180*npy.pi,25/180*npy.pi]}
         
         if gear_width==None:
             gear_width={list_gear[0]:[15*1e-3,25*1e-3]}
@@ -1044,7 +1048,7 @@ class GearAssemblyOptimizer:
                 coefficient_profile_shift[ne]=[-0.8,0.8]
                 
         if rack_list==None:
-            rack_list={0:{'name':'Optim_Module','module':[0.5*1e-3,3*1e-3],'transverse_pressure_angle_rack':[20*npy.pi/180,20*npy.pi/180],'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
+            rack_list={0:{'name':'Optim_Module','module':[1*1e-3,3*1e-3],'transverse_pressure_angle_rack':[20*npy.pi/180,20*npy.pi/180],'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
             
         if rack_choice==None:
             rack_choice={list_gear[0]:list(rack_list.keys())[0]}
@@ -1092,6 +1096,7 @@ class GearAssemblyOptimizer:
         
         if self.Z=={}:
             self.Z=self.AnalyseZ()
+        print(self.Z)
         
         self.AnalyzeCombination()
         for i,plex in enumerate(self.plex_calcul):
@@ -1115,8 +1120,6 @@ class GearAssemblyOptimizer:
     def AnalyseZ(self):
         #nombre de dents adaptatif
         Z=self.Z
-        Zmin_default=20
-        Zmax_default=100
         for i,gs in enumerate(self.gear_set):
             cd_min=self.center_distance[i][0]
             cd_max=self.center_distance[i][1]
@@ -1128,16 +1131,12 @@ class GearAssemblyOptimizer:
             demul_max=self.gear_speed[gs[0]][1]/self.gear_speed[gs[1]][0]
             DF1_max=2*cd_max/(1+demul_min)
             Z1_max=int(DF1_max/module1_min)+1
-            Z1_max=min(Zmax_default,Z1_max)
             DF2_max=2*cd_max*demul_max/(1+demul_max)
             Z2_max=int(DF2_max/module2_min)+1
-            Z2_max=min(Zmax_default,Z2_max)
             DF1_min=2*cd_min/(1+demul_max)
             Z1_min=int(DF1_min/module1_max)-1
-            Z1_min=max(Zmin_default,Z1_min)
             DF2_min=2*cd_min*demul_min/(1+demul_min)
             Z2_min=int(DF2_min/module2_max)-1
-            Z2_min=max(Zmin_default,Z2_min)
             
             if gs[0] not in Z.keys():
                 Z[gs[0]]=[Z1_min,Z1_max]
@@ -1352,16 +1351,17 @@ class GearAssemblyOptimizer:
                 xt=dict(list(ga.xi.items())+list(xsol.items()))
                 self.solutions.append(GearAssembly(**xt))
                 compt_nb_sol+=1
-                if compt_nb_sol==nb_sol:
-                    break
+                print(post_traitement)
                 if post_traitement==True:
                     print('Largueur denture des dentures convergées: {}'.format(self.solutions[-1].gear_width))
                     print('Nombre de dent des dentures convergées: {}'.format(plex['Z']))
                     print('Entraxe des dentures convergées: {}'.format(self.solutions[-1].center_distance))
+                if compt_nb_sol==nb_sol:
+                    break
 
                 
-    def SearchOptimumCD(self,nb_sol=1,callback=lambda x:x):
-        
+    def SearchOptimumCD(self,nb_sol=1,post_traitement=False,callback=lambda x:x):
+
         #recherche de l'ensemble des entraxes
         list_plex_estim_cd=[]
         for plex in self.plex_calcul:
@@ -1370,15 +1370,15 @@ class GearAssemblyOptimizer:
             for engr_num,Z in plex['Z'].items():
                 rack_num=plex['rack_choice'][engr_num]
                 module_minmax=plex['rack_list'][rack_num]['module']
-                module_min=module_minmax[0]
-                module_max=module_minmax[1]
-                plex['DF'][engr_num]=[module_min*Z,module_max*Z]
+                plex['DF'][engr_num]=Z*module_minmax[0]
+                plex['module']=module_minmax
                 plex['Z_minmax'][engr_num]=[Z,Z]
             plex['center_distance']=[]
-            for (eng1,eng2) in self.gear_set:
-                cd_min=(plex['DF'][eng1][0]+plex['DF'][eng2][0])/2
-                cd_max=(plex['DF'][eng1][1]+plex['DF'][eng2][1])/2
-                plex['center_distance'].append([cd_min,cd_max])
+            plex['pente_cd_module']=[]
+            for set_num,(eng1,eng2) in enumerate(self.gear_set):
+                cd_min=(plex['DF'][eng1]+plex['DF'][eng2])/2
+                plex['center_distance'].append(cd_min)
+                plex['pente_cd_module'].append(cd_min/plex['module'][0])
             del plex['DF']
             list_plex_estim_cd.append(plex)
             
@@ -1388,16 +1388,25 @@ class GearAssemblyOptimizer:
         for plex_num,plex in enumerate(list_plex_estim_cd):
             Z_minmax=list_plex_estim_cd[plex_num]['Z_minmax'].copy()
             cd_minmax=list_plex_estim_cd[plex_num]['center_distance'].copy()
+            pente_cd_module=list_plex_estim_cd[plex_num]['pente_cd_module'].copy()
+            module=list_plex_estim_cd[plex_num]['module'].copy()
             admissible_cd=True
             cd_minmax_nv=[]
+            module_optimal=0
+            for set_num,cd in enumerate(self.center_distance):
+                module_optimal=max(module_optimal,cd[0]/pente_cd_module[set_num])
+            if module_optimal>module[1]:
+                admissible_cd=False
+            module_optimal=max(module_optimal,module[0])
             fonctionnel=0
-            for engr_num,cd in enumerate(self.center_distance):
-                if (cd_minmax[engr_num][1]*0.99)<(cd[0]):
+            for set_num,cd in enumerate(self.center_distance):
+                cd_optimal=pente_cd_module[set_num]*module_optimal
+                if (cd_optimal)>(cd[1]):
                     admissible_cd=False
-                if (cd_minmax[engr_num][0]*1.01)>(cd[1]):
-                    admissible_cd=False
-                fonctionnel+=cd_minmax[engr_num][0]-cd[0]
-                cd_minmax_nv.append([max(cd_minmax[engr_num][0],cd[0])*(1.01),min(cd_minmax[engr_num][1],cd[1])*1.05])
+#                print(cd_minmax[set_num][0]-cd[0],cd_minmax[set_num][0],cd[0])
+#                fonctionnel+=cd_minmax[set_num][0]-cd[0]
+                fonctionnel+=cd_optimal-cd[0]
+                cd_minmax_nv.append([cd_optimal,min(cd[1],cd_optimal*1.2)])
             if admissible_cd:
                 list_plex_add_cd.append([fonctionnel,cd_minmax_nv,Z_minmax])
                 nb_plex_add+=1
@@ -1413,7 +1422,7 @@ class GearAssemblyOptimizer:
                                             center_distance=cd_minmax_nv,Z=Z_minmax,rack_list=self.rack_list,
                                             rack_choice=self.rack_choice,
                                             torque=self.torque,cycle=self.cycle,material=self.material,safety_factor=self.safety_factor)
-            ga.Optimize()
+            ga.Optimize(post_traitement=post_traitement)
             if len(ga.solutions)>0:
                 valid_cd=True
                 for engr_num,cd in enumerate(self.center_distance):
@@ -1423,8 +1432,8 @@ class GearAssemblyOptimizer:
                         valid_cd=False
                 if valid_cd:
                     self.solutions.append(ga.solutions[-1])
-                    print('Solution convergée valide')
                     compt_nb_sol+=1
+                    print('Solution convergée valide n°{}'.format(compt_nb_sol))
                     if compt_nb_sol==nb_sol:
                         break
                 else:
