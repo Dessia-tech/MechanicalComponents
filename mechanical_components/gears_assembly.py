@@ -1011,7 +1011,7 @@ class GearAssemblyOptimizer:
                  helix_angle=None,gear_width=None,frequency=[[0,0]],coefficient_profile_shift=None,
                  rack_list=None,rack_choice=None,material=None,torque=None,cycle=None,safety_factor=1):
         
-        # Initialisation
+        # Valeur par defaut
         list_gear=[]
         for gs in gear_set:
             for g in gs:
@@ -1096,9 +1096,9 @@ class GearAssemblyOptimizer:
         
         if self.Z=={}:
             self.Z=self.AnalyseZ()
-        print(self.Z)
-        
+
         self.AnalyzeCombination()
+        
         for i,plex in enumerate(self.plex_calcul):
             plex['gear_graph']=self.gear_graph
             plex['rack_list']=self.rack_list
@@ -1141,39 +1141,34 @@ class GearAssemblyOptimizer:
             if gs[0] not in Z.keys():
                 Z[gs[0]]=[Z1_min,Z1_max]
             else:
-                Z[gs[0]]=[min(Z1_min,Z[gs[0]][0]),max(Z1_max,Z[gs[0]][1])]
+                Z[gs[0]]=[max(Z1_min,Z[gs[0]][0]),min(Z1_max,Z[gs[0]][1])]
             if gs[1] not in Z.keys():
                 Z[gs[1]]=[Z2_min,Z2_max]
             else:
-                Z[gs[1]]=[min(Z2_min,Z[gs[1]][0]),max(Z2_max,Z[gs[1]][1])]
+                Z[gs[1]]=[max(Z2_min,Z[gs[1]][0]),min(Z2_max,Z[gs[1]][1])]
         return Z
 
     def AnalyzeCombination(self):
-        #recherche des Zmin et Zmax
-        Zmin=npy.inf
-        Zmax=0
-        for n1,n2 in self.gear_set:
-            if min(self.Z[n1][0],self.Z[n2][0])<Zmin:
-                Zmin=min(self.Z[n1][0],self.Z[n2][0])
-            if max(self.Z[n1][1],self.Z[n2][1])>Zmax:
-                Zmax=max(self.Z[n1][1],self.Z[n2][1])
-        np=[Zmax+1-Zmin]*self.nb_gear+[self.nb_rack]*self.nb_gear
-        liste_gear=npy.arange(Zmin,Zmax+1)
-        liste_rack=list(self.rack_list.keys())
-        
-        demul_int_min=1/1.9
-        demul_int_max=1.9
-        demul_int_min=1/4.
-        demul_int_max=4
-        
-        dt=tools.RegularDecisionTree(np)
-#        node=dt.current_node
         n1=self.node_init
         liste_node=[n1]
-
         for (n1,n2) in self.gear_set_dfs:
             if n2 not in liste_node:
                 liste_node.append(n2)
+                
+        np=[]
+        liste_gear=[]
+        for engr_num in liste_node:
+            np.append(self.Z[engr_num][1]-self.Z[engr_num][0]+1)
+            liste_gear.append(npy.arange(self.Z[engr_num][0],self.Z[engr_num][1]+1))
+        np.extend([self.nb_rack]*self.nb_gear)
+
+        liste_rack=list(self.rack_list.keys())
+        
+        demul_int_min=1/9.
+        demul_int_max=9
+        
+        dt=tools.RegularDecisionTree(np)
+        
         incr=0
         self.plex_calcul=[]
 
@@ -1181,35 +1176,18 @@ class GearAssemblyOptimizer:
             while a%b != 0 :
                 a, b = b, a%b
             return b
-
         while not dt.finished:
             valid=True
-            #Analyse du Z initial
-            if dt.current_depth==0:
-                z=liste_gear[dt.current_node[0]]
-                if (z<self.Z[liste_node[0]][0]) or (z>self.Z[liste_node[0]][1]):
-                    valid=False
-            if dt.current_depth>0:
-                if dt.current_depth<=(self.nb_gear-1):
-#                    print(dt.current_node,self.gear_set_dfs,dt.current_depth)
-                    (n1,n2)=self.gear_set_dfs[dt.current_depth-1]
-                    i1=liste_node.index(n1)
-                    i2=liste_node.index(n2)
-                    z1=liste_gear[dt.current_node[i1]]
-                    z2=liste_gear[dt.current_node[i2]]
-                
-                #Analyse des bornes sur Z
-                if (valid) and (dt.current_depth<=(self.nb_gear-1)):
-                    if (z2<self.Z[n2][0]) or (z2>self.Z[n2][1]):
-                        valid=False
+            if (dt.current_depth<=(self.nb_gear-1)) and (dt.current_depth>0):
+                z1=liste_gear[dt.current_depth-1][dt.current_node[dt.current_depth-1]]
+                z2=liste_gear[dt.current_depth][dt.current_node[dt.current_depth]]
                 #analyse ACV engrenage 2 à 2
-                if (pgcd(z1,z2)!=1) and (dt.current_depth<=(self.nb_gear-1)):
+                if (pgcd(z1,z2)!=1):
                     valid=False
                 #analyse demul interne
-                if (valid) and (dt.current_depth<=(self.nb_gear-1)):
-                    demul=liste_gear[dt.current_node[i1]]/liste_gear[dt.current_node[i2]]
-                    if (demul > demul_int_max) or (demul < demul_int_min):
-                        valid=False
+#                demul=z1/z2
+#                if (demul > demul_int_max) or (demul < demul_int_min):
+#                    valid=False
                 #analyse ACV de l'ensemble des engrenages entre eux
 #                if (valid) & (dt.current_depth<=(self.nb_gear-1)):
 #                    for n in liste_node[0:dt.current_depth]:
@@ -1218,20 +1196,19 @@ class GearAssemblyOptimizer:
 #                        if pgcd(z,z2)!=1:
 #                            valid=False
                 #analyse des vitesses du CDC
-                if (valid) and (dt.current_depth<=(self.nb_gear-1)):
-                    v1=self.gear_speed[liste_node[0]][0]
-                    v2=self.gear_speed[liste_node[0]][1]
-                    for n in liste_node[1:dt.current_depth+1]:
-                        if valid==True:
-                            i=liste_node.index(n)
-                            if n in self.gear_speed.keys():
-                                demul=liste_gear[dt.current_node[0]]/liste_gear[dt.current_node[i]]
-                                v1p=self.gear_speed[n][0]/demul
-                                v2p=self.gear_speed[n][1]/demul
-                                v1=max(v1,v1p)
-                                v2=min(v2,v2p)
-                                if (v1>v2):
-                                    valid=False
+                v1=self.gear_speed[liste_node[0]][0]
+                v2=self.gear_speed[liste_node[0]][1]
+                for n in liste_node[1:dt.current_depth+1]:
+                    i=liste_node.index(n)
+                    if n in self.gear_speed.keys():
+                        demul=liste_gear[0][dt.current_node[0]]/liste_gear[i][dt.current_node[i]]
+                        v1p=self.gear_speed[n][0]/demul
+                        v2p=self.gear_speed[n][1]/demul
+                        v1=max(v1,v1p)
+                        v2=min(v2,v2p)
+                        if (v1>v2):
+                            valid=False
+#                            break
 #                #analyse frequence
 #                if (valid) and (dt.current_depth<=(self.nb_gear-1)):
 #                    for freq in self.frequency:
@@ -1320,7 +1297,7 @@ class GearAssemblyOptimizer:
                 rack={}
                 for n in liste_node:
                     i=liste_node.index(n)
-                    gear[n]=liste_gear[dt.current_node[i]]
+                    gear[n]=liste_gear[i][dt.current_node[i]]
                     rack[n]=liste_rack[dt.current_node[i+self.nb_gear]]
                     
                 Temp={}
@@ -1330,8 +1307,6 @@ class GearAssemblyOptimizer:
                 Temp['rack_choice']=rack
                 self.plex_calcul.append(Temp)
                 incr+=1
-#                if incr==3:
-#                    break
             dt.NextNode(valid)
         if incr>1:
             print('Nombre de combinaison trouvées: {}'.format(incr))
@@ -1351,7 +1326,6 @@ class GearAssemblyOptimizer:
                 xt=dict(list(ga.xi.items())+list(xsol.items()))
                 self.solutions.append(GearAssembly(**xt))
                 compt_nb_sol+=1
-                print(post_traitement)
                 if post_traitement==True:
                     print('Largueur denture des dentures convergées: {}'.format(self.solutions[-1].gear_width))
                     print('Nombre de dent des dentures convergées: {}'.format(plex['Z']))

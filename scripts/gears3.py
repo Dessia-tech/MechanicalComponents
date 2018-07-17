@@ -22,9 +22,9 @@ GA=gears.GearAssemblyOptimizer(gear_set=list_gear_set,gear_speed=list_speed,
 #Recherche triée des nb_sol architecture ayant un entraxe mini (nb_sol=-1 pour analyser l'ensemble des solutions)
 GA.SearchOptimumCD(nb_sol=-1)
 print('Nombre de solutions convergés:',len(GA.solutions))
-solution=GA.solutions[-1]
-solution.SVGExport('name.txt',{5:[0,0]})
-solution.FreeCADExport('Gears1')
+#solution=GA.solutions[-1]
+#solution.SVGExport('name.txt',{5:[0,0]})
+#solution.FreeCADExport('Gears1')
 
 
 #Recherche non triée des nb_sol architecture vérifiant le CDC (nb_sol=-1 pour analyser l'ensemble des solutions)
