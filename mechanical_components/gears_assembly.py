@@ -1059,7 +1059,7 @@ class GearAssemblyOptimizer:
                 material[ne]=hardened_alloy_steel
         
         if torque==None:
-            torque={list_gear[0]:100}
+            torque={list_gear[0]:100,list_gear[1]:'output'}
             
         if cycle==None:
             cycle={list_gear[0]:1e6}
