@@ -664,7 +664,7 @@ class GearAssembly():
             primitives.append(t2)
 
         model=vm.VolumeModel(primitives)
-        return model,primitives
+        return model
 
     def FreeCADExport(self, file_path, centers, export_types=['fcstd'], python_path = 'python',
                       freecad_path = '/usr/lib/freecad/lib'):
