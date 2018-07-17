@@ -407,17 +407,17 @@ class BearingCombination():
 
     """
     def __init__(self):
-        tableau_serie = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                                               'mechanical_components/catalogs/serie_rlts_iso.csv')
-        self.tableau_serie=pandas.read_csv(tableau_serie)
+        with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                                               'mechanical_components/catalogs/serie_rlts_iso.csv') as tableau_serie:            
+            self.tableau_serie=pandas.read_csv(tableau_serie)
         
-        roller = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                                               'mechanical_components/catalogs/roller_iso.csv')
-        self.roller=pandas.read_csv(roller)
+        with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                                               'mechanical_components/catalogs/roller_iso.csv') as roller:
+             self.roller=pandas.read_csv(roller)
         
-        radial_clearance = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                                               'mechanical_components/catalogs/radial_clearance_iso.csv')
-        self.radial_clearance = pandas.read_csv(radial_clearance)
+        with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                                               'mechanical_components/catalogs/radial_clearance_iso.csv') as radial_clearance:            
+            self.radial_clearance = pandas.read_csv(radial_clearance)
         
         df1=self.tableau_serie.copy()
         df2=self.roller.copy()
@@ -430,10 +430,10 @@ class BearingCombination():
         self.df_dict=[df1.to_dict(),df2.to_dict(),df3.to_dict()]
         
     def LoadSKFRules(self):
-        rules_rlts_skf = pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                                               'mechanical_components/catalogs/rules_rlts_SKF.csv')
-        self.rules_rlts_skf=pandas.read_csv(rules_rlts_skf)
-        self.df_rules_dict=self.rules_rlts_skf.to_dict()
+        with  pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                                               'mechanical_components/catalogs/rules_rlts_SKF.csv') as rules_rlts_skf:
+            self.rules_rlts_skf=pandas.read_csv(rules_rlts_skf)
+            self.df_rules_dict=self.rules_rlts_skf.to_dict()
         
     def Analyze(self,limit,Fr,n,grade=['Gr_gn'],Fa=0):
         # Combinatoire sur les dimensions externe ISO
