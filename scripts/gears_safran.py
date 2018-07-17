@@ -5,6 +5,8 @@ import networkx as nx
 from scipy.optimize import minimize,fsolve
 import itertools
 import volmdlr as vm
+import volmdlr.primitives3D as primitives3D
+import volmdlr.primitives2D as primitives2D
 
 ##########################
 # script pour AGB Safran
@@ -16,7 +18,7 @@ data_gear_set=[[(2,4),(4,6),(6,7),(7,0),(0,3),(3,5)],[(5,1)]]
 data_speed={2:[9000*npy.pi/30*(1-erreur),9000*npy.pi/30],4:[20000*npy.pi/30*(1-erreur),
                20000*npy.pi/30],6:[11000*npy.pi/30,11000*npy.pi/30*(1+erreur)],7:[17000*npy.pi/30,
                17000*npy.pi/30*(1+erreur)],0:[1000*npy.pi/30,30000*npy.pi/30],
-               3:[15000*npy.pi/30,15000*npy.pi/30*(1+erreur)],5:[1000*npy.pi/30,30000*npy.pi/30],
+               3:[15000*npy.pi/30,15000*npy.pi/30*(1+erreur)],5:[9000*npy.pi/30,11000*npy.pi/30],
                1:[4100*npy.pi/30*(1-erreur),4100*npy.pi/30]}
 data_rack={0:{'name':'Catalogue_A','module':[2.54*1e-3,2.54*1e-3],
               'transverse_pressure_angle_rack':[20/180*npy.pi,20/180*npy.pi],
@@ -143,7 +145,7 @@ for i,(num_plan,node_output) in enumerate(zip(ordre_calcul,liste_node_fin)):
                                             rack_choice=list_rack_choice,helix_angle=list_helix_angle,
                                             torque=list_torque,cycle=list_cycle,
                                             safety_factor=4)
-    GA1.SearchCenterLine(nb_sol=1)
+    GA1.SearchCenterLine(nb_sol=2)
     sol_eng[num_plan]=GA1.solutions_search[-1]
     for node,tq in sol_eng[num_plan].torque2.items():
         data_torque[node]=-tq
@@ -244,6 +246,9 @@ L10=10
 C1.OptimizerBearing(d={'min':0.04,'max':0.10},D={'min':0.04,'max':0.15},B={'min':0.01,'max':0.08},
                     Lnm={'min':L10,'max':100000*L10},
                     Fr=Fr,Fa=Fa,n=N,mini=['D'],typ='NF')
+
+#for i,(num_plan,node_output) in enumerate(zip(ordre_calcul,liste_node_fin)):
+    
 for k,ctr in data_SVG.items():
     centers=ctr
     centers[0]=-0.05    
@@ -252,9 +257,13 @@ for k,ctr in data_SVG.items():
     centers[0]=0.1    
     model,primitives3=C1.solution[0].VolumeModel(centers)
     primitives.extend(primitives3)
+#    circle=vm.Circle2D(vm.Point2D(centers[1::]),0.02)
+#    C2=vm.Contour2D([circle])
+#    t1=primitives3D.ExtrudedProfile(vm.Point3D((0,0,0)),vm.Point3D((0,1,0)),vm.Point3D((0,0,1)),[C2],vm.Vector3D((1,0,0)))
+#    primitives.append(t1)
 
 model=vm.VolumeModel(primitives)
-model.FreeCADExport('python' ,'Gears1', '/usr/lib/freecad/lib', ['fcstd'])
+model.FreeCADExport('python' ,'Gears2', '/usr/lib/freecad/lib', ['fcstd'])
 
 
 #sol_eng[0].FreeCADExport('Gears1',centers)
