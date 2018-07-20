@@ -10,7 +10,7 @@ list_rack={0:{'name':'Catalogue_A','module':[0.5*1e-3,2*1e-3],
               'transverse_pressure_angle_rack':[20/180*npy.pi,20/180*npy.pi],
               'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],
               'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
-list_rack_choice={5:0,1:0}
+list_rack_choice={5:[0],1:[0]}
 list_helix_angle={5:[0,0]}
 list_material={5:gears.hardened_alloy_steel}
 list_torque={1:186,5:'output',2:20}
@@ -22,7 +22,7 @@ GA=gears.GearAssemblyOptimizer(Z={},gear_set=list_gear_set,gear_speed=list_speed
                                cycle=list_cycle)
 
 #Recherche triée des nb_sol architecture ayant un entraxe mini (nb_sol=-1 pour analyser l'ensemble des solutions)
-GA.SearchOptimumCD(nb_sol=1,post_traitement=True)
+GA.SearchOptimumCD(nb_sol=100,post_traitement=True)
 print('Nombre de solutions convergés:',len(GA.solutions))
 solution=GA.solutions[-1]
 solution.FreeCADExport('Gears1')

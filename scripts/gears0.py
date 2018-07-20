@@ -11,7 +11,7 @@ GA=gears.GearAssemblyOptimizer(gear_set=list_gear_set,gear_speed=list_speed,
                                center_distance=list_cd)
 
 #Recherche triée des nb_sol architecture ayant un entraxe mini (nb_sol=-1 pour analyser l'ensemble des solutions)
-GA.SearchOptimumCD(nb_sol=-1)
+GA.SearchOptimumCD(nb_sol=200,post_traitement=True)
 print('Nombre de solutions convergés:',len(GA.solutions))
 solution=GA.solutions[-1]
 solution.SVGExport('name.txt',{5:[0,0]})
