@@ -572,104 +572,101 @@ class GearAssembly():
             export.append(model_export)
         return export
     
-    def InitialPosition(self,ne,ens):        
-        fun = (lambda tan_alpha : (norm(self.gears[ne][ens[0]]._Involute(tan_alpha))-(self.center_distance[ne]-self.DF[ne][ens[1]]/2))**2)
-        sol=minimize(fun,[0.1], method='SLSQP', tol=1e-20)
-        xsol=sol.x
-        Angle1=xsol[0]-npy.arctan(xsol[0])
-        fun = (lambda tan_alpha : (norm(self.gears[ne][ens[1]]._Involute(tan_alpha))-(self.DF[ne][ens[1]]/2))**2)
-        sol=minimize(fun,[0.1], method='SLSQP', tol=1e-20)
-        xsol=sol.x
-        Angle2=xsol[0]-npy.arctan(xsol[0])        
-        Angle1=npy.arccos(self.gears[ne][ens[0]].DB/self.DF[ne][ens[0]])
-        Angle2=npy.arccos(self.gears[ne][ens[1]].DB/self.DF[ne][ens[1]])
+    def InitialPosition(self,set_pos,liste_eng=()):    
+          
+        Angle1=npy.arccos(self.gears[set_pos][liste_eng[0]].DB/self.DF[set_pos][liste_eng[0]])
+        Angle2=npy.arccos(self.gears[set_pos][liste_eng[1]].DB/self.DF[set_pos][liste_eng[1]])
         Gear1Angle=-(npy.tan(Angle1)-Angle1)
         Gear2Angle=-(npy.tan(Angle2)-Angle2)+npy.pi        
         return [Gear1Angle,Gear2Angle]
     
-    def VolumeModel(self, centers = [], axis = (1,0,0), name = ''):
+    def VolumeModel(self, centers = {}, axis = (1,0,0), name = ''):
         
         x = vm.Vector3D(axis)
         y = x.RandomUnitNormalVector()
         z = vm.Vector3D(npy.cross(x.vector, y.vector))  
         
         if len(centers)==0:
-            centers = []
-            pos_axis = self.PosAxis({self.list_gear[0]:[0,0]})
-            for i in range(int(len(pos_axis)/2)):
-                centers.append(tuple(pos_axis[2*i]*y.vector+pos_axis[2*i+1]*z.vector))
+            centers = {}
+            center_var = self.PosAxis({self.list_gear[0]:[0,0]})
+            for engr_num in center_var.keys():
+                centers[engr_num]=tuple(center_var[engr_num][0]*y.vector+center_var[engr_num][1]*z.vector)
         else:
-            center_var=[]
-            for c in centers:
-                center_var.append((npy.dot(c,x.vector),npy.dot(c,y.vector),npy.dot(c,z.vector)))
+            center_var={}
+            for engr_num in centers.keys():
+                center_var[engr_num]=(npy.dot(centers[engr_num],x.vector),npy.dot(centers[engr_num],y.vector),npy.dot(centers[engr_num],z.vector))
             centers=center_var
             
-        TG={}#
+        Gears3D={}
         Struct=[]
-        Rot={}
+        Rotation={}
         primitives=[]
         
-#        angles=[0]
-        
-        for num,en in enumerate(self.gear_set_dfs):
+        for set_pos_dfs,(eng1,eng2) in enumerate(self.gear_set_dfs):
             
-            ens=[self.list_gear.index(en[0]),self.list_gear.index(en[1])]
-            position1 = centers[ens[0]]
-            position2 = centers[ens[1]]
+            engr_pos=[self.list_gear.index(eng1),self.list_gear.index(eng2)]
+            position1 = centers[eng1]
+            position2 = centers[eng2]
             
-            #tuple1 et 2 correspondent a la position des centres
-            ne=self.gear_set.index(en)
-            Rot[ne]={}
-            if num==0:
-                TG[en[0]]=self.gears[ne][en[0]].Contour(3)
-            Struct.append(vm.Circle2D(vm.Point2D(position1),self.DF[ne][en[0]]/2))
-            TG[en[1]]=self.gears[ne][en[1]].Contour(3)
-            Struct.append(vm.Circle2D(vm.Point2D(position2),self.DF[ne][en[1]]/2))
-            #Definition de la position angulaire initiale
-            list_rot=self.InitialPosition(ne,en)
+            if (eng1,eng2) in self.gear_set:
+                set_pos=self.gear_set.index((eng1,eng2))
+                list_rot=self.InitialPosition(set_pos,(eng1,eng2))
+            elif (eng2,eng1) in self.gear_set:
+                set_pos=self.gear_set.index((eng2,eng1))
+                list_rot=self.InitialPosition(set_pos,(eng2,eng1))
+            print(list_rot)
+            Rotation[set_pos]={}
+            if set_pos_dfs==0:
+                Gears3D[eng1]=self.gears[set_pos][eng1].Contour(3)
+            Struct.append(vm.Circle2D(vm.Point2D(position1),self.DF[set_pos][eng1]/2))
+            Gears3D[eng2]=self.gears[set_pos][eng2].Contour(3)
+            Struct.append(vm.Circle2D(vm.Point2D(position2),self.DF[set_pos][eng2]/2))            
             
             if position2[1]==position1[1]:
                 if position2[2]-position1[2]>0:
-                    angle=npy.pi/2
+                    angle0=npy.pi/2
+                    print(1)
                 else:
-                    angle=-npy.pi/2
+                    angle0=-npy.pi/2
+                    print(2)
             else:
-                angle=-npy.arctan((position2[2]-position1[2])/(position2[1]-position1[1]))
-            if num==0:
-                Rot[ne][en[0]]=list_rot[0]-angle
-                Rot[ne][en[1]]=list_rot[1]-angle
+                angle0=-npy.arctan((position2[2]-position1[2])/(position2[1]-position1[1]))
+                if (position2[2]-position1[2])<0:
+                    angle0=angle0+npy.pi
+            if set_pos_dfs==0:
+                Rotation[set_pos][eng1]=list_rot[0]+angle0
+                Rotation[set_pos][eng2]=list_rot[1]+angle0
             else:
-                for k1,v1 in Rot.items():
-                    if en[0] in v1.keys():
-                        Rot[ne][en[0]]=v1[en[0]]
-                        delta_rot=Rot[ne][en[0]]-(list_rot[0]-angle)
-                Rot[ne][en[1]]=list_rot[1]-angle-delta_rot*((self.gears[ne][en[0]].Z)/(self.gears[ne][en[1]].Z))
-            sol=self.GearRotate([TG[en[0]],TG[en[1]]],[(position1[1::]),(position2[1::])],
-                                       list_rot=[Rot[ne][en[0]],Rot[ne][en[1]]])
+                for k1,rot in Rotation.items():
+                    if eng1 in rot.keys():
+                        Rotation[set_pos][eng1]=rot[eng1]
+                        delta_rot=Rotation[set_pos][eng1]-(list_rot[0]-angle0)
+                Rotation[set_pos][eng2]=list_rot[1]-angle0-delta_rot*((self.gears[set_pos][eng1].Z)/(self.gears[set_pos][eng2].Z))
+            Gears3D_Rotate=self.GearRotate([Gears3D[eng1],Gears3D[eng2]],[(position1[1::]),(position2[1::])],
+                                       list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
         
-            C1=vm.Contour2D(sol[0])
-            C2=vm.Contour2D(sol[1])
+            C1=vm.Contour2D(Gears3D_Rotate[0])
+            C2=vm.Contour2D(Gears3D_Rotate[1])
             
-            extrusion_vector1 = (self.gear_width[en[0]]*x).vector
-            extrusion_vector2 = (self.gear_width[en[1]]*x).vector
+            extrusion_vector1 = (self.gear_width[eng1]*x).vector
+            extrusion_vector2 = (self.gear_width[eng2]*x).vector
             
-            if num==0:
-                vect_x=tuple(-0.5*self.gear_width[en[0]]*x.vector+[npy.dot(centers[0],x.vector),0,0])
+            if set_pos_dfs==0:
+                vect_x=tuple(-0.5*self.gear_width[eng1]*x.vector+[npy.dot(centers[eng1],x.vector),0,0])
                 t1=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z,[C1],extrusion_vector1)
                 primitives.append(t1)
         
-            vect_x=tuple(-0.5*self.gear_width[en[1]]*x.vector+[npy.dot(centers[0],x.vector),0,0])
+            vect_x=tuple(-0.5*self.gear_width[eng2]*x.vector+[npy.dot(centers[eng2],x.vector),0,0])
             t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z,[C2],extrusion_vector2)
-
             primitives.append(t2)
 
         model=vm.VolumeModel(primitives)
         return model
 
-    def FreeCADExport(self, file_path, export_types=['fcstd'], python_path = 'python',
+    def FreeCADExport(self, file_path, centers = {}, axis = (1,0,0), export_types=['fcstd'], python_path = 'python',
                       freecad_path = '/usr/lib/freecad/lib'):
         
-        model = self.VolumeModel()
+        model = self.VolumeModel(centers, axis)
         model.FreeCADExport(python_path ,file_path, freecad_path, export_types)
         
     def PosAxis(self,position):
@@ -705,7 +702,10 @@ class GearAssembly():
             if (min(ineg(res.x))>0) and (max(eg(res.x))<1e-7):
                 drap=0
         x_opt=res.x
-        return x_opt
+        centers={}
+        for engr_pos,engr_num in enumerate(self.list_gear):
+            centers[engr_num]=[x_opt[2*engr_pos],x_opt[2*engr_pos+1]]
+        return centers
     
     def SVGExport(self,name,position):
         x_opt=self.PosAxis(position)
