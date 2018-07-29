@@ -1048,7 +1048,7 @@ class GearAssemblyOptimizer:
                 coefficient_profile_shift[ne]=[-0.8,0.8]
                 
         if rack_list==None:
-            rack_list={0:{'name':'Optim_Module','module':[1*1e-3,3*1e-3],'transverse_pressure_angle_rack':[20*npy.pi/180,20*npy.pi/180],'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
+            rack_list={0:{'name':'Optim_Module','module':[2*1e-3,3*1e-3],'transverse_pressure_angle_rack':[20*npy.pi/180,20*npy.pi/180],'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
             
         if rack_choice==None:
             rack_choice={list_gear[0]:[list(rack_list.keys())[0]]}
