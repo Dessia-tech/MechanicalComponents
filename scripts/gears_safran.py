@@ -24,7 +24,7 @@ data_rack={0:{'name':'Catalogue_A','module':[2.54*1e-3,2.54*1e-3],
               'transverse_pressure_angle_rack':[20/180*npy.pi,20/180*npy.pi],
               'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],
               'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
-data_rack_choice={2:0,4:0,6:0,7:0,0:0,3:0,5:0,1:0}
+data_rack_choice={2:[0],4:[0],6:[0],7:[0],0:[0],3:[0],5:[0],1:[0]}
 data_helix_angle=[[0,0],[0,0]]
 data_material={2:gears.hardened_alloy_steel,4:gears.hardened_alloy_steel}
 data_torque={2:106,7:-85,3:'output',1:186}
@@ -145,8 +145,8 @@ for i,(num_plan,node_output) in enumerate(zip(ordre_calcul,liste_node_fin)):
                                             rack_choice=list_rack_choice,helix_angle=list_helix_angle,
                                             torque=list_torque,cycle=list_cycle,
                                             safety_factor=4)
-    GA1.SearchCenterLine(nb_sol=2)
-    sol_eng[num_plan]=GA1.solutions_search[-1]
+    GA1.SearchOptimumCD(nb_sol=2)
+    sol_eng[num_plan]=GA1.solutions[-1]
     for node,tq in sol_eng[num_plan].torque2.items():
         data_torque[node]=-tq
         
@@ -221,9 +221,9 @@ for i,ne in enumerate(list_gear_complete):
     data_SVG[ne]=[0,x_opt[2*i],x_opt[2*i+1]]
 
 list_gear=sol_eng[0].list_gear
-centers=[]
+centers={}
 for ne in list_gear:
-    centers.append(data_SVG[ne])
+    centers[ne]=(data_SVG[ne])
 model,primitives1=sol_eng[0].VolumeModel(centers)
 
 list_gear=sol_eng[1].list_gear

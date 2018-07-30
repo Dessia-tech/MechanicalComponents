@@ -1,5 +1,6 @@
 import numpy as npy
 import pandas
+import json
 
 # =============================================================
 # Serie des roulements de la norme ISO
@@ -27,6 +28,7 @@ radial_clearance.d_max=radial_clearance.d_max*1e-3
 radial_clearance[['Gr_g2_min','Gr_g2_max','Gr_gn_min','Gr_gn_max','Gr_g3_min','Gr_g3_max','Gr_g4_min','Gr_g4_max','Gr_g5_min','Gr_g5_max']]=radial_clearance[['Gr_g2_min','Gr_g2_max','Gr_gn_min','Gr_gn_max','Gr_g3_min','Gr_g3_max','Gr_g4_min','Gr_g4_max','Gr_g5_min','Gr_g5_max']]*1e-6
 liste_serie=[serie0,serie1,serie2,serie3,serie4,serie7,serie8,serie9]
 tableau=[]
+dico_tri={}
 for serie in liste_serie:
     const={}
     for (i,col) in enumerate(serie.columns):
@@ -41,6 +43,15 @@ for serie in liste_serie:
             D=serie[val['D']][index]*1e-3
             rsmin=serie[val['rsmin']][index]*1e-3
             serial=key
+            if d not in dico_tri.keys():
+                dico_tri[d]={}
+            if D not in dico_tri[d].keys():
+                dico_tri[d][D]={}
+            if B not in dico_tri[d][D].keys():
+                dico_tri[d][D][B]={}
+            if rsmin not in dico_tri[d][D][B].keys():
+                dico_tri[d][D][B][rsmin]={}
+            dico_tri[d][D][B][rsmin]=serial
             tableau.append([d,D,B,rsmin,serial])
 tableau_serie=pandas.DataFrame(tableau,columns=['d','D','B','rsmin','serie'])
 
@@ -52,3 +63,9 @@ chemin_catalogs='../../mechanical_components/catalogs/'
 tableau_serie.to_csv(chemin_catalogs+'serie_rlts_iso.csv',index=False)
 roller.to_csv(chemin_catalogs+'roller_iso.csv',index=False)
 radial_clearance.to_csv(chemin_catalogs+'radial_clearance_iso.csv',index=False)
+
+with open('dico_iso_bearing.txt', 'w') as file:
+    json.dump(dico_tri, file,ensure_ascii=False)
+    
+#with open('notes.txt', 'r') as file:
+#    notes = json.load(file)
