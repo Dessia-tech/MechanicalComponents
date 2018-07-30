@@ -1309,6 +1309,8 @@ class GearAssemblyOptimizer:
             dt.NextNode(valid)
         if incr>1:
             print('Nombre de combinaison trouvées: {}'.format(incr))
+        else:
+            print('Aucune combinaison de nombre de dent trouvée: augmentez la tolérance sur les entraxes')
 
 
     def Optimize(self,nb_sol=1,num_sol=None,post_traitement=False):
