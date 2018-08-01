@@ -614,7 +614,6 @@ class GearAssembly():
             elif (eng2,eng1) in self.gear_set:
                 set_pos=self.gear_set.index((eng2,eng1))
                 list_rot=self.InitialPosition(set_pos,(eng2,eng1))
-            print(list_rot)
             Rotation[set_pos]={}
             if set_pos_dfs==0:
                 Gears3D[eng1]=self.gears[set_pos][eng1].Contour(3)
@@ -1007,10 +1006,9 @@ class ContinuousGearAssemblyOptimizer:
 
 
 class GearAssemblyOptimizer:
-    def __init__(self,gear_set,gear_speed,center_distance,Z={},transverse_pressure_angle=None,
+    def __init__(self,gear_set,gear_speed,center_distance,Z=None,transverse_pressure_angle=None,
                  helix_angle=None,gear_width=None,frequency=[[0,0]],coefficient_profile_shift=None,
                  rack_list=None,rack_choice=None,material=None,torque=None,cycle=None,safety_factor=1):
-        
         # Valeur par defaut
         list_gear=[]
         for gs in gear_set:
@@ -1048,7 +1046,7 @@ class GearAssemblyOptimizer:
                 coefficient_profile_shift[ne]=[-0.8,0.8]
                 
         if rack_list==None:
-            rack_list={0:{'name':'Optim_Module','module':[2*1e-3,3*1e-3],'transverse_pressure_angle_rack':[20*npy.pi/180,20*npy.pi/180],'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
+            rack_list={0:{'name':'Optim_Module','module':[2.54*1e-3,2.54*1e-3],'transverse_pressure_angle_rack':[20*npy.pi/180,20*npy.pi/180],'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
             
         if rack_choice==None:
             rack_choice={list_gear[0]:[list(rack_list.keys())[0]]}
@@ -1068,6 +1066,8 @@ class GearAssemblyOptimizer:
         if cycle==None:
             cycle={list_gear[0]:1e6}
         
+        if Z==None:
+            Z={}
         self.Z=Z
         self.gear_set=gear_set
         self.gear_speed=gear_speed
@@ -1095,7 +1095,8 @@ class GearAssemblyOptimizer:
         self.gear_set_dfs=list(nx.dfs_edges(gear_graph,self.node_init))
         
         if self.Z=={}:
-            self.Z=self.AnalyseZ()
+            var_Z=self.AnalyseZ()
+            self.Z=var_Z
 
         self.AnalyzeCombination()
         
