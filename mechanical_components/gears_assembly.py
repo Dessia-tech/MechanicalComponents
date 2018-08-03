@@ -761,10 +761,13 @@ class GearAssembly():
             else:
                 d[k]=v
         
-        for ne,gs in enumerate(self.gear_set):
-            d['Gear'+str(gs[0]+1)]=self.gears[ne][gs[0]].Dict()
-            d['Gear'+str(gs[1]+1)]=self.gears[ne][gs[1]].Dict()
-
+#        gears_dicts = {}
+#        for ne,gs in enumerate(self.gear_set):
+#            d['Gear'+str(gs[0]+1)]=self.gears[ne][gs[0]].Dict()
+#            d['Gear'+str(gs[1]+1)]=self.gears[ne][gs[1]].Dict()
+        del d['gears']
+        del d['gear_graph']
+        del d['material']
         return d
 
 class ContinuousGearAssemblyOptimizer:

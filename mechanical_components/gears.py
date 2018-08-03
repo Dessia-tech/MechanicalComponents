@@ -981,15 +981,14 @@ class GearAssembly(persistent.Persistent):
             else:
                 d[k]=v
 
-        del d['Rack1']
-        del d['Rack2']
-        
-        del d['material']
+        gears_dict = []
+        for gear in self.gears:
+            gears_dict.append(gear.Dict())
+        d['gears'] = gears_dict
+#        del d['material']
         
         d['mass']=self.Mass()
         
-        d['Gear1']=self.Gear1.Dict()
-        d['Gear2']=self.Gear2.Dict()
 
         return d
     

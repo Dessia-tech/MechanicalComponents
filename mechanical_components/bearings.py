@@ -684,8 +684,8 @@ class BearingCombination():
             
         self.SortBearing(liste_ind,const=limit_sort,S=S,T=T,oil_name=oil_name,nb_sol=nb_sol,typ=typ)
         print('Nombre de Solution finale: ',len(self.solution))
-        s=self.solution[-1]
-        print('Grandeurs élémentaires du rlts:(\'D\':{},\'d\':{},\'B\':{},\'L10\':{},\'Lnm\':{},\'mass\':{})'.format(s.D,s.d,s.B,s.L10,s.Lnm,s.mass))
+#        s=self.solution[-1]
+#        print('Grandeurs élémentaires du rlts:(\'D\':{},\'d\':{},\'B\':{},\'L10\':{},\'Lnm\':{},\'mass\':{})'.format(s.D,s.d,s.B,s.L10,s.Lnm,s.mass))
         
     def OptimizerBearingNew(self,d,D,B,Fr,Fa,n,L10=None,C0r=None,Cr=None,Lnm=None,grade=['Gr_gn'],
                          S=0.9,T=40,oil_name='iso_vg_100',nb_sol=1,maxi=None,mini=None,rsmin=None,typ='NF'):
