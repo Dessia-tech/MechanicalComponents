@@ -1,4 +1,4 @@
-import mechanical_components.gears as gears
+import mechanical_components.meshes as meshes
 import numpy as npy
 
 input_dict=(
@@ -27,12 +27,12 @@ input_dict=(
 
 #constraint_dict=({},)
 
-GA_wizard=gears.GearAssemblyOptimizerWizard(input_dict)
+GA_wizard=meshes.MeshesAssemblyOptimizerWizard(input_dict)
 if GA_wizard.ok:
     GA_wizard.Optimize()
 
 ### Sorties Obj et CSV
-results=gears.GearAssemblyOptimizationResults(GA_wizard.solutions,input_dict)
+results=meshes.GearAssemblyOptimizationResults(GA_wizard.solutions,input_dict)
 #results.CSVExport('data.csv','w')
 
 ### Sorties graphiques SVG

@@ -1,5 +1,5 @@
 import numpy as npy
-import math as mt
+#import math as mt
 from scipy import interpolate
 #import os
 import volmdlr as vm
@@ -8,19 +8,18 @@ import volmdlr.primitives2D as primitives2D
 import math
 from scipy.linalg import norm
 from scipy.optimize import minimize,fsolve
-from scipy.interpolate import splprep, splev
-#import cma
-#from sympy import *
+#from scipy.interpolate import splprep, splev
 import itertools
-from jinja2 import Environment, PackageLoader, select_autoescape
+#from jinja2 import Environment, PackageLoader, select_autoescape
 import networkx as nx
-#from interval import interval, inf, imath
 
-import mechanical_components.LibSvgD3 as LibSvg
+#import mechanical_components.LibSvgD3 as LibSvg
 import powertransmission.tools as tools
 
-#from dessia_common import ResultsDBClient
 #import pyDOE
+
+# TODO: Vérifier que les commentaires et les noms de variables soient en anglais
+
 
 #data_coeff_YB_Iso
 evol_coeff_yb_iso={'data':[[0.0,1.0029325508401201],[4.701492563229561,0.9310850480431024],[9.104477651442416,0.8782991233021732],[14.5522388104227,0.8240469255458759],[19.328358165913905,0.784457481990179],[23.955224059269884,0.7609970656504502],[28.507462609617956,0.7521994155347822],[34.029850499665855,0.7507331425194141],[40.0,0.7492668574805859]],'x':'Linear','y':'Linear'}
@@ -109,7 +108,7 @@ class Rack():
         d=self.__dict__.copy()
         return list(d.keys()),list(d.values())
 
-class Gear():
+class Mesh():
     def __init__(self, z, db, cp, transverse_pressure_angle_rack,
                  coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
                  coeff_circular_tooth_thickness):
@@ -134,7 +133,9 @@ class Gear():
         self.DB=db
         self.DFF=self.DB/npy.cos(transverse_pressure_angle_rack)
         module_rack=self.DFF/self.Z
-        self.rack.Update(module_rack,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
+        self.rack.Update(module_rack,transverse_pressure_angle_rack,
+                         coeff_gear_addendum,coeff_gear_dedendum, 
+                         coeff_root_radius,coeff_circular_tooth_thickness)
         self.coefficient_profile_shift=cp
         
         self.outside_diameter=self.DFF+2*(self.rack.gear_addendum+self.rack.module*self.coefficient_profile_shift)
@@ -153,12 +154,14 @@ class Gear():
         self.root_gear_angle=self.circular_tooth_thickness/(self.DFF/2)+2*(npy.tan(self.alpha_pitch_diameter)-self.alpha_pitch_diameter)
         
     def GearSection(self,diameter):
+        # TODO: traduire en englais le prochain commentaire
         #epaisseur de la dent au diameter
         alpha_diameter=npy.arccos(self.DB/diameter)
         theta1=(npy.tan(self.alpha_outside_diameter)-self.alpha_outside_diameter)-(npy.tan(alpha_diameter)-alpha_diameter)
         return diameter/2*(2*theta1+self.outside_active_angle)
         
     def _RootDiameterActive(self):
+        # TODO: traduire en englais le prochain commentaire
         #Analyse diam pied de dent actif
         a=self.rack.a
         b=self.rack.b-self.rack.module*self.coefficient_profile_shift
@@ -217,21 +220,24 @@ class Gear():
         return L
         
     def _Involute(self,tan_alpha):
-        
+        # TODO: better variable naming than "sol"
         sol=(self.DB/2*npy.cos(tan_alpha)+self.DB/2*tan_alpha*npy.sin(tan_alpha),
              self.DB/2*npy.sin(tan_alpha)-self.DB/2*tan_alpha*npy.cos(tan_alpha))
         return sol
     
-    def _TrochoideTrace(self,discret,number,ind='T'):
+    def _TrochoideTrace(self, discret, number, ind='T'):
+        # TODO: donner des noms plus explicite que ind et drap
         if ind=='T':
             drap=1
         else:
             drap=-1
         
         a=drap*self.rack.a
+        # TODO: vérifier pourquoi la variable n'est pas utilisée: bug?
         b=self.rack.b-self.rack.module*self.coefficient_profile_shift
         phi0=a/(self.DFF/2)
         
+        # TODO: donner des noms plus explicites que ind et ref
         ref=[]
         if ind=='R':
             theta=npy.linspace(phi0,drap*self.phi_trochoide,discret)
@@ -253,6 +259,7 @@ class Gear():
         return L1
     
     def _Trochoide(self,phi,ind='T'):
+        # TODO: donner des noms plus explicite que ind, drap et sol
         if ind=='T':
             drap=1
         else:
@@ -267,7 +274,7 @@ class Gear():
         return sol
     
     def _RootCircleTrace(self,number):
-
+        # TODO: donner un nom plus explicite que drap
         drap=1
         a=drap*self.rack.a
         phi0=a/(self.DFF/2)
@@ -285,6 +292,7 @@ class Gear():
         return L2
     
     def _OutsideTrace(self,number):
+        # TODO: Commentaire en anglais, Nom plus explicite pour la fonction?
         #trace du sommet des dents en arc de cercle
         theta4=npy.tan(self.alpha_outside_diameter)-self.alpha_outside_diameter
         p1=vm.Point2D((self.outside_diameter/2*npy.cos(theta4),self.outside_diameter/2*npy.sin(theta4)))
@@ -294,28 +302,27 @@ class Gear():
         ref=primitives2D.RoundedLines2D([p3,p2,p1],{},False)
         L=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.Z)
         return L
+
     
-    ### Stress
-    
-    def _CoeffYSIso(self,s_thickness_iso):
+    def _ISO_YS(self,s_thickness_iso):
         #facteur de concentration de contrainte en pied de dent
         rho_f=self.rack.root_radius+self.rack.b**2/(self.DFF/2+self.rack.b)
         coeff_ys_iso=1+0.15*s_thickness_iso/rho_f
         return coeff_ys_iso
     
-    def GearSectionISO(self,angle):
+    def GearISOSection(self,angle):
         a=self.rack.a
         b=self.rack.b-self.rack.module*self.coefficient_profile_shift
         r=self.DFF/2
-        theta0=fsolve((lambda theta:a + b*npy.tan(theta) + r*(-angle - self.root_angle/2 - theta + npy.pi/2)) ,0)[0]
+        theta0 = fsolve((lambda theta:a + b*npy.tan(theta) + r*(-angle - self.root_angle/2 - theta + npy.pi/2)) ,0)[0]
         phi0=(a-b*npy.tan(theta0))/r
-        pt_iso=self._Trochoide(phi0)
-        angle0=npy.arctan(pt_iso[1]/pt_iso[0])-self.root_angle/2
-        angle_iso=self.root_gear_angle-2*angle0
-        diameter_iso=2*norm(pt_iso)
-        s_thickness_iso=diameter_iso*npy.sin(angle_iso/2)
-        h_height_iso=(s_thickness_iso/2)/npy.tan(angle)
-        return s_thickness_iso,h_height_iso
+        pt_iso = self._Trochoide(phi0)
+        angle0 = npy.arctan(pt_iso[1]/pt_iso[0])-self.root_angle/2
+        angle_iso = self.root_gear_angle-2*angle0
+        diameter_iso = 2*norm(pt_iso)
+        s_thickness_iso = diameter_iso*npy.sin(angle_iso/2)
+        h_height_iso = (s_thickness_iso/2)/npy.tan(angle)
+        return s_thickness_iso, h_height_iso
         
     def Dict(self):
         d={}
@@ -331,27 +338,27 @@ class Gear():
         d['rack']=self.rack.Dict()
         return d
 
-class GearAssembly():
-    def __init__(self,Z, center_distance, gear_set,transverse_pressure_angle,
+class MeshAssembly():
+    def __init__(self,Z, center_distance, connections,transverse_pressure_angle,
                  coefficient_profile_shift,gear_graph, transverse_pressure_angle_rack,
                  coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,
                  coeff_circular_tooth_thickness,list_gear,material,torque,cycle,safety_factor):
         
         self.center_distance=center_distance
-        self.gear_set=gear_set
+        self.connections=connections
         self.transverse_pressure_angle=transverse_pressure_angle
         self.gear_graph=gear_graph
         self.list_gear=list_gear
         self.material=material
         self.helix_angle=0
 
-        self.DF,DB,self.gear_set_dfs=self.GearGeometryParameter(Z)
-        self.cycle=self.CycleParameter(cycle,Z)
-        self.torque1,self.torque2,self.normal_load,self.tangential_load,self.radial_load=self.GearTorque(Z,torque,DB)
+        self.DF, DB, self.connections_dfs = self.GearGeometryParameter(Z)
+        self.cycle = self.CycleParameter(cycle, Z)
+        self.torque1, self.torque2, self.normal_load, self.tangential_load, self.radial_load = self.GearTorque(Z, torque, DB)
         
         #instantiation des objets Gears
         self.gears={}
-        for ne,ns in enumerate(self.gear_set):
+        for ne,ns in enumerate(self.connections):
             self.gears[ne]={}
             for ng in ns:
                 z=Z[ng]
@@ -363,23 +370,35 @@ class GearAssembly():
                 cgd=coeff_gear_dedendum[ngp]
                 crr=coeff_root_radius[ngp]
                 cct=coeff_circular_tooth_thickness[ngp]
-                self.gears[ne][ng]=Gear(z,db,cp,tpa,cga,cgd,crr,cct)
+                self.gears[ne][ng]=Mesh(z,db,cp,tpa,cga,cgd,crr,cct)
                 
-        self.linear_backlash,self.radial_contact_ratio=self.GearContactRatioParameter(Z,coefficient_profile_shift,DB,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
+        self.linear_backlash,self.radial_contact_ratio = \
+            self.GearContactRatioParameter(Z, coefficient_profile_shift, DB,
+                                           transverse_pressure_angle_rack,
+                                           coeff_gear_addendum, coeff_gear_dedendum,
+                                           coeff_root_radius,
+                                           coeff_circular_tooth_thickness)
         self.gear_width,self.sigma_iso,self.sigma_lim=self.GearWidthDefinition(safety_factor)
             
-    def Update(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,gear_graph,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness,list_gear,material,torque,cycle,safety_factor):
+    def Update(self, Z, center_distance, connections, transverse_pressure_angle,
+               coefficient_profile_shift, gear_graph,
+               transverse_pressure_angle_rack, coeff_gear_addendum,
+               coeff_gear_dedendum, coeff_root_radius,coeff_circular_tooth_thickness,
+               list_gear,material, torque,cycle, safety_factor):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
-        self.DF,DB,self.gear_set_dfs=self.GearGeometryParameter(Z)
-        self.linear_backlash,self.radial_contact_ratio=self.GearContactRatioParameter(Z,coefficient_profile_shift,DB,transverse_pressure_angle_rack,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
+        self.DF,DB,self.connections_dfs=self.GearGeometryParameter(Z)
+        self.linear_backlash,self.radial_contact_ratio = self.GearContactRatioParameter(
+            Z, coefficient_profile_shift, DB, transverse_pressure_angle_rack,
+            coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
+            coeff_circular_tooth_thickness)
         
     def GearContactRatioParameter(self,Z,coefficient_profile_shift,DB,
                            transverse_pressure_angle_rack,coeff_gear_addendum,
                            coeff_gear_dedendum,coeff_root_radius,
                            coeff_circular_tooth_thickness):
         
-        for ne,ns in enumerate(self.gear_set):
+        for ne,ns in enumerate(self.connections):
             for ng in ns:
                 z=Z[ng]
                 db=DB[ne][ng]
@@ -394,8 +413,8 @@ class GearAssembly():
             
         linear_backlash=[]
         radial_contact_ratio=[]
-        for g1,g2 in self.gear_set_dfs:
-            ne=self.gear_set.index((g1,g2))
+        for g1,g2 in self.connections_dfs:
+            ne=self.connections.index((g1,g2))
             circular_tooth_thickness1=self.gears[ne][g1].GearSection(self.DF[ne][g1])
             circular_tooth_thickness2=self.gears[ne][g2].GearSection(self.DF[ne][g2])
             transverse_radial_pitch1=npy.pi*self.DF[ne][g1]/self.gears[ne][g1].Z
@@ -411,7 +430,7 @@ class GearAssembly():
         DF={}
         DB={}
 #        transverse_pressure_angle=[self.transverse_pressure_angle_0]
-        for ne,(gs,cd) in enumerate(zip(self.gear_set,self.center_distance)):
+        for ne,(gs,cd) in enumerate(zip(self.connections,self.center_distance)):
             Z1=Z[gs[0]]
             Z2=Z[gs[1]]
             #définition DF
@@ -426,9 +445,9 @@ class GearAssembly():
             DB[ne][gs[0]]=DB1
             DB[ne][gs[1]]=DB2
         
-        gear_set_dfs=list(nx.edge_dfs(self.gear_graph, [self.gear_set[0][0],self.gear_set[0][1]]))
+        connections_dfs=list(nx.edge_dfs(self.gear_graph, [self.connections[0][0],self.connections[0][1]]))
 
-        return DF,DB,gear_set_dfs
+        return DF,DB,connections_dfs
     
     def GearTorque(self,Z,torque,DB):
         ggd=self.gear_graph.degree(self.list_gear)
@@ -459,15 +478,21 @@ class GearAssembly():
                 torque1[eng1]=torque_moteur_m
                 torque2={}
                 torque2[eng2]=torque_recepteur
+                # TODO: Vérifier pourquoi la variable n'est pas utilisée
                 torque_input_m=torque_recepteur
         for node_init,path in zip(liste_node_init,path_list):
             torque_moteur_m=torque[node_init]
             for i,eng1 in enumerate(path[0:-1]):
                 eng2=path[i+1]
-                try:
-                    ne=self.gear_set.index((eng1,eng2))
-                except:
-                    ne=self.gear_set.index((eng2,eng1))
+                if (eng1, eng2) in self.connections:
+                    ne=self.connections.index((eng1, eng2))
+                else:
+                    ne=self.connections.index((eng2, eng1))
+#                try:
+                    
+                # Définir le type d'erreur!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#                except NotImplementedError:
+#                    ne=self.connections.index((eng2,eng1))
                 tq1=torque1[eng1]
                 normal_load[ne]=abs(tq1)*2/(DB[ne][eng1])
                 tangential_load[ne]=abs(tq1)*2/(self.DF[ne][eng1])
@@ -496,7 +521,7 @@ class GearAssembly():
         gear_width={}
         for eng in self.list_gear:
             gear_width[eng]=0
-        for ne,(eng1,eng2) in enumerate(self.gear_set):
+        for ne,(eng1,eng2) in enumerate(self.connections):
             gear_width1=abs(self.tangential_load[ne]/(sigma_lim[ne][eng1]*self.gears[ne][eng1].rack.module)*coeff_yf_iso[ne][eng1]*coeff_ye_iso[ne]*coeff_yb_iso[ne][eng1])
             gear_width2=abs(self.tangential_load[ne]/(sigma_lim[ne][eng2]*self.gears[ne][eng2].rack.module)*coeff_yf_iso[ne][eng2]*coeff_ye_iso[ne]*coeff_yb_iso[ne][eng2])
             gear_width_set=max(gear_width1,gear_width2)
@@ -508,23 +533,23 @@ class GearAssembly():
     def SigmaMaterialISO(self,safety_factor):
         angle=30/180*npy.pi
         sigma_lim={}
-        for ne,(eng1,eng2) in enumerate(self.gear_set):
+        for ne,(eng1,eng2) in enumerate(self.connections):
             sigma_lim[ne]={}
             
             matrice_wholer=self.material[eng1].data_wholer_curve
             matrice_material=self.material[eng1].data_gear_material
             sgla=self.material[eng1].FunCoeff(self.cycle[eng1],npy.array(matrice_wholer['data']),matrice_wholer['x'],matrice_wholer['y'])
             sgl1=self.material[eng1].FunCoeff(sgla,npy.array(matrice_material['data']),matrice_material['x'],matrice_material['y'])
-            s_thickness_iso_1,h_height_iso_1=self.gears[ne][eng1].GearSectionISO(angle)
-            coeff_ys_iso=self.gears[ne][eng1]._CoeffYSIso(s_thickness_iso_1)
+            s_thickness_iso_1,h_height_iso_1=self.gears[ne][eng1].GearISOSection(angle)
+            coeff_ys_iso=self.gears[ne][eng1]._ISO_YS(s_thickness_iso_1)
             sigma_lim[ne][eng1]=(sgl1/(safety_factor*coeff_ys_iso))*10**7
             
             matrice_wholer=self.material[eng2].data_wholer_curve
             matrice_material=self.material[eng2].data_gear_material
             sglb=self.material[eng2].FunCoeff(self.cycle[eng2],npy.array(matrice_wholer['data']),matrice_wholer['x'],matrice_wholer['y'])
             sgl2=self.material[eng2].FunCoeff(sglb,npy.array(matrice_material['data']),matrice_material['x'],matrice_material['y'])
-            s_thickness_iso_2,h_height_iso_2=self.gears[ne][eng2].GearSectionISO(angle)
-            coeff_ys_iso=self.gears[ne][eng2]._CoeffYSIso(s_thickness_iso_2)
+            s_thickness_iso_2,h_height_iso_2=self.gears[ne][eng2].GearISOSection(angle)
+            coeff_ys_iso=self.gears[ne][eng2]._ISO_YS(s_thickness_iso_2)
             sigma_lim[ne][eng2]=(sgl2/(safety_factor*coeff_ys_iso))*10**7
         return sigma_lim
 
@@ -533,10 +558,10 @@ class GearAssembly():
         #facteur de forme pour la contrainte ISO
         angle=30/180*npy.pi
         coeff_yf_iso={}
-        for ne,(eng1,eng2) in enumerate(self.gear_set):
+        for ne,(eng1,eng2) in enumerate(self.connections):
             coeff_yf_iso[ne]={}
-            s_thickness_iso_1,h_height_iso_1=self.gears[ne][eng1].GearSectionISO(angle)
-            s_thickness_iso_2,h_height_iso_2=self.gears[ne][eng2].GearSectionISO(angle)
+            s_thickness_iso_1,h_height_iso_1=self.gears[ne][eng1].GearISOSection(angle)
+            s_thickness_iso_2,h_height_iso_2=self.gears[ne][eng2].GearISOSection(angle)
             coeff_yf_iso[ne][eng1]=(6*(h_height_iso_1/self.gears[ne][eng1].rack.module)*npy.cos(self.transverse_pressure_angle[ne]))/((s_thickness_iso_1/self.gears[ne][eng1].rack.module)**2*npy.cos(self.gears[ne][eng1].rack.transverse_pressure_angle))
             coeff_yf_iso[ne][eng2]=(6*(h_height_iso_2/self.gears[ne][eng2].rack.module)*npy.cos(self.transverse_pressure_angle[ne]))/((s_thickness_iso_2/self.gears[ne][eng2].rack.module)**2*npy.cos(self.gears[ne][eng2].rack.transverse_pressure_angle))
         return coeff_yf_iso
@@ -544,14 +569,14 @@ class GearAssembly():
     def _CoeffYEIso(self):
         #facteur de conduite pour la contrainte ISO
         coeff_ye_iso=[]
-        for ne,eng in enumerate(self.gear_set):
+        for ne,eng in enumerate(self.connections):
             coeff_ye_iso.append(1/self.radial_contact_ratio[ne])
         return coeff_ye_iso
         
     def _CoeffYBIso(self):
         #facteur de contrefort pour la contrainte ISO
         coeff_yb_iso={}
-        for ne,(eng1,eng2) in enumerate(self.gear_set):
+        for ne,(eng1,eng2) in enumerate(self.connections):
             coeff_yb_iso[ne]={}
             matrice_YB=self.material[eng1].data_coeff_YB_Iso
             coeff_yb_iso[ne][eng1]=self.material[eng1].FunCoeff(self.helix_angle,npy.array(matrice_YB['data']),matrice_YB['x'],matrice_YB['y'])
@@ -602,17 +627,17 @@ class GearAssembly():
         Rotation={}
         primitives=[]
         
-        for set_pos_dfs,(eng1,eng2) in enumerate(self.gear_set_dfs):
-            
+        for set_pos_dfs,(eng1,eng2) in enumerate(self.connections_dfs):
+            # TODO: Check if this is a bug
             engr_pos=[self.list_gear.index(eng1),self.list_gear.index(eng2)]
             position1 = centers[eng1]
             position2 = centers[eng2]
             
-            if (eng1,eng2) in self.gear_set:
-                set_pos=self.gear_set.index((eng1,eng2))
+            if (eng1,eng2) in self.connections:
+                set_pos=self.connections.index((eng1,eng2))
                 list_rot=self.InitialPosition(set_pos,(eng1,eng2))
-            elif (eng2,eng1) in self.gear_set:
-                set_pos=self.gear_set.index((eng2,eng1))
+            elif (eng2,eng1) in self.connections:
+                set_pos=self.connections.index((eng2,eng1))
                 list_rot=self.InitialPosition(set_pos,(eng2,eng1))
             Rotation[set_pos]={}
             if set_pos_dfs==0:
@@ -672,7 +697,7 @@ class GearAssembly():
         #optimisation pour le placement des axes des engrenages
         def fun(x):
             obj=0
-            for num,it in enumerate(self.gear_set):
+            for num,it in enumerate(self.connections):
                 eng1=(self.list_gear).index(it[0])
                 eng2=(self.list_gear).index(it[1])
                 obj+=(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-self.center_distance[num])**2
@@ -686,7 +711,7 @@ class GearAssembly():
             return ine
         def ineg(x):
             ine=[]
-            for num,it in enumerate(self.gear_set):
+            for num,it in enumerate(self.connections):
                 eng1=(self.list_gear).index(it[0])
                 eng2=(self.list_gear).index(it[1])
                 ine.append(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-0.999*self.center_distance[num])
@@ -712,12 +737,12 @@ class GearAssembly():
         L1=[]
         Struct=[]
         Rot={}
-        for num,en in enumerate(self.gear_set_dfs):
+        for num,en in enumerate(self.connections_dfs):
             ens=[self.list_gear.index(en[0]),self.list_gear.index(en[1])]
             position1=(x_opt[2*ens[0]],x_opt[2*ens[0]+1])   
             position2=(x_opt[2*ens[1]],x_opt[2*ens[1]+1])
             #tuple1 et 2 correspondent a la position des centres
-            ne=self.gear_set.index(en)
+            ne=self.connections.index(en)
             Rot[ne]={}
             if num==0:
                 TG[en[0]]=self.gears[ne][en[0]].Contour(5)
@@ -762,7 +787,7 @@ class GearAssembly():
                 d[k]=v
         
 #        gears_dicts = {}
-#        for ne,gs in enumerate(self.gear_set):
+#        for ne,gs in enumerate(self.connections):
 #            d['Gear'+str(gs[0]+1)]=self.gears[ne][gs[0]].Dict()
 #            d['Gear'+str(gs[1]+1)]=self.gears[ne][gs[1]].Dict()
         del d['gears']
@@ -770,9 +795,11 @@ class GearAssembly():
         del d['material']
         return d
 
-class ContinuousGearAssemblyOptimizer:
-    def __init__(self,Z,center_distance,gear_set,transverse_pressure_angle,coefficient_profile_shift,
-                 gear_graph,cond_init,rack_list,rack_choice,list_gear,material,torque,cycle,safety_factor):
+class ContinuousMeshesAssemblyOptimizer:
+    def __init__(self, Z, center_distance, connections, transverse_pressure_angle,
+                 coefficient_profile_shift, gear_graph,cond_init,
+                 rack_list, rack_choice, list_gear, material,torque,
+                 cycle, safety_factor):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
         self.coefficient_profile_shift=coefficient_profile_shift
@@ -782,12 +809,13 @@ class ContinuousGearAssemblyOptimizer:
         self.list_gear=list_gear
         Bounds=list(center_distance)
         Bounds.extend(transverse_pressure_angle)
+        # TODO: Check if this is a bug
         tp=len(coefficient_profile_shift.keys())
         for i in self.list_gear:
             Bounds.append(coefficient_profile_shift[i])
         self.solutions=[]
         
-        self.xi={'Z':Z,'gear_set':gear_set,'gear_graph':gear_graph,'list_gear':list_gear,
+        self.xi={'Z': Z, 'connections': connections,'gear_graph':gear_graph,'list_gear':list_gear,
                  'material':material,'torque':torque,'cycle':cycle,'safety_factor':safety_factor}
         self.xj,self.dict_xu=self._init()
         self.xt=dict(list(self.xi.items())+list(self.xj.items()))
@@ -799,8 +827,9 @@ class ContinuousGearAssemblyOptimizer:
         #xk partie non optimisée du vecteur x
         #xu partie optimisée du vecteur x
         
-        self.GearAssembly=GearAssembly(**self.xt)
+        self.MeshAssembly = MeshAssembly(**self.xt)
         
+    # TODO: Pourquoi un deuxième Init ???
     def _init(self):
         xj={'center_distance':self._init_list(self.center_distance),
                  'transverse_pressure_angle':self._init_list(self.transverse_pressure_angle),
@@ -829,6 +858,7 @@ class ContinuousGearAssemblyOptimizer:
     def _convert_xj2Xu(self,xj):
         sol=xj['center_distance'].copy()
         sol.extend(xj['transverse_pressure_angle'])
+        # TODO: Check if this is a bug
         tp=len(xj['coefficient_profile_shift'].keys())
         for key in self.list_gear:
             sol.append(xj['coefficient_profile_shift'][key])
@@ -879,44 +909,46 @@ class ContinuousGearAssemblyOptimizer:
     
     def Update(self,xj):
         self.xt=dict(list(self.xi.items())+list(xj.items()))
-        self.GearAssembly.Update(**self.xt)
+        self.MeshAssembly.Update(**self.xt)
         return xj
-        
+    
+    # TODO: implémenter les critères comme des calculs dans le MeshAssembly
+    # Les appeller ensuite. Pour un exemple regarder InternalInterference du model3D PWT.
     def Fineq(self,X):
         xj=self._convert_Xu2xj(X)
         xj=self.Update(xj)
         ineq=[]
         #jeu inter-denture
-        for lb in self.GearAssembly.linear_backlash:
+        for lb in self.MeshAssembly.linear_backlash:
             ineq.append(lb)
             ineq.append((4e-4)-lb)
         #contrainte géométrique
-        for ne,gs in enumerate(self.GearAssembly.gear_set):
-            dia1=self.GearAssembly.gears[ne][gs[0]].root_diameter_active
-            dia2=self.GearAssembly.gears[ne][gs[1]].root_diameter_active
-            de1=self.GearAssembly.gears[ne][gs[0]].outside_diameter
-            de2=self.GearAssembly.gears[ne][gs[1]].outside_diameter
-            cd=self.GearAssembly.center_distance[ne]
+        for ne,gs in enumerate(self.MeshAssembly.connections):
+            dia1=self.MeshAssembly.gears[ne][gs[0]].root_diameter_active
+            dia2=self.MeshAssembly.gears[ne][gs[1]].root_diameter_active
+            de1=self.MeshAssembly.gears[ne][gs[0]].outside_diameter
+            de2=self.MeshAssembly.gears[ne][gs[1]].outside_diameter
+            cd=self.MeshAssembly.center_distance[ne]
             ineq.append(cd-(de1/2+dia2/2))
             ineq.append(cd-(de2/2+dia1/2))
-            oaa1=self.GearAssembly.gears[ne][gs[0]].outside_active_angle
-            oaa2=self.GearAssembly.gears[ne][gs[1]].outside_active_angle
+            oaa1=self.MeshAssembly.gears[ne][gs[0]].outside_active_angle
+            oaa2=self.MeshAssembly.gears[ne][gs[1]].outside_active_angle
             ineq.append(oaa1)
             ineq.append(oaa2)
-            df1=self.GearAssembly.DF[ne][gs[0]]
-            df2=self.GearAssembly.DF[ne][gs[1]]
-            db1=self.GearAssembly.gears[ne][gs[0]].DB
-            db2=self.GearAssembly.gears[ne][gs[1]].DB
+            df1=self.MeshAssembly.DF[ne][gs[0]]
+            df2=self.MeshAssembly.DF[ne][gs[1]]
+            db1=self.MeshAssembly.gears[ne][gs[0]].DB
+            db2=self.MeshAssembly.gears[ne][gs[1]].DB
             ineq.append(df1-db1)
             ineq.append(df2-db2)
         #contrainte sur le RCA
-        for ne,gs in enumerate(self.GearAssembly.gear_set):
-            rca=self.GearAssembly.radial_contact_ratio[ne]
+        for ne,gs in enumerate(self.MeshAssembly.connections):
+            rca=self.MeshAssembly.radial_contact_ratio[ne]
             ineq.append(rca-1)
         #contrainte sur le module
-        for ne,gs in enumerate(self.GearAssembly.gear_set):
+        for ne,gs in enumerate(self.MeshAssembly.connections):
             for g in gs:
-                mo=self.GearAssembly.gears[ne][g].rack.module
+                mo=self.MeshAssembly.gears[ne][g].rack.module
                 list_module=self.rack_list[self.rack_choice[g]]['module']
 #                if lm[0]<lm[1]:
                 ineq.append(mo-list_module[0])
@@ -927,24 +959,24 @@ class ContinuousGearAssemblyOptimizer:
         x=self._convert_Xu2xj(X)
         x=self.Update(x)
         eq=[]
-#        for ng in range(self.GearAssembly.gear_graph.number_of_nodes()):
+#        for ng in range(self.MeshAssembly.gear_graph.number_of_nodes()):
         for ng in self.list_gear:
-            nel=list(self.GearAssembly.gear_graph.edges(ng))
+            nel=list(self.MeshAssembly.gear_graph.edges(ng))
             if len(nel)>1:
                 list_db=[]
                 for ne in nel:
-                    if (ne[0],ne[1]) in self.GearAssembly.gear_set:
-                        nes=self.GearAssembly.gear_set.index((ne[0],ne[1]))
-                    elif (ne[1],ne[0]) in self.GearAssembly.gear_set:
-                        nes=self.GearAssembly.gear_set.index((ne[1],ne[0]))
-                    list_db.append(self.GearAssembly.gears[nes][ng].DB)
-#                    print(self.GearAssembly.gears[nes][ng].DB,nes,ng,list_db)
+                    if (ne[0],ne[1]) in self.MeshAssembly.connections:
+                        nes=self.MeshAssembly.connections.index((ne[0],ne[1]))
+                    elif (ne[1],ne[0]) in self.MeshAssembly.connections:
+                        nes=self.MeshAssembly.connections.index((ne[1],ne[0]))
+                    list_db.append(self.MeshAssembly.gears[nes][ng].DB)
+#                    print(self.MeshAssembly.gears[nes][ng].DB,nes,ng,list_db)
                 list1=itertools.combinations(list_db,2)
                 for n1,n2 in list1:
                     eq.append(n1-n2)
-#        for ne,gs in enumerate(self.GearAssembly.gear_set):
+#        for ne,gs in enumerate(self.MeshAssembly.connections):
 #            for g in gs:
-#                mo=self.GearAssembly.gears[ne][g].rack.module
+#                mo=self.MeshAssembly.gears[ne][g].rack.module
 #                lm=self.rack_list[self.rack_choice[g]]['module']
 #                if lm[0]==lm[1]:
 #                    eq.append(mo-lm[0])
@@ -959,18 +991,18 @@ class ContinuousGearAssemblyOptimizer:
         feq=self.Feq(X)
         obj=0
         #Maximisation du module pour avoir des pignons avec un faible gear_width
-        for ne,gs in enumerate(self.GearAssembly.gear_set):
+        for ne,gs in enumerate(self.MeshAssembly.connections):
             for g in gs:
-                mo=self.GearAssembly.gears[ne][g].rack.module
+                mo=self.MeshAssembly.gears[ne][g].rack.module
                 list_module=self.rack_list[self.rack_choice[g]]['module']
                 if list_module[0]<list_module[1]:
                     obj+=1*(list_module[1]-mo)**2
                 
         #Minimisation des entraxes sur la borne inf
         for num_engr,list_cd in enumerate(self.center_distance):
-            obj+=100*(list_cd[0]-self.GearAssembly.center_distance[num_engr])**2
+            obj+=100*(list_cd[0]-self.MeshAssembly.center_distance[num_engr])**2
             
-        for lb in self.GearAssembly.linear_backlash:
+        for lb in self.MeshAssembly.linear_backlash:
             obj+=100*(lb)**2
             
         for i in fineq:
@@ -1008,18 +1040,19 @@ class ContinuousGearAssemblyOptimizer:
             i=i+1
 
 
-class GearAssemblyOptimizer:
-    def __init__(self,gear_set,gear_speed,center_distance,Z=None,transverse_pressure_angle=None,
+class MeshesAssemblyOptimizer:
+    def __init__(self,connections,gear_speed,center_distance,Z=None,transverse_pressure_angle=None,
                  helix_angle=None,gear_width=None,frequency=[[0,0]],coefficient_profile_shift=None,
                  rack_list=None,rack_choice=None,material=None,torque=None,cycle=None,safety_factor=1):
         # Valeur par defaut
         list_gear=[]
-        for gs in gear_set:
+        for gs in connections:
             for g in gs:
                 if g not in list_gear:
                     list_gear.append(g)
+        # TODO: Check if this is a bug
         nb_gear=len(list_gear)
-        nb_set=len(gear_set)
+        nb_set=len(connections)
                     
         if transverse_pressure_angle==None:
             transverse_pressure_angle=[]
@@ -1072,7 +1105,7 @@ class GearAssemblyOptimizer:
         if Z==None:
             Z={}
         self.Z=Z
-        self.gear_set=gear_set
+        self.connections=connections
         self.gear_speed=gear_speed
         self.frequency=frequency
         self.center_distance=center_distance
@@ -1089,13 +1122,13 @@ class GearAssemblyOptimizer:
         self.nb_gear=len(list_gear)
         gear_graph=nx.Graph()
         gear_graph.add_nodes_from(list_gear)
-        gear_graph.add_edges_from(self.gear_set)
+        gear_graph.add_edges_from(self.connections)
         self.gear_graph=gear_graph
         
         self.nb_rack=len(self.rack_list.keys())
 
         self.node_init=int(list(self.gear_speed.keys())[0])
-        self.gear_set_dfs=list(nx.dfs_edges(gear_graph,self.node_init))
+        self.connections_dfs=list(nx.dfs_edges(gear_graph,self.node_init))
         
         if self.Z=={}:
             var_Z=self.AnalyseZ()
@@ -1110,7 +1143,7 @@ class GearAssemblyOptimizer:
             plex['material']=self.material
             plex['torque']=self.torque
             plex['cycle']=self.cycle
-            plex['gear_set']=self.gear_set
+            plex['connections']=self.connections
 #            plex['center_distance']=self.center_distance
             plex['transverse_pressure_angle']=self.transverse_pressure_angle
             plex['coefficient_profile_shift']=self.coefficient_profile_shift
@@ -1124,7 +1157,7 @@ class GearAssemblyOptimizer:
     def AnalyseZ(self):
         #nombre de dents adaptatif
         Z=self.Z
-        for i,(engr1,engr2) in enumerate(self.gear_set):
+        for i,(engr1,engr2) in enumerate(self.connections):
             cd_min=self.center_distance[i][0]
             cd_max=self.center_distance[i][1]
             module1_min,module1_max=(npy.inf,0)
@@ -1159,7 +1192,7 @@ class GearAssemblyOptimizer:
     def AnalyzeCombination(self):
         n1=self.node_init
         liste_node=[n1]
-        for (n1,n2) in self.gear_set_dfs:
+        for (n1,n2) in self.connections_dfs:
             if n2 not in liste_node:
                 liste_node.append(n2)
                 
@@ -1255,7 +1288,7 @@ class GearAssemblyOptimizer:
                     engr_num=liste_node[tree_pos]
                     liste_DF_min[engr_num]=z*module_inf
                 liste_pente_cd_module=[]
-                for set_num,(eng1,eng2) in enumerate(self.gear_set):
+                for set_num,(eng1,eng2) in enumerate(self.connections):
                     cd_min=(liste_DF_min[eng1]+liste_DF_min[eng2])/2
                     liste_pente_cd_module.append(cd_min/module_inf)
                 cd_minmax_nv=[]
@@ -1276,7 +1309,7 @@ class GearAssemblyOptimizer:
                         cd_minmax_nv.append([cd_optimal,min(cd[1],cd_optimal*1.2)])
 #            
 #                # analyse coherence DB, demul et angle de pression de la cremaillere
-#                for set_num,(engr1,engr2) in enumerate(self.gear_set):
+#                for set_num,(engr1,engr2) in enumerate(self.connections):
 #                    engr1_pos=liste_node.index(engr1)
 #                    rack1_num=liste_rack[dt.current_node[self.nb_gear+engr1_pos]]
 #                    transverse_pressure_angle=self.rack_list[rack1_num]['transverse_pressure_angle_rack']
@@ -1300,7 +1333,7 @@ class GearAssemblyOptimizer:
                     i=liste_node.index(n)
                     gear[n]=liste_gear[i][dt.current_node[i]]
                     rack[n]=liste_rack[dt.current_node[i+self.nb_gear]]
-                    
+                # TODO: nom plus explicite que Temp!!!!!
                 Temp={}
                 Temp['Z']=gear
 #                Temp['cond_init']=res.x
@@ -1317,7 +1350,7 @@ class GearAssemblyOptimizer:
             print('Aucune combinaison de nombre de dent trouvée: augmentez la tolérance sur les entraxes')
 
 
-    def Optimize(self,nb_sol=1,num_sol=None,post_traitement=False):
+    def Optimize(self,nb_sol=1,num_sol = None, verbose = False):
         
         compt_nb_sol=0
         if num_sol==None:
@@ -1325,41 +1358,44 @@ class GearAssemblyOptimizer:
         else:
             liste_plex=self.plex_calcul[num_sol:num_sol+1]
         for plex in liste_plex:
-            ga=ContinuousGearAssemblyOptimizer(**plex)
+            ga=ContinuousMeshesAssemblyOptimizer(**plex)
             try:
                 ga.Optimize()
-            except:
-                print('Problème de convergence')
+            # BUG: Définir l'erreur à attraper!
+            except NameError:
+                print('Convergence problem')
             if len(ga.solutions)>0:
                 xsol=ga.solutions[-1]
                 xt=dict(list(ga.xi.items())+list(xsol.items()))
-                self.solutions.append(GearAssembly(**xt))
+                self.solutions.append(MeshAssembly(**xt))
                 compt_nb_sol+=1
-                if post_traitement==True:
-                    print('Largueur denture des dentures convergées: {}'.format(self.solutions[-1].gear_width))
-                    print('Nombre de dent des dentures convergées: {}'.format(plex['Z']))
-                    print('Entraxe des dentures convergées: {}'.format(self.solutions[-1].center_distance))
+                if verbose:
+                    print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
+                    print('Numbers of teeth: {}'.format(plex['Z']))
+                    print('Center distances: {}'.format(self.solutions[-1].center_distance))
                 if compt_nb_sol==nb_sol:
                     break
 
-                
-    def SearchOptimumCD(self,nb_sol=1,post_traitement=False,callback=lambda x:x):
-
+    # TODO: Rename to optimize?
+    def SearchOptimumCD(self, nb_sol = 1, verbose = False,
+                        progress_callback = lambda x:x):
+        # TODO post_traitement -> english
         #Optimisation des nb_sol meilleures solutions vis à vis de la fonctionnelle
         list_fonctionnel=npy.array(self.fonctionnel)
         compt_nb_sol=0
         liste_solutions=[]
         for num_plex in npy.argsort(list_fonctionnel):
             plex=self.plex_calcul[num_plex]
-            ga=ContinuousGearAssemblyOptimizer(**plex)
+            ga=ContinuousMeshesAssemblyOptimizer(**plex)
             try:
                 ga.Optimize()
-            except:
-                print('Problème de convergence')
+            # BUG: Définir l'erreur
+            except NameError:
+                print('Convergence Problem')
             if len(ga.solutions)>0:
                 xsol=ga.solutions[-1]
                 xt=dict(list(ga.xi.items())+list(xsol.items()))
-                solutions=GearAssembly(**xt)
+                solutions=MeshAssembly(**xt)
                 valid_cd=True
                 for engr_num,cd in enumerate(self.center_distance):
                     if (solutions.center_distance[engr_num])<(cd[0]):
@@ -1373,9 +1409,12 @@ class GearAssemblyOptimizer:
                     if compt_nb_sol==nb_sol:
                         break
                 else:
-                    print('Solution convergée non valide')
+                    if verbose: 
+                        print('Solution convergée non valide')
             else:
-                print('Solution non convergée')
+                if verbose:
+                    print('Solution non convergée')
+        # TODO: commentaire en anglais
         #Tri des solutions convergées en fonction de la fonctionnelle actualisée
         list_fonctionnel_nv=[]
         for solutions in liste_solutions:
@@ -1385,7 +1424,7 @@ class GearAssemblyOptimizer:
             list_fonctionnel_nv.append(fonctionnel)
         for indice_plex,num_plex in enumerate(npy.argsort(npy.array(list_fonctionnel_nv))):
             self.solutions.append(liste_solutions[num_plex])
-            if post_traitement==True and indice_plex==0:
-                print('Largueur denture des dentures convergées: {}'.format(self.solutions[-1].gear_width))
-                print('Entraxe des dentures convergées: {}'.format(self.solutions[-1].center_distance))
+            if verbose and indice_plex==0:
+                print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
+                print('Center distances: {}'.format(self.solutions[-1].center_distance))
 
