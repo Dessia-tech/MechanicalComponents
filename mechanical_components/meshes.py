@@ -1017,7 +1017,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 obj+=1000*i**2
         return obj
     
-    def Optimize(self):
+    def Optimize(self, verbose = False):
         boucle=2
         i=0
         arret=0 
@@ -1033,7 +1033,8 @@ class ContinuousMeshesAssemblyOptimizer:
             Xsol=cx.x
             xsol=self._convert_Xu2xj(Xsol)
             xsol=self.Update(xsol)
-            print('Boucle de convergence n°{} avec le status {}, min(fineq):{}, max(eq):{}'.format(i,cx.status,min(self.Fineq(Xsol)),max(npy.abs(self.Feq(Xsol)))))
+            if verbose:
+                print('Boucle de convergence n°{} avec le status {}, min(fineq):{}, max(eq):{}'.format(i,cx.status,min(self.Fineq(Xsol)),max(npy.abs(self.Feq(Xsol)))))
             if min(self.Fineq(Xsol))>-1e-5 and max(npy.abs(self.Feq(Xsol)))<1e-5:
                 self.solutions.append(xsol)
                 arret=1
@@ -1345,9 +1346,9 @@ class MeshesAssemblyOptimizer:
                 incr+=1
             dt.NextNode(valid)
         if incr>1:
-            print('Nombre de combinaison trouvées: {}'.format(incr))
+            print('Number of combination found: {}'.format(incr))
         else:
-            print('Aucune combinaison de nombre de dent trouvée: augmentez la tolérance sur les entraxes')
+            print('No teeth combination found: increase center distances')
 
 
     def Optimize(self,nb_sol=1,num_sol = None, verbose = False):
@@ -1379,7 +1380,6 @@ class MeshesAssemblyOptimizer:
     # TODO: Rename to optimize?
     def SearchOptimumCD(self, nb_sol = 1, verbose = False,
                         progress_callback = lambda x:x):
-        # TODO post_traitement -> english
         #Optimisation des nb_sol meilleures solutions vis à vis de la fonctionnelle
         list_fonctionnel=npy.array(self.fonctionnel)
         compt_nb_sol=0
@@ -1388,7 +1388,7 @@ class MeshesAssemblyOptimizer:
             plex=self.plex_calcul[num_plex]
             ga=ContinuousMeshesAssemblyOptimizer(**plex)
             try:
-                ga.Optimize()
+                ga.Optimize(verbose = verbose)
             # BUG: Définir l'erreur
             except NameError:
                 print('Convergence Problem')
@@ -1405,12 +1405,13 @@ class MeshesAssemblyOptimizer:
                 if valid_cd:
                     liste_solutions.append(solutions)
                     compt_nb_sol+=1
-                    print('Solution convergée valide n°{}'.format(compt_nb_sol))
+                    if verbose:
+                        print('valid solution n°{}'.format(compt_nb_sol))
                     if compt_nb_sol==nb_sol:
                         break
                 else:
                     if verbose: 
-                        print('Solution convergée non valide')
+                        print('unvalid solution')
             else:
                 if verbose:
                     print('Solution non convergée')
