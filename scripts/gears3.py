@@ -2,7 +2,7 @@ import mechanical_components.meshes as meshes
 import numpy as npy
 
 """
-7 gears Test case
+7 gears Test case with fixed modulus to 2.56
 
 """
 erreur=0.02
@@ -16,7 +16,7 @@ list_speed={2:[9000*npy.pi/30*(1-erreur),9000*npy.pi/30],4:[20000*npy.pi/30*(1-e
                17000*npy.pi/30*(1+erreur)],0:[1000*npy.pi/30,30000*npy.pi/30],
                3:[15000*npy.pi/30,15000*npy.pi/30*(1+erreur)],5:[10000*npy.pi/30,11000*npy.pi/30]}
 
-list_rack={0:{'name':'Catalogue_A','module':[2.54*1e-3,2.54*1e-3],
+list_rack={0:{'name':'Catalogue_A','module':[2.56*1e-3,2.56*1e-3],
               'transverse_pressure_angle_rack':[20/180*npy.pi,20/180*npy.pi],
               'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],
               'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
@@ -25,7 +25,7 @@ list_choice={0:[0],2:[0],3:[0],4:[0],5:[0],6:[0],7:[0]}
 
 list_torque={2:106,5:-85,3:'output'}
 
-GA=meshes.MeshesAssemblyOptimizer(connections = list_gear_set, 
+GA=meshes.MeshAssemblyOptimizer(connections = list_gear_set, 
                                   gear_speed = list_speed,
                                   center_distance = list_cd,
                                   rack_list = list_rack,
