@@ -18,9 +18,7 @@ import math
 #import volmdlr.primitives3D as primitives3D
 #import volmdlr.primitives2D as primitives2D
 
-import pkg_resources
 import persistent
-import pandas
 #from pandas.plotting import scatter_matrix
 #import matplotlib.pyplot as plt
 #from dessia_common import ResultsDBClient
@@ -42,100 +40,30 @@ dico_radial_clearance_iso={'Gr_g2': {0.0: {0.01: [0.0, 2.4999999999999998e-05]},
 #Ordre de rangement de dico_rules: (var_x, var_y, type) /[coeff_a, coeff_b] le type peu être soit inf soit sup
 dico_rules={('B', 'C0', 'inf'): [10999999.999884959, -242999.99999554327],('B', 'C0r', 'inf'): [10595740.107796928, -222664.43835953731],('B', 'D', 'inf'): [3.0526364797070964, -0.011263058258513968],('B', 'D', 'sup'): [13.529405336884333, -0.12235343508852292],('B', 'Dw', 'inf'): [0.34782580909578492, 0.00060953790454699812],('B', 'E', 'inf'): [2.6746116418207206, -0.011676614606128169],('B', 'E', 'sup'): [12.828239304453144, -0.11883975610404443],('B', 'F', 'inf'): [1.9000086953872888, -0.011200350744753812],('B', 'F', 'sup'): [11.791174282498535, -0.1193948065867704],('B', 'Lw', 'inf'): [0.5555761378113282, -3.2543436279533658e-07],('B', 'Lw', 'sup'): [0.88893219638711107, -1.7666835879997704e-06],('B', 'Z', 'inf'): [53.966506737597491, 7.4921778207326373],('B', 'd', 'inf'): [1.5094414024918843, -0.0107548193235401],('B', 'd', 'sup'): [11.264699454531796, -0.11817696450029985],('B', 'ep', 'inf'): [0.76001074784051581, -0.0001800731989067705],('B', 'ep', 'sup'): [1.4285853156680683, -0.0035722658944757602],('B', 'ep_ax', 'inf'): [0.10525951369995468, 1.0341432294954503e-06],('B', 'ep_ax', 'sup'): [0.42855439035235598, 0.00028558247525959404],('C0', 'B', 'sup'): [9.0909090910041643e-08, 0.02209090909073497],('C0', 'D', 'sup'): [4.8780487798624781e-07, 0.09073170733090824],('C0', 'E', 'inf'): [1.446368080383096e-07, 0.033067875004131074],('C0', 'E', 'sup'): [3.5451569894825586e-07, 0.10020202929619754],('C0', 'F', 'inf'): [1.1961414641026374e-07, 0.020391366794243557],('C0', 'F', 'sup'): [3.3360584037365644e-07, 0.073268666332558449],('C0r', 'B', 'sup'): [9.4377550772894571e-08, 0.021014524336595286],('C0r', 'D', 'sup'): [4.7800555249898937e-07, 0.091025288663603543],('C0r', 'E', 'inf'): [1.4250860640939164e-07, 0.032980334423203403],('C0r', 'F', 'inf'): [1.1751534492007127e-07, 0.020323204290045072],('C0r', 'F', 'sup'): [3.2758619058294891e-07, 0.072265991327511506],('D', 'B', 'inf'): [0.073913078594353698, 0.0090435190639871488],('D', 'B', 'sup'): [0.32758568098352508, 0.0036896166095724148],('D', 'C0', 'inf'): [2050000.0002627939, -186000.00005220558],('D', 'C0r', 'inf'): [2092025.9080089119, -190427.2621682485],('D', 'D_E', 'inf'): [0.033274144924432265, 0.0035722215963722623],('D', 'E', 'inf'): [0.82860665959654511, -0.0049396158590550472],('D', 'E', 'sup'): [0.96428699606696744, -0.0037891844868336031],('D', 'F', 'inf'): [0.57286446871206131, -0.0065575574398416036],('D', 'F', 'sup'): [0.88651719708767807, -0.013988952997717937],('D', 'Lw', 'inf'): [0.039843826083635653, 0.0064064533773625955],('D', 'd', 'sup'): [0.84492817960239819, -0.016797647952457438],('D1', 'E', 'inf'): [1.000946683648902, 7.6726666470381714e-05],('D1', 'E', 'sup'): [1.0599983277463469, 0.0029709577272640565],('D_E', 'D', 'sup'): [30.053364324494723, -0.10735727708360374],('D_E', 'Dw', 'inf'): [0.60525047790374353, 0.00086196193916208074],('D_E', 'Dw', 'sup'): [1.6938674435141874, -0.00030331929238478812],('Dw', 'B', 'sup'): [2.8750022966944884, -0.0017524228754949652],('Dw', 'D_E', 'inf'): [0.59036496853930132, 0.00017906908450610856],('Dw', 'D_E', 'sup'): [1.6522085260691619, -0.0014241408650306981],('Dw', 'F_d', 'inf'): [0.26648792807300675, 0.00053701312208594024],('Dw', 'F_d', 'sup'): [1.3333038580569458, -0.0011667183862433561],('E', 'B', 'inf'): [0.077953020384712038, 0.0092639179300927788],('E', 'B', 'sup'): [0.373886056713362, 0.0043657233908469062],('E', 'C0', 'inf'): [2820749.5548623288, -282644.82953355124],('E', 'C0', 'sup'): [6913869.3916359963, -228626.96883750692],('E', 'C0r', 'sup'): [7017120.0546811176, -231426.96609115059],('E', 'D', 'inf'): [1.0370356585525835, 0.0039295194296807183],('E', 'D', 'sup'): [1.2068452364200255, 0.0059613518692453954],('E', 'D1', 'inf'): [0.94339771471724043, -0.0028027947304224373],('E', 'D1', 'sup'): [0.99905421171340425, -7.6654099287964489e-05],('E', 'd', 'sup'): [0.89176617441793482, -0.013821008551135671],('F', 'B', 'inf'): [0.084809195084520575, 0.010125777443896013],('F', 'B', 'sup'): [0.52631338079016776, 0.0058948944665070521],('F', 'C0', 'inf'): [2997549.4400216318, -219626.44973629239],('F', 'C0', 'sup'): [8360215.1585825523, -170476.21377745186],('F', 'C0r', 'inf'): [3052631.7309666565, -220601.45819612281],('F', 'C0r', 'sup'): [8509526.9956460204, -172940.85554416757],('F', 'D', 'inf'): [1.1280097027842522, 0.015779674713218686],('F', 'D', 'sup'): [1.7456135868371156, 0.011446961363452315],('F', 'd', 'sup'): [0.95465147953886365, -0.0033400528819706185],('F', 'd1', 'inf'): [1.0122596445746641, 0.0026294694985415524],('F', 'd1', 'sup'): [1.0802612571714665, 0.010042282772707259],('F_d', 'Dw', 'inf'): [0.75001658020949769, 0.00087505813411778573],('F_d', 'Dw', 'sup'): [3.7525151973339712, -0.0020151499017952539],('F_d', 'd', 'sup'): [19.61323560364545, -0.048016409339707945],('Lw', 'B', 'inf'): [1.1249451916178779, 1.9874222074305617e-06],('Lw', 'B', 'sup'): [1.7999333159618109, 5.8576015175412904e-07],('Lw', 'D', 'sup'): [25.097991289815219, -0.16078911106365368],('Lw', 'd', 'sup'): [21.278357055204392, -0.15323909010656148],('Z', 'B', 'sup'): [0.018530011676729817, -0.13883014250231196],('d', 'B', 'inf'): [0.088772896608235674, 0.010490911451060255],('d', 'B', 'sup'): [0.66249673445364266, 0.0071250326814842517],('d', 'D', 'inf'): [1.1835325464829149, 0.019880563056095472],('d', 'E', 'inf'): [1.1213701850181863, 0.015498466916124947],('d', 'F', 'inf'): [1.0475026975111814, 0.0034987144036942191],('d', 'F_d', 'inf'): [0.050985978051175482, 0.0024481635926906068],('d', 'Lw', 'inf'): [0.046996109587108086, 0.007201641071676694],('d1', 'F', 'inf'): [0.92570199418090704, -0.0092961611888236779],('d1', 'F', 'sup'): [0.98788883401568861, -0.0025976235569940315],('ep', 'B', 'inf'): [0.6999931953887939, 0.0025005618182524954],('ep', 'B', 'sup'): [1.3157708661902299, 0.00023693506890320703],('ep_ax', 'B', 'inf'): [2.3334261006585493, -0.00066638560166141115],('ep_ax', 'B', 'sup'): [9.5003288999655577, -9.8247008098793422e-06]}
 
-class OilData(persistent.Persistent):
-    
-    def __init__(self):
-        
-        data_array,dico_axis,dico_nom,type_axis=self.KinematicViscosityData()
-        self.oil_kinematic_viscosity=self.GenereCoeff(data_array,dico_axis,dico_nom,type_axis)
-        for (key,val) in self.oil_kinematic_viscosity.items():
-            if key not in ['x','y']:
-                if type_axis['x']=='Log':
-                    self.oil_kinematic_viscosity[key][:,0]=10**val[:,0]
-                if type_axis['y']=='Log':
-                    self.oil_kinematic_viscosity[key][:,1]=10**val[:,1]
-        self.KinematicViscosity()
-        
-    def GenereCoeff(self,data_array,dico_axis,dico_nom,type_axis):
-        structure={}
-        vect_x=npy.linspace(data_array[dico_nom['x']][0,0],data_array[dico_nom['x']][-1,0],len(data_array[dico_nom['x']][:,0]))
-        vect_y=npy.linspace(data_array[dico_nom['y']][0,1],data_array[dico_nom['y']][-1,1],len(data_array[dico_nom['y']][:,1]))
-        
-        for i,j in type_axis.items():
-            if j=='Log':
-                axe_reel=[mt.log10(dico_axis[i][0]),mt.log10(dico_axis[i][-1])]
-            if j=='Linear':
-                axe_reel=dico_axis[i]
-            if i=='x':
-                ax,bx=self.AxisLinear(axe_reel,vect_x)
-            if i=='y':
-                ay,by=self.AxisLinear(axe_reel,vect_y)
+#oil_kinematic_viscosity
+iso_vg_1500={'data':[[47.21238870380181,922.5481847223729],[76.41592953982855,191.5471560481642],[110.70796589064605,54.90426918109079]],'x':'Linear','y':'Log'}
+iso_vg_1000={'data':[[41.68141577143845,877.2173704075102],[62.477877333256444,261.78400435754804],[100.53097486106454,57.74149074755608]],'x':'Linear','y':'Log'}
+iso_vg_680={'data':[[38.80530942959304,777.3038394524846],[57.168142067138206,251.441902731903],[89.46902691125547,61.96159004047747]],'x':'Linear','y':'Log'}
+iso_vg_460={'data':[[36.15044283907511,580.3315115122488],[59.159291488756054,159.77215436382392],[85.48672598293739,53.80881018274548]],'x':'Linear','y':'Log'}
+iso_vg_320={'data':[[32.16814191075703,551.8160309554283],[57.38937973338331,131.93199565920736],[81.06194763704671,48.65076991453211]],'x':'Linear','y':'Log'}
+iso_vg_220={'data':[[29.95575273781169,407.8526478060212],[56.725664649565616,96.53454045940936],[83.05309705866458,35.24081769455843]],'x':'Linear','y':'Log'}
+iso_vg_150={'data':[[27.964601231111455,307.58489032135725],[50.97345196587479,89.9597273365993],[87.25663773831015,23.313898800373792]],'x':'Linear','y':'Log'}
+iso_vg_100={'data':[[33.05309674590221,148.89034266049572],[60.7079655778837,41.82579554586569],[91.23893866662823,15.115797660575524]],'x':'Linear','y':'Log'}
+iso_vg_68={'data':[[29.95575273781169,113.42390186278217],[56.94690231581072,34.19139868782362],[89.91150432882806,11.749567781125915]],'x':'Linear','y':'Log'}
+iso_vg_46={'data':[[29.070795817584123,76.56429373059628],[60.48672582655621,21.946066333596434],[99.4247781895095,7.316992362396092]],'x':'Linear','y':'Log'}
+iso_vg_32={'data':[[27.52212381353886,56.0220352459023],[58.27433665361086,17.058761946001017],[82.16814222351938,8.510952177980519]],'x':'Linear','y':'Log'}
+iso_vg_22={'data':[[30.619469906711767,32.840621976693456],[57.38937973338331,12.481883087082235],[90.79646124905564,4.939173694948054]],'x':'Linear','y':'Log'}
+iso_vg_15={'data':[[23.982300928318086,28.519522512213047],[44.115044695711276,13.126893028298408],[77.07964670872863,4.889651598606255]],'x':'Linear','y':'Log'}
+iso_vg_10={'data':[[25.088495514790754,17.231530421142708],[46.548673619984115,8.092752773048398],[66.01769875891955,4.649391098015179]],'x':'Linear','y':'Log'}
 
-        for key,data in dico_nom.items():
-            if not key in ['x','y']:
-                export=[]
-                for item in data_array[data]:
-                    data_x=item[0]*ax+bx
-                    data_y=item[1]*ay+by
-                    export.append([data_x,data_y])
-                export=npy.array(export)
-                structure[key]=export
-        structure['x']=type_axis['x']
-        structure['y']=type_axis['y']
-        return structure
+#Ordre de rangement du coefficient de contamination de l'huile: Dpw mini/ Dpw maxi/ grade/ coeff de contamination
+dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},0.1:{npy.inf:{1:1,2:0.85,3:0.7,4:0.5,5:0.3,6:0.05,7:0}}}
+
+class Oil:
+    def __init__(self,oil_data,dict_oil_contamination):
+        self.oil_kinematic_viscosity_curve=self.KinematicViscosity(oil_data)
+        self.dict_oil_contamination=dict_oil_contamination
     
-    def KinematicViscosityData(self):
-        data_svg=['m 70.029703,610.96286 48.808577,0 48.80858,1.06106 46.68647,0 48.80858,-1.06106 48.80859,1.06106 47.74752,0 48.80858,0 47.74753,0 47.74752,-1.06106 45.62541,0','m 70.029703,512.28465 -2.122112,-168.70792 1.061056,-71.09076 0,-245.103963','M 200.5396,35.870456 340.59901,201.39521 505.06271,332.96617','M 174.0132,41.175736 273.75248,168.50247 456.25413,327.66088','m 160.21947,53.908409 88.06766,118.838281 154.91419,147.4868','M 147.4868,84.679036 257.83663,220.49422 384.10231,335.08828','M 128.38779,89.984317 249.34818,240.65428 362.88119,345.69884','M 117.77723,121.816 246.16502,273.54702 372.43069,379.65263','m 108.22772,151.52557 110.34984,129.44885 174.0132,142.18151','M 132.63201,227.92161 265.26403,361.61468 411.68977,468.78135','M 117.77723,256.57013 247.22607,382.8358 405.32343,495.30775','M 113.533,297.95131 264.20297,429.52227 450.94884,545.17739','m 106.10561,330.84405 147.4868,125.20462 114.59406,73.21287','m 120.9604,387.08003 128.38778,101.86138 160.21948,97.61716','m 89.128713,401.93481 96.556107,81.70132 158.09736,103.9835','m 94.433993,454.98762 102.922447,79.57921 93.37293,58.35808']
-        dico_nom={'x':0,'y':1,'iso_vg_1500':2,'iso_vg_1000':3,'iso_vg_680':4,'iso_vg_460':5,'iso_vg_320':6,'iso_vg_220':7,'iso_vg_150':8,'iso_vg_100':9,'iso_vg_68':10,'iso_vg_46':11,'iso_vg_32':12,'iso_vg_22':13,'iso_vg_15':14,'iso_vg_10':15}
-        dico_axis={'x':[20,30,40,50,60,70,80,90,100,110,120],'y':[10,1000]}
-        type_axis={'x':'Linear','y':'Log'}
-        data_array=self.SVG2Array(data_svg)
-        return data_array,dico_axis,dico_nom,type_axis
-    
-    def KinematicViscosity(self):
-        self.oil_kinematic_viscosity_curve={}
-        for (key,val) in self.oil_kinematic_viscosity.items():
-            if key not in ['x','y']:
-                self.oil_kinematic_viscosity_curve[key]={}
-                A=(npy.log10(npy.log10(0.6+val[0,1]))-npy.log10(npy.log10(0.6+val[-1,1])))/(npy.log10(val[0,0])-npy.log10(val[-1,0]))
-                B=npy.log10(npy.log10(0.6+val[0,1]))-A*npy.log10(val[0,0])
-                self.oil_kinematic_viscosity_curve[key]['A']=A
-                self.oil_kinematic_viscosity_curve[key]['B']=B
-                
-    def OilContamination(self,Dpw,grade=3):
-        #grade correspond au niveau de propreté de lhuile, 1 très propre et 7 pour une contamination extreme
-        oil_contamination={1:'ultra clean',2:'high level clean',3:'normal clean',4:'slight contamination',5:'classical contamination',6:'serious contamination',7:'major contamination'}
-        if Dpw<0.1:
-            if grade==1:
-                self.ec=1
-            elif grade==2:
-                self.ec=0.7
-            elif grade==3:
-                self.ec=0.55
-            elif grade==4:
-                self.ec=0.4
-            elif grade==5:
-                self.ec=0.2
-            elif grade==6:
-                self.ec=0.05
-            elif grade==7:
-                self.ec=0
-        else:
-            if grade==1:
-                self.ec=1
-            elif grade==2:
-                self.ec=0.85
-            elif grade==3:
-                self.ec=0.7
-            elif grade==4:
-                self.ec=0.5
-            elif grade==5:
-                self.ec=0.3
-            elif grade==6:
-                self.ec=0.05
-            elif grade==7:
-                self.ec=0
-                
     def FunCoeff(self,x,data,type_x='Linear',type_y='Linear'):
         if type_x=='Log': 
             x=npy.log10(x)
@@ -145,29 +73,48 @@ class OilData(persistent.Persistent):
             sol=10**sol
         return sol
     
-    def AxisLinear(self,axe,vect):
-        a=(axe[0]-axe[-1])/(vect[0]-vect[-1])
-        b=axe[0]-a*vect[0]
-        return a,b
+    def KinematicViscosity(self,oil_kinematic_viscosity):
+        oil_kinematic_viscosity_curve={}
+        for (key,val) in oil_kinematic_viscosity.items():
+            val_np=npy.array(val)
+            if key not in ['x','y']:
+                oil_kinematic_viscosity_curve[key]={}
+                A=(npy.log10(npy.log10(0.6+val_np[0,1]))-npy.log10(npy.log10(0.6+val_np[-1,1])))/(npy.log10(val_np[0,0])-npy.log10(val_np[-1,0]))
+                B=npy.log10(npy.log10(0.6+val_np[0,1]))-A*npy.log10(val_np[0,0])
+                oil_kinematic_viscosity_curve[key]['A']=A
+                oil_kinematic_viscosity_curve[key]['B']=B
+        return oil_kinematic_viscosity_curve['data']
     
-    def SVG2Array(self,data):
-        # en entrée une liste de data SVG positionnee en relatif et 
-        # en sortie liste Array avec positionnement en absolu
-        export={}
-        for i,dat in enumerate(data):
-            data_temp=[]
-            sol=dat.split(' ')
-            for item in sol[1:]:
-                temp=item.split(',')
-                data_temp.append([float(temp[0]),float(temp[1])])
-            export_temp=[data_temp[0]]
-            if sol[0]=='m':
-                for item in data_temp[1::]:
-                    export_temp.append([item[0]+export_temp[-1][0],item[1]+export_temp[-1][1]])
-            if sol[0]=='M':
-                export_temp=data_temp
-            export[i]=npy.array(export_temp)
-        return export
+    def OilParameterContamination(self,Dpw,grade):
+        for k,v in self.dict_oil_contamination.items():
+            if (Dpw>=k) and (Dpw<list(v.keys())[0]):
+                return list(v.values())[0][grade]
+    
+oil_iso_vg_1500=Oil(iso_vg_1500,dict_oil_contamination)
+oil_iso_vg_1000=Oil(iso_vg_1000,dict_oil_contamination)
+oil_iso_vg_680=Oil(iso_vg_680,dict_oil_contamination)
+oil_iso_vg_460=Oil(iso_vg_460,dict_oil_contamination)
+oil_iso_vg_320=Oil(iso_vg_320,dict_oil_contamination)
+oil_iso_vg_220=Oil(iso_vg_220,dict_oil_contamination)
+oil_iso_vg_150=Oil(iso_vg_150,dict_oil_contamination)
+oil_iso_vg_100=Oil(iso_vg_100,dict_oil_contamination)
+oil_iso_vg_68=Oil(iso_vg_68,dict_oil_contamination)
+oil_iso_vg_46=Oil(iso_vg_46,dict_oil_contamination)
+oil_iso_vg_32=Oil(iso_vg_32,dict_oil_contamination)
+oil_iso_vg_22=Oil(iso_vg_22,dict_oil_contamination)
+oil_iso_vg_15=Oil(iso_vg_15,dict_oil_contamination)
+oil_iso_vg_10=Oil(iso_vg_10,dict_oil_contamination)
+        
+class Material:
+    def __init__(self,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05):
+        self.weibull_e=weibull_e
+        self.weibull_c=weibull_c
+        self.weibull_h=weibull_h
+        self.B1=B1
+        self.mu_delta=mu_delta
+        self.c_gamma=c_gamma
+
+material_iso=Material()
     
 # =============================================================
 # Object générique roulement cylindrique
@@ -185,7 +132,7 @@ class OilData(persistent.Persistent):
     
 class RadialRollerBearing(persistent.Persistent):
     #Roulement à rouleaux
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,O1,bm=1.1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
+    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1.1,oil=oil_iso_vg_1500,material=material_iso):
         self.typ=typ
         self.B=B
         self.d=d
@@ -202,15 +149,9 @@ class RadialRollerBearing(persistent.Persistent):
         self.i=i
         self.r_roller=r_roller
         self.alpha=alpha
-        self.weibull_e=weibull_e
-        self.weibull_c=weibull_c
-        self.weibull_h=weibull_h
-        self.B1=B1
-        self.mu_delta=mu_delta
         self.bm=bm
-        self.c_gamma=c_gamma
-        self.oil_name=oil_name
-        self.O1=O1
+        self.oil=oil
+        self.material=material
         self.Dpw,self.Lwe,self.jeu,self.ep=self.DefParam()
         self.mass=self.Mass()
         
@@ -256,9 +197,8 @@ class RadialRollerBearing(persistent.Persistent):
     def BaseDynamicLoad(self):
         #Charge radiale dynamique de base
         mu=float((self.Dwe*1e3)*npy.cos(self.alpha)/(self.Dpw*1e3))
-        delta=self.mu_delta/mu
-        fc=0.377*self.mu_delta*1/((2**((self.weibull_c+self.weibull_h-1)/(self.weibull_c-self.weibull_h+1)))*(0.5**(2*self.weibull_e/(self.weibull_c-self.weibull_h+1))))*self.B1*((1-mu)**((self.weibull_c+self.weibull_h-3)/(self.weibull_c-self.weibull_h+1))/((1+mu)**(2*self.weibull_e/(self.weibull_c-self.weibull_h+1))))*(mu**(2/(self.weibull_c-self.weibull_h+1)))*(1+(1.04*((1-mu)/(1+mu))**((self.weibull_c+self.weibull_h+2*self.weibull_e-3)/(self.weibull_c-self.weibull_h+1)))**((self.weibull_c-self.weibull_h+1)/2))**(-2/(self.weibull_c-self.weibull_h+1))
-        Cr=fc*self.bm*self.i*((self.Lwe*1e3)*npy.cos(self.alpha))**((self.weibull_c-self.weibull_h-1)/(self.weibull_c-self.weibull_h+1))*self.Z**((self.weibull_c-self.weibull_h-2*self.weibull_e+1)/(self.weibull_c-self.weibull_h+1))*(self.Dwe*1e3)**((self.weibull_c-self.weibull_h-3)/(self.weibull_c-self.weibull_h+1))
+        fc=0.377*self.material.mu_delta*1/((2**((self.material.weibull_c+self.material.weibull_h-1)/(self.material.weibull_c-self.material.weibull_h+1)))*(0.5**(2*self.material.weibull_e/(self.material.weibull_c-self.material.weibull_h+1))))*self.material.B1*((1-mu)**((self.material.weibull_c+self.material.weibull_h-3)/(self.material.weibull_c-self.material.weibull_h+1))/((1+mu)**(2*self.material.weibull_e/(self.material.weibull_c-self.material.weibull_h+1))))*(mu**(2/(self.material.weibull_c-self.material.weibull_h+1)))*(1+(1.04*((1-mu)/(1+mu))**((self.material.weibull_c+self.material.weibull_h+2*self.material.weibull_e-3)/(self.material.weibull_c-self.material.weibull_h+1)))**((self.material.weibull_c-self.material.weibull_h+1)/2))**(-2/(self.material.weibull_c-self.material.weibull_h+1))
+        Cr=fc*self.bm*self.i*((self.Lwe*1e3)*npy.cos(self.alpha))**((self.material.weibull_c-self.material.weibull_h-1)/(self.material.weibull_c-self.material.weibull_h+1))*self.Z**((self.material.weibull_c-self.material.weibull_h-2*self.material.weibull_e+1)/(self.material.weibull_c-self.material.weibull_h+1))*(self.Dwe*1e3)**((self.material.weibull_c-self.material.weibull_h-3)/(self.material.weibull_c-self.material.weibull_h+1))
         return Cr
     
     def EquivalentDynamicLoad(self,Fr,Fa=0):
@@ -288,7 +228,7 @@ class RadialRollerBearing(persistent.Persistent):
         
     def AdjustedLifeTime(self,Fr,n,Fa=0,S=0.9,T=40):
         # Durée de vie corrigée en millions de tour associée à une fiabilité de S% pour un roulement tournant à la vitesse n (rad/s) et à la température de l'huile T
-        a1=(1-self.c_gamma)*(npy.log(1/S)/npy.log(100/90))**(1/self.weibull_e)+self.c_gamma
+        a1=(1-self.material.c_gamma)*(npy.log(1/S)/npy.log(100/90))**(1/self.material.weibull_e)+self.material.c_gamma
         L10=self.BaseLifeTime(Fr,Fa)
         Pr=self.EquivalentDynamicLoad(Fr,Fa)
         C0r=self.BaseStaticLoad()
@@ -298,12 +238,11 @@ class RadialRollerBearing(persistent.Persistent):
         else:
             nu1=4500*(n*60/(2*npy.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
         
-        coeff_oil=self.O1.oil_kinematic_viscosity_curve[self.oil_name]
+        coeff_oil=self.oil.oil_kinematic_viscosity_curve
         nu=10**(10**(coeff_oil['A']*npy.log10(T)+coeff_oil['B']))-0.6
         kappa=nu/nu1
         #définition du paramètre de contamination
-        self.O1.OilContamination(self.Dpw)
-        ec=self.O1.ec
+        ec=self.oil.OilParameterContamination(self.Dpw,3)
         #calcul de la limite de charge en fatigue
         if self.Dpw<0.1:
             Cu=C0r/8.2
@@ -332,7 +271,6 @@ class RadialRollerBearing(persistent.Persistent):
                 d[k]=float(v)
             else:
                 d[k]=v
-        del d['O1']
 
         return d
     
@@ -451,18 +389,18 @@ class RadialRollerBearing(persistent.Persistent):
 
 class DrawnCupNeedleRollerBearing(RadialRollerBearing):
     #Douille à aiguilles
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,O1,bm=1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,O1,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
+    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
+        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
         
 class NeedleRollerBearing(RadialRollerBearing):
     #Cage à aiguilles
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,O1,bm=1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,O1,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
+    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
+        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
 
 class SphericalRollerBearing(RadialRollerBearing):
     #Roulement à rotule à rouleaux
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,O1,bm=1.15,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,O1,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
+    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1.15,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
+        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
         
 class BearingCombination():
     """
@@ -477,7 +415,7 @@ class BearingCombination():
         self.solutions=[]
        
     def OptimizerBearing(self,d,D,B,Fr,Fa,n,L10=None,C0r=None,Cr=None,Lnm=None,grade=['Gr_gn'],
-                         S=0.9,T=40,oil_name='iso_vg_100',nb_sol=1,maxi=None,mini=None,rsmin=None,typ='NF'):
+                         S=0.9,T=40,oil=oil_iso_vg_1500,material=material_iso,nb_sol=1,maxi=None,mini=None,rsmin=None,typ='NF'):
         
         err_default=0.05
         def def_inter(data):
@@ -565,13 +503,10 @@ class BearingCombination():
 
 
         #Analyse de détail des roulements
-        liste_rlts_detail=[]
-        list_obj=[]
         a_ED1_inf,b_ED1_inf=dico_rules[('E','D1','inf')]
         a_ED1_sup,b_ED1_sup=dico_rules[('E','D1','sup')]
         a_Fd1_inf,b_Fd1_inf=dico_rules[('F','d1','inf')]
         a_Fd1_sup,b_Fd1_sup=dico_rules[('F','d1','sup')]
-        O1=OilData()
         estim_masse=[]
         #Construction d'une fonctionnelle pour le tri afin d'engager une optimisation continue
         for [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup] in liste_sol_roller_iso:
@@ -591,7 +526,7 @@ class BearingCombination():
             [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup]=liste_sol_roller_iso[fonct_sort[i]]
             i+=1
             # Var X: (E,D1,d1)
-            R1=RadialRollerBearing('N',B,d,D,0,0,Lw,Dw,rsmin,0,0,0,1,0,O1)
+            R1=RadialRollerBearing('N',B,d,D,0,0,Lw,Dw,rsmin,0,0,0,1,0)
             def fun(x):
                 obj=0
                 F=x[0]-2*Dw
