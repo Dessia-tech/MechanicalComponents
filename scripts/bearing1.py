@@ -20,14 +20,13 @@ L10=63.71767661468127
 Fa=0
 Fr=3368
 N=249
-L10=10
+L10=1000
 
-C1.OptimizerBearing(d={'min':0.04,'max':0.10},D={'min':0.04,'max':0.15},B={'min':0.01,'max':0.08},
-                    Lnm={'min':L10,'max':100000*L10},
-                    Fr=Fr,Fa=Fa,n=N,mini=['D'],typ='NF')
+C1.OptimizerBearing(d={'min':0.02,'max':0.1},D={'min':0.04,'max':0.15},B={'min':0.01,'max':0.1},
+                    Lnm={'min':L10,'max':npy.inf},L10={'min':L10,'max':npy.inf},
+                    Fr=Fr,Fa=Fa,n=N,typ='NF',nb_sol=10)
 
-for i,b in enumerate(C1.solution):
-    print(b)
+for i,b in enumerate(C1.solutions):
 #    v=b.VolumeModel()
     b.FreeCADExport('Bearing_{}'.format(i))
     

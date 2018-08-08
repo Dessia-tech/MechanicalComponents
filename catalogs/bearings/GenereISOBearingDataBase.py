@@ -23,9 +23,31 @@ radial_clearance=pandas.DataFrame([[0,10,0,25,20,45,35,60,50,75,0,0],[10,24,0,25
 # =============================================================
 
 roller=roller*1e-3
+dico_roller={}
+for ind in roller.index:
+    Dw=roller['Dw'][ind]
+    Lw=roller['Lw'][ind]
+    rsmin=roller['rsmin'][ind]
+    rsmax=roller['rsmax'][ind]
+    if Dw not in dico_roller.keys():
+        dico_roller[Dw]={}
+    if Lw not in dico_roller[Dw].keys():
+        dico_roller[Dw][Lw]={}
+    if rsmin not in dico_roller[Dw][Lw].keys():
+        dico_roller[Dw][Lw][rsmin]={}
+    if rsmax not in dico_roller[Dw][Lw][rsmin].keys():
+        dico_roller[Dw][Lw][rsmin]=rsmax
+    
 radial_clearance.d_min=radial_clearance.d_min*1e-3
 radial_clearance.d_max=radial_clearance.d_max*1e-3
 radial_clearance[['Gr_g2_min','Gr_g2_max','Gr_gn_min','Gr_gn_max','Gr_g3_min','Gr_g3_max','Gr_g4_min','Gr_g4_max','Gr_g5_min','Gr_g5_max']]=radial_clearance[['Gr_g2_min','Gr_g2_max','Gr_gn_min','Gr_gn_max','Gr_g3_min','Gr_g3_max','Gr_g4_min','Gr_g4_max','Gr_g5_min','Gr_g5_max']]*1e-6
+dico_clearance={'Gr_g2':{},'Gr_g3':{},'Gr_g4':{},'Gr_g5':{},'Gr_gn':{}}
+for ind in radial_clearance.index:
+    for key in dico_clearance.keys():
+        if radial_clearance['d_min'][ind] not in dico_clearance[key].keys():
+            dico_clearance[key][radial_clearance['d_min'][ind]]={radial_clearance['d_max'][ind]:[radial_clearance[key+'_min'][ind],radial_clearance[key+'_max'][ind]]}
+        elif radial_clearance['d_max'][ind] not in dico_clearance[key][radial_clearance['d_min'][ind]].keys():
+            dico_clearance[key][radial_clearance['d_min'][ind]][radial_clearance['d_max'][ind]]=[radial_clearance[key+'_min'][ind],radial_clearance[key+'_max'][ind]]
 liste_serie=[serie0,serie1,serie2,serie3,serie4,serie7,serie8,serie9]
 tableau=[]
 dico_tri={}
