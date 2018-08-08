@@ -599,6 +599,8 @@ class BearingCombination():
                 R1.Update(x[2],x[1],x[0],F,Zmax)
                 l10=R1.BaseLifeTime(Fr,Fa)
                 obj+=(1/l10)**2
+                obj+=(x[0]-x[1])**2 #minimisation de la hauteur de l'épaulement externe
+                obj+=(F-x[2])**2 #minimisation de la hauteur de l'épaulement interne
                 return obj
             def ineg(x):
                 ine=[]
@@ -613,6 +615,7 @@ class BearingCombination():
                 ine.append(d1_sup-x[2])
                 ine.append(x[0]-x[1])
                 ine.append(x[1]-x[2])
+                ine.append((x[0]+F)/2-x[2])  #d1 inférieur au diamètre passant par l'axe des rouleaux
                 return ine
             cons = ({'type': 'ineq','fun' : ineg})
             valid_optim=1
