@@ -475,12 +475,9 @@ class BearingCombination():
     def __init__(self):
         
         self.solutions=[]
-    
+       
     def OptimizerBearing(self,d,D,B,Fr,Fa,n,L10=None,C0r=None,Cr=None,Lnm=None,grade=['Gr_gn'],
-                         S=0.9,T=40,oil_name='iso_vg_100',nb_sol=1,typ='NF'):
-        
-        if Lnm==None and L10==None:
-            L10={'min':100,'max':npy.inf}
+                         S=0.9,T=40,oil_name='iso_vg_100',nb_sol=1,maxi=None,mini=None,rsmin=None,typ='NF'):
         
         err_default=0.05
         def def_inter(data):
