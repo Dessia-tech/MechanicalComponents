@@ -864,7 +864,7 @@ class MeshAssembly():
         
         mass = 0.
         for i,df in enumerate(DF):
-            mass +=  self.gear_width[i] * self.material[i].volumic_mass* math.pi * DF[i]**2
+            mass +=  self.gear_width[i] * self.material[i].volumic_mass* math.pi * (0.5*DF[i])**2
         return mass
 
     def FreeCADExport(self, file_path, centers = {}, axis = (1,0,0), export_types=['fcstd'], python_path = 'python',
