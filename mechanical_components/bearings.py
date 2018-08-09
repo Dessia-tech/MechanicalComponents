@@ -148,7 +148,8 @@ material_iso=Material()
     
 class RadialRollerBearing:
     #Roulement à rouleaux
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1.1,oil=oil_iso_vg_1500,material=material_iso):
+    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i, 
+                 alpha,bm=1.1, oil=oil_iso_vg_1500, material=material_iso):
         self.typ=typ
         self.B=B
         self.d=d
@@ -407,18 +408,34 @@ class RadialRollerBearing:
 
 class DrawnCupNeedleRollerBearing(RadialRollerBearing):
     #Douille à aiguilles
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
+    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
+                 alpha,bm=1, weibull_e=9/8, weibull_c=31/3, weibull_h=7/3,
+                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
+                 oil_name='iso_vg_100'):
+        RadialRollerBearing.__init__(typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,
+                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
+                                     weibull_h, B1, mu_delta, c_gamma, oil_name)
         
 class NeedleRollerBearing(RadialRollerBearing):
     #Cage à aiguilles
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
+    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
+                 alpha, bm=1, weibull_e=9/8, weibull_c=31/3, weibull_h=7/3,
+                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
+                 oil_name='iso_vg_100'):
+        RadialRollerBearing.__init__(typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,
+                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
+                                     weibull_h, B1, mu_delta, c_gamma, oil_name)
 
 class SphericalRollerBearing(RadialRollerBearing):
     #Roulement à rotule à rouleaux
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1.15,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
+    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
+                 alpha,bm=1.15, weibull_e=9/8, weibull_c=31/3, weibull_h=7/3,
+                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
+                 oil_name='iso_vg_100'):
+        RadialRollerBearing.__init__(typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,
+                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
+                                     weibull_h, B1, mu_delta, c_gamma,
+                                     oil_name)
         
 class BearingCombination:
     """
@@ -432,8 +449,10 @@ class BearingCombination:
         
         self.solutions=[]
        
-    def OptimizerBearing(self,d,D,B,Fr,Fa,n,L10=None,C0r=None,Cr=None,Lnm=None,grade=['Gr_gn'],
-                         S=0.9,T=40,oil=oil_iso_vg_1500,material=material_iso,nb_sol=1,maxi=None,mini=None,rsmin=None,typ='NF'):
+    def OptimizerBearing(self, d, D, B, Fr, Fa, n, L10=None, C0r=None, Cr=None,
+                         Lnm=None, grade=['Gr_gn'], S=0.9, T=40,
+                         oil=oil_iso_vg_1500, material=material_iso,
+                         nb_sol=1, maxi=None, mini=None, rsmin=None, typ='NF'):
         
         err_default=0.05
         def def_inter(data):
