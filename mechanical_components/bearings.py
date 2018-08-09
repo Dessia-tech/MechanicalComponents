@@ -80,6 +80,9 @@ class Oil:
         self.oil_kinematic_viscosity_curve=self.KinematicViscosity(oil_data)
         self.dict_oil_contamination=dict_oil_contamination
     
+    def Dict(self):
+        return self.__dict__
+    
     def FunCoeff(self,x,data,type_x='Linear',type_y='Linear'):
         if type_x=='Log': 
             x=npy.log10(x)
@@ -129,6 +132,9 @@ class Material:
         self.B1=B1
         self.mu_delta=mu_delta
         self.c_gamma=c_gamma
+
+    def Dict(self):
+        return self.__dict__
 
 material_iso=Material()
     
@@ -291,6 +297,8 @@ class RadialRollerBearing:
             else:
                 d[k]=v
 
+        d['oil'] = self.oil.Dict()
+        d['material'] = self.material.Dict()
         return d
     
     def InternalRingContour(self):
@@ -452,7 +460,8 @@ class BearingCombination:
     def OptimizerBearing(self, d, D, B, Fr, Fa, n, L10=None, C0r=None, Cr=None,
                          Lnm=None, grade=['Gr_gn'], S=0.9, T=40,
                          oil=oil_iso_vg_1500, material=material_iso,
-                         nb_sol=1, maxi=None, mini=None, rsmin=None, typ='NF'):
+                         nb_sol=1, maxi=None, mini=None, rsmin=None, typ='NF',
+                         verbose = False):
         
         err_default=0.05
         def def_inter(data):
@@ -632,4 +641,5 @@ class BearingCombination:
                     self.solutions.append(R1)
                     if len(self.solutions)<nb_sol:
                         liminf_lifetime=False
-                    print('Solution roulement convergée n°{} avec L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.solutions),l10,D,d,B,Dw,Zmax))
+                    if verbose:
+                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.solutions),l10,D,d,B,Dw,Zmax))
