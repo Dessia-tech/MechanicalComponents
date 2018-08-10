@@ -18,7 +18,10 @@ import math
 #import volmdlr.primitives3D as primitives3D
 #import volmdlr.primitives2D as primitives2D
 
-import persistent
+import pkg_resources
+#import persistent
+import pandas
+
 #from pandas.plotting import scatter_matrix
 #import matplotlib.pyplot as plt
 #from dessia_common import ResultsDBClient
@@ -37,6 +40,7 @@ from scipy.optimize import minimize,fsolve
 ##Ordre de rangement de dico_rules: (var_x, var_y, type) /[coeff_a, coeff_b] le type peu être soit inf soit sup
 from catalogs.dico_bearings_ISO import dico_rlts_iso,dico_roller_iso,dico_radial_clearance_iso,dico_rules
 
+
 #oil_kinematic_viscosity
 iso_vg_1500={'data':[[47.21238870380181,922.5481847223729],[76.41592953982855,191.5471560481642],[110.70796589064605,54.90426918109079]],'x':'Linear','y':'Log'}
 iso_vg_1000={'data':[[41.68141577143845,877.2173704075102],[62.477877333256444,261.78400435754804],[100.53097486106454,57.74149074755608]],'x':'Linear','y':'Log'}
@@ -53,6 +57,7 @@ iso_vg_22={'data':[[30.619469906711767,32.840621976693456],[57.38937973338331,12
 iso_vg_15={'data':[[23.982300928318086,28.519522512213047],[44.115044695711276,13.126893028298408],[77.07964670872863,4.889651598606255]],'x':'Linear','y':'Log'}
 iso_vg_10={'data':[[25.088495514790754,17.231530421142708],[46.548673619984115,8.092752773048398],[66.01769875891955,4.649391098015179]],'x':'Linear','y':'Log'}
 
+
 #Ordre de rangement du coefficient de contamination de l'huile: Dpw mini/ Dpw maxi/ grade/ coeff de contamination
 dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},0.1:{npy.inf:{1:1,2:0.85,3:0.7,4:0.5,5:0.3,6:0.05,7:0}}}
 
@@ -60,6 +65,9 @@ class Oil:
     def __init__(self,oil_data,dict_oil_contamination):
         self.oil_kinematic_viscosity_curve=self.KinematicViscosity(oil_data)
         self.dict_oil_contamination=dict_oil_contamination
+    
+    def Dict(self):
+        return self.__dict__
     
     def FunCoeff(self,x,data,type_x='Linear',type_y='Linear'):
         if type_x=='Log': 
@@ -111,6 +119,9 @@ class Material:
         self.mu_delta=mu_delta
         self.c_gamma=c_gamma
 
+    def Dict(self):
+        return self.__dict__
+
 material_iso=Material()
     
 # =============================================================
@@ -127,9 +138,10 @@ material_iso=Material()
 #    
 #class RadialBallBearing(persistent.Persistent):
     
-class RadialRollerBearing(persistent.Persistent):
+class RadialRollerBearing:
     #Roulement à rouleaux
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1.1,oil=oil_iso_vg_1500,material=material_iso):
+    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i, 
+                 alpha,bm=1.1, oil=oil_iso_vg_1500, material=material_iso):
         self.typ=typ
         self.B=B
         self.d=d
@@ -246,6 +258,7 @@ class RadialRollerBearing(persistent.Persistent):
         else:
             Cu=C0r/8.2*(100/(self.Dpw*1e3))**0.3
         #calcul du coefficient a_iso
+        # TODO: vérifier ces calculs: a_iso est souvent un nombre complexe, ce qui entraine des NaN!
         if kappa<0.4:
             a_iso=0.1*((1-(1.5859-1.3993/(kappa**0.054381))*((ec*Cu/Pr)**0.4))**(-9.185))
         elif kappa<1:
@@ -253,6 +266,7 @@ class RadialRollerBearing(persistent.Persistent):
         else:
             kappa=min(kappa,4)
             a_iso=0.1*((1-(1.5859-1.2348/(kappa**0.071739))*((ec*Cu/Pr)**0.4))**(-9.185))
+#            print(kappa,ec,Cu,Pr, a_iso)
         a_iso=min(50,a_iso)
         #calcul de la durée de vie corrigée
         Lnm=a1*a_iso*L10
@@ -270,6 +284,8 @@ class RadialRollerBearing(persistent.Persistent):
             else:
                 d[k]=v
 
+        d['oil'] = self.oil.Dict()
+        d['material'] = self.material.Dict()
         return d
     
     def InternalRingContour(self):
@@ -387,20 +403,36 @@ class RadialRollerBearing(persistent.Persistent):
 
 class DrawnCupNeedleRollerBearing(RadialRollerBearing):
     #Douille à aiguilles
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
+    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
+                 alpha,bm=1, weibull_e=9/8, weibull_c=31/3, weibull_h=7/3,
+                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
+                 oil_name='iso_vg_100'):
+        RadialRollerBearing.__init__(typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,
+                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
+                                     weibull_h, B1, mu_delta, c_gamma, oil_name)
         
 class NeedleRollerBearing(RadialRollerBearing):
     #Cage à aiguilles
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
+    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
+                 alpha, bm=1, weibull_e=9/8, weibull_c=31/3, weibull_h=7/3,
+                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
+                 oil_name='iso_vg_100'):
+        RadialRollerBearing.__init__(typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,
+                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
+                                     weibull_h, B1, mu_delta, c_gamma, oil_name)
 
 class SphericalRollerBearing(RadialRollerBearing):
     #Roulement à rotule à rouleaux
-    def __init__(self,typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm=1.15,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05,oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(typ,B,d,D,d1,D1,Lw,Dw,r_roller,E,F,Z,i,alpha,bm,weibull_e,weibull_c,weibull_h,B1,mu_delta,c_gamma,oil_name)
+    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
+                 alpha,bm=1.15, weibull_e=9/8, weibull_c=31/3, weibull_h=7/3,
+                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
+                 oil_name='iso_vg_100'):
+        RadialRollerBearing.__init__(typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,
+                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
+                                     weibull_h, B1, mu_delta, c_gamma,
+                                     oil_name)
         
-class BearingCombination():
+class BearingCombination:
     """
     Objet avec 3 fonctions de selection des roulements cylindriques
    - Combinatoire sur les dimensions externe ISO
@@ -412,8 +444,11 @@ class BearingCombination():
         
         self.solutions=[]
        
-    def OptimizerBearing(self,d,D,B,Fr,Fa,n,L10=None,C0r=None,Cr=None,Lnm=None,grade=['Gr_gn'],
-                         S=0.9,T=70,oil=oil_iso_vg_1500,material=material_iso,nb_sol=1,maxi=None,mini=None,rsmin=None,typ='NF'):
+    def OptimizerBearing(self, d, D, B, Fr, Fa, n, L10=None, C0r=None, Cr=None,
+                         Lnm=None, grade=['Gr_gn'], S=0.9, T=40,
+                         oil=oil_iso_vg_1500, material=material_iso,
+                         nb_sol=1, maxi=None, mini=None, rsmin=None, typ='NF',
+                         verbose = False):
         
         err_default=0.05
         def def_inter(data):
@@ -519,8 +554,14 @@ class BearingCombination():
         #Optimisation Minimize du détail du roulement (E,D1 et d1)
         fonct_sort=npy.argsort(estim_masse)
         liminf_lifetime=False
+        # BUG: rien n'empeche i de dépasser du tableau!
+        # Vérifier ma correction
+        
+        # BUG: 1 fois sur 4 pas de solution!!!
+        
         i=0
-        while liminf_lifetime==False:
+        iter_max = len(liste_sol_roller_iso)
+        while (not liminf_lifetime) and (i<iter_max):
             [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup]=liste_sol_roller_iso[fonct_sort[i]]
             i+=1
             # Var X: (E,D1,d1)
@@ -587,4 +628,5 @@ class BearingCombination():
                     self.solutions.append(R1)
                     if len(self.solutions)<nb_sol:
                         liminf_lifetime=False
-                    print('Solution roulement convergée n°{} avec L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.solutions),l10,D,d,B,Dw,Zmax))
+                    if verbose:
+                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.solutions),l10,D,d,B,Dw,Zmax))

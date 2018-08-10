@@ -864,7 +864,7 @@ class MeshAssembly():
         
         mass = 0.
         for i,df in enumerate(DF):
-            mass +=  self.gear_width[i] * self.material[i].volumic_mass* math.pi * DF[i]**2
+            mass +=  self.gear_width[i] * self.material[i].volumic_mass* math.pi * (0.5*DF[i])**2
         return mass
 
     def FreeCADExport(self, file_path, centers = {}, axis = (1,0,0), export_types=['fcstd'], python_path = 'python',
@@ -1229,9 +1229,12 @@ class ContinuousMeshesAssemblyOptimizer:
 
 
 class MeshAssemblyOptimizer:
-    def __init__(self,connections,gear_speed,center_distance,Z=None,transverse_pressure_angle=None,
-                 helix_angle=None,gear_width=None,frequency=[[0,0]],coefficient_profile_shift=None,
-                 rack_list=None,rack_choice=None,material=None,torque=None,cycle=None,safety_factor=1):
+    def __init__(self, connections, gear_speed, center_distance, Z=None,
+                 transverse_pressure_angle=None, helix_angle=None,
+                 gear_width=None, frequency=[[0,0]],
+                 coefficient_profile_shift=None, rack_list=None,
+                 rack_choice=None, material=None, torque=None, cycle=None,
+                 safety_factor=1):
         # Valeur par defaut
         list_gear=[]
         for gs in connections:
@@ -1383,7 +1386,7 @@ class MeshAssemblyOptimizer:
                 Z[engr2]=[max(Z2_min,Z[engr2][0]),min(Z2_max,Z[engr2][1])]
         return Z
 
-    def AnalyzeCombination(self):
+    def AnalyzeCombination(self, verbose = False):
         n1=self.node_init
         liste_node=[n1]
         for (n1,n2) in self.connections_dfs:
@@ -1543,9 +1546,11 @@ class MeshAssemblyOptimizer:
                 incr+=1
             dt.NextNode(valid)
         if incr>1:
-            print('Number of combination found: {}'.format(incr))
+            if verbose:
+                print('Number of combination found: {}'.format(incr))
         else:
-            print('No teeth combination found: increase center distances')
+            if verbose:
+                print('No teeth combination found: increase center distances')
 
 
     def Optimize(self,nb_sol=1,num_sol = None, verbose = False):
