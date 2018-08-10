@@ -1388,23 +1388,25 @@ class MeshAssemblyOptimizer:
 
     def AnalyzeCombination(self, verbose = False):
         n1=self.node_init
-        liste_node=[n1]
+        list_node=[n1]
         for (n1,n2) in self.connections_dfs:
-            if n2 not in liste_node:
-                liste_node.append(n2)
+            if n2 not in list_node:
+                list_node.append(n2)
                 
         np=[]
-        liste_gear=[]
-        for engr_num in liste_node:
+        list_gear=[]
+        for engr_num in list_node:
             np.append(self.Z[engr_num][1]-self.Z[engr_num][0]+1)
-            liste_gear.append(npy.arange(self.Z[engr_num][0],self.Z[engr_num][1]+1))
+            list_gear.append(npy.arange(self.Z[engr_num][0],self.Z[engr_num][1]+1))
         np.extend([self.nb_rack]*self.nb_gear)
 
-        liste_rack=list(self.rack_list.keys())
+        list_rack=list(self.rack_list.keys())
+#        print(list_gear)
+#        print(list_node)
         
         demul_int_min=1/9.
         demul_int_max=9
-        
+#        print(np)
         dt=tools.RegularDecisionTree(np)
         
         incr=0
@@ -1417,15 +1419,19 @@ class MeshAssemblyOptimizer:
             return b
         while not dt.finished:
             valid=True
+#            print(dt.current_node)
+            Z_node = [list_gear[i][node_value] for i,node_value in enumerate(dt.current_node[:self.nb_gear])]
+#            print('Znode: ', Z_node)
             if (dt.current_depth<=(self.nb_gear-1)) and (dt.current_depth>0):
-                z1=liste_gear[dt.current_depth-1][dt.current_node[dt.current_depth-1]]
-                z2=liste_gear[dt.current_depth][dt.current_node[dt.current_depth]]
+                z1=list_gear[dt.current_depth-1][dt.current_node[dt.current_depth-1]]
+                z2=list_gear[dt.current_depth][dt.current_node[dt.current_depth]]
                 #analyse ACV engrenage 2 à 2
                 if (pgcd(z1,z2)!=1):
                     valid=False
                 #analyse demul interne
                 if valid:
                     demul=z1/z2
+#                    print(demul)
                     if (demul > demul_int_max) or (demul < demul_int_min):
                         valid=False
                 #analyse ACV de l'ensemble des engrenages entre eux
@@ -1437,25 +1443,42 @@ class MeshAssemblyOptimizer:
 #                            valid=False
                 #analyse des vitesses du CDC
                 if valid:
-                    v0_min,v0_max=self.gear_speed[liste_node[0]]
-                    z0=liste_gear[0][dt.current_node[0]]
-                    for engr_index,engr_num in enumerate(liste_node[0:dt.current_depth]):
-                        if engr_num in self.gear_speed.keys():
-                            z=liste_gear[engr_index][dt.current_node[engr_index]]
-                            demul=z0/z
-                            vp_min=self.gear_speed[engr_num][0]/demul
-                            vp_max=self.gear_speed[engr_num][1]/demul
-                            v0_min=max(v0_min,vp_min)
-                            v0_max=min(v0_max,vp_max)
-                            if (v0_min>v0_max):
-                                valid=False
-                                break
+#                    print('@@@@@@@@@@@@@@@@@@@')
+                    v0_min, v0_max = self.gear_speed[list_node[0]]
+                    z0 = list_gear[0][dt.current_node[0]]
+#                    print('z0', z0)
+#                    print(list_node[0:dt.current_depth+1])
+                    for engr_index, engr_num in enumerate(list_node[0:dt.current_depth+1]):
+#                        print('###')
+                        if engr_index>0:# No need of checking input
+                            if engr_num in self.gear_speed.keys():
+                                z=list_gear[engr_index][dt.current_node[engr_index]]
+    #                            print('z', z)
+                                demul=z0/z
+    #                            print(demul, z, z0)
+                                vsi_min=self.gear_speed[engr_num][0] # Specified speed
+                                vsi_max=self.gear_speed[engr_num][1]
+                                
+                                vai_min = v0_min*demul # Actual speed
+                                vai_max = v0_max*demul
+                                
+    #                            vs_min = self.gear_speed
+    #                            print(demul)
+    #                            print(vsi_min, vsi_max, vai_min, vai_max)
+                                msi = 0.5 * (vsi_min+vsi_min)
+                                mai = 0.5* (vai_min + vai_max)
+                                dsi = vsi_max-vsi_min
+                                dai = vai_max-vai_min
+                                if (abs(msi-mai)>0.5*(dai+dsi)):
+                                    valid=False
+    #                                print(valid)
+                                    break
                 #analyse frequence
                 if valid:
                     for freq in self.frequency:
-                        zm=liste_gear[0][dt.current_node[0]]
+                        zm=list_gear[0][dt.current_node[0]]
                         for engr_num,engr_ind in enumerate(dt.current_node):
-                            z=liste_gear[engr_num][dt.current_node[engr_num]]
+                            z=list_gear[engr_num][dt.current_node[engr_num]]
                             f_min=(2*npy.pi*v0_min*zm/z)/z
                             f_max=(2*npy.pi*v0_max*zm/z)/z
                             if (max(f_min,f_max)>freq[0]) and (min(f_min,f_max)<freq[1]):
@@ -1464,8 +1487,8 @@ class MeshAssemblyOptimizer:
 
             elif (dt.current_depth>(self.nb_gear-1)):
                 # Analyse de la faisabilité des cremailleres
-                rack_num=liste_rack[dt.current_node[-1]]
-                rack_pos=liste_node[dt.current_depth-self.nb_gear]
+                rack_num=list_rack[dt.current_node[-1]]
+                rack_pos=list_node[dt.current_depth-self.nb_gear]
                 if rack_num not in self.rack_choice[rack_pos]:
                     valid=False
                     
@@ -1480,13 +1503,13 @@ class MeshAssemblyOptimizer:
                 module_minmax={}
                 module_inf,module_sup=(0,npy.inf)
                 for tree_pos,tree_val in enumerate(dt.current_node[0:self.nb_gear]):
-                    engr_num=liste_node[tree_pos]
-                    rack_num=liste_rack[dt.current_node[tree_pos+self.nb_gear]]
+                    engr_num=list_node[tree_pos]
+                    rack_num=list_rack[dt.current_node[tree_pos+self.nb_gear]]
                     module_minmax[engr_num]=self.rack_list[rack_num]['module']
                     module_inf,module_sup=(max(module_inf,module_minmax[engr_num][0]),min(module_sup,module_minmax[engr_num][1]))
                 for tree_pos,tree_val in enumerate(dt.current_node[0:self.nb_gear]):
-                    z=liste_gear[tree_pos][tree_val]
-                    engr_num=liste_node[tree_pos]
+                    z=list_gear[tree_pos][tree_val]
+                    engr_num=list_node[tree_pos]
                     liste_DF_min[engr_num]=z*module_inf
                 liste_pente_cd_module=[]
                 for set_num,(eng1,eng2) in enumerate(self.connections):
@@ -1530,10 +1553,10 @@ class MeshAssemblyOptimizer:
             if (dt.current_depth==(self.nb_gear+self.nb_gear-1)) & (valid==True):
                 gear={}
                 rack={}
-                for n in liste_node:
-                    i=liste_node.index(n)
-                    gear[n]=liste_gear[i][dt.current_node[i]]
-                    rack[n]=liste_rack[dt.current_node[i+self.nb_gear]]
+                for n in list_node:
+                    i=list_node.index(n)
+                    gear[n]=list_gear[i][dt.current_node[i]]
+                    rack[n]=list_rack[dt.current_node[i+self.nb_gear]]
                 # TODO: nom plus explicite que Temp!!!!!
                 Temp={}
                 Temp['Z']=gear
@@ -1544,6 +1567,7 @@ class MeshAssemblyOptimizer:
                 self.fonctionnel.append(fonctionnel)
                 self.plex_calcul.append(Temp)
                 incr+=1
+#            print('valid sent to dt', valid)
             dt.NextNode(valid)
         if incr>1:
             if verbose:
@@ -1553,7 +1577,7 @@ class MeshAssemblyOptimizer:
                 print('No teeth combination found: increase center distances')
 
 
-    def Optimize(self,nb_sol=1,num_sol = None, verbose = False):
+    def Optimize(self, nb_sol=1, num_sol = None, verbose = False):
         
         compt_nb_sol=0
         if num_sol==None:

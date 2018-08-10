@@ -54,26 +54,34 @@ MAO2=meshes.MeshAssemblyOptimizer(connections = list_gear_set2,
 
 
 #Recherche triée des nb_sol architecture ayant un entraxe mini (nb_sol=-1 pour analyser l'ensemble des solutions)
-MAO1.SearchOptimumCD(nb_sol=nsols, verbose = True)
-MAO2.SearchOptimumCD(nb_sol=nsols, verbose = True)
+MAO1.Optimize(nb_sol=nsols, verbose = True)
+MAO2.Optimize(nb_sol=nsols, verbose = True)
 
 ratios1 = []
+cd1 = []
+w1 = []
 for sol in MAO1.solutions:
     Z1 = sol.meshes[0][0].Z
     Z2 = sol.meshes[0][1].Z
     ratios1.append(Z1/Z2)
-    
+    cd1.append(0.5*(sol.DF[0][0]+sol.DF[0][1]))
 ratio1_min = list_speed1[1][0]/list_speed1[0][1]
 ratio1_max = list_speed1[1][1]/list_speed1[0][0]
-    
+cd1_min = list_cd1[0][0]
+cd1_max = list_cd1[0][1]
+
 ratios2 = []
+cd2 = []
 for sol in MAO2.solutions:
     Z1 = sol.meshes[0][0].Z
     Z2 = sol.meshes[0][1].Z
     ratios2.append(Z1/Z2)
+    cd2.append(0.5*(sol.DF[0][0]+sol.DF[0][1]))
     
 ratio2_min = list_speed2[1][0]/list_speed2[0][1]
 ratio2_max = list_speed2[1][1]/list_speed2[0][0]
+cd2_min = list_cd2[0][0]
+cd2_max = list_cd2[0][1]
     
 ratios = []
 for r1,r2 in it.product(ratios1, ratios2):
@@ -84,9 +92,21 @@ ratio_max = ratio1_max * ratio2_max
 
     
 f, subplots = plt.subplots(3, 1, sharex = True)
-subplots[0].hist(ratios1, bins = int(nsols/15))
+subplots[0].hist(ratios1, bins = int(nsols/20))
 subplots[0].plot([ratio1_min, ratio1_max], [0,0], 'o-r')
-subplots[1].hist(ratios2, bins = int(nsols/15))
+subplots[0].set_xlabel('Ratio 1')
+subplots[1].hist(ratios2, bins = int(nsols/20))
 subplots[1].plot([ratio2_min, ratio2_max], [0,0], 'o-r')
+subplots[1].set_xlabel('Ratio 2')
 subplots[2].hist(ratios, bins = 200)
 subplots[2].plot([ratio_min, ratio_max], [0,0], 'o-r')
+subplots[2].set_xlabel('ratio1 * ratio2')
+
+
+f, subplots = plt.subplots(2, 1, sharex = True)
+subplots[0].hist(cd1, bins = int(nsols/10))
+subplots[0].plot([cd1_min, cd1_max], [0,0], 'o-r')
+subplots[0].set_xlabel('Center distance 1')
+subplots[1].hist(cd2, bins = int(nsols/10))
+subplots[1].plot([cd2_min, cd2_max], [0,0], 'o-r')
+subplots[1].set_xlabel('Center distance 2')
