@@ -18,9 +18,9 @@ import math
 #import volmdlr.primitives3D as primitives3D
 #import volmdlr.primitives2D as primitives2D
 
-import pkg_resources
+#import pkg_resources
 #import persistent
-import pandas
+#import pandas
 
 #from pandas.plotting import scatter_matrix
 #import matplotlib.pyplot as plt
@@ -31,28 +31,58 @@ import pandas
 from scipy.optimize import minimize,fsolve
 
 
-from catalogs.dico_bearings_ISO import dico_rlts_iso,dico_roller_iso,dico_radial_clearance_iso,dico_rules
+from mechanical_components.catalogs.dico_bearings_ISO \
+    import dico_rlts_iso,dico_roller_iso,dico_radial_clearance_iso,dico_rules
 
 
 #oil_kinematic_viscosity
-iso_vg_1500={'data':[[47.21238870380181,922.5481847223729],[76.41592953982855,191.5471560481642],[110.70796589064605,54.90426918109079]],'x':'Linear','y':'Log'}
-iso_vg_1000={'data':[[41.68141577143845,877.2173704075102],[62.477877333256444,261.78400435754804],[100.53097486106454,57.74149074755608]],'x':'Linear','y':'Log'}
-iso_vg_680={'data':[[38.80530942959304,777.3038394524846],[57.168142067138206,251.441902731903],[89.46902691125547,61.96159004047747]],'x':'Linear','y':'Log'}
-iso_vg_460={'data':[[36.15044283907511,580.3315115122488],[59.159291488756054,159.77215436382392],[85.48672598293739,53.80881018274548]],'x':'Linear','y':'Log'}
-iso_vg_320={'data':[[32.16814191075703,551.8160309554283],[57.38937973338331,131.93199565920736],[81.06194763704671,48.65076991453211]],'x':'Linear','y':'Log'}
-iso_vg_220={'data':[[29.95575273781169,407.8526478060212],[56.725664649565616,96.53454045940936],[83.05309705866458,35.24081769455843]],'x':'Linear','y':'Log'}
-iso_vg_150={'data':[[27.964601231111455,307.58489032135725],[50.97345196587479,89.9597273365993],[87.25663773831015,23.313898800373792]],'x':'Linear','y':'Log'}
-iso_vg_100={'data':[[33.05309674590221,148.89034266049572],[60.7079655778837,41.82579554586569],[91.23893866662823,15.115797660575524]],'x':'Linear','y':'Log'}
-iso_vg_68={'data':[[29.95575273781169,113.42390186278217],[56.94690231581072,34.19139868782362],[89.91150432882806,11.749567781125915]],'x':'Linear','y':'Log'}
-iso_vg_46={'data':[[29.070795817584123,76.56429373059628],[60.48672582655621,21.946066333596434],[99.4247781895095,7.316992362396092]],'x':'Linear','y':'Log'}
-iso_vg_32={'data':[[27.52212381353886,56.0220352459023],[58.27433665361086,17.058761946001017],[82.16814222351938,8.510952177980519]],'x':'Linear','y':'Log'}
-iso_vg_22={'data':[[30.619469906711767,32.840621976693456],[57.38937973338331,12.481883087082235],[90.79646124905564,4.939173694948054]],'x':'Linear','y':'Log'}
-iso_vg_15={'data':[[23.982300928318086,28.519522512213047],[44.115044695711276,13.126893028298408],[77.07964670872863,4.889651598606255]],'x':'Linear','y':'Log'}
-iso_vg_10={'data':[[25.088495514790754,17.231530421142708],[46.548673619984115,8.092752773048398],[66.01769875891955,4.649391098015179]],'x':'Linear','y':'Log'}
+iso_vg_1500={'data':[[47.21238870380181,922.5481847223729],
+                     [76.41592953982855,191.5471560481642],
+                     [110.70796589064605,54.90426918109079]],'x':'Linear','y':'Log'}
+iso_vg_1000={'data':[[41.68141577143845,877.2173704075102],
+                     [62.477877333256444,261.78400435754804],
+                     [100.53097486106454,57.74149074755608]],'x':'Linear','y':'Log'}
+iso_vg_680={'data':[[38.80530942959304,777.3038394524846],
+                    [57.168142067138206,251.441902731903],
+                    [89.46902691125547,61.96159004047747]],'x':'Linear','y':'Log'}
+iso_vg_460={'data':[[36.15044283907511,580.3315115122488],
+                    [59.159291488756054,159.77215436382392],
+                    [85.48672598293739,53.80881018274548]],'x':'Linear','y':'Log'}
+iso_vg_320={'data':[[32.16814191075703,551.8160309554283],
+                    [57.38937973338331,131.93199565920736],
+                    [81.06194763704671,48.65076991453211]],'x':'Linear','y':'Log'}
+iso_vg_220={'data':[[29.95575273781169,407.8526478060212],
+                    [56.725664649565616,96.53454045940936],
+                    [83.05309705866458,35.24081769455843]],'x':'Linear','y':'Log'}
+iso_vg_150={'data':[[27.964601231111455,307.58489032135725],
+                    [50.97345196587479,89.9597273365993],
+                    [87.25663773831015,23.313898800373792]],'x':'Linear','y':'Log'}
+iso_vg_100={'data':[[33.05309674590221,148.89034266049572],
+                    [60.7079655778837,41.82579554586569],
+                    [91.23893866662823,15.115797660575524]],'x':'Linear','y':'Log'}
+iso_vg_68={'data':[[29.95575273781169,113.42390186278217],
+                   [56.94690231581072,34.19139868782362],
+                   [89.91150432882806,11.749567781125915]],'x':'Linear','y':'Log'}
+iso_vg_46={'data':[[29.070795817584123,76.56429373059628],
+                   [60.48672582655621,21.946066333596434],
+                   [99.4247781895095,7.316992362396092]],'x':'Linear','y':'Log'}
+iso_vg_32={'data':[[27.52212381353886,56.0220352459023],
+                   [58.27433665361086,17.058761946001017],
+                   [82.16814222351938,8.510952177980519]],'x':'Linear','y':'Log'}
+iso_vg_22={'data':[[30.619469906711767,32.840621976693456],
+                   [57.38937973338331,12.481883087082235],
+                   [90.79646124905564,4.939173694948054]],'x':'Linear','y':'Log'}
+iso_vg_15={'data':[[23.982300928318086,28.519522512213047],
+                   [44.115044695711276,13.126893028298408],
+                   [77.07964670872863,4.889651598606255]],'x':'Linear','y':'Log'}
+iso_vg_10={'data':[[25.088495514790754,17.231530421142708],
+                   [46.548673619984115,8.092752773048398],
+                   [66.01769875891955,4.649391098015179]],'x':'Linear','y':'Log'}
 
 
 #Ordre de rangement du coefficient de contamination de l'huile: Dpw mini/ Dpw maxi/ grade/ coeff de contamination
-dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},0.1:{npy.inf:{1:1,2:0.85,3:0.7,4:0.5,5:0.3,6:0.05,7:0}}}
+dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},
+                        0.1:{npy.inf:{1:1,2:0.85,3:0.7,4:0.5,5:0.3,6:0.05,7:0}}}
 
 class Oil:
     def __init__(self,oil_data,dict_oil_contamination):
@@ -357,6 +387,79 @@ class RadialRollerBearing:
         ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{2:self.r_roller,3:self.r_roller},False).primitives)
         return ref
         
+    def PlotData(self, heights, x, width, labels = True):
+        transversal_plot_data = []
+        axial_position_data = []
+        
+        component_height = self.D-self.d
+                
+        # TODO Hypothethis = y_roller = 0.5*(d+D) to check
+        y_roller = 0.5* (self.d + self.D)
+
+        # interface of upper section
+        axial_position_data.append({'type' : 'rect',
+                            'x' : x - 0.5 * self.B,
+                            'y' : heights[0] + self.d  ,
+                            'width' : self.B,
+                            'height' : component_height,
+                            'color' : (0, 0, 0),
+                            'size' : 1,
+                            'dash' : 'none'})
+            
+        # Roller of upper section
+        axial_position_data.append({'type' : 'rect',
+                            'x' : x - 0.5*self.Lw,
+                            'y' : heights[0] + y_roller,
+                            'width' : self.Lw,
+                            'height' : component_height,
+                            'color' : (0, 0, 0),
+                            'size' : 1,
+                            'dash' : 'none'})
+
+
+        # interface of lower section
+        axial_position_data.append({'type' : 'rect',
+                            'x' : x - 0.5 * self.B,
+                            'y' : heights[0] - self.D  ,
+                            'width' : self.B,
+                            'height' : component_height,
+                            'color' : (0, 0, 0),
+                            'size' : 1,
+                            'dash' : 'none'})
+            
+        # Roller of upper section
+        axial_position_data.append({'type' : 'rect',
+                            'x' : x - 0.5*self.Lw,
+                            'y' : heights[0] - y_roller,
+                            'width' : self.Lw,
+                            'height' : component_height,
+                            'color' : (0, 0, 0),
+                            'size' : 1,
+                            'dash' : 'none'})
+                    
+            
+                    
+        
+        transversal_plot_data.append({'type' : 'circle',
+                                  'cx' : y,
+                                  'cy' : z,
+                                  'r' : self.inner_radius,
+                                  'color' : [0, 0, 0],
+                                  'size' : 1,
+                                  'group' : 3,
+                                  'dash' : 'none',})
+            
+        transversal_plot_data.append({'type' : 'circle',
+                                  'cx' : y,
+                                  'cy' : z,
+                                  'r' : self.outer_radius,
+                                  'color' : [0, 0, 0],
+                                  'size' : 1,
+                                  'group' : 3,
+                                  'dash' : 'none',})
+                    
+
+        return axial_position_data, transversal_plot_data
         
     def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
         center = vm.Point3D(npy.round(center,6))
