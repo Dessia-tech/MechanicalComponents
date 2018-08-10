@@ -915,14 +915,14 @@ class MeshAssembly():
     # TODO change this function to make it like PlotData in PWT: output is dict of geometrical shapes
     def SVGExport(self,name,position):
         x_opt=self.PosAxis(position)
+        print(x_opt)
         TG={}
         L1=[]
         Struct=[]
         Rot={}
         for num,en in enumerate(self.connections_dfs):
-            ens=[self.list_gear.index(en[0]),self.list_gear.index(en[1])]
-            position1=(x_opt[2*ens[0]],x_opt[2*ens[0]+1])   
-            position2=(x_opt[2*ens[1]],x_opt[2*ens[1]+1])
+            position1=(x_opt[en[0]][0],x_opt[en[0]][1])   
+            position2=(x_opt[en[1]][0],x_opt[en[1]][1])
             #tuple1 et 2 correspondent a la position des centres
             ne=self.connections.index(en)
             Rot[ne]={}
@@ -1182,7 +1182,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 mo=self.MeshAssembly.meshes[ne][g].rack.module
                 list_module=self.rack_list[self.rack_choice[g]]['module']
                 if list_module[0]<list_module[1]:
-                    obj+=1*(list_module[1]-mo)**2
+                    obj+=100*(list_module[1]-mo)**2
                 
         #Minimisation des entraxes sur la borne inf
         for num_engr,list_cd in enumerate(self.center_distance):
@@ -1204,7 +1204,7 @@ class ContinuousMeshesAssemblyOptimizer:
         return obj
     
     def Optimize(self, verbose = False):
-        max_iter=2
+        max_iter=5
         i=0
         arret=0 
         while i<max_iter and arret==0:
@@ -1410,6 +1410,7 @@ class MeshAssemblyOptimizer:
         incr=0
         self.plex_calcul=[]
         self.fonctionnel=[]
+        self.fonctionnel_module=[]
 
         def pgcd(a,b) :
             while a%b != 0 :
@@ -1542,6 +1543,7 @@ class MeshAssemblyOptimizer:
                 Temp['rack_choice']=rack
                 Temp['center_distance']=cd_minmax_nv
                 self.fonctionnel.append(fonctionnel)
+                self.fonctionnel_module.append(module_optimal)
                 self.plex_calcul.append(Temp)
                 incr+=1
             dt.NextNode(valid)
@@ -1553,13 +1555,16 @@ class MeshAssemblyOptimizer:
                 print('No teeth combination found: increase center distances')
 
 
-    def Optimize(self,nb_sol=1,num_sol = None, verbose = False):
+    def Optimize(self,nb_sol=1,list_sol = None, verbose = False):
         
         compt_nb_sol=0
-        if num_sol==None:
+        if list_sol==None:
             liste_plex=self.plex_calcul
         else:
-            liste_plex=self.plex_calcul[num_sol:num_sol+1]
+            liste_plex=[]
+            for ind_plex in list_sol:
+                liste_plex.append(self.plex_calcul[ind_plex])
+            nb_sol=len(liste_plex)
         for plex in liste_plex:
             ga=ContinuousMeshesAssemblyOptimizer(**plex)
             try:
@@ -1584,9 +1589,27 @@ class MeshAssemblyOptimizer:
                         progress_callback = lambda x:x):
         #Optimisation des nb_sol meilleures solutions vis à vis de la fonctionnelle
         list_fonctionnel=npy.array(self.fonctionnel)
+        
+        #En cours de construction
+        list_fonctionnel_module=npy.array(self.fonctionnel_module)
+        sort_fonct_module=npy.argsort(list_fonctionnel_module)
+        compt_fonct_mod=0
+        fonct_entraxe=[]
+        for ind_plex in sort_fonct_module[::-1]:
+            fonct_entraxe.append(list_fonctionnel[ind_plex])
+            if compt_fonct_mod==5*nb_sol:
+                break
+            compt_fonct_mod+=1
+        list_fonct_entraxe=npy.array(fonct_entraxe)
+        sort_list_fonct_entraxe=npy.argsort(list_fonct_entraxe)
+        plex_analyse=[]
+        for ind_plex in range(nb_sol):
+            plex_analyse.append(sort_fonct_module[::-1][sort_list_fonct_entraxe[ind_plex]])
+        
         compt_nb_sol=0
         liste_solutions=[]
-        for num_plex in npy.argsort(list_fonctionnel):
+#        for num_plex in npy.argsort(list_fonctionnel):
+        for num_plex in plex_analyse:
             plex=self.plex_calcul[num_plex]
             ga=ContinuousMeshesAssemblyOptimizer(**plex)
             try:
@@ -1609,6 +1632,7 @@ class MeshAssemblyOptimizer:
                     compt_nb_sol+=1
                     if verbose:
                         print('valid solution n°{}'.format(compt_nb_sol))
+                        print('Module: {}'.format(solutions.meshes[0][list(solutions.meshes[0].keys())[0]].rack.module))
                     if compt_nb_sol==nb_sol:
                         break
                 else:
@@ -1630,4 +1654,5 @@ class MeshAssemblyOptimizer:
             if verbose and indice_plex==0:
                 print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
                 print('Center distances: {}'.format(self.solutions[-1].center_distance))
+                print('Module: {}'.format(self.solutions[-1].meshes[0][list(self.solutions[-1].meshes[0].keys())[0]].rack.module))
 

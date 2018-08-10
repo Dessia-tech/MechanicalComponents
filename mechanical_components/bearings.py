@@ -38,7 +38,7 @@ from scipy.optimize import minimize,fsolve
 ##Ordre de rangement de dico_roller_iso: Dw (diam rouleau)/Lw (long du rouleau)/rsmin (rayon mini du roul)/rsmax (rayon max du roul)
 ##Ordre de rangement de dico_radial_clearance_iso: typ de grade/ d_min (diam mini admi)/ d_max (diam maxi admi)/ intervale jeu [jeu mini radial, jeu maxi radial]
 ##Ordre de rangement de dico_rules: (var_x, var_y, type) /[coeff_a, coeff_b] le type peu être soit inf soit sup
-from catalogs.dico_bearings_ISO import dico_rlts_iso,dico_roller_iso,dico_radial_clearance_iso,dico_rules
+from mechanical_components.catalogs.dico_bearings_ISO import dico_rlts_iso,dico_roller_iso,dico_radial_clearance_iso,dico_rules
 
 
 #oil_kinematic_viscosity
