@@ -387,19 +387,20 @@ class RadialRollerBearing:
         ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{2:self.r_roller,3:self.r_roller},False).primitives)
         return ref
         
-    def PlotData(self, heights, x, width, labels = True):
+    def PlotData(self, x, heights, ys, zs, labels = True):
         transversal_plot_data = []
         axial_position_data = []
         
-        component_height = self.D-self.d
+        component_height = 0.5 * (self.D-self.d)
                 
         # TODO Hypothethis = y_roller = 0.5*(d+D) to check
-        y_roller = 0.5* (self.d + self.D)
-
+        y_roller = 0.25* (self.d + self.D)
+        y = ys[0]
+        z = zs[0]
         # interface of upper section
         axial_position_data.append({'type' : 'rect',
                             'x' : x - 0.5 * self.B,
-                            'y' : heights[0] + self.d  ,
+                            'y' : heights[0] + 0.5*self.d ,
                             'width' : self.B,
                             'height' : component_height,
                             'color' : (0, 0, 0),
@@ -409,9 +410,9 @@ class RadialRollerBearing:
         # Roller of upper section
         axial_position_data.append({'type' : 'rect',
                             'x' : x - 0.5*self.Lw,
-                            'y' : heights[0] + y_roller,
+                            'y' : heights[0] +  0.5 * self.F,
                             'width' : self.Lw,
-                            'height' : component_height,
+                            'height' : self.Dw,
                             'color' : (0, 0, 0),
                             'size' : 1,
                             'dash' : 'none'})
@@ -420,7 +421,7 @@ class RadialRollerBearing:
         # interface of lower section
         axial_position_data.append({'type' : 'rect',
                             'x' : x - 0.5 * self.B,
-                            'y' : heights[0] - self.D  ,
+                            'y' : heights[0] - 0.5*self.D ,
                             'width' : self.B,
                             'height' : component_height,
                             'color' : (0, 0, 0),
@@ -430,9 +431,9 @@ class RadialRollerBearing:
         # Roller of upper section
         axial_position_data.append({'type' : 'rect',
                             'x' : x - 0.5*self.Lw,
-                            'y' : heights[0] - y_roller,
+                            'y' : heights[0] - 0.5 * self.F - self.Dw,
                             'width' : self.Lw,
-                            'height' : component_height,
+                            'height' : self.Dw,
                             'color' : (0, 0, 0),
                             'size' : 1,
                             'dash' : 'none'})
@@ -443,7 +444,7 @@ class RadialRollerBearing:
         transversal_plot_data.append({'type' : 'circle',
                                   'cx' : y,
                                   'cy' : z,
-                                  'r' : self.inner_radius,
+                                  'r' : 0.5 * self.d,
                                   'color' : [0, 0, 0],
                                   'size' : 1,
                                   'group' : 3,
@@ -452,11 +453,22 @@ class RadialRollerBearing:
         transversal_plot_data.append({'type' : 'circle',
                                   'cx' : y,
                                   'cy' : z,
-                                  'r' : self.outer_radius,
+                                  'r' : 0.5 * self.D,
                                   'color' : [0, 0, 0],
                                   'size' : 1,
                                   'group' : 3,
                                   'dash' : 'none',})
+    
+        for i in range(self.Z):
+            theta=2*npy.pi/self.Z*i
+            transversal_plot_data.append({'type' : 'circle',
+                                      'cx' : y + 0.5 * (self.F + self.Dw) * math.cos(theta),
+                                      'cy' : z + 0.5 * (self.F + self.Dw) * math.sin(theta),
+                                      'r' : 0.5 * self.Dw,
+                                      'color' : [0, 0, 0],
+                                      'size' : 1,
+                                      'group' : 3,
+                                      'dash' : 'none',})
                     
 
         return axial_position_data, transversal_plot_data
