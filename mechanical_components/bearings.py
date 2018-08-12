@@ -389,7 +389,7 @@ class RadialRollerBearing:
         
     def PlotData(self, x, heights, ys, zs, labels = True):
         transversal_plot_data = []
-        axial_position_data = []
+        axial_plot_data = []
         
         component_height = 0.5 * (self.D-self.d)
                 
@@ -398,7 +398,7 @@ class RadialRollerBearing:
         y = ys[0]
         z = zs[0]
         # interface of upper section
-        axial_position_data.append({'type' : 'rect',
+        axial_plot_data.append({'type' : 'rect',
                             'x' : x - 0.5 * self.B,
                             'y' : heights[0] + 0.5*self.d ,
                             'width' : self.B,
@@ -408,7 +408,7 @@ class RadialRollerBearing:
                             'dash' : 'none'})
             
         # Roller of upper section
-        axial_position_data.append({'type' : 'rect',
+        axial_plot_data.append({'type' : 'rect',
                             'x' : x - 0.5*self.Lw,
                             'y' : heights[0] +  0.5 * self.F,
                             'width' : self.Lw,
@@ -419,7 +419,7 @@ class RadialRollerBearing:
 
 
         # interface of lower section
-        axial_position_data.append({'type' : 'rect',
+        axial_plot_data.append({'type' : 'rect',
                             'x' : x - 0.5 * self.B,
                             'y' : heights[0] - 0.5*self.D ,
                             'width' : self.B,
@@ -429,7 +429,7 @@ class RadialRollerBearing:
                             'dash' : 'none'})
             
         # Roller of upper section
-        axial_position_data.append({'type' : 'rect',
+        axial_plot_data.append({'type' : 'rect',
                             'x' : x - 0.5*self.Lw,
                             'y' : heights[0] - 0.5 * self.F - self.Dw,
                             'width' : self.Lw,
@@ -471,7 +471,7 @@ class RadialRollerBearing:
                                       'dash' : 'none',})
                     
 
-        return axial_position_data, transversal_plot_data
+        return axial_plot_data, transversal_plot_data
         
     def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
         center = vm.Point3D(npy.round(center,6))

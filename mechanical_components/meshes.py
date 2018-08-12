@@ -485,6 +485,34 @@ class Mesh():
         
         d['rack']=self.rack.Dict()
         return d
+    
+    def PlotData(self, x, heights, y, z, labels = True):
+        transversal_plot_data = []
+        axial_plot_data = []
+        
+#        points = []
+#        for p in self.Contour(2):
+#            for point in p.points:
+#                points.extend(point.vector)
+#        transversal_plot_data.append({'type' : 'line',
+#                              'data' : points,
+#                              'color' : [0, 0, 0],
+#                              'dash' : 'none',
+#                              'stroke_width' : 2,
+#                              'marker' : '.',
+#                              'size' : 1})
+        # Outer diameter        
+        transversal_plot_data.append({'type' : 'circle',
+                          'cx' : y,
+                          'cy' : z,
+                          'r' : 0.5 * self.outside_diameter,
+                          'color' : [0, 0, 0],
+                          'size' : 1,
+                          'group' : 3,
+                          'dash' : 'none',})
+        
+        return transversal_plot_data, axial_plot_data
+
 
 class MeshAssembly():
     def __init__(self,Z, center_distance, connections,transverse_pressure_angle,
@@ -866,6 +894,33 @@ class MeshAssembly():
         for i,df in enumerate(DF):
             mass +=  self.gear_width[i] * self.material[i].volumic_mass* math.pi * (0.5*DF[i])**2
         return mass
+    
+    # Waiting for meshes to know how to plot themselves
+#    def PlotData(self, x, heights, ys, zs, labels = True):
+#        transversal_plot_data = []
+#        axial_plot_data = []
+#        # TODO remove when meshes would be a list
+#        imesh = []
+#        meshes = []
+#        for ic, connec in enumerate(self.connections):
+#            imesh.extend(connec)
+#        imesh = list(set(imesh))
+#        for ic, (ic1, ic2) in enumerate(self.connections):
+#            if ic1 in imesh:
+#                meshes.append(self.meshes[ic][ic1])
+#                imesh.remove(ic1)
+#            if ic2 in imesh:
+#                meshes.append(self.meshes[ic][ic2])
+#                imesh.remove(ic2)
+#        
+#        for imesh, mesh in enumerate(meshes):
+#            t, a = mesh.PlotData(x, heights, ys[imesh], zs[imesh], labels)
+#            transversal_plot_data.extend(t)
+#            axial_plot_data.extend(a)
+#            
+#        # Ploting axial because mesh doesn't know its width
+#        
+#        return axial_plot_data, transversal_plot_data
 
     def FreeCADExport(self, file_path, centers = {}, axis = (1,0,0), export_types=['fcstd'], python_path = 'python',
                       freecad_path = '/usr/lib/freecad/lib'):
