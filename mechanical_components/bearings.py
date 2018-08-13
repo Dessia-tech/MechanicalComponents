@@ -552,7 +552,6 @@ class BearingCombination:
         
         self.solutions=[]
        
-        
     def OptimizerBearing(self, d, D, B, Fr, Fa, n, L10=None, C0r=None, Cr=None,
                          Lnm=None, grade=['Gr_gn'], S=0.9, T=40,
                          oil=oil_iso_vg_1500, material=material_iso,
