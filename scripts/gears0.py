@@ -14,10 +14,10 @@ GA = meshes.MeshAssemblyOptimizer(connections = list_gear_set,
 #Optimization for a short list of architecture generate with the decision tree
 for plex in GA.plex_calcul:
     print(plex['Z'])
-GA.Optimize(list_sol=[1,2,3,4],verbose=True)
+GA.Optimize(list_sol=[1,2,3,4], verbose=True)
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.SearchOptimumCD(nb_sol=1,verbose=True)
+GA.SearchOptimumCD(nb_sol=1, verbose=True)
 
 #Export SVG and FreeCAD
 print('Nombre de solutions convergés:',len(GA.solutions))

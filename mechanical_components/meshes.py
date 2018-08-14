@@ -1525,8 +1525,8 @@ class MeshAssemblyOptimizer:
                                 mai = 0.5* (vai_min + vai_max)
                                 dsi = vsi_max-vsi_min
                                 dai = vai_max-vai_min
-                                if (abs(msi-mai)>0.5*(dai+dsi)):
-                                    valid=False
+                                if abs(msi-mai) > 0.5*(dai+dsi):
+                                    valid = False
     #                                print(valid)
                                     break
                 #analyse frequence
