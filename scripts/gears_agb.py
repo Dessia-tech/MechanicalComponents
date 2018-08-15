@@ -36,7 +36,7 @@ connections = [(0, 1), (1, 2), (2, 3), (3, 4), (0, 5), (5, 6)]
 #               17000*npy.pi/30*(1+erreur)],0:[1000*npy.pi/30,30000*npy.pi/30],
 #               3:[15000*npy.pi/30,15000*npy.pi/30*(1+erreur)],5:[10000*npy.pi/30,11000*npy.pi/30]}
 
-list_rack = {0:{'name':'Catalogue_A','module':[2.10*1e-3,2.56*1e-3],
+list_rack = {0:{'name':'Catalogue_A','module':[2.43*1e-3,2.43*1e-3],
               'transverse_pressure_angle_rack':[20/180*npy.pi,20/180*npy.pi],
               'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],
               'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
