@@ -1,34 +1,14 @@
 import numpy as npy
-import math as mt
+#import math as mt
 from scipy import interpolate
 #import os
 import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 import math
-#from scipy.linalg import norm
-#from scipy.optimize import minimize,fsolve
-#from scipy.interpolate import splprep, splev
-#from sympy import *
-#import itertools
-#from jinja2 import Environment, PackageLoader, select_autoescape
 
-#import mechanical_components.LibSvgD3 as LibSvg
-#import volmdlr as vm
-#import volmdlr.primitives3D as primitives3D
-#import volmdlr.primitives2D as primitives2D
 
-#import pkg_resources
-#import persistent
-#import pandas
-
-#from pandas.plotting import scatter_matrix
-#import matplotlib.pyplot as plt
-#from dessia_common import ResultsDBClient
-#import pyDOE
-#from operator import itemgetter
-
-from scipy.optimize import minimize,fsolve
+from scipy.optimize import minimize
 
 
 from mechanical_components.catalogs.dico_bearings_ISO \
@@ -281,7 +261,7 @@ class RadialRollerBearing:
         else:
             Cu=C0r/8.2*(100/(self.Dpw*1e3))**0.3
         #calcul du coefficient a_iso
-        # TODO: vérifier ces calculs: a_iso est souvent un nombre complexe, ce qui entraine des NaN!
+        # TODO: Il y a des fois des warnings, il y a peut etre encore un problème!
         if kappa<0.4:
             a_iso=0.1*((1-(1.5859-1.3993/(kappa**0.054381))*((ec*Cu/Pr)**0.4))**(-9.185))
         elif kappa<1:
@@ -393,10 +373,10 @@ class RadialRollerBearing:
         
         component_height = 0.5 * (self.D-self.d)
                 
-        # TODO Hypothethis = y_roller = 0.5*(d+D) to check
-        y_roller = 0.25* (self.d + self.D)
+        # TODO Check rollers seem to be to low
         y = ys[0]
         z = zs[0]
+        yroller = 0.25*(self.E+self.F)
         # interface of upper section
         axial_plot_data.append({'type' : 'rect',
                             'x' : x - 0.5 * self.B,
@@ -410,7 +390,7 @@ class RadialRollerBearing:
         # Roller of upper section
         axial_plot_data.append({'type' : 'rect',
                             'x' : x - 0.5*self.Lw,
-                            'y' : heights[0] +  0.5 * self.F,
+                            'y' : heights[0] +  yroller -0.5*self.Dw,
                             'width' : self.Lw,
                             'height' : self.Dw,
                             'color' : (0, 0, 0),
@@ -431,7 +411,7 @@ class RadialRollerBearing:
         # Roller of upper section
         axial_plot_data.append({'type' : 'rect',
                             'x' : x - 0.5*self.Lw,
-                            'y' : heights[0] - 0.5 * self.F - self.Dw,
+                            'y' : heights[0] - yroller - 0.5*self.Dw,
                             'width' : self.Lw,
                             'height' : self.Dw,
                             'color' : (0, 0, 0),
@@ -462,8 +442,8 @@ class RadialRollerBearing:
         for i in range(self.Z):
             theta=2*npy.pi/self.Z*i
             transversal_plot_data.append({'type' : 'circle',
-                                      'cx' : y + 0.5 * (self.F + self.Dw) * math.cos(theta),
-                                      'cy' : z + 0.5 * (self.F + self.Dw) * math.sin(theta),
+                                      'cx' : y + yroller * math.cos(theta),
+                                      'cy' : z + yroller * math.sin(theta),
                                       'r' : 0.5 * self.Dw,
                                       'color' : [0, 0, 0],
                                       'size' : 1,
@@ -539,13 +519,13 @@ class SphericalRollerBearing(RadialRollerBearing):
                                      F, Z, i, alpha, bm, weibull_e, weibull_c,
                                      weibull_h, B1, mu_delta, c_gamma,
                                      oil_name)
-        
+# TODO: Cumulative damages
 class BearingCombination:
     """
     Objet avec 3 fonctions de selection des roulements cylindriques
-   - Combinatoire sur les dimensions externe ISO
-   - Combinatoire en prenant en compte les règles SKF
-   - Estimation des durées de vie et charge dynamique et fonction de tri
+     * Combinatoire sur les dimensions externe ISO
+     * Combinatoire en prenant en compte les règles SKF
+     * Estimation des durées de vie et charge dynamique et fonction de tri
 
     """
     def __init__(self):
@@ -666,7 +646,7 @@ class BearingCombination:
         # BUG: rien n'empeche i de dépasser du tableau!
         # Vérifier ma correction
         
-        # BUG: 1 fois sur 4 pas de solution!!!
+        # TODO: permettre de ne donner qu'un borne min au L10/ Lnm
         
         i=0
         iter_max = len(liste_sol_roller_iso)

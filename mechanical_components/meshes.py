@@ -195,7 +195,7 @@ bronze=Material(8200, evol_coeff_yb_iso, wholer_bronze, sigma_bronze)
 
 grey_iron=Material(7200, evol_coeff_yb_iso, wholer_grey_iron, sigma_grey_iron)
 
-class Rack():
+class Rack:
     def __init__(self,transverse_pressure_angle):
         self.transverse_pressure_angle=transverse_pressure_angle
 
@@ -237,7 +237,7 @@ class Rack():
         d=self.__dict__.copy()
         return list(d.keys()),list(d.values())
 
-class Mesh():
+class Mesh:
     def __init__(self, z, db, cp, transverse_pressure_angle_rack,
                  coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
                  coeff_circular_tooth_thickness):
@@ -514,11 +514,12 @@ class Mesh():
         return transversal_plot_data, axial_plot_data
 
 
-class MeshAssembly():
+class MeshAssembly:
     def __init__(self,Z, center_distance, connections,transverse_pressure_angle,
                  coefficient_profile_shift,gear_graph, transverse_pressure_angle_rack,
-                 coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,
-                 coeff_circular_tooth_thickness,list_gear,material,torque,cycle,safety_factor):
+                 coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
+                 coeff_circular_tooth_thickness, list_gear, material,torque,
+                 cycle, safety_factor):
         
         self.center_distance=center_distance
         self.connections=connections
@@ -806,7 +807,7 @@ class MeshAssembly():
         x = vm.Vector3D(axis)
         y = x.RandomUnitNormalVector()
         z = vm.Vector3D(npy.cross(x.vector, y.vector))  
-        
+        # TODO: initial position pour engrènement 
         if len(centers)==0:
             centers = {}
             center_var = self.PosAxis({self.list_gear[0]:[0,0]})
