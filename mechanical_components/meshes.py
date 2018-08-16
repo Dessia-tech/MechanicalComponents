@@ -594,7 +594,12 @@ class MeshAssembly:
         linear_backlash=[]
         radial_contact_ratio=[]
         for g1,g2 in self.connections_dfs:
-            ne=self.connections.index((g1,g2))
+            if (g1,g2) in self.connections:
+                ne=self.connections.index((g1,g2))
+            elif (g2,g1) in self.connections:
+                ne=self.connections.index((g2,g1))
+            else:
+                raise RuntimeError
             circular_tooth_thickness1=self.meshes[ne][g1].GearSection(self.DF[ne][g1])
             circular_tooth_thickness2=self.meshes[ne][g2].GearSection(self.DF[ne][g2])
             transverse_radial_pitch1=npy.pi*self.DF[ne][g1]/self.meshes[ne][g1].Z
