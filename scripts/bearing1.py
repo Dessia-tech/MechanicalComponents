@@ -18,17 +18,20 @@ N=44.48332994588729
 L10=63.71767661468127
 
 Fa=0
-Fr=10421.818061894102
-N=133.9290777505247
-L10=191.83927272961304
+Fr=3368
+N=249
+L10=1000
 
-C1.OptimizerBearing(d={'min':0.04,'max':0.10},D={'min':0.04,'max':0.15},B={'min':0.01,'max':0.08},
-                    Lnm={'min':L10,'max':1.2*L10},
-                    Fr=Fr,Fa=Fa,n=N,mini=['D'],typ='NF')
-for i,b in enumerate(C1.solution):
-    print(b)
-    v=b.VolumeModel(npy.random.random(3),npy.random.random(3))
-    v.FreeCADExport('python','Bearing_{}'.format(i),'/usr/lib/freecad/lib')
+C1.OptimizerBearing(d={'min':0.02,'max':0.1},
+                    D={'min':0.04,'max':0.15},
+                    B={'min':0.01,'max':0.1},
+                    Lnm={'min':L10,'max':npy.inf},
+                    L10={'min':L10,'max':npy.inf},
+                    Fr=Fr,Fa=Fa,n=N,typ='NF',nb_sol=10)
+
+for i,b in enumerate(C1.solutions):
+#    v=b.VolumeModel()
+    b.FreeCADExport('Bearing_{}'.format(i))
     
 ##Test 2
 #Fa=1340.1788731883905
