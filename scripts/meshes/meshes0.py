@@ -1,4 +1,4 @@
-import mechanical_components.meshes as meshes
+import mechanical_components.optimize.meshes as meshes_opt
 import numpy as npy
 
 #cas test avec deux engrenages
@@ -7,7 +7,7 @@ list_gear_set=[(1,0)]
 list_speed={1:[1000*npy.pi/30,1500*npy.pi/30],0:[4100*npy.pi/30,
                4300*npy.pi/30]}
 
-GA = meshes.MeshAssemblyOptimizer(connections = list_gear_set,
+GA = meshes_opt.MeshAssemblyOptimizer(connections = list_gear_set,
                                 gear_speed = list_speed,
                                 center_distance = list_cd)
 

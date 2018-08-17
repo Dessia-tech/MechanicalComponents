@@ -1,4 +1,5 @@
 import mechanical_components.meshes as meshes
+import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
 
 
@@ -20,7 +21,7 @@ list_material={5:meshes.hardened_alloy_steel}
 list_torque={1:186,5:'output',2:20}
 list_cycle={1:1e12}
 
-GA = meshes.MeshAssemblyOptimizer(Z={},
+GA = meshes_opt.MeshAssemblyOptimizer(Z={},
                                   connections = connections, 
                                   gear_speed = list_speed,
                                   center_distance = list_cd,

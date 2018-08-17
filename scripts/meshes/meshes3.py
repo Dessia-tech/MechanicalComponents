@@ -1,4 +1,5 @@
 import mechanical_components.meshes as meshes
+import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
 
 """
@@ -25,7 +26,7 @@ list_choice={0:[0],2:[0],3:[0],4:[0],5:[0],6:[0],7:[0]}
 
 list_torque={2:106,5:-85,3:'output'}
 
-GA=meshes.MeshAssemblyOptimizer(connections = list_gear_set, 
+GA=meshes_opt.MeshAssemblyOptimizer(connections = list_gear_set, 
                                   gear_speed = list_speed,
                                   center_distance = list_cd,
                                   rack_list = list_rack,
