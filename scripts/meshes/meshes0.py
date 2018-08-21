@@ -1,4 +1,4 @@
-import mechanical_components.optimize.meshes as meshes_opt
+import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
 
 #cas test avec deux engrenages

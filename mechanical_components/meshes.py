@@ -156,14 +156,63 @@ sigma_grey_iron={'data':[[1.354230792372041,0.7100658633470387],
                         ], 'x':'Log','y':'Log'}
 
 class Material:
+    """
+    Gear material
+    
+    :param volumic_mass: A float to define the gear volumic mass
+    :param data_coeff_YB_Iso: a dictionary to define the YB parameter of the ISO description
+    :param data_wholer_curve: a dictionary to define the wholer slope of the ISO description
+    :param data_gear_material: a dictionary to define the maximum gear stress
+    
+    :data_coeff_YB_Iso: - **'data'** matrix define points of the YB curve in the plane (YB, helix_angle)
+        - **'x'** string define the x axis evolution ('Log' or 'Linear')
+        - **'y'** string define the y axis evolution ('Log' or 'Linear') 
+        
+    :data_wholer_curve: - **'data'** matrix define points of the wholer slope in the plane (wholer slope, number of cycle)
+        - **'x'** string define the x axis evolution ('Log' or 'Linear')
+        - **'y'** string define the y axis evolution ('Log' or 'Linear')
+        
+    :data_gear_material: - **'data'** matrix define points of the maximum gear stress (maximum gear stress, wholer slope)
+        - **'x'** string define the x axis evolution ('Log' or 'Linear')
+        - **'y'** string define the y axis evolution ('Log' or 'Linear')
+        
+    >>> volumic_mass=7800
+    >>> data_coeff_YB_Iso={'data':[[0.0,1.0029325508401201],
+                           [4.701492563229561,0.9310850480431024],
+                           [23.955224059269884,0.7609970656504502],
+                           [40.0,0.7492668574805859]
+                          ], 'x':'Linear','y':'Linear'}
+    >>> data_wholer_curve={'data':[[4.307791955971963,1.6419147590563592],
+                       [6.518240063668731,1.431665495290182],
+                       [7.989456220850952,1.4353220033111185]
+                      ], 'x':'Log','y':'Log'}
+    >>> data_gear_material={'data':[[1.313871566195314,0.7858874572688317],
+                      [1.4294457009773085,0.8802021097895326],
+                      [1.4551288380965028,0.9097910273994609]
+                     ], 'x':'Log','y':'Log'}
+    >>> material1=Material(volumic_mass, data_coeff_YB_Iso, 
+                           data_wholer_curve, data_gear_material)
+    """
     def __init__(self,volumic_mass, data_coeff_YB_Iso, data_wholer_curve,
                  data_gear_material):
         self.volumic_mass = volumic_mass
         self.data_coeff_YB_Iso = data_coeff_YB_Iso
         self.data_wholer_curve = data_wholer_curve
         self.data_gear_material = data_gear_material
-        
+    
     def FunCoeff(self,x,data,type_x='Linear',type_y='Linear'):
+        """ Interpolation of material data
+        
+        :param x: value of the interpolation
+        :param data: dictionary of the input data
+        :param type_x: type of the x axis of the data matrix ('Log' or 'Linear')
+        :param type_y: type of the y axis of the data matrix ('Log' or 'Linear')
+        
+        :returns:  interpolation value
+        
+        >>> interp1=material1.FunCoeff(x = 5.2,data = data_wholer_curve,
+                                       type_x = 'Log',type_y = 'Log') 
+        """
         if type_x=='Log': 
             x=npy.log10(x)
         f = interpolate.interp1d(list(data[:,0]),list(data[:,1]), fill_value='extrapolate')
@@ -196,11 +245,20 @@ bronze=Material(8200, evol_coeff_yb_iso, wholer_bronze, sigma_bronze)
 grey_iron=Material(7200, evol_coeff_yb_iso, wholer_grey_iron, sigma_grey_iron)
 
 class Rack:
+    """
+    Gear rack definition
+    
+    :param transverse_pressure_angle: definition of the transverse pressure angle of the rack
+    :type transverse_pressure_angle: radian
+    
+    >>> Rack1=Rack(20/180.*npy.pi) #definition of an ISO rack
+    """
     def __init__(self,transverse_pressure_angle):
         self.transverse_pressure_angle=transverse_pressure_angle
 
+    
     def RackParam(self,transverse_pressure_angle,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness):
-
+        
         self.transverse_pressure_angle=transverse_pressure_angle
         self.transverse_radial_pitch=self.module*math.pi
         self.gear_addendum=coeff_gear_addendum*self.module
@@ -217,11 +275,32 @@ class Rack:
         self.b=self.gear_dedendum-self.root_radius
 
     def Update(self,module,transverse_pressure_angle,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness):
+        """
+        Update of the gear rack
+        
+        :param module: update of the module of the rack define on the pitch factory diameter
+        :type module: m
+        :param transverse_pressure_angle: update of the transverse pressure angle of the rack
+        :type transverse_pressure_angle: radian
+        :param coeff_gear_addendum: update of the gear addendum coefficient (gear_addendum = coeff_gear_addendum*module)
+        :param coeff_gear_dedendum: update of the gear dedendum coefficient (gear_dedendum = coeff_gear_dedendum*module)
+        :param coeff_root_radius: update of the root radius coefficient (root_radius = coeff_root_radius*module)
+        :param coeff_circular_tooth_thickness: update of the circular tooth thickness coefficient (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
+        
+        >>> input={'module':2*1e-3,'transverse_pressure_angle':21/180.*npy.pi}
+        >>> Rack1.Update(**input) # Update of the rack definition
+        """
         self.module=module
         self.RackParam(transverse_pressure_angle,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
         
 
     def Dict(self):
+        """Export dictionary
+        
+        :returns:  dictionary with all rack parameters
+        
+        >>> print(Rack1.Dict())
+        """
         d={}
         for k,v in self.__dict__.items():
             tv=type(v)
@@ -234,10 +313,34 @@ class Rack:
         return d
 
     def CSVExport(self):
+        """
+        Export CSV format
+        
+         :returns:  list of all element in dict() function
+        """
         d=self.__dict__.copy()
         return list(d.keys()),list(d.values())
 
 class Mesh:
+    """
+    Gear mesh definition
+    
+    :param z: number of tooth
+    :param db: base diameter
+    :type db: m
+    :param cp: coefficient profile shift of the rack
+    :param transverse_pressure_angle_rack: transverse pressure angle of the rack
+    :type transverse_pressure_angle_rack: radian
+    :param coeff_gear_addendum: update of the gear addendum coefficient (gear_addendum = coeff_gear_addendum*module)
+    :param coeff_gear_dedendum: update of the gear dedendum coefficient (gear_dedendum = coeff_gear_dedendum*module)
+    :param coeff_root_radius: update of the root radius coefficient (root_radius = coeff_root_radius*module)
+    :param coeff_circular_tooth_thickness: update of the circular tooth thickness coefficient (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
+        
+    >>> input={z:13, db:40*1e-3, cp:0.3, transverse_pressure_angle_rack:20/180.*npy.pi,
+                 coeff_gear_addendum:1, coeff_gear_dedendum:1, coeff_root_radius:1,
+                 coeff_circular_tooth_thickness:1}
+    >>> mesh1=Mesh(**input) # generation of one gear mesh
+    """
     def __init__(self, z, db, cp, transverse_pressure_angle_rack,
                  coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
                  coeff_circular_tooth_thickness):
@@ -250,6 +353,13 @@ class Mesh:
     def Update(self,z,db,cp,transverse_pressure_angle_rack,
                coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,
                coeff_circular_tooth_thickness):
+        """ Update of the gear mesh
+        
+        :param all: same parameters of this class initialisation
+            
+        >>> input={z:14, db:42*1e-3, cp:0.5}
+        >>> mesh1.Update(**input)
+        """
         self.GearParam(z,db,cp, transverse_pressure_angle_rack,
                        coeff_gear_addendum, coeff_gear_dedendum,
                        coeff_root_radius, coeff_circular_tooth_thickness)
@@ -298,6 +408,15 @@ class Mesh:
         self.root_gear_angle=self.circular_tooth_thickness/(self.DFF/2)+2*(npy.tan(self.alpha_pitch_diameter)-self.alpha_pitch_diameter)
         
     def GearSection(self,diameter):
+        """ Definition of the gear section
+        
+        :param diameter: diameter of the gear section calculation
+        :type diameter: m
+        
+        :results: gear section in m
+            
+        >>> gs=mesh1.GearSection(44*1e-3)
+        """
         # TODO: traduire en englais le prochain commentaire
         #epaisseur de la dent au diameter
         alpha_diameter=npy.arccos(self.DB/diameter)
@@ -316,6 +435,17 @@ class Mesh:
         return root_diameter_active,phi
     
     def Contour(self,discret=10,list_number=[None]):
+        """ Definition of the gear contour for volmdlr
+        
+        :param discret: number of discretization points on the gear mesh involute
+        :param list_number: list of gear tooth to include on the graph
+        
+        :results: volmdlr profile
+            
+        >>> C1=mesh1.Contour(10)
+        >>> G1=vm.Contour2D(C1)
+        >>> G1.MPLPlot() # generate a plot with matplotlib
+        """
         #Analytical tooth profil
         if list_number==[None]:
             list_number=npy.arange(int(self.Z))
@@ -458,6 +588,13 @@ class Mesh:
         return coeff_ys_iso
     
     def GearISOSection(self,angle):
+        """ Calculation of the ISO section
+        
+        :param angle: pressure angle of the ISO section calculation
+        :type angle: radian
+        
+        :results: ISO section and ISO height
+        """
         a=self.rack.a
         b=self.rack.b-self.rack.module*self.coefficient_profile_shift
         r=self.DFF/2
@@ -473,6 +610,12 @@ class Mesh:
         
     
     def Dict(self):
+        """Export dictionary
+        
+        :returns:  dictionary with all gear mesh parameters
+        
+        >>> print(mesh1.Dict())
+        """
         d={}
         for k,v in self.__dict__.items():
             tv=type(v)
@@ -515,6 +658,35 @@ class Mesh:
 
 
 class MeshAssembly:
+    """
+    Gear mesh assembly definition
+    
+    :param Z: dictionary define the number of tooth {node1:Z1, node2:Z2, mesh3:Z3 ...}
+    :param center_distance: list of the center distance in the order of connections definition [centerdistance1, centerdistance2 ...]
+    :param connections: List of tuple define gear mesh connection [(node1,node2), (node2,node3), (node2,node4)]
+    :param transverse_pressure_angle: transverse pressure angle of the first gear mesh in the order of connections definition
+    :type transverse_pressure_angle: radian
+    :param coefficient_profile_shift: dictionary define the profile shift of tooth {node1:cps1, node2:cps2, mesh3:cps3 ...}
+    :param gear_graph: NetwokX gear graph connection
+    :param transverse_pressure_angle_rack: dictionary define the transverse pressure angle of tooth
+    :param coeff_gear_addendum: dictionary define the gear addendum coefficient
+    :param coeff_gear_dedendum: dictionary define the gear dedendum coefficient
+    :param coeff_root_radius: dictionary define the root radius coefficient
+    :param coeff_circular_tooth_thickness: dictionary define the circular tooth thickness coefficient
+    :param list_gear: List of gear mesh in connections [node1, node2, node3, node4]
+    :param material: Dictionary defining material for each gear mesh {node1:mechanical_components.meshes.Material, node2:mechanical_components.meshes.Material ...}
+    :param torque: Dictionary defining all input torque, one node where the torque is not specified is define as the 'output' {node1:torque1, node2:torque2, node3:'output'}
+    :param cycle: Dictionary defining the number of cycle for one node {node3: number_cycle3}
+    :param safety_factor: Safety factor used for the ISO design
+        
+    >>> connections=[(1,2),(2,3)]
+    >>> Z={1:13,2:41,3:37}
+    >>> center_distance=[0.117,0.120]
+    >>> transverse_pressure_angle=18/180.*npy.pi
+    >>> mesh_assembly1=MeshAssembly(connections=connections,Z=Z,
+                                    center_distance=center_distance,
+                                    transverse_pressure_angle=transverse_pressure_angle)
+    """
     def __init__(self,Z, center_distance, connections,transverse_pressure_angle,
                  coefficient_profile_shift,gear_graph, transverse_pressure_angle_rack,
                  coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,

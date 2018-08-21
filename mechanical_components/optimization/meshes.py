@@ -15,14 +15,30 @@ import powertransmission.tools as tools
 from scipy.optimize import minimize
 
 class ContinuousMeshesAssemblyOptimizer:
+    """
+    Gear mesh optimizer
+    
+    :param Z: Dictionary define the tooth number of each mesh {node1: Z1, node2: Z2 ...}
+    :param center_distance: List of two elements define gear mesh center-distance [[mesh1_centerdistance_min, mesh1_centerdistance_max], [mesh2_centerdistance_min, mesh2_centerdistance_max] ...] with mesh1 the mesh between node1 and node2 ...    
+    :param connections: List of tuple define gear mesh connection [(node1,node2), (node2,node3), (node2,node4)]
+    :param transverse_pressure_angle: List of two elements define the transversal pressure angle interval for each mesh [[mesh1_transversepressure_min, mesh1_transversepressure_max], [mesh2_transversepressure_min, mesh2_transversepressure_max] ...]
+    :param coefficient_profile_shift: Dictionary defining the minimum and maximum coefficient profile shift for each node {node1: [node1_coeffshift_min,node1_coeffshift_max],node2: [node2_coeffshift_min,node2_coeffshift_max] ...}
+    :param gear_graph: NetwokX gear graph connection
+    :param rack_list: Dictionary define all admissible rack {rack1:mechanical_components.meshes.Rack, rack2:mechanical_components.meshes.Rack ...}
+    :param rack_choice: Dictionary assign for each gear mesh a list of acceptable rack {node1:rack1, node2:rack1, node3:rack4 ...}
+    :param list_gear: List of gear mesh in connections [node1, node2, node3, node4]
+    :param material: Dictionary defining material for each gear mesh {node1:mechanical_components.meshes.Material, node2:mechanical_components.meshes.Material ...}
+    :param torque: Dictionary defining all input torque, one node where the torque is not specified is define as the 'output' {node1:torque1, node2:torque2, node3:'output'}
+    :param cycle: Dictionary defining the number of cycle for one node {node3: number_cycle3}
+    :param safety_factor: Safety factor used for the ISO design
+    """
     def __init__(self, Z, center_distance, connections, transverse_pressure_angle,
-                 coefficient_profile_shift, gear_graph,cond_init,
+                 coefficient_profile_shift, gear_graph,
                  rack_list, rack_choice, list_gear, material,torque,
                  cycle, safety_factor):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
         self.coefficient_profile_shift=coefficient_profile_shift
-        self.cond_init=cond_init
         self.rack_list=rack_list
         self.rack_choice=rack_choice
         self.list_gear=list_gear
@@ -266,6 +282,24 @@ class ContinuousMeshesAssemblyOptimizer:
 
 
 class MeshAssemblyOptimizer:
+    """
+    Gear mesh assembly optimizer
+    
+    :param connections: List of tuple define gear mesh connection [(node1,node2), (node2,node3)...]
+    :param gear_speed: Dictionary defining minimum and maximum speed for each gear mesh {node1: [speed_min,speed_max], node2: [speed_min,speed_max]...}
+    :param center_distance: List of two elements define gear mesh connection [[mesh1_centerdistance_min, mesh1_centerdistance_max], [mesh2_centerdistance_min, mesh2_centerdistance_max] ...] with mesh1 the mesh between node1 and node2 ...
+    :param transverse_pressure_angle: List of two elements define the transversal pressure angle interval for each mesh [[mesh1_transversepressure_min, mesh1_transversepressure_max], [mesh2_transversepressure_min, mesh2_transversepressure_max] ...]
+    :param helix_angle: Dictionary to define for one mesh the minimum and maximum helix angle {node2: [mesh1_helixangle_min, mesh1_helixangle_max]}
+    :param gear_width: Dictionary to define for each gear mesh the minimum and maximum gear width {node1: [node1_gearwidth_min,node1_gearwidth_max] ,node2: [node2_gearwidth_min,node2_gearwidth_max] ...}
+    :param frequency: List of two elements defining unacceptable frequency interval [[freq1_min,freq1_max], [freq2_min,freq2_max]...]
+    :param coefficient_profile_shift: Dictionary defining the minimum and maximum coefficient profile shift for each node {node1: [node1_coeffshift_min,node1_coeffshift_max],node2: [node2_coeffshift_min,node2_coeffshift_max] ...}
+    :param rack_list: Dictionary define all admissible rack {rack1:mechanical_components.meshes.Rack, rack2:mechanical_components.meshes.Rack ...}
+    :param rack_choice: Dictionary assign for each gear mesh a list of acceptable rack {node1:[rack1,rack2], node2:[rack1],node3:[rack4,rack5] ...}
+    :param material: Dictionary defining material for each gear mesh {node1:mechanical_components.meshes.Material, node2:mechanical_components.meshes.Material ...}
+    :param torque: Dictionary defining all input torque, one node where the torque is not specified is define as the 'output' {node1:torque1, node2:torque2, node3:'output'}
+    :param cycle: Dictionary defining the number of cycle for one node {node3: number_cycle3}
+    :param safety_factor: Safety factor used for the ISO design
+    """
     def __init__(self, connections, gear_speed, center_distance, Z=None,
                  transverse_pressure_angle=None, helix_angle=None,
                  gear_width=None, frequency=[[0,0]],
@@ -595,16 +629,13 @@ class MeshAssemblyOptimizer:
                     i=list_node.index(n)
                     gear[n]=list_gear[i][dt.current_node[i]]
                     rack[n]=list_rack[dt.current_node[i+self.nb_gear]]
-                # TODO: nom plus explicite que Temp!!!!!
-                Temp={}
-                Temp['Z']=gear
-#                Temp['cond_init']=res.x
-                Temp['cond_init']=0
-                Temp['rack_choice']=rack
-                Temp['center_distance']=cd_minmax_nv
+                Export={}
+                Export['Z']=gear
+                Export['rack_choice']=rack
+                Export['center_distance']=cd_minmax_nv
                 self.fonctionnel.append(fonctionnel)
                 self.fonctionnel_module.append(module_optimal)
-                self.plex_calcul.append(Temp)
+                self.plex_calcul.append(Export)
                 incr+=1
 #            print('valid sent to dt', valid)
             dt.NextNode(valid)
