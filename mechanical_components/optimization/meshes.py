@@ -23,10 +23,8 @@ class ContinuousMeshesAssemblyOptimizer:
     :param connections: List of tuple define gear mesh connection [(node1,node2), (node2,node3), (node2,node4)]
     :param transverse_pressure_angle: List of two elements define the transversal pressure angle interval for each mesh [[mesh1_transversepressure_min, mesh1_transversepressure_max], [mesh2_transversepressure_min, mesh2_transversepressure_max] ...]
     :param coefficient_profile_shift: Dictionary defining the minimum and maximum coefficient profile shift for each node {node1: [node1_coeffshift_min,node1_coeffshift_max],node2: [node2_coeffshift_min,node2_coeffshift_max] ...}
-    :param gear_graph: NetwokX gear graph connection
     :param rack_list: Dictionary define all admissible rack {rack1:mechanical_components.meshes.Rack, rack2:mechanical_components.meshes.Rack ...}
     :param rack_choice: Dictionary assign for each gear mesh a list of acceptable rack {node1:rack1, node2:rack1, node3:rack4 ...}
-    :param list_gear: List of gear mesh in connections [node1, node2, node3, node4]
     :param material: Dictionary defining material for each gear mesh {node1:mechanical_components.meshes.Material, node2:mechanical_components.meshes.Material ...}
     :param torque: Dictionary defining all input torque, one node where the torque is not specified is define as the 'output' {node1:torque1, node2:torque2, node3:'output'}
     :param cycle: Dictionary defining the number of cycle for one node {node3: number_cycle3}
@@ -53,24 +51,34 @@ class ContinuousMeshesAssemblyOptimizer:
     >>> cmao1 = ContinuousMeshesAssemblyOptimizer(**input)
     """
     def __init__(self, Z, center_distance, connections, transverse_pressure_angle,
-                 coefficient_profile_shift, gear_graph,
-                 rack_list, rack_choice, list_gear, material,torque,
+                 coefficient_profile_shift,
+                 rack_list, rack_choice, material,torque,
                  cycle, safety_factor):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
         self.coefficient_profile_shift=coefficient_profile_shift
         self.rack_list=rack_list
         self.rack_choice=rack_choice
-        self.list_gear=list_gear
         Bounds=list(center_distance)
         Bounds.extend(transverse_pressure_angle)
-        # TODO: Check if this is a bug
-        tp=len(coefficient_profile_shift.keys())
+
+        # NetworkX graph construction
+        list_gear=[]
+        for gs in connections:
+            for g in gs:
+                if g not in list_gear:
+                    list_gear.append(g)
+        gear_graph=nx.Graph()
+        gear_graph.add_nodes_from(list_gear)
+        gear_graph.add_edges_from(connections)
+        self.gear_graph=gear_graph
+        self.list_gear=list_gear
+        
         for i in self.list_gear:
             Bounds.append(coefficient_profile_shift[i])
         self.solutions=[]
         
-        self.xi={'Z': Z, 'connections': connections,'gear_graph':gear_graph,'list_gear':list_gear,
+        self.xi={'Z': Z, 'connections': connections,
                  'material':material,'torque':torque,'cycle':cycle,'safety_factor':safety_factor}
         self.xj,self.dict_xu=self._init()
         self.xt=dict(list(self.xi.items())+list(self.xj.items()))
@@ -196,8 +204,8 @@ class ContinuousMeshesAssemblyOptimizer:
             ineq.append(oaa2)
             df1=self.MeshAssembly.DF[ne][gs[0]]
             df2=self.MeshAssembly.DF[ne][gs[1]]
-            db1=self.MeshAssembly.meshes[ne][gs[0]].DB
-            db2=self.MeshAssembly.meshes[ne][gs[1]].DB
+            db1=self.MeshAssembly.meshes[ne][gs[0]].db
+            db2=self.MeshAssembly.meshes[ne][gs[1]].db
             ineq.append(df1-db1)
             ineq.append(df2-db2)
         #contrainte sur le RCA
@@ -218,9 +226,8 @@ class ContinuousMeshesAssemblyOptimizer:
         x=self._convert_Xu2xj(X)
         x=self.Update(x)
         eq=[]
-#        for ng in range(self.MeshAssembly.gear_graph.number_of_nodes()):
         for ng in self.list_gear:
-            nel=list(self.MeshAssembly.gear_graph.edges(ng))
+            nel=list(self.gear_graph.edges(ng))
             if len(nel)>1:
                 list_db=[]
                 for ne in nel:
@@ -228,8 +235,7 @@ class ContinuousMeshesAssemblyOptimizer:
                         nes=self.MeshAssembly.connections.index((ne[0],ne[1]))
                     elif (ne[1],ne[0]) in self.MeshAssembly.connections:
                         nes=self.MeshAssembly.connections.index((ne[1],ne[0]))
-                    list_db.append(self.MeshAssembly.meshes[nes][ng].DB)
-#                    print(self.MeshAssembly.meshes[nes][ng].DB,nes,ng,list_db)
+                    list_db.append(self.MeshAssembly.meshes[nes][ng].db)
                 list1=itertools.combinations(list_db,2)
                 for n1,n2 in list1:
                     eq.append(n1-n2)
@@ -439,9 +445,7 @@ class MeshAssemblyOptimizer:
         self.plex_calcul=self.AnalyzeCombination()
         
         for i,plex in enumerate(self.plex_calcul):
-            plex['gear_graph']=self.gear_graph
             plex['rack_list']=self.rack_list
-            plex['list_gear']=self.list_gear
             plex['material']=self.material
             plex['torque']=self.torque
             plex['cycle']=self.cycle
@@ -538,12 +542,9 @@ class MeshAssemblyOptimizer:
         np.extend([self.nb_rack]*self.nb_gear)
 
         list_rack=list(self.rack_list.keys())
-#        print(list_gear)
-#        print(list_node)
         
         demul_int_min=1/9.
         demul_int_max=9
-#        print(np)
         dt=tools.RegularDecisionTree(np)
         
         incr=0
@@ -584,16 +585,11 @@ class MeshAssemblyOptimizer:
 #                    print('@@@@@@@@@@@@@@@@@@@')
                     v0_min, v0_max = self.gear_speed[list_node[0]]
                     z0 = list_gear[0][dt.current_node[0]]
-#                    print('z0', z0)
-#                    print(list_node[0:dt.current_depth+1])
                     for engr_index, engr_num in enumerate(list_node[0:dt.current_depth+1]):
-#                        print('###')
                         if engr_index>0:# No need of checking input
                             if engr_num in self.gear_speed.keys():
                                 z=list_gear[engr_index][dt.current_node[engr_index]]
-    #                            print('z', z)
                                 demul=z0/z
-    #                            print(demul, z, z0)
                                 vsi_min=self.gear_speed[engr_num][0] # Specified speed
                                 vsi_max=self.gear_speed[engr_num][1]
                                 
