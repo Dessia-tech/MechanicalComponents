@@ -31,7 +31,7 @@ MeshAssembly
 .. seealso::
 
   .. autoclass:: mechanical_components.meshes.MeshAssembly
-     :members: Update,GearTorque,CycleParameter,SigmaLewis,GearWidthDefinition,SigmaMaterialISO,GearRotate,InitialPosition,VolumeModel,Mass,FreeCADExport,SVGExport,Dict
+     :members: Update,GearTorque,CycleParameter,GearWidthDefinition,SigmaMaterialISO,GearRotate,InitialPosition,VolumeModel,Mass,FreeCADExport,SVGExport,Dict
 
 ContinuousMeshesAssemblyOptimizer
 ---------------------------------
@@ -39,6 +39,7 @@ ContinuousMeshesAssemblyOptimizer
 .. seealso::
 
   .. autoclass:: mechanical_components.optimization.meshes.ContinuousMeshesAssemblyOptimizer
+     :members: Optimize
 
 MeshAssemblyOptimizer
 ---------------------
@@ -46,3 +47,4 @@ MeshAssemblyOptimizer
 .. seealso::
 
   .. autoclass:: mechanical_components.optimization.meshes.MeshAssemblyOptimizer
+     :members: AnalyseZ,AnalyzeCombination,Optimize,SearchOptimumCD

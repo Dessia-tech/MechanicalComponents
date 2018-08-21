@@ -1,7 +1,7 @@
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
 
-#cas test avec deux engrenages
+#input for a specified gear mesh
 list_cd=[[0.117,0.16]]
 list_gear_set=[(5,1)]
 list_speed={5:[1000*npy.pi/30,1500*npy.pi/30],1:[4100*npy.pi/30,
@@ -27,7 +27,7 @@ GA=meshes_opt.MeshAssemblyOptimizer(Z={},
                                torque=list_torque,
                                cycle=list_cycle)
 
-#Recherche triée des nb_sol architecture ayant un entraxe mini (nb_sol=-1 pour analyser l'ensemble des solutions)
+#Optimization for gear set with center-distance closed to the minimum boundary
 GA.SearchOptimumCD(nb_sol=1,verbose=True)
 print('Nombre de solutions convergés:',len(GA.solutions))
 solution=GA.solutions[-1]
