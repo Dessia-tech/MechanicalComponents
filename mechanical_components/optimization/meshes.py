@@ -285,10 +285,10 @@ class MeshAssemblyOptimizer:
         if transverse_pressure_angle==None:
             transverse_pressure_angle=[]
             for i in range(nb_set):
-                transverse_pressure_angle.append([15/180*npy.pi,30/180*npy.pi])
+                transverse_pressure_angle.append([15/180.*npy.pi,30/180.*npy.pi])
             
         if helix_angle==None:
-            helix_angle={list_gear[0]:[15/180*npy.pi,25/180*npy.pi]}
+            helix_angle={list_gear[0]:[15/180.*npy.pi,25/180.*npy.pi]}
         
         if gear_width==None:
             gear_width={list_gear[0]:[15*1e-3,25*1e-3]}
@@ -311,7 +311,7 @@ class MeshAssemblyOptimizer:
                 
         if rack_list==None:
             rack_list={0:{'name':'Optim_Module','module':[1*1e-3,3*1e-3],
-                          'transverse_pressure_angle_rack':[20*npy.pi/180,20*npy.pi/180],
+                          'transverse_pressure_angle_rack':[20*npy.pi/180.,20*npy.pi/180.],
                           'coeff_gear_addendum':[1,1],
                           'coeff_gear_dedendum':[1.25,1.25],
                           'coeff_root_radius':[0.38,0.38],
@@ -551,7 +551,7 @@ class MeshAssemblyOptimizer:
                     liste_DF_min[engr_num]=z*module_inf
                 liste_pente_cd_module=[]
                 for set_num,(eng1,eng2) in enumerate(self.connections):
-                    cd_min=(liste_DF_min[eng1]+liste_DF_min[eng2])/2
+                    cd_min=(liste_DF_min[eng1]+liste_DF_min[eng2])/2.
                     liste_pente_cd_module.append(cd_min/module_inf)
                 cd_minmax_nv=[]
                 module_optimal=0

@@ -213,7 +213,7 @@ class Rack:
         self.clearance=self.root_radius-self.root_radius*npy.sin(self.transverse_pressure_angle)
 
         #paramètre pour la trochoide
-        self.a=self.tooth_space/2-self.gear_dedendum*npy.tan(self.transverse_pressure_angle)-self.root_radius*npy.tan(1/2*npy.arctan(npy.cos(self.transverse_pressure_angle)/(npy.sin(self.transverse_pressure_angle))))
+        self.a=self.tooth_space/2.-self.gear_dedendum*npy.tan(self.transverse_pressure_angle)-self.root_radius*npy.tan(1/2.*npy.arctan(npy.cos(self.transverse_pressure_angle)/(npy.sin(self.transverse_pressure_angle))))
         self.b=self.gear_dedendum-self.root_radius
 
     def Update(self,module,transverse_pressure_angle,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness):
