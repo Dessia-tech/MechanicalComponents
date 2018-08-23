@@ -1,7 +1,7 @@
 Define and Optimize a simple gear mesh
 --------------------------------------
 
-In this tutorial, we will define and optimize a gear mesh
+In this tutorial, we will define and optimize a simple gear mesh
 
 .. image:: images/meshes0.png
    :height: 350px
@@ -26,8 +26,8 @@ Input definition
 
 The minimum parameters to define one gear mesh are:
  * List define minimum and maximum center-distance
- * List of connected mesh
- * Dictionary of admissible speed
+ * List of connected gear mesh
+ * Dictionary of admissible speed for each component
 
 .. literalinclude:: ../../scripts/meshes/meshes0.py
    :lines: 6-10
@@ -35,15 +35,22 @@ The minimum parameters to define one gear mesh are:
 MeshAssemblyOptimizer definition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The objet MeshAssemblyOptimizer is then generated, and a decision tree is used to define all teeth number available
+
 .. literalinclude:: ../../scripts/meshes/meshes0.py
    :lines: 12-14
 
 .. seealso::
 
   .. autoclass:: mechanical_components.optimization.meshes.MeshAssemblyOptimizer
+     :noindex:
 
 Gear mesh optimization
 ^^^^^^^^^^^^^^^^^^^^^^
+
+The objet MeshAssemblyOptimizer propose two different methods to optimize the  gear mesh
+  * An automatic optimization approach where the optimization is perform only for the best candidate toward center-distance and modulus
+  * A classical (sequential method) optimization approach where we optimize all the design of experiment
 
 Automatic gear mesh optimize
 ****************************
@@ -59,6 +66,8 @@ Sequential gear mesh optimize
 
 Export CAD and SVG
 ^^^^^^^^^^^^^^^^^^
+
+The objet MeshAssemblyOptimizer propose some method to generate a SVG graph and a 3D CAD in FreeCAD
 
 .. literalinclude:: ../../scripts/meshes/meshes0.py
    :lines: 24-28

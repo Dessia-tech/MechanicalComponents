@@ -149,12 +149,14 @@ class ContinuousMeshesAssemblyOptimizer:
         
         # Definition initial condition
         self.X0=self.CondInit()
-        self.optimizer_data=self._convert_X2x(self.X0)
         self.general_data={'Z': Z, 'connections': connections,
                  'material':material,'torque':torque,'cycle':cycle,
                  'safety_factor':safety_factor,'verbose':verbose}
+        self.optimizer_data=self._convert_X2x(self.X0)
         self.xt=dict(list(self.optimizer_data.items())+list(self.general_data.items()))
         self.MeshAssembly = MeshAssembly(**self.xt)
+        
+        self.save=copy.deepcopy(self.optimizer_data)
         
     def CondInit(self):
         X0=[]
@@ -235,7 +237,9 @@ class ContinuousMeshesAssemblyOptimizer:
     def Update(self,X):
         optimizer_data=self._convert_X2x(X)
         xt=dict(list(optimizer_data.items())+list(self.general_data.items()))
-        self.MeshAssembly.Update(**xt)
+        if self.save!=optimizer_data:
+            self.MeshAssembly.Update(**xt)
+            self.save=copy.deepcopy(optimizer_data)
     
     def Fineq(self,X):
         
@@ -283,16 +287,16 @@ class ContinuousMeshesAssemblyOptimizer:
         obj=0
         obj+=self.MeshAssembly.Functional()
         # maximization of the gear modulus
-        for ne,gs in enumerate(self.MeshAssembly.connections):
-            for g in gs:
-                mo=self.MeshAssembly.meshes[g].rack.module
-                list_module=self.rack_list[self.rack_choice[g]]['module']
-                if list_module[0]<list_module[1]:
-                    obj+=100*(list_module[1]-mo)**2
+#        for ne,gs in enumerate(self.MeshAssembly.connections):
+#            for g in gs:
+#                mo=self.MeshAssembly.meshes[g].rack.module
+#                list_module=self.rack_list[self.rack_choice[g]]['module']
+#                if list_module[0]<list_module[1]:
+#                    obj+=100*(list_module[1]-mo)**2
             
         # Minimisation of center-distance on the minimum bound specified
-        for num_engr,list_cd in enumerate(self.center_distance):
-            obj+=100*(list_cd[0]-self.MeshAssembly.center_distance[num_engr])**2
+#        for num_engr,list_cd in enumerate(self.center_distance):
+#            obj+=100*(list_cd[0]-self.MeshAssembly.center_distance[num_engr])**2
             
 #        for i in fineq:
 #            if i < 0:
@@ -324,7 +328,9 @@ class ContinuousMeshesAssemblyOptimizer:
                 print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
                       cx.status,min(self.Fineq(Xsol))))
             if min(self.Fineq(Xsol))>-1e-5:
-                self.solutions.append(self.MeshAssembly)
+                optimizer_data=self._convert_X2x(Xsol)
+                xt=dict(list(optimizer_data.items())+list(self.general_data.items()))
+                self.solutions.append(MeshAssembly(**xt))
                 arret=1
             i=i+1
 

@@ -794,11 +794,6 @@ class MeshAssembly:
             Z, coefficient_profile_shift, dict_db, transverse_pressure_angle_rack,
             coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
             coeff_circular_tooth_thickness)
-        # update gear_width
-        self.gear_width,self.sigma_iso,self.sigma_lim=self.GearWidthDefinition(safety_factor)
-        for num_gear in self.list_gear:
-            self.meshes[num_gear].gear_width=self.gear_width[num_gear]
-        
         
     ### Method gear mesh calculation
         
@@ -1111,7 +1106,7 @@ class MeshAssembly:
         
         :results: vector of data that should be positive
         """
-        check1,ineq,obj1=self.CheckMinimumBacklash(3*1e-4)
+        check1,ineq,obj1=self.CheckMinimumBacklash(4*1e-4)
         check2,list_ineq,obj2=self.CheckRadialContactRatio(1)
         ineq.extend(list_ineq)
         return ineq
@@ -1121,7 +1116,7 @@ class MeshAssembly:
         
         :results: scalar add to the global functional of the optimizer
         """
-        check1,ineq1,obj1=self.CheckMinimumBacklash(3*1e-4)
+        check1,ineq1,obj1=self.CheckMinimumBacklash(4*1e-4)
         check2,ineq2,obj2=self.CheckRadialContactRatio(1)
         obj=obj1+obj2
         return obj

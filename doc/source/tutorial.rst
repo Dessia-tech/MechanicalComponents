@@ -4,5 +4,5 @@
 .. toctree::
    :maxdepth: 3
 
-   tutorial0
-   tutorial1
+   example
+   example_objet

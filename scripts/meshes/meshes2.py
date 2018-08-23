@@ -3,7 +3,7 @@
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
 
-#3 gear mesh test
+#3 gears meshes test
 list_cd=[[0.08,0.12],[0.07,0.12]]
 connections=[(5,1),(1,2)]
 list_speed={5:[1000*npy.pi/30,1200*npy.pi/30],1:[2000*npy.pi/30,
@@ -32,7 +32,7 @@ GA = meshes_opt.MeshAssemblyOptimizer(Z={},
 GA.SearchOptimumCD(nb_sol=1, verbose=True)
 print('Number of solutions:',len(GA.solutions))
 solution=GA.solutions[-1]
-solution.SVGExport('name.txt',{5 : [0,0]})
-solution.FreeCADExport('Gears1')
+solution.SVGExport('meshes2.txt',{5 : [0,0], 2 : [0.15,0]})
+#solution.FreeCADExport('meshes2')
  
 
