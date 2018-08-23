@@ -17,7 +17,7 @@ First, we import mechanical_components.optimization.meshes package and then one 
 * numpy (http://www.numpy.org)
 
 .. literalinclude:: ../../scripts/meshes/meshes1.py
-  :lines: 1-2
+  :lines: 3-5
 
 In most scripts, the package is imported as meshes to make it shorter.
 
@@ -30,24 +30,24 @@ The minimum parameters to define one gear mesh are:
   * Dictionary of admissible speed
 
 .. literalinclude:: ../../scripts/meshes/meshes1.py
-  :lines: 4-17
+  :lines: 6-19
 
 MeshAssemblyOptimizer definition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. literalinclude:: ../../scripts/meshes/meshes1.py
-  :lines: 19-28
+  :lines: 21-30
 
 
 Gear mesh optimization
 ^^^^^^^^^^^^^^^^^^^^^^
 
 .. literalinclude:: ../../scripts/meshes/meshes1.py
-  :lines: 30-32
+  :lines: 32-34
 
 
 Export CAD and SVG
 ^^^^^^^^^^^^^^^^^^
 
 .. literalinclude:: ../../scripts/meshes/meshes1.py
-  :lines: 33-35
+  :lines: 35-37

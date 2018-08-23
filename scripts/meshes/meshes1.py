@@ -1,3 +1,5 @@
+#import sys
+#del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
 
@@ -6,7 +8,7 @@ list_cd=[[0.117,0.16]]
 list_gear_set=[(5,1)]
 list_speed={5:[1000*npy.pi/30,1500*npy.pi/30],1:[4100*npy.pi/30,
                4300*npy.pi/30]}
-list_rack={0:{'name':'Catalogue_A','module':[0.5*1e-3,2.6*1e-3],
+list_rack={0:{'name':'Catalogue_A','module':[1*1e-3,2.5*1e-3],
               'transverse_pressure_angle_rack':[20/180*npy.pi,20/180*npy.pi],
               'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],
               'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}

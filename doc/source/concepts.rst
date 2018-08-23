@@ -31,7 +31,7 @@ MeshAssembly
 .. seealso::
 
   .. autoclass:: mechanical_components.meshes.MeshAssembly
-     :members: Update,GearTorque,CycleParameter,GearWidthDefinition,SigmaMaterialISO,GearRotate,InitialPosition,VolumeModel,Mass,FreeCADExport,SVGExport,Dict
+     :members: Update,GearTorque,CycleParameter,GearWidthDefinition,SigmaMaterialISO,GearRotate,InitialPosition,VolumeModel,Mass,FreeCADExport,SVGExport,Dict,CheckMinimumBacklash,CheckRadialContactRatio,ListeIneq,Functional
 
 ContinuousMeshesAssemblyOptimizer
 ---------------------------------
