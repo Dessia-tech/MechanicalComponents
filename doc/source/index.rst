@@ -14,7 +14,8 @@ Version |release|
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
+   :numbered: 3
 
    intro
    tutorial

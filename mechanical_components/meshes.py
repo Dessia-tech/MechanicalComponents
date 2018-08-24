@@ -18,6 +18,8 @@ import itertools
 import networkx as nx
 
 import powertransmission.tools as tools
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 #data_coeff_YB_Iso
 evol_coeff_yb_iso={'data':[[0.0,1.0029325508401201],
@@ -288,7 +290,8 @@ class Rack:
         self.a=self.tooth_space/2-self.gear_dedendum*npy.tan(self.transverse_pressure_angle)-self.root_radius*npy.tan(1/2*npy.arctan(npy.cos(self.transverse_pressure_angle)/(npy.sin(self.transverse_pressure_angle))))
         self.b=self.gear_dedendum-self.root_radius
 
-    def Update(self,module,transverse_pressure_angle,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness):
+    def Update(self,module,transverse_pressure_angle=None,coeff_gear_addendum=1,
+               coeff_gear_dedendum=1.25,coeff_root_radius=0.38,coeff_circular_tooth_thickness=0.5):
         """
         Update of the gear rack
         
@@ -297,16 +300,43 @@ class Rack:
         :param transverse_pressure_angle: update of the transverse pressure angle of the rack
         :type transverse_pressure_angle: radian
         :param coeff_gear_addendum: update of the gear addendum coefficient (gear_addendum = coeff_gear_addendum*module)
-        :param coeff_gear_dedendum: update of the gear dedendum coefficient (gear_dedendum = coeff_gear_dedendum*module)
+        :param coeff_gear_dedendum: update of the gear dedendum coefficient (gear_dedendum = coeff_gear_dedendum*module) (top of the rack)
         :param coeff_root_radius: update of the root radius coefficient (root_radius = coeff_root_radius*module)
         :param coeff_circular_tooth_thickness: update of the circular tooth thickness coefficient (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
         
         >>> input={'module':2*1e-3,'transverse_pressure_angle':21/180.*npy.pi}
         >>> Rack1.Update(**input) # Update of the rack definition
         """
+        if transverse_pressure_angle==None:
+            transverse_pressure_angle=self.transverse_pressure_angle
         self.module=module
         self.RackParam(transverse_pressure_angle,coeff_gear_addendum,coeff_gear_dedendum,coeff_root_radius,coeff_circular_tooth_thickness)
         
+    ### Optimization Method
+    
+    def CheckRackViable(self):
+        """ Check the viability of the rack toward the top and the root
+        
+        :results: boolean variable, and a list of element to be positive for the optimizer
+        """
+        list_ineq=[]
+        list_ineq.append(self.transverse_radial_pitch-self.circular_tooth_thickness
+                         -2*self.gear_dedendum*npy.tan(self.transverse_pressure_angle)
+                         -2*(self.root_radius*npy.cos(self.transverse_pressure_angle)-npy.tan(self.transverse_pressure_angle)
+                         *self.root_radius*(1-npy.sin(self.transverse_pressure_angle))))
+        list_ineq.append(self.circular_tooth_thickness-2*(self.gear_addendum*npy.tan(self.transverse_pressure_angle)))
+        check=False
+        if min(list_ineq)>0:
+            check=True
+        return check,list_ineq
+    
+    def ListeIneq(self):
+        """ Compilation method for inequality list used by the optimizer
+        
+        :results: vector of data that should be positive
+        """
+        check,ineq=self.CheckRackViable
+        return ineq
 
     def Dict(self):
         """Export dictionary
@@ -325,6 +355,40 @@ class Rack:
             else:
                 d[k]=v
         return d
+    
+    def Contour(self,number_pattern):
+        """ Construction of the volmdr 2D rack profile
+        
+        :param number_pattern: number of rack pattern to define
+        """
+        p1=vm.Point2D((0,0))
+        p2=p1.Translation((self.gear_addendum*npy.tan(self.transverse_pressure_angle),self.gear_addendum))
+        p4=p1.Translation((self.circular_tooth_thickness,0))
+        p3=p4.Translation((-self.gear_addendum*npy.tan(self.transverse_pressure_angle),self.gear_addendum))
+        p5=p4.Translation((self.gear_dedendum*npy.tan(self.transverse_pressure_angle),-self.gear_dedendum))
+        p7=p4.Translation((self.tooth_space,0))
+        p6=p7.Translation((-self.gear_dedendum*npy.tan(self.transverse_pressure_angle),-self.gear_dedendum))
+        L=primitives2D.RoundedLines2D([p1,p2,p3,p4,p5,p6,p7],{4:self.root_radius,5:self.root_radius},False)
+        Rack_Elem=[]
+        for i in range(number_pattern):
+            Rack_Elem.append(L.Translation(((i)*(p7.vector-p1.vector))))
+        p10=Rack_Elem[0].points[0]
+        p15=Rack_Elem[-1].points[-1]
+        p11=p10.Translation((-self.circular_tooth_thickness,0))
+        p12=p11.Translation((0,2*self.whole_depth))
+        p14=p15.Translation((self.circular_tooth_thickness,0))
+        p13=p14.Translation((0,2*self.whole_depth))
+        Rack_Elem.append(primitives2D.RoundedLines2D([p10,p11,p12,p13,p14,p15],{},False))
+        return Rack_Elem
+    
+    def Plot(self,number_pattern):
+        """ Plot function of the rack
+        
+        :param number_pattern: number of rack pattern to draw
+        """
+        Rack_Elem=self.Contour(number_pattern)
+        RackElem=vm.Contour2D(Rack_Elem)
+        RackElem.MPLPlot()
 
     def CSVExport(self):
         """
@@ -454,6 +518,16 @@ class Mesh:
         phi=-(a+b*npy.tan(npy.pi/2-self.rack.transverse_pressure_angle))/r
         root_diameter_active=2*norm(self._Trochoide(phi))
         return root_diameter_active,phi
+    
+    ### Optimization Method
+    
+    def ListeIneq(self):
+        """ Compilation method for inequality list used by the optimizer
+        
+        :results: vector of data that should be positive
+        """
+        check,ineq=self.rack.CheckRackViable()
+        return ineq
     
     ### Trace method
     
@@ -1106,9 +1180,14 @@ class MeshAssembly:
         
         :results: vector of data that should be positive
         """
-        check1,ineq,obj1=self.CheckMinimumBacklash(4*1e-4)
-        check2,list_ineq,obj2=self.CheckRadialContactRatio(1)
+        _,ineq,_=self.CheckMinimumBacklash(4*1e-4)
+        _,list_ineq,_=self.CheckRadialContactRatio(1)
         ineq.extend(list_ineq)
+        
+        for num_gear,mesh in self.meshes.items():
+            list_ineq=mesh.ListeIneq()
+            ineq.extend(list_ineq)
+        
         return ineq
         
     def Functional(self):

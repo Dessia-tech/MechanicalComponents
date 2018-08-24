@@ -7,7 +7,7 @@ Rack
 .. seealso::
 
   .. autoclass:: mechanical_components.meshes.Rack
-     :members: Update,Dict,CSVExport
+     :members: Update,Dict,CSVExport,Plot,Contour,CheckRackViable,ListeIneq
 
 Material
 --------
@@ -23,7 +23,7 @@ Mesh
 .. seealso::
 
   .. autoclass:: mechanical_components.meshes.Mesh
-     :members: Update,GearSection,Contour,GearISOSection,Dict
+     :members: Update,GearSection,Contour,GearISOSection,Dict,ListeIneq
 
 MeshAssembly
 ------------

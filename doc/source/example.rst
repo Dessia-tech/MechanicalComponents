@@ -2,7 +2,7 @@ Example
 =======
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
 
    tutorial0
    tutorial1
