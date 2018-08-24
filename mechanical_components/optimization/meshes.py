@@ -3,7 +3,7 @@
 """
 Created on Fri Aug 17 02:13:01 2018
 
-@author: steven
+@author: Pierre-Emmanuel Dumouchel
 """
 
 #import itertools as it
@@ -13,6 +13,7 @@ import itertools
 import networkx as nx
 import powertransmission.tools as tools
 from scipy.optimize import minimize
+import copy
 
 class ContinuousMeshesAssemblyOptimizer:
     """
@@ -53,15 +54,18 @@ class ContinuousMeshesAssemblyOptimizer:
     def __init__(self, Z, center_distance, connections, transverse_pressure_angle,
                  coefficient_profile_shift,
                  rack_list, rack_choice, material,torque,
-                 cycle, safety_factor):
+                 cycle, safety_factor,db,verbose=False):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
         self.coefficient_profile_shift=coefficient_profile_shift
         self.rack_list=rack_list
         self.rack_choice=rack_choice
-        Bounds=list(center_distance)
-        Bounds.extend(transverse_pressure_angle)
-
+        self.Z=Z
+        self.connections=connections
+        
+        # Initailization
+        self.solutions=[]
+        
         # NetworkX graph construction
         list_gear=[]
         for gs in connections:
@@ -73,213 +77,232 @@ class ContinuousMeshesAssemblyOptimizer:
         gear_graph.add_edges_from(connections)
         self.gear_graph=gear_graph
         self.list_gear=list_gear
+        self.connections_dfs=list(nx.dfs_edges(gear_graph,connections[0][0]))
         
-        for i in self.list_gear:
-            Bounds.append(coefficient_profile_shift[i])
-        self.solutions=[]
+        # Search of the min/max of the base diameter of the first gear mesh
+        mesh1,mesh2=connections[0]
+        Z1=Z[mesh1]
+        Z2=Z[mesh2]
+        cd1_min,cd1_max=self.center_distance[0]
+        tpa1_min,tpa1_max=self.transverse_pressure_angle[0]
+        df1_min=2*cd1_min*Z1/(Z1+Z2)
+        db1_min=df1_min*npy.cos(tpa1_max)
+        df1_max=2*cd1_max*Z1/(Z1+Z2)
+        db1_max=df1_max*npy.cos(tpa1_min)
+        self.db=[db1_min,db1_max]
         
-        self.xi={'Z': Z, 'connections': connections,
-                 'material':material,'torque':torque,'cycle':cycle,'safety_factor':safety_factor}
-        self.xj,self.dict_xu=self._init()
-        self.xt=dict(list(self.xi.items())+list(self.xj.items()))
-        
-        for k,v in self.dict_xu:
-            Bounds.append(self.rack_list[v][k])
-        self.Bounds=npy.array(Bounds)
-        
-        #xk partie non optimisée du vecteur x
-        #xu partie optimisée du vecteur x
-        
-        self.MeshAssembly = MeshAssembly(**self.xt)
-        
-    # TODO: Pourquoi un deuxième Init ???
-    def _init(self):
-        xj={'center_distance':self._init_list(self.center_distance),
-                 'transverse_pressure_angle':self._init_list(self.transverse_pressure_angle),
-                 'coefficient_profile_shift':self._init_item(self.coefficient_profile_shift),
-                 'transverse_pressure_angle_rack':[],'coeff_gear_addendum':[],
-                 'coeff_gear_dedendum':[],'coeff_root_radius':[],'coeff_circular_tooth_thickness':[]}
-        dict_xu=[]
-        x_list={}
+        # Search of unknown parameters (borne_min different of borne_max)
+        dict_unknown={'db':[],'transverse_pressure_angle':[],
+                 'coefficient_profile_shift':[],'transverse_pressure_angle_rack':[],
+                 'coeff_gear_addendum':[],'coeff_gear_dedendum':[],
+                 'coeff_root_radius':[],'coeff_circular_tooth_thickness':[]}
+        dict_global=copy.deepcopy(dict_unknown)
         for i in list(set(list(self.rack_choice.values()))):
-            x_list[i]={'transverse_pressure_angle_rack':[],
-                  'coeff_gear_addendum':[],
-                  'coeff_gear_dedendum':[],
-                  'coeff_root_radius':[],
-                  'coeff_circular_tooth_thickness':[]}
             for k,v in self.rack_list[i].items():
                 if k not in ['type','name','module']:
-                    if v[0]==v[1]:
-                        x_list[i][k]=v[0]
+                    dict_global[k].append(i)
+                    if not v[0]==v[1]:
+                        dict_unknown[k].append(i)
+        dict_global['db']=[connections[0][0]]
+        if not db1_min==db1_max:
+            dict_unknown['db']=[connections[0][0]]
+        for num_mesh,list_tpa in enumerate(self.transverse_pressure_angle):
+            dict_global['transverse_pressure_angle'].append(num_mesh)
+            if not list_tpa[0]==list_tpa[1]:
+                dict_unknown['transverse_pressure_angle'].append(num_mesh)
+        for num_gear in self.list_gear:
+            cps=coefficient_profile_shift[num_gear]
+            dict_global['coefficient_profile_shift'].append(num_gear)
+            if not cps[0]==cps[1]:
+                dict_unknown['coefficient_profile_shift'].append(num_gear)
+        self.dict_unknown=dict_unknown
+        self.dict_global=dict_global
+        number_unknown=0
+        for key,list_unknown in dict_unknown.items():
+            number_unknown+=len(list_unknown)
+        print('The total number of unknown for the gear mesh assembly optimization is {}'.format(number_unknown))
+        
+        # Definition of the Bound matrix for the optimizer
+        Bounds=[]
+        list_order_unknown=[]
+        for key,list_unknown in dict_unknown.items():
+            if len(list_unknown)>0:
+                if key=='db':
+                    Bounds.append(self.db)
+                    list_order_unknown.append(key)
+                elif key=='transverse_pressure_angle':
+                    list_order_unknown.append(key)
+                    for num_mesh in list_unknown:
+                        Bounds.append(self.transverse_pressure_angle[num_mesh])
+                elif key=='coefficient_profile_shift':
+                    list_order_unknown.append(key)
+                    for num_gear in list_unknown:
+                        Bounds.append(self.coefficient_profile_shift[num_gear])
+                elif key in ['transverse_pressure_angle_rack','coeff_gear_addendum',
+                             'coeff_gear_dedendum','coeff_root_radius',
+                             'coeff_circular_tooth_thickness']:
+                    list_order_unknown.append(key)
+                    for num_rack in list_unknown:
+                        Bounds.append(self.rack_list[num_rack][key])
+        self.Bounds=npy.array(Bounds)
+        self.list_order_unknown=list_order_unknown
+        
+        # Definition initial condition
+        self.X0=self.CondInit()
+        self.general_data={'Z': Z, 'connections': connections,
+                 'material':material,'torque':torque,'cycle':cycle,
+                 'safety_factor':safety_factor,'verbose':verbose}
+        self.optimizer_data=self._convert_X2x(self.X0)
+        self.xt=dict(list(self.optimizer_data.items())+list(self.general_data.items()))
+        self.MeshAssembly = MeshAssembly(**self.xt)
+        
+        self.save=copy.deepcopy(self.optimizer_data)
+        
+    def CondInit(self):
+        X0=[]
+        for interval in self.Bounds:
+            X0.append((interval[1]-interval[0])*float(npy.random.random(1))+interval[0])
+        return X0
+    
+    def _convert_X2x(self,X):
+        optimizer_data={'center_distance':[],'transverse_pressure_angle':[],
+                 'coefficient_profile_shift':{},'transverse_pressure_angle_rack':{},
+                 'coeff_gear_addendum':{},'coeff_gear_dedendum':{},
+                 'coeff_root_radius':{},'coeff_circular_tooth_thickness':{}} # dictionary of possibily/currently optimization data
+        # copy and transfert data to the dictionary optimizer_data
+        liste_transverse_pressure_angle=[]
+        for key,list_ind in self.dict_global.items():
+            for num_elem in list_ind:
+                if key in ['transverse_pressure_angle']:
+                    if num_elem in self.dict_unknown[key]:
+                        value=X[self._position_X(key,num_elem)]
                     else:
-                        x_list[i][k]=(v[1]-v[0])*float(npy.random.random(1))+v[0]
-                        dict_xu.append((k,i))
-#        for k in sorted(list(self.rack_choice.keys())):
-        for k in self.list_gear:
-            v=self.rack_choice[k]
-            for k2,v2 in self.rack_list[v].items():
-                if k2 not in ['type','name','module']:
-                    xj[k2].append(x_list[v][k2])
-        return xj,dict_xu
+                        value=self.transverse_pressure_angle[num_elem][0]
+                    liste_transverse_pressure_angle.append(value)
+                    if num_elem==0:
+                        optimizer_data[key].append(value)
+                elif key in ['coefficient_profile_shift']:
+                    if num_elem in self.dict_unknown[key]:
+                        value=X[self._position_X(key,num_elem)]
+                    else:
+                        value=self.coefficient_profile_shift[num_elem][0]
+                    optimizer_data[key][num_elem]=value
+                elif key in ['transverse_pressure_angle_rack',
+                             'coeff_gear_addendum','coeff_gear_dedendum',
+                             'coeff_root_radius','coeff_circular_tooth_thickness']:
+                    if num_elem in self.dict_unknown[key]:
+                        value=X[self._position_X(key,num_elem)]
+                    else:
+                        value=self.rack_list[num_elem][key][0]
+                    for num_engr in self.list_gear:
+                        if self.rack_choice[num_engr]==num_elem:
+                            optimizer_data[key][num_engr]=value
+                elif key in ['db']:
+                    if num_elem in self.dict_unknown[key]:
+                        value=X[self._position_X(key,num_elem)]
+                    else:
+                        value=self.db[0]
+                    db_init=value
+        # calculation of the center_distance data
+        engr_init=self.dict_global['db'][0]
+        db={engr_init:db_init}
+        Z=self.Z
+        for engr1,engr2 in self.connections_dfs:
+            db1=db[engr1]
+            db2=Z[engr2]/Z[engr1]*db1
+            db[engr2]=db2
+        for num_mesh,(engr1,engr2) in enumerate(self.connections):
+            tpa=liste_transverse_pressure_angle[num_mesh]
+            df1=db[engr1]/npy.cos(tpa)
+            df2=db[engr2]/npy.cos(tpa)
+            optimizer_data['center_distance'].append((df1+df2)/2)
+        return optimizer_data
+                    
+    def _position_X(self,key,indice):
+        # search of the position in the vector X of the data define by (key,indice) in dict_global
+        position=0
+        for evol_key in self.list_order_unknown:
+            val=self.dict_unknown[evol_key]
+            if evol_key!=key:
+                position+=len(val)
+            else:
+                break
+        for ind in val:
+            if ind!=indice:
+                position+=1
+            else:
+                break
+        return position
     
-    def _convert_xj2Xu(self,xj):
-        sol=xj['center_distance'].copy()
-        sol.extend(xj['transverse_pressure_angle'])
-        # TODO: Check if this is a bug
-        tp=len(xj['coefficient_profile_shift'].keys())
-        for key in self.list_gear:
-            sol.append(xj['coefficient_profile_shift'][key])
-        for k,v in self.dict_xu:
-            for k2 in sorted(list(self.rack_choice.keys())):
-                v2=self.rack_choice[k2]
-                if v2==v:
-                    ind=k2
-            sol.append(xj[k][ind])
-        return npy.array(sol)
-
-    def _convert_Xu2xj(self,X):
-        X=list(X)
-        tp1=len(self.center_distance)
-        tp2=len(self.transverse_pressure_angle)
-        tp3=len(self.coefficient_profile_shift.keys())
-        xj=self.xj
-        xj['center_distance']=X[0:tp1]
-        xj['transverse_pressure_angle']=X[tp1:tp1+tp2]
-        xj['coefficient_profile_shift']={}
-        for i in self.list_gear:
-            j=self.list_gear.index(i)
-            xj['coefficient_profile_shift'][i]=X[tp1+tp2+j]
-#        xj['transverse_pressure_angle_rack']=[0]*len(self.rack_choice.keys())
-#        xj['coeff_gear_addendum']=[0]*len(self.rack_choice.keys())
-#        xj['coeff_gear_dedendum']=[0]*len(self.rack_choice.keys())
-#        xj['coeff_root_radius']=[0]*len(self.rack_choice.keys())
-#        xj['coeff_circular_tooth_thickness']=[0]*len(self.rack_choice.keys())
-        for i,(k,v) in enumerate(self.dict_xu):
-            for k2 in sorted(list(self.rack_choice.keys())):
-                v2=self.rack_choice[k2]
-                if v2==v:
-                    ind=k2
-                    xj[k][ind]=X[tp1+tp2+tp3+i]
-        return xj
-
-    def _init_list(self,list):
-        list1=[]
-        for li in list:
-            list1.append((li[1]-li[0])*float(npy.random.random(1))+li[0])
-        return list1
+    def Update(self,X):
+        optimizer_data=self._convert_X2x(X)
+        xt=dict(list(optimizer_data.items())+list(self.general_data.items()))
+        if self.save!=optimizer_data:
+            self.MeshAssembly.Update(**xt)
+            self.save=copy.deepcopy(optimizer_data)
     
-    def _init_item(self,dico):
-        dict1={}
-        for k1,v1 in dico.items():
-            dict1[k1]=(v1[1]-v1[0])*float(npy.random.random(1))+v1[0]
-        return dict1
-    
-    def Update(self,xj):
-        self.xt=dict(list(self.xi.items())+list(xj.items()))
-        self.MeshAssembly.Update(**self.xt)
-        return xj
-    
-    # TODO: implémenter les critères comme des calculs dans le MeshAssembly
-    # Les appeller ensuite. Pour un exemple regarder InternalInterference du model3D PWT.
     def Fineq(self,X):
-        xj=self._convert_Xu2xj(X)
-        xj=self.Update(xj)
+        
+        self.Update(X)
         ineq=[]
-        #jeu inter-denture
-        for lb in self.MeshAssembly.linear_backlash:
-            ineq.append(lb)
-            ineq.append((4e-4)-lb)
-        #contrainte géométrique
-        for ne,gs in enumerate(self.MeshAssembly.connections):
-            dia1=self.MeshAssembly.meshes[ne][gs[0]].root_diameter_active
-            dia2=self.MeshAssembly.meshes[ne][gs[1]].root_diameter_active
-            de1=self.MeshAssembly.meshes[ne][gs[0]].outside_diameter
-            de2=self.MeshAssembly.meshes[ne][gs[1]].outside_diameter
-            cd=self.MeshAssembly.center_distance[ne]
+        ineq.extend(self.MeshAssembly.ListeIneq())
+
+        #geometric constraint
+        for num_mesh,(engr1,engr2) in enumerate(self.MeshAssembly.connections):
+            dia1=self.MeshAssembly.meshes[engr1].root_diameter_active
+            dia2=self.MeshAssembly.meshes[engr2].root_diameter_active
+            de1=self.MeshAssembly.meshes[engr1].outside_diameter
+            de2=self.MeshAssembly.meshes[engr2].outside_diameter
+            cd=self.MeshAssembly.center_distance[num_mesh]
             ineq.append(cd-(de1/2+dia2/2))
             ineq.append(cd-(de2/2+dia1/2))
-            oaa1=self.MeshAssembly.meshes[ne][gs[0]].outside_active_angle
-            oaa2=self.MeshAssembly.meshes[ne][gs[1]].outside_active_angle
+            oaa1=self.MeshAssembly.meshes[engr1].outside_active_angle
+            oaa2=self.MeshAssembly.meshes[engr2].outside_active_angle
             ineq.append(oaa1)
             ineq.append(oaa2)
-            df1=self.MeshAssembly.DF[ne][gs[0]]
-            df2=self.MeshAssembly.DF[ne][gs[1]]
-            db1=self.MeshAssembly.meshes[ne][gs[0]].db
-            db2=self.MeshAssembly.meshes[ne][gs[1]].db
+            df1=self.MeshAssembly.DF[num_mesh][engr1]
+            df2=self.MeshAssembly.DF[num_mesh][engr2]
+            db1=self.MeshAssembly.meshes[engr1].db
+            db2=self.MeshAssembly.meshes[engr2].db
             ineq.append(df1-db1)
             ineq.append(df2-db2)
-        #contrainte sur le RCA
-        for ne,gs in enumerate(self.MeshAssembly.connections):
-            rca=self.MeshAssembly.radial_contact_ratio[ne]
-            ineq.append(rca-1)
-        #contrainte sur le module
+        # modulus constraint (not in the open-source part because this parameter is not a ddl)
         for ne,gs in enumerate(self.MeshAssembly.connections):
             for g in gs:
-                mo=self.MeshAssembly.meshes[ne][g].rack.module
+                mo=self.MeshAssembly.meshes[g].rack.module
                 list_module=self.rack_list[self.rack_choice[g]]['module']
-#                if lm[0]<lm[1]:
                 ineq.append(mo-list_module[0])
                 ineq.append(list_module[1]-mo)
+        # center-distance constraint (not in the open-source part because this parameter is not a ddl)
+        for num_mesh,(engr1,engr2) in enumerate(self.MeshAssembly.connections):
+            cd=self.MeshAssembly.center_distance[num_mesh]
+            limit_cd=self.center_distance[num_mesh]
+            ineq.append(cd-limit_cd[0])
+            ineq.append(limit_cd[1]-cd)
         return ineq
-    
-    def Feq(self,X):
-        x=self._convert_Xu2xj(X)
-        x=self.Update(x)
-        eq=[]
-        for ng in self.list_gear:
-            nel=list(self.gear_graph.edges(ng))
-            if len(nel)>1:
-                list_db=[]
-                for ne in nel:
-                    if (ne[0],ne[1]) in self.MeshAssembly.connections:
-                        nes=self.MeshAssembly.connections.index((ne[0],ne[1]))
-                    elif (ne[1],ne[0]) in self.MeshAssembly.connections:
-                        nes=self.MeshAssembly.connections.index((ne[1],ne[0]))
-                    list_db.append(self.MeshAssembly.meshes[nes][ng].db)
-                list1=itertools.combinations(list_db,2)
-                for n1,n2 in list1:
-                    eq.append(n1-n2)
-#        for ne,gs in enumerate(self.MeshAssembly.connections):
-#            for g in gs:
-#                mo=self.MeshAssembly.meshes[ne][g].rack.module
-#                lm=self.rack_list[self.rack_choice[g]]['module']
-#                if lm[0]==lm[1]:
-#                    eq.append(mo-lm[0])
-        if eq==[]:
-            eq=[0]
-        return eq
         
     def Objective(self,X):
-        x=self._convert_Xu2xj(X)
-        x=self.Update(x)
-        fineq=self.Fineq(X)
-        feq=self.Feq(X)
+        self.Update(X)
+#        fineq=self.Fineq(X)
         obj=0
-        #Maximisation du module pour avoir des pignons avec un faible gear_width
-        for ne,gs in enumerate(self.MeshAssembly.connections):
-            for g in gs:
-                mo=self.MeshAssembly.meshes[ne][g].rack.module
-                list_module=self.rack_list[self.rack_choice[g]]['module']
-                if list_module[0]<list_module[1]:
-                    obj+=100*(list_module[1]-mo)**2
-                
-        #Minimisation des entraxes sur la borne inf
-        for num_engr,list_cd in enumerate(self.center_distance):
-            obj+=100*(list_cd[0]-self.MeshAssembly.center_distance[num_engr])**2
+        obj+=self.MeshAssembly.Functional()
+        # maximization of the gear modulus
+#        for ne,gs in enumerate(self.MeshAssembly.connections):
+#            for g in gs:
+#                mo=self.MeshAssembly.meshes[g].rack.module
+#                list_module=self.rack_list[self.rack_choice[g]]['module']
+#                if list_module[0]<list_module[1]:
+#                    obj+=100*(list_module[1]-mo)**2
             
-        for lb in self.MeshAssembly.linear_backlash:
-            obj+=100*(lb)**2
+        # Minimisation of center-distance on the minimum bound specified
+#        for num_engr,list_cd in enumerate(self.center_distance):
+#            obj+=100*(list_cd[0]-self.MeshAssembly.center_distance[num_engr])**2
             
-        for i in fineq:
-            if i < 0:
-                obj+=1000*i**2
-            else:
-                obj+=0.000001*i
-        for i in feq:
-            if i<0:
-                obj+=1000*i**2
-            else:
-                obj+=1000*i**2
+#        for i in fineq:
+#            if i < 0:
+#                obj+=1000*i**2
+#            else:
+#                obj+=0.000001*i
         return obj
     
     def Optimize(self, verbose = False):
@@ -295,22 +318,19 @@ class ContinuousMeshesAssemblyOptimizer:
         i=0
         arret=0 
         while i<max_iter and arret==0:
-            xj0,dict_xu=self._init()
-            xj0=self.Update(xj0)
-            X0=self._convert_xj2Xu(xj0)
-            if self.Feq(X0)==[0]:
-                cons = {'type': 'ineq','fun' : self.Fineq}
-            else:
-                cons = ({'type': 'eq','fun' : self.Feq},{'type': 'ineq','fun' : self.Fineq})
+            X0=self.CondInit()
+            self.Update(X0)
+            cons = {'type': 'ineq','fun' : self.Fineq}
             cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons)
             Xsol=cx.x
-            xsol=self._convert_Xu2xj(Xsol)
-            xsol=self.Update(xsol)
+            self.Update(Xsol)
             if verbose:
-                print('Iteration n°{} with status {}, min(fineq):{}, max(eq):{}'.format(i,
-                      cx.status,min(self.Fineq(Xsol)),max(npy.abs(self.Feq(Xsol)))))
-            if min(self.Fineq(Xsol))>-1e-5 and max(npy.abs(self.Feq(Xsol)))<1e-5:
-                self.solutions.append(xsol)
+                print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
+                      cx.status,min(self.Fineq(Xsol))))
+            if min(self.Fineq(Xsol))>-1e-5:
+                optimizer_data=self._convert_X2x(Xsol)
+                xt=dict(list(optimizer_data.items())+list(self.general_data.items()))
+                self.solutions.append(MeshAssembly(**xt))
                 arret=1
             i=i+1
 
@@ -347,7 +367,7 @@ class MeshAssemblyOptimizer:
                  gear_width=None, frequency=[[0,0]],
                  coefficient_profile_shift=None, rack_list=None,
                  rack_choice=None, material=None, torque=None, cycle=None,
-                 safety_factor=1):
+                 safety_factor=1,verbose=False):
 
         list_gear=[]
         for gs in connections:
@@ -358,9 +378,9 @@ class MeshAssemblyOptimizer:
                     
         if transverse_pressure_angle==None:
             transverse_pressure_angle=[]
-            for i in range(nb_set):
+            for i in range(nb_set):            
                 transverse_pressure_angle.append([15/180.*npy.pi,30/180.*npy.pi])
-            
+
         if helix_angle==None:
             helix_angle={list_gear[0]:[15/180.*npy.pi,25/180.*npy.pi]}
         
@@ -384,7 +404,7 @@ class MeshAssemblyOptimizer:
                 coefficient_profile_shift[ne]=[-0.8,0.8]
                 
         if rack_list==None:
-            rack_list={0:{'name':'Optim_Module','module':[1*1e-3,3*1e-3],
+            rack_list={0:{'name':'Optim_Module','module':[1*1e-3,2.5*1e-3],
                           'transverse_pressure_angle_rack':[20*npy.pi/180.,20*npy.pi/180.],
                           'coeff_gear_addendum':[1,1],
                           'coeff_gear_dedendum':[1.25,1.25],
@@ -442,7 +462,7 @@ class MeshAssemblyOptimizer:
             var_Z=self.AnalyseZ()
             self.Z=var_Z
 
-        self.plex_calcul=self.AnalyzeCombination()
+        self.plex_calcul=self.AnalyzeCombination(verbose)
         
         for i,plex in enumerate(self.plex_calcul):
             plex['rack_list']=self.rack_list
@@ -558,31 +578,27 @@ class MeshAssemblyOptimizer:
             return b
         while not dt.finished:
             valid=True
-#            print(dt.current_node)
             Z_node = [list_gear[i][node_value] for i,node_value in enumerate(dt.current_node[:self.nb_gear])]
-#            print('Znode: ', Z_node)
             if (dt.current_depth<=(self.nb_gear-1)) and (dt.current_depth>0):
                 z1=list_gear[dt.current_depth-1][dt.current_node[dt.current_depth-1]]
                 z2=list_gear[dt.current_depth][dt.current_node[dt.current_depth]]
-                #analyse ACV engrenage 2 à 2
+                # NVH analysis of gear mesh
                 if (pgcd(z1,z2)!=1):
                     valid=False
-                #analyse demul interne
+                # gear ratio analysis
                 if valid:
                     demul=z1/z2
-#                    print(demul)
                     if (demul > demul_int_max) or (demul < demul_int_min):
                         valid=False
-                #analyse ACV de l'ensemble des engrenages entre eux
+                # NVH analysis of gear mesh each other
 #                if (valid) & (dt.current_depth<=(self.nb_gear-1)):
 #                    for n in liste_node[0:dt.current_depth]:
 #                        i=liste_node.index(n)
 #                        z=liste_gear[dt.current_node[i]]
 #                        if pgcd(z,z2)!=1:
 #                            valid=False
-                #analyse des vitesses du CDC
+                # speed specification analysis
                 if valid:
-#                    print('@@@@@@@@@@@@@@@@@@@')
                     v0_min, v0_max = self.gear_speed[list_node[0]]
                     z0 = list_gear[0][dt.current_node[0]]
                     for engr_index, engr_num in enumerate(list_node[0:dt.current_depth+1]):
@@ -595,10 +611,6 @@ class MeshAssemblyOptimizer:
                                 
                                 vai_min = v0_min*demul # Actual speed
                                 vai_max = v0_max*demul
-                                
-    #                            vs_min = self.gear_speed
-    #                            print(demul)
-    #                            print(vsi_min, vsi_max, vai_min, vai_max)
                                 msi = 0.5 * (vsi_min+vsi_min)
                                 mai = 0.5* (vai_min + vai_max)
                                 dsi = vsi_max-vsi_min
@@ -607,7 +619,7 @@ class MeshAssemblyOptimizer:
                                     valid = False
     #                                print(valid)
                                     break
-                #analyse frequence
+                # frequncy analysis
                 if valid:
                     for freq in self.frequency:
                         zm=list_gear[0][dt.current_node[0]]
@@ -620,7 +632,7 @@ class MeshAssemblyOptimizer:
                                 break
 
             elif (dt.current_depth>(self.nb_gear-1)):
-                # Analyse de la faisabilité des cremailleres
+                # rack feasibility analysis
                 rack_num=list_rack[dt.current_node[-1]]
                 rack_pos=list_node[dt.current_depth-self.nb_gear]
                 if rack_num not in self.rack_choice[rack_pos]:
@@ -628,14 +640,11 @@ class MeshAssemblyOptimizer:
                     
             if (dt.current_depth==(self.nb_gear+self.nb_gear-1)):
                  
-                """
-                Analyse de la viabilité module/entraxe et construction 
-                d'une fonctionnelle mesurant l'écart entre 
-                les entraxes estimées et les entraxes mini spécifiées
-                """
+                # feasibility analysis of the modulus toward center-distance
                 liste_DF_min={}
                 module_minmax={}
                 module_inf,module_sup=(0,npy.inf)
+                # intersection between all module specified by each rack
                 for tree_pos,tree_val in enumerate(dt.current_node[0:self.nb_gear]):
                     engr_num=list_node[tree_pos]
                     rack_num=list_rack[dt.current_node[tree_pos+self.nb_gear]]
@@ -665,24 +674,34 @@ class MeshAssemblyOptimizer:
                     else:
                         fonctionnel+=(cd_optimal-cd[0])**2
                         cd_minmax_nv.append([cd_optimal,min(cd[1],cd_optimal*1.2)])
-#            
-#                # analyse coherence DB, demul et angle de pression de la cremaillere
-#                for set_num,(engr1,engr2) in enumerate(self.connections):
-#                    engr1_pos=liste_node.index(engr1)
-#                    rack1_num=liste_rack[dt.current_node[self.nb_gear+engr1_pos]]
-#                    transverse_pressure_angle=self.rack_list[rack1_num]['transverse_pressure_angle_rack']
-#                    Z1=liste_gear[engr1_pos][dt.current_node[engr1_pos]]
-#                    DB1_min=npy.cos(transverse_pressure_angle[0])*Z1*module_optimal
-#                    DB1_max=npy.cos(transverse_pressure_angle[1])*Z1*module_sup
-#                    engr2_pos=liste_node.index(engr2)
-#                    rack2_num=liste_rack[dt.current_node[self.nb_gear+engr2_pos]]
-#                    transverse_pressure_angle=self.rack_list[rack2_num]['transverse_pressure_angle_rack']
-#                    Z2=liste_gear[engr2_pos][dt.current_node[engr2_pos]]
-#                    DB2_min=npy.cos(transverse_pressure_angle[0])*Z2*module_optimal
-#                    DB2_max=npy.cos(transverse_pressure_angle[1])*Z2*module_sup
-#                    if ((Z1/Z2)<(DB1_min/DB2_max)) or ((Z1/Z2)>(DB1_max/DB2_min)):
-#                        valid=False
-#                        break
+                
+                # Analysis of the impact of the new center-distance on the initial base diamter interval
+                # Initialisation of the dfs graph with the gear mesh used for the unknown db
+                connections_dfs=list(nx.dfs_edges(self.gear_graph,self.connections[0][0]))
+                db={}
+                for ind,(eng1,eng2) in enumerate(connections_dfs[::-1]):
+                    if (eng1,eng2) in self.connections:
+                        num_mesh=self.connections.index((eng1,eng2))
+                    elif (eng2,eng1) in self.connections:
+                        num_mesh=self.connections.index((eng2,eng1))
+                    if len(cd_minmax_nv)>num_mesh:
+                        cd_min,cd_max=cd_minmax_nv[num_mesh]
+                        z1_pos=list_node.index(eng1)
+                        z1=list_gear[z1_pos][dt.current_node[z1_pos]]
+                        z2_pos=list_node.index(eng2)
+                        z2=list_gear[z2_pos][dt.current_node[z2_pos]]
+                        tpa1_min,tpa1_max=self.transverse_pressure_angle[num_mesh]
+                        df2_min=2*cd_min-2*cd_min*z1/(z1+z2)
+                        db2_min=df2_min*npy.cos(tpa1_max)
+                        df2_max=2*cd_max-2*cd_max*z1/(z1+z2)
+                        db2_max=df2_max*npy.cos(tpa1_min)
+                        try:
+                            db[eng2]=[max(db2_min,db[eng2][0]),min(db2_max,db[eng2][1])]
+                        except KeyError:
+                            db[eng2]=[db2_min,db2_max]
+                        db[eng1]=[db[eng2][0]*z1/z2,db[eng2][1]*z1/z2]
+                    else:
+                        break
         
             if (dt.current_depth==(self.nb_gear+self.nb_gear-1)) & (valid==True):
                 gear={}
@@ -695,11 +714,11 @@ class MeshAssemblyOptimizer:
                 Export['Z']=gear
                 Export['rack_choice']=rack
                 Export['center_distance']=cd_minmax_nv
+                Export['db']=db
                 self.fonctionnel.append(fonctionnel)
                 self.fonctionnel_module.append(module_optimal)
                 plex_calcul.append(Export)
                 incr+=1
-#            print('valid sent to dt', valid)
             dt.NextNode(valid)
         if incr>1:
             if verbose:
@@ -733,9 +752,8 @@ class MeshAssemblyOptimizer:
             except ValueError:
                 print('Convergence problem')
             if len(ga.solutions)>0:
-                xsol=ga.solutions[-1]
-                xt=dict(list(ga.xi.items())+list(xsol.items()))
-                self.solutions.append(MeshAssembly(**xt))
+                sol1=ga.solutions[-1]
+                self.solutions.append(sol1)
                 compt_nb_sol+=1
                 if verbose:
                     print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
@@ -757,7 +775,6 @@ class MeshAssemblyOptimizer:
         """
         list_fonctionnel=npy.array(self.fonctionnel)
         
-        #En cours de construction
         list_fonctionnel_module=npy.array(self.fonctionnel_module)
         sort_fonct_module=npy.argsort(list_fonctionnel_module)
         compt_fonct_mod=0
@@ -775,31 +792,27 @@ class MeshAssemblyOptimizer:
         
         compt_nb_sol=0
         liste_solutions=[]
-#        for num_plex in npy.argsort(list_fonctionnel):
         for num_plex in plex_analyse:
             plex=self.plex_calcul[num_plex]
             ga=ContinuousMeshesAssemblyOptimizer(**plex)
             try:
-                ga.Optimize(verbose = verbose)
-            # BUG: Définir l'erreur
+                ga.Optimize(verbose)
             except ValueError:
                 print('Convergence Problem')
             if len(ga.solutions)>0:
-                xsol=ga.solutions[-1]
-                xt=dict(list(ga.xi.items())+list(xsol.items()))
-                solutions=MeshAssembly(**xt)
+                solutions=ga.solutions[-1]
                 valid_cd=True
                 for engr_num,cd in enumerate(self.center_distance):
-                    if (solutions.center_distance[engr_num])<(cd[0]):
+                    if (solutions.center_distance[engr_num])<(cd[0]*0.999):
                         valid_cd=False
-                    elif (solutions.center_distance[engr_num])>(cd[1]):
+                    elif (solutions.center_distance[engr_num])>(cd[1]*1.001):
                         valid_cd=False
                 if valid_cd:
                     liste_solutions.append(solutions)
                     compt_nb_sol+=1
                     if verbose:
                         print('valid solution n°{}'.format(compt_nb_sol))
-                        print('Module: {}'.format(solutions.meshes[0][list(solutions.meshes[0].keys())[0]].rack.module))
+                        print('Module: {}'.format(solutions.meshes[list(solutions.meshes.keys())[0]].rack.module))
                     if compt_nb_sol==nb_sol:
                         break
                 else:
@@ -807,9 +820,8 @@ class MeshAssemblyOptimizer:
                         print('unvalid solution')
             else:
                 if verbose:
-                    print('Solution non convergée')
-        # TODO: commentaire en anglais
-        #Tri des solutions convergées en fonction de la fonctionnelle actualisée
+                    print('Convergence Problem')
+        # admissible solution are sorted toward the updated functional
         list_fonctionnel_nv=[]
         for solutions in liste_solutions:
             fonctionnel=0
@@ -821,5 +833,5 @@ class MeshAssemblyOptimizer:
             if verbose and indice_plex==0:
                 print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
                 print('Center distances: {}'.format(self.solutions[-1].center_distance))
-                print('Module: {}'.format(self.solutions[-1].meshes[0][list(self.solutions[-1].meshes[0].keys())[0]].rack.module))
+                print('Module: {}'.format(self.solutions[-1].meshes[list(self.solutions[-1].meshes.keys())[0]].rack.module))
 

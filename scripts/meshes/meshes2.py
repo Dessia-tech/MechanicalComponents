@@ -3,12 +3,12 @@ del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
 
-#3 gear test case with 0.5 to 2 for modulus
-list_cd=[[0.05,0.055],[0.05,0.055]]
+#3 gears meshes test
+list_cd=[[0.08,0.12],[0.07,0.12]]
 connections=[(5,1),(1,2)]
-list_speed={5:[1000*npy.pi/30,1100*npy.pi/30],1:[2000*npy.pi/30,
-               2100*npy.pi/30],2:[1000*npy.pi/30,1100*npy.pi/30]}
-list_rack={0:{'name':'Racks_A','module':[0.5*1e-3,2*1e-3],
+list_speed={5:[1000*npy.pi/30,1200*npy.pi/30],1:[2000*npy.pi/30,
+               2100*npy.pi/30],2:[1000*npy.pi/30,1200*npy.pi/30]}
+list_rack={0:{'name':'Racks_A','module':[2*1e-3,2*1e-3],
               'transverse_pressure_angle_rack':[20/180*npy.pi,20/180*npy.pi],
               'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],
               'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
@@ -26,13 +26,13 @@ GA = meshes_opt.MeshAssemblyOptimizer(Z={},
                                   rack_choice = list_rack_choice,
                                   helix_angle = list_helix_angle,
                                   material = list_material,torque = list_torque,
-                                  cycle = list_cycle)
+                                  cycle = list_cycle,verbose=True)
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.SearchOptimumCD(nb_sol=10, verbose=True)
+GA.SearchOptimumCD(nb_sol=1, verbose=True)
 print('Number of solutions:',len(GA.solutions))
 solution=GA.solutions[-1]
-solution.SVGExport('name.txt',{5 : [0,0],2 : [0.1,0]})
-solution.FreeCADExport('Gears1')
+solution.SVGExport('meshes2.txt',{5 : [0,0], 2 : [0.15,0]})
+#solution.FreeCADExport('meshes2')
  
 
