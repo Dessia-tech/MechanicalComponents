@@ -369,17 +369,21 @@ class MeshAssemblyOptimizer:
                  rack_choice=None, material=None, torque=None, cycle=None,
                  safety_factor=1,verbose=False):
 
-        list_gear=[]
+        list_gear=[] # list of all gears
+        compt_mesh=0 # number of gear mesh
         for gs in connections:
-            for g in gs:
-                if g not in list_gear:
-                    list_gear.append(g)
-        nb_set=len(connections)
+            for (eng1,eng2) in gs:
+                compt_mesh+=1
+                if eng1 not in list_gear:
+                    list_gear.append(eng1)
+                if eng2 not in list_gear:
+                    list_gear.append(eng2)
                     
+        # default parameters
         if transverse_pressure_angle==None:
-            transverse_pressure_angle=[]
-            for i in range(nb_set):
-                transverse_pressure_angle.append([15/180*npy.pi,30/180*npy.pi])
+            transverse_pressure_angle={}
+            for num_mesh in range(compt_mesh):
+                transverse_pressure_angle[num_mesh]=[15/180*npy.pi,30/180*npy.pi]
         
         if helix_angle==None:
             helix_angle={list_gear[0]:[15/180*npy.pi,25/180*npy.pi]}
@@ -403,6 +407,30 @@ class MeshAssemblyOptimizer:
             if ne not in coefficient_profile_shift.keys():
                 coefficient_profile_shift[ne]=[-0.8,0.8]
                 
+        speed_min,speed_max=[npy.inf,-npy.inf]
+        # definition min/max absolute speed
+        for num_engr,(speed_interval_min,speed_interval_max) in gear_speed.items():
+            if speed_interval_min<speed_min:
+                speed_min=speed_interval_min
+            if speed_interval_max>speed_max:
+                speed_max=speed_interval_max
+        # analyse for each shaft (same speed)
+        for gs in connections:
+            speed_mesh1=[speed_min,speed_max]
+            speed_mesh2=[speed_min,speed_max]
+            for eng1,eng2 in gs:
+                if eng1 in gear_speed.keys():
+                    speed_mesh1=[max(speed_mesh1[0],gear_speed[eng1][0]),min(speed_mesh1[1],gear_speed[eng1][1])]
+                if eng2 in gear_speed.keys():
+                    speed_mesh2=[max(speed_mesh2[0],gear_speed[eng2][0]),min(speed_mesh2[1],gear_speed[eng2][1])]
+            if speed_mesh1[0]>speed_mesh1[1]:
+                raise KeyError('gear speed data are not valid')
+            if speed_mesh2[0]>speed_mesh2[1]:
+                raise KeyError('gear speed data are not valid')
+            for eng1,eng2 in gs:
+                gear_speed[eng1]=speed_mesh1
+                gear_speed[eng2]=speed_mesh2
+            
         if rack_list==None:
             rack_list={0:{'name':'Optim_Module','module':[1*1e-3,2.5*1e-3],
                           'transverse_pressure_angle_rack':[20*npy.pi/180,20*npy.pi/180],
@@ -450,18 +478,34 @@ class MeshAssemblyOptimizer:
         self.nb_gear=len(list_gear)
         gear_graph=nx.Graph()
         gear_graph.add_nodes_from(list_gear)
-        gear_graph.add_edges_from(self.connections)
+        for list_edge in self.connections:
+            gear_graph.add_edges_from(list_edge,typ='gear_mesh')
+            li_shaft1=[]
+            li_shaft2=[]
+            for eng1,eng2 in list_edge:
+                li_shaft1.append(eng1)
+                li_shaft2.append(eng2)
+            if len(li_shaft1)>1:
+                for pos_gear,num_gear in enumerate(li_shaft1[1:]):
+                    gear_graph.add_edges_from([(num_gear,li_shaft1[pos_gear])],typ='same_shaft')
+            if len(li_shaft2)>1:
+                for pos_gear,num_gear in enumerate(li_shaft2[1:]):
+                    gear_graph.add_edges_from([(num_gear,li_shaft2[pos_gear])],typ='same_shaft')                    
         self.gear_graph=gear_graph
+        self.connections_dfs=list(nx.dfs_edges(gear_graph,list_gear[0]))
+#        self.sub_graph=nx.connected_component_subgraphs(gear_graph)
         
         self.nb_rack=len(self.rack_list.keys())
-
-        self.node_init=int(list(self.gear_speed.keys())[0])
-        self.connections_dfs=list(nx.dfs_edges(gear_graph,self.node_init))
+        
+#        self.connections_dfs=[]
+#        for s_graph in self.sub_graph:
+#            node_init=list(s_graph.nodes())[0]
+#            self.connections_dfs.append(list(nx.dfs_edges(s_graph,node_init)))
         
         if self.Z=={}:
             var_Z=self.AnalyseZ()
             self.Z=var_Z
-
+        
         self.plex_calcul=self.AnalyzeCombination(verbose)
         
         for i,plex in enumerate(self.plex_calcul):
@@ -490,36 +534,37 @@ class MeshAssemblyOptimizer:
         {1:[13,45], 2: [37,56]}
         """
         Z=self.Z
-        for i,(engr1,engr2) in enumerate(self.connections):
+        for i,shaft_mesh in enumerate(self.connections):
             cd_min=self.center_distance[i][0]
             cd_max=self.center_distance[i][1]
-            module1_min,module1_max=(npy.inf,0)
-            for rack_num in self.rack_choice[engr1]:
-                mod_min,mod_max=self.rack_list[rack_num]['module']
-                module1_min,module1_max=(min(module1_min,mod_min),max(module1_max,mod_max))
-            module2_min,module2_max=(npy.inf,0)
-            for rack_num in self.rack_choice[engr2]:
-                mod_min,mod_max=self.rack_list[rack_num]['module']
-                module2_min,module2_max=(min(module2_min,mod_min),max(module2_max,mod_max))
-            demul_min=self.gear_speed[engr1][0]/self.gear_speed[engr2][1]
-            demul_max=self.gear_speed[engr1][1]/self.gear_speed[engr2][0]
-            DF1_max=2*cd_max/(1+demul_min)
-            Z1_max=int(DF1_max/module1_min)+1
-            DF2_max=2*cd_max*demul_max/(1+demul_max)
-            Z2_max=int(DF2_max/module2_min)+1
-            DF1_min=2*cd_min/(1+demul_max)
-            Z1_min=int(DF1_min/module1_max)-1
-            DF2_min=2*cd_min*demul_min/(1+demul_min)
-            Z2_min=int(DF2_min/module2_max)-1
-            
-            if engr1 not in Z.keys():
-                Z[engr1]=[Z1_min,Z1_max]
-            else:
-                Z[engr1]=[max(Z1_min,Z[engr1][0]),min(Z1_max,Z[engr1][1])]
-            if engr2 not in Z.keys():
-                Z[engr2]=[Z2_min,Z2_max]
-            else:
-                Z[engr2]=[max(Z2_min,Z[engr2][0]),min(Z2_max,Z[engr2][1])]
+            for engr1,engr2 in shaft_mesh:
+                module1_min,module1_max=(npy.inf,0)
+                for rack_num in self.rack_choice[engr1]:
+                    mod_min,mod_max=self.rack_list[rack_num]['module']
+                    module1_min,module1_max=(min(module1_min,mod_min),max(module1_max,mod_max))
+                module2_min,module2_max=(npy.inf,0)
+                for rack_num in self.rack_choice[engr2]:
+                    mod_min,mod_max=self.rack_list[rack_num]['module']
+                    module2_min,module2_max=(min(module2_min,mod_min),max(module2_max,mod_max))
+                demul_min=self.gear_speed[engr1][0]/self.gear_speed[engr2][1]
+                demul_max=self.gear_speed[engr1][1]/self.gear_speed[engr2][0]
+                DF1_max=2*cd_max/(1+demul_min)
+                Z1_max=int(DF1_max/module1_min)+1
+                DF2_max=2*cd_max*demul_max/(1+demul_max)
+                Z2_max=int(DF2_max/module2_min)+1
+                DF1_min=2*cd_min/(1+demul_max)
+                Z1_min=int(DF1_min/module1_max)-1
+                DF2_min=2*cd_min*demul_min/(1+demul_min)
+                Z2_min=int(DF2_min/module2_max)-1
+                
+                if engr1 not in Z.keys():
+                    Z[engr1]=[Z1_min,Z1_max]
+                else:
+                    Z[engr1]=[max(Z1_min,Z[engr1][0]),min(Z1_max,Z[engr1][1])]
+                if engr2 not in Z.keys():
+                    Z[engr2]=[Z2_min,Z2_max]
+                else:
+                    Z[engr2]=[max(Z2_min,Z[engr2][0]),min(Z2_max,Z[engr2][1])]
         return Z
 
     def AnalyzeCombination(self, verbose = False):
@@ -548,17 +593,18 @@ class MeshAssemblyOptimizer:
          'torque': {0: 'output', 1: 100},
          'transverse_pressure_angle': [[0.2617993877991494, 0.5235987755982988]]}
         """
-        n1=self.node_init
-        list_node=[n1]
-        for (n1,n2) in self.connections_dfs:
-            if n2 not in list_node:
-                list_node.append(n2)
-                
+        list_node=[]
+        for eng1,eng2 in self.connections_dfs:
+            if eng1 not in list_node:
+                list_node.append(eng1)
+            if eng2 not in list_node:
+                list_node.append(eng2)
+                    
         np=[]
-        list_gear=[]
+        list_Z=[]
         for engr_num in list_node:
             np.append(self.Z[engr_num][1]-self.Z[engr_num][0]+1)
-            list_gear.append(npy.arange(self.Z[engr_num][0],self.Z[engr_num][1]+1))
+            list_Z.append(npy.arange(self.Z[engr_num][0],self.Z[engr_num][1]+1))
         np.extend([self.nb_rack]*self.nb_gear)
 
         list_rack=list(self.rack_list.keys())
@@ -578,18 +624,32 @@ class MeshAssemblyOptimizer:
             return b
         while not dt.finished:
             valid=True
-            Z_node = [list_gear[i][node_value] for i,node_value in enumerate(dt.current_node[:self.nb_gear])]
             if (dt.current_depth<=(self.nb_gear-1)) and (dt.current_depth>0):
-                z1=list_gear[dt.current_depth-1][dt.current_node[dt.current_depth-1]]
-                z2=list_gear[dt.current_depth][dt.current_node[dt.current_depth]]
+                current_node=list_node[dt.current_depth]
+                list_neighbors=self.gear_graph.neighbors(current_node)
+                list_analyze_pos=[dt.current_depth]
+                list_analyze_Z=[list_Z[dt.current_depth][dt.current_node[dt.current_depth]]]
+                for neighbors in list_neighbors:
+                    pos_neighbors=list_node.index(neighbors)
+                    if pos_neighbors<dt.current_depth:
+                        list_analyze_pos.append(pos_neighbors)
+                        z=list_Z[pos_neighbors][dt.current_node[pos_neighbors]]
+                        list_analyze_Z.append(z)
+                
+                z1=list_Z[dt.current_depth-1][dt.current_node[dt.current_depth-1]]
+                z2=list_Z[dt.current_depth][dt.current_node[dt.current_depth]]
                 # NVH analysis of gear mesh
-                if (pgcd(z1,z2)!=1):
-                    valid=False
+                for z in list_analyze_Z[1:]:
+                    if (pgcd(list_analyze_Z[0],z)!=1):
+                        valid=False
                 # gear ratio analysis
                 if valid:
-                    demul=z1/z2
-                    if (demul > demul_int_max) or (demul < demul_int_min):
-                        valid=False
+                    for i,(pos_z,z) in enumerate(zip(list_analyze_pos,list_analyze_Z)):
+                        if i>0:
+                            if self.gear_graph[list_node[list_analyze_pos[0]]][list_node[pos_z]]['typ']=='gear_mesh':
+                                demul=list_analyze_Z[0]/z
+                                if (demul > demul_int_max) or (demul < demul_int_min):
+                                    valid=False
                 # NVH analysis of gear mesh each other
 #                if (valid) & (dt.current_depth<=(self.nb_gear-1)):
 #                    for n in liste_node[0:dt.current_depth]:
@@ -600,36 +660,45 @@ class MeshAssemblyOptimizer:
                 # speed specification analysis
                 if valid:
                     v0_min, v0_max = self.gear_speed[list_node[0]]
-                    z0 = list_gear[0][dt.current_node[0]]
-                    for engr_index, engr_num in enumerate(list_node[0:dt.current_depth+1]):
-                        if engr_index>0:# No need of checking input
-                            if engr_num in self.gear_speed.keys():
-                                z=list_gear[engr_index][dt.current_node[engr_index]]
-                                demul=z0/z
-                                vsi_min=self.gear_speed[engr_num][0] # Specified speed
-                                vsi_max=self.gear_speed[engr_num][1]
-                                
-                                vai_min = v0_min*demul # Actual speed
-                                vai_max = v0_max*demul
-                                msi = 0.5 * (vsi_min+vsi_min)
-                                mai = 0.5* (vai_min + vai_max)
-                                dsi = vsi_max-vsi_min
-                                dai = vai_max-vai_min
-                                if abs(msi-mai) > 0.5*(dai+dsi):
+                    z0 = list_Z[0][dt.current_node[0]]
+                    short_path=list(nx.shortest_path(self.gear_graph, source=list_node[0], target=current_node))
+                    analyze = True
+                    for num_gear in short_path:
+                        pos_neighbors=list_node.index(num_gear)
+                        if pos_neighbors>dt.current_depth:
+                            analyze = False # all node in short_path must be include in dt.current_node
+                    if analyze: 
+                        for indice,num_gear in enumerate(short_path):
+                            demul=1
+                            if indice>0:
+                                for ng in short_path[1:indice+1]:
+                                    ng_m=short_path[short_path.index(ng)-1]
+                                    pos_m=list_node.index(ng_m)
+                                    pos=list_node.index(ng)
+                                    z0=list_Z[pos_m][dt.current_node[pos_m]]
+                                    z=list_Z[pos][dt.current_node[pos]]
+                                    if self.gear_graph[ng_m][ng]['typ']=='gear_mesh':
+                                        demul=demul*z0/z
+                                vsi_min=self.gear_speed[num_gear][0] # Specified speed
+                                vsi_max=self.gear_speed[num_gear][1]
+                                vai_min = max(v0_min*demul,vsi_min)
+                                vai_max = min(v0_max*demul,vsi_max)
+                                if vai_min>vai_max:
                                     valid = False
-    #                                print(valid)
                                     break
+                                v0_min, v0_max = vai_min/demul,vai_max/demul
                 # frequncy analysis
-                if valid:
-                    for freq in self.frequency:
-                        zm=list_gear[0][dt.current_node[0]]
-                        for engr_num,engr_ind in enumerate(dt.current_node):
-                            z=list_gear[engr_num][dt.current_node[engr_num]]
-                            f_min=(2*npy.pi*v0_min*zm/z)/z
-                            f_max=(2*npy.pi*v0_max*zm/z)/z
-                            if (max(f_min,f_max)>freq[0]) and (min(f_min,f_max)<freq[1]):
-                                valid=False
-                                break
+#                if valid:
+#                    print(2)
+#                    for freq in self.frequency:
+#                        zm=list_Z[0][dt.current_node[0]]
+#                        for engr_num,engr_ind in enumerate(dt.current_node):
+#                            z=list_Z[engr_num][dt.current_node[engr_num]]
+#                            f_min=(2*npy.pi*v0_min*zm/z)/z
+#                            f_max=(2*npy.pi*v0_max*zm/z)/z
+#                            if (max(f_min,f_max)>freq[0]) and (min(f_min,f_max)<freq[1]):
+#                                valid=False
+#                                break
 
             elif (dt.current_depth>(self.nb_gear-1)):
                 # rack feasibility analysis
@@ -651,12 +720,14 @@ class MeshAssemblyOptimizer:
                     module_minmax[engr_num]=self.rack_list[rack_num]['module']
                     module_inf,module_sup=(max(module_inf,module_minmax[engr_num][0]),min(module_sup,module_minmax[engr_num][1]))
                 for tree_pos,tree_val in enumerate(dt.current_node[0:self.nb_gear]):
-                    z=list_gear[tree_pos][tree_val]
+                    z=list_Z[tree_pos][tree_val]
                     engr_num=list_node[tree_pos]
                     liste_DF_min[engr_num]=z*module_inf
                 liste_pente_cd_module=[]
-                for set_num,(eng1,eng2) in enumerate(self.connections):
-                    cd_min=(liste_DF_min[eng1]+liste_DF_min[eng2])/2
+                for set_num,gs in enumerate(self.connections):
+                    cd_min=-npy.inf
+                    for eng1,eng2 in gs:
+                        cd_min=max(cd_min,(liste_DF_min[eng1]+liste_DF_min[eng2])/2)
                     liste_pente_cd_module.append(cd_min/module_inf)
                 cd_minmax_nv=[]
                 module_optimal=0
@@ -674,47 +745,48 @@ class MeshAssemblyOptimizer:
                     else:
                         fonctionnel+=(cd_optimal-cd[0])**2
                         cd_minmax_nv.append([cd_optimal,min(cd[1],cd_optimal*1.2)])
+                print(cd_minmax_nv,valid)
                 
                 # Analysis of the impact of the new center-distance on the initial base diamter interval
                 # Initialisation of the dfs graph with the gear mesh used for the unknown db
-                connections_dfs=list(nx.dfs_edges(self.gear_graph,self.connections[0][0]))
-                db={}
-                for ind,(eng1,eng2) in enumerate(connections_dfs[::-1]):
-                    if (eng1,eng2) in self.connections:
-                        num_mesh=self.connections.index((eng1,eng2))
-                    elif (eng2,eng1) in self.connections:
-                        num_mesh=self.connections.index((eng2,eng1))
-                    if len(cd_minmax_nv)>num_mesh:
-                        cd_min,cd_max=cd_minmax_nv[num_mesh]
-                        z1_pos=list_node.index(eng1)
-                        z1=list_gear[z1_pos][dt.current_node[z1_pos]]
-                        z2_pos=list_node.index(eng2)
-                        z2=list_gear[z2_pos][dt.current_node[z2_pos]]
-                        tpa1_min,tpa1_max=self.transverse_pressure_angle[num_mesh]
-                        df2_min=2*cd_min-2*cd_min*z1/(z1+z2)
-                        db2_min=df2_min*npy.cos(tpa1_max)
-                        df2_max=2*cd_max-2*cd_max*z1/(z1+z2)
-                        db2_max=df2_max*npy.cos(tpa1_min)
-                        try:
-                            db[eng2]=[max(db2_min,db[eng2][0]),min(db2_max,db[eng2][1])]
-                        except KeyError:
-                            db[eng2]=[db2_min,db2_max]
-                        db[eng1]=[db[eng2][0]*z1/z2,db[eng2][1]*z1/z2]
-                    else:
-                        break
+#                connections_dfs=list(nx.dfs_edges(self.gear_graph,self.connections[0][0]))
+#                db={}
+#                for ind,(eng1,eng2) in enumerate(connections_dfs[::-1]):
+#                    if (eng1,eng2) in self.connections:
+#                        num_mesh=self.connections.index((eng1,eng2))
+#                    elif (eng2,eng1) in self.connections:
+#                        num_mesh=self.connections.index((eng2,eng1))
+#                    if len(cd_minmax_nv)>num_mesh:
+#                        cd_min,cd_max=cd_minmax_nv[num_mesh]
+#                        z1_pos=list_node.index(eng1)
+#                        z1=list_Z[z1_pos][dt.current_node[z1_pos]]
+#                        z2_pos=list_node.index(eng2)
+#                        z2=list_Z[z2_pos][dt.current_node[z2_pos]]
+#                        tpa1_min,tpa1_max=self.transverse_pressure_angle[num_mesh]
+#                        df2_min=2*cd_min-2*cd_min*z1/(z1+z2)
+#                        db2_min=df2_min*npy.cos(tpa1_max)
+#                        df2_max=2*cd_max-2*cd_max*z1/(z1+z2)
+#                        db2_max=df2_max*npy.cos(tpa1_min)
+#                        try:
+#                            db[eng2]=[max(db2_min,db[eng2][0]),min(db2_max,db[eng2][1])]
+#                        except KeyError:
+#                            db[eng2]=[db2_min,db2_max]
+#                        db[eng1]=[db[eng2][0]*z1/z2,db[eng2][1]*z1/z2]
+#                    else:
+#                        break
         
             if (dt.current_depth==(self.nb_gear+self.nb_gear-1)) & (valid==True):
                 gear={}
                 rack={}
                 for n in list_node:
                     i=list_node.index(n)
-                    gear[n]=list_gear[i][dt.current_node[i]]
+                    gear[n]=list_Z[i][dt.current_node[i]]
                     rack[n]=list_rack[dt.current_node[i+self.nb_gear]]
                 Export={}
                 Export['Z']=gear
                 Export['rack_choice']=rack
                 Export['center_distance']=cd_minmax_nv
-                Export['db']=db
+#                Export['db']=db
                 self.fonctionnel.append(fonctionnel)
                 self.fonctionnel_module.append(module_optimal)
                 plex_calcul.append(Export)
