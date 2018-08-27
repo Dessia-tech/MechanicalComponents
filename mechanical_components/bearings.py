@@ -261,15 +261,14 @@ class RadialRollerBearing:
         else:
             Cu=C0r/8.2*(100/(self.Dpw*1e3))**0.3
         #calcul du coefficient a_iso
-        # TODO: Il y a des fois des warnings, il y a peut etre encore un problème!
+        coeff=min(5,ec*Cu/Pr) # the ISO norm is not clear on the limit of this coeff (maybe 5?)
         if kappa<0.4:
-            a_iso=0.1*((1-(1.5859-1.3993/(kappa**0.054381))*((ec*Cu/Pr)**0.4))**(-9.185))
+            a_iso=0.1*((1-(1.5859-1.3993/(kappa**0.054381))*((coeff)**0.4))**(-9.185))
         elif kappa<1:
-            a_iso=0.1*((1-(1.5859-1.2348/(kappa**0.19087))*((ec*Cu/Pr)**0.4))**(-9.185))
+            a_iso=0.1*((1-(1.5859-1.2348/(kappa**0.19087))*((coeff)**0.4))**(-9.185))
         else:
             kappa=min(kappa,4)
-            a_iso=0.1*((1-(1.5859-1.2348/(kappa**0.071739))*((ec*Cu/Pr)**0.4))**(-9.185))
-#            print(kappa,ec,Cu,Pr, a_iso)
+            a_iso=0.1*((1-(1.5859-1.2348/(kappa**0.071739))*((coeff)**0.4))**(-9.185))
         a_iso=min(50,a_iso)
         #calcul de la durée de vie corrigée
         Lnm=a1*a_iso*L10
