@@ -1,0 +1,3 @@
+include compile.py
+include mechanical_components/catalogs/dico_bearings_ISO.py
+recursive-include scripts/ *.py

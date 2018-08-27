@@ -114,7 +114,8 @@ oil_iso_vg_15=Oil(iso_vg_15,dict_oil_contamination)
 oil_iso_vg_10=Oil(iso_vg_10,dict_oil_contamination)
         
 class Material:
-    def __init__(self,weibull_e=9/8,weibull_c=31/3,weibull_h=7/3,B1=551.13373/0.483,mu_delta=0.83,c_gamma=0.05):
+    def __init__(self, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
+                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05):
         self.weibull_e=weibull_e
         self.weibull_c=weibull_c
         self.weibull_h=weibull_h
@@ -177,17 +178,17 @@ class RadialRollerBearing:
         self.mass=self.Mass()
         
     def DefParam(self):
-        Dpw=(self.E+self.F)/2
+        Dpw=(self.E+self.F)/2.
         Lwe=self.Lw-2*self.r_roller
-        jeu=(self.E-self.F-2*self.Dw)/4
-        ep=(self.B-self.Lw-2*jeu)/2
+        jeu=(self.E-self.F-2*self.Dw)/4.
+        ep=(self.B-self.Lw-2*jeu)/2.
         return Dpw,Lwe,jeu,ep
         
     def Mass(self):
         rho=7800
-        m=self.Z*npy.pi*(self.Dw)**2/4*self.Lw*rho
-        m+=(npy.pi*(self.D)**2/4-npy.pi*(self.E)**2/4)*self.B*rho
-        m+=(npy.pi*(self.F)**2/4-npy.pi*(self.d)**2/4)*self.B*rho
+        m=self.Z*npy.pi*(self.Dw)**2/4.*self.Lw*rho
+        m+=(npy.pi*(self.D)**2/4.-npy.pi*(self.E)**2/4.)*self.B*rho
+        m+=(npy.pi*(self.F)**2/4.-npy.pi*(self.d)**2/4.)*self.B*rho
         return m
     
     def BaseStaticLoad(self):
@@ -209,7 +210,7 @@ class RadialRollerBearing:
     def BaseDynamicLoad(self):
         #Charge radiale dynamique de base
         mu=float((self.Dwe*1e3)*npy.cos(self.alpha)/(self.Dpw*1e3))
-        fc=0.377*self.material.mu_delta*1/((2**((self.material.weibull_c+self.material.weibull_h-1)/(self.material.weibull_c-self.material.weibull_h+1)))*(0.5**(2*self.material.weibull_e/(self.material.weibull_c-self.material.weibull_h+1))))*self.material.B1*((1-mu)**((self.material.weibull_c+self.material.weibull_h-3)/(self.material.weibull_c-self.material.weibull_h+1))/((1+mu)**(2*self.material.weibull_e/(self.material.weibull_c-self.material.weibull_h+1))))*(mu**(2/(self.material.weibull_c-self.material.weibull_h+1)))*(1+(1.04*((1-mu)/(1+mu))**((self.material.weibull_c+self.material.weibull_h+2*self.material.weibull_e-3)/(self.material.weibull_c-self.material.weibull_h+1)))**((self.material.weibull_c-self.material.weibull_h+1)/2))**(-2/(self.material.weibull_c-self.material.weibull_h+1))
+        fc=0.377*self.material.mu_delta*1/((2**((self.material.weibull_c+self.material.weibull_h-1)/(self.material.weibull_c-self.material.weibull_h+1)))*(0.5**(2*self.material.weibull_e/(self.material.weibull_c-self.material.weibull_h+1))))*self.material.B1*((1-mu)**((self.material.weibull_c+self.material.weibull_h-3)/(self.material.weibull_c-self.material.weibull_h+1))/((1+mu)**(2*self.material.weibull_e/(self.material.weibull_c-self.material.weibull_h+1))))*(mu**(2/(self.material.weibull_c-self.material.weibull_h+1)))*(1+(1.04*((1-mu)/(1+mu))**((self.material.weibull_c+self.material.weibull_h+2*self.material.weibull_e-3)/(self.material.weibull_c-self.material.weibull_h+1)))**((self.material.weibull_c-self.material.weibull_h+1)/2.))**(-2/(self.material.weibull_c-self.material.weibull_h+1))
         Cr=fc*self.bm*self.i*((self.Lwe*1e3)*npy.cos(self.alpha))**((self.material.weibull_c-self.material.weibull_h-1)/(self.material.weibull_c-self.material.weibull_h+1))*self.Z**((self.material.weibull_c-self.material.weibull_h-2*self.material.weibull_e+1)/(self.material.weibull_c-self.material.weibull_h+1))*(self.Dwe*1e3)**((self.material.weibull_c-self.material.weibull_h-3)/(self.material.weibull_c-self.material.weibull_h+1))
         return Cr
     
@@ -235,17 +236,17 @@ class RadialRollerBearing:
         # Durée de vie en millions de tour associée à une fiabilité de 90%
         Cr=self.BaseDynamicLoad()
         Pr=self.EquivalentDynamicLoad(Fr,Fa)
-        L10=(Cr/Pr)**(10/3)
+        L10=(Cr/Pr)**(10/3.)
         return L10
         
     def AdjustedLifeTime(self,Fr,n,Fa=0,S=0.9,T=70):
         # Durée de vie corrigée en millions de tour associée à une fiabilité de S% pour un roulement tournant à la vitesse n (rad/s) et à la température de l'huile T
-        a1=(1-self.material.c_gamma)*(npy.log(1/S)/npy.log(100/90))**(1/self.material.weibull_e)+self.material.c_gamma
+        a1=(1-self.material.c_gamma)*(npy.log(1/S)/npy.log(100/90.))**(1/self.material.weibull_e)+self.material.c_gamma
         L10=self.BaseLifeTime(Fr,Fa)
         Pr=self.EquivalentDynamicLoad(Fr,Fa)
         C0r=self.BaseStaticLoad()
         # viscosité cinématique de référence
-        if n<(1000*2*npy.pi/60):
+        if n<(1000*2*npy.pi/60.):
             nu1=45000*(n*60/(2*npy.pi))**(-0.83)*(self.Dpw*1e3)**(-0.5)
         else:
             nu1=4500*(n*60/(2*npy.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
@@ -292,56 +293,56 @@ class RadialRollerBearing:
     
     def InternalRingContour(self):
         if self.typ=='NU':
-            p=[vm.Point2D((0,self.d/2))]
-            p.append(vm.Point2D((-self.B/2,self.d/2)))
-            p.append(vm.Point2D((-self.B/2,self.F/2)))
-            p.append(vm.Point2D((self.B/2,self.F/2)))
-            p.append(vm.Point2D((self.B/2,self.d/2)))
+            p=[vm.Point2D((0,self.d/2.))]
+            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
+            p.append(vm.Point2D((-self.B/2.,self.F/2.)))
+            p.append(vm.Point2D((self.B/2.,self.F/2.)))
+            p.append(vm.Point2D((self.B/2.,self.d/2.)))
             p.append(p[0])
             ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
         elif self.typ=='N' or self.typ=='NF':
-            p=[vm.Point2D((0,self.d/2))]
-            p.append(vm.Point2D((-self.B/2,self.d/2)))
-            p.append(vm.Point2D((-self.B/2,self.d1/2)))
-            p.append(vm.Point2D((-self.B/2+self.ep,self.d1/2)))
-            p.append(vm.Point2D((-self.B/2+self.ep,self.F/2)))
-            p.append(vm.Point2D((self.B/2-self.ep,self.F/2)))
-            p.append(vm.Point2D((self.B/2-self.ep,self.d1/2)))
-            p.append(vm.Point2D((self.B/2,self.d1/2)))
-            p.append(vm.Point2D((self.B/2,self.d/2)))
+            p=[vm.Point2D((0,self.d/2.))]
+            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
+            p.append(vm.Point2D((-self.B/2.,self.d1/2.)))
+            p.append(vm.Point2D((-self.B/2.+self.ep,self.d1/2.)))
+            p.append(vm.Point2D((-self.B/2.+self.ep,self.F/2.)))
+            p.append(vm.Point2D((self.B/2.-self.ep,self.F/2.)))
+            p.append(vm.Point2D((self.B/2.-self.ep,self.d1/2.)))
+            p.append(vm.Point2D((self.B/2.,self.d1/2.)))
+            p.append(vm.Point2D((self.B/2.,self.d/2.)))
             p.append(p[0])
             ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
         elif self.typ=='NJ':
-            p=[vm.Point2D((0,self.d/2))]
-            p.append(vm.Point2D((-self.B/2,self.d/2)))
-            p.append(vm.Point2D((-self.B/2,self.d1/2)))
-            p.append(vm.Point2D((-self.B/2+self.ep,self.d1/2)))
-            p.append(vm.Point2D((-self.B/2+self.ep,self.F/2)))
-            p.append(vm.Point2D((self.B/2,self.F/2)))
-            p.append(vm.Point2D((self.B/2,self.d/2)))
+            p=[vm.Point2D((0,self.d/2.))]
+            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
+            p.append(vm.Point2D((-self.B/2.,self.d1/2.)))
+            p.append(vm.Point2D((-self.B/2.+self.ep,self.d1/2.)))
+            p.append(vm.Point2D((-self.B/2.+self.ep,self.F/2.)))
+            p.append(vm.Point2D((self.B/2.,self.F/2.)))
+            p.append(vm.Point2D((self.B/2.,self.d/2.)))
             p.append(p[0])
             ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
         return ref
     
     def ExternalRingContour(self):
         if self.typ=='N':
-            p=[vm.Point2D((0,self.E/2))]
-            p.append(vm.Point2D((-self.B/2,self.E/2)))
-            p.append(vm.Point2D((-self.B/2,self.D/2)))
-            p.append(vm.Point2D((self.B/2,self.D/2)))
-            p.append(vm.Point2D((self.B/2,self.E/2)))
+            p=[vm.Point2D((0,self.E/2.))]
+            p.append(vm.Point2D((-self.B/2.,self.E/2.)))
+            p.append(vm.Point2D((-self.B/2.,self.D/2.)))
+            p.append(vm.Point2D((self.B/2.,self.D/2.)))
+            p.append(vm.Point2D((self.B/2.,self.E/2.)))
             p.append(p[0])
             ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
         elif self.typ=='NU' or self.typ=='NJ':
-            p=[vm.Point2D((0,self.E/2))]
-            p.append(vm.Point2D((-self.B/2+self.ep,self.E/2)))
-            p.append(vm.Point2D((-self.B/2+self.ep,self.D1/2)))
-            p.append(vm.Point2D((-self.B/2,self.D1/2)))
-            p.append(vm.Point2D((-self.B/2,self.D/2)))
-            p.append(vm.Point2D((self.B/2,self.D/2)))
-            p.append(vm.Point2D((self.B/2,self.D1/2)))
-            p.append(vm.Point2D((self.B/2-self.ep,self.D1/2)))
-            p.append(vm.Point2D((self.B/2-self.ep,self.E/2)))
+            p=[vm.Point2D((0,self.E/2.))]
+            p.append(vm.Point2D((-self.B/2.+self.ep,self.E/2)))
+            p.append(vm.Point2D((-self.B/2.+self.ep,self.D1/2)))
+            p.append(vm.Point2D((-self.B/2.,self.D1/2.)))
+            p.append(vm.Point2D((-self.B/2.,self.D/2.)))
+            p.append(vm.Point2D((self.B/2.,self.D/2.)))
+            p.append(vm.Point2D((self.B/2.,self.D1/2.)))
+            p.append(vm.Point2D((self.B/2.-self.ep,self.D1/2.)))
+            p.append(vm.Point2D((self.B/2.-self.ep,self.E/2.)))
             p.append(p[0])
             ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
         elif self.typ=='NF':
@@ -471,7 +472,7 @@ class RadialRollerBearing:
         erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center, x, angle=2*math.pi,name='erc')
         #roller
         ROL=self.RollerContour()
-        radius=self.F/2+self.jeu+self.Dw/2
+        radius=self.F/2.+self.jeu+self.Dw/2.
         rol=[]
         theta=2*npy.pi/self.Z
         for zi in range(int(self.Z)):
@@ -491,7 +492,7 @@ class RadialRollerBearing:
 class DrawnCupNeedleRollerBearing(RadialRollerBearing):
     #Douille à aiguilles
     def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
-                 alpha,bm=1, weibull_e=9/8, weibull_c=31/3, weibull_h=7/3,
+                 alpha,bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
                  oil_name='iso_vg_100'):
         RadialRollerBearing.__init__(typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,
@@ -501,7 +502,7 @@ class DrawnCupNeedleRollerBearing(RadialRollerBearing):
 class NeedleRollerBearing(RadialRollerBearing):
     #Cage à aiguilles
     def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
-                 alpha, bm=1, weibull_e=9/8, weibull_c=31/3, weibull_h=7/3,
+                 alpha, bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
                  oil_name='iso_vg_100'):
         RadialRollerBearing.__init__(typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,
@@ -511,7 +512,7 @@ class NeedleRollerBearing(RadialRollerBearing):
 class SphericalRollerBearing(RadialRollerBearing):
     #Roulement à rotule à rouleaux
     def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
-                 alpha,bm=1.15, weibull_e=9/8, weibull_c=31/3, weibull_h=7/3,
+                 alpha,bm=1.15, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
                  oil_name='iso_vg_100'):
         RadialRollerBearing.__init__(typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,

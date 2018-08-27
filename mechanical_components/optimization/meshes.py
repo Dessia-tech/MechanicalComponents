@@ -15,14 +15,50 @@ import powertransmission.tools as tools
 from scipy.optimize import minimize
 
 class ContinuousMeshesAssemblyOptimizer:
+    """
+    Gear mesh assembly optimizer
+    
+    :param Z: Dictionary define the tooth number of each mesh {node1: Z1, node2: Z2 ...}
+    :param center_distance: List of two elements define gear mesh center-distance [[mesh1_centerdistance_min, mesh1_centerdistance_max], [mesh2_centerdistance_min, mesh2_centerdistance_max] ...] with mesh1 the mesh between node1 and node2 ...    
+    :param connections: List of tuple define gear mesh connection [(node1,node2), (node2,node3), (node2,node4)]
+    :param transverse_pressure_angle: List of two elements define the transversal pressure angle interval for each mesh [[mesh1_transversepressure_min, mesh1_transversepressure_max], [mesh2_transversepressure_min, mesh2_transversepressure_max] ...]
+    :param coefficient_profile_shift: Dictionary defining the minimum and maximum coefficient profile shift for each node {node1: [node1_coeffshift_min,node1_coeffshift_max],node2: [node2_coeffshift_min,node2_coeffshift_max] ...}
+    :param gear_graph: NetwokX gear graph connection
+    :param rack_list: Dictionary define all admissible rack {rack1:mechanical_components.meshes.Rack, rack2:mechanical_components.meshes.Rack ...}
+    :param rack_choice: Dictionary assign for each gear mesh a list of acceptable rack {node1:rack1, node2:rack1, node3:rack4 ...}
+    :param list_gear: List of gear mesh in connections [node1, node2, node3, node4]
+    :param material: Dictionary defining material for each gear mesh {node1:mechanical_components.meshes.Material, node2:mechanical_components.meshes.Material ...}
+    :param torque: Dictionary defining all input torque, one node where the torque is not specified is define as the 'output' {node1:torque1, node2:torque2, node3:'output'}
+    :param cycle: Dictionary defining the number of cycle for one node {node3: number_cycle3}
+    :param safety_factor: Safety factor used for the ISO design
+    
+    >>> input = {'Z': {0: 53, 1: 180},
+                 'center_distance': [[0.117, 0.117]],
+                 'coefficient_profile_shift': {0: [-0.8, 0.8], 1: [-0.8, 0.8]},
+                 'connections': [(1, 0)],
+                 'cycle': {1: 1000000.0},
+                 'list_gear': [1, 0],
+                 'rack_choice': {0: 0, 1: 0},
+                 'rack_list': {0: {'coeff_circular_tooth_thickness': [0.5, 0.5],
+                                   'coeff_gear_addendum': [1, 1],
+                                   'coeff_gear_dedendum': [1.25, 1.25],
+                                   'coeff_root_radius': [0.38, 0.38],
+                                   'module': [0.001, 0.003],
+                                   'name': 'Optim_Module',
+                                   'transverse_pressure_angle_rack': [0.3490658503988659,
+                                                                      0.3490658503988659]}},
+                 'safety_factor': 1,
+                 'torque': {0: 'output', 1: 100},
+                 'transverse_pressure_angle': [[0.2617993877991494, 0.5235987755982988]]}
+    >>> cmao1 = ContinuousMeshesAssemblyOptimizer(**input)
+    """
     def __init__(self, Z, center_distance, connections, transverse_pressure_angle,
-                 coefficient_profile_shift, gear_graph,cond_init,
+                 coefficient_profile_shift, gear_graph,
                  rack_list, rack_choice, list_gear, material,torque,
                  cycle, safety_factor):
         self.center_distance=center_distance
         self.transverse_pressure_angle=transverse_pressure_angle
         self.coefficient_profile_shift=coefficient_profile_shift
-        self.cond_init=cond_init
         self.rack_list=rack_list
         self.rack_choice=rack_choice
         self.list_gear=list_gear
@@ -241,6 +277,14 @@ class ContinuousMeshesAssemblyOptimizer:
         return obj
     
     def Optimize(self, verbose = False):
+        """ Optimizer function
+        
+        >>> cmao1.Optimize(verbose = True)
+        Iteration n°0 with status 0, min(fineq):-4.7435658082073395e-08, max(eq):0
+        Mesh sections: {1: 0.0039733070033111731, 0: 0.0039733070033111731}
+        Numbers of teeth: {1: 59, 0: 19}
+        Center distances: [0.11700000000000001]
+        """
         max_iter=5
         i=0
         arret=0 
@@ -266,29 +310,53 @@ class ContinuousMeshesAssemblyOptimizer:
 
 
 class MeshAssemblyOptimizer:
+    """
+    Gear mesh assembly optimizer supervisor
+    
+    :param connections: List of tuple define gear mesh connection [(node1,node2), (node2,node3)...]
+    :param gear_speed: Dictionary defining minimum and maximum speed for each gear mesh {node1: [speed_min,speed_max], node2: [speed_min,speed_max]...}
+    :param center_distance: List of two elements define gear mesh connection [[mesh1_centerdistance_min, mesh1_centerdistance_max], [mesh2_centerdistance_min, mesh2_centerdistance_max] ...] with mesh1 the mesh between node1 and node2 ...
+    :param transverse_pressure_angle: List of two elements define the transversal pressure angle interval for each mesh [[mesh1_transversepressure_min, mesh1_transversepressure_max], [mesh2_transversepressure_min, mesh2_transversepressure_max] ...]
+    :param helix_angle: Dictionary to define for one mesh the minimum and maximum helix angle {node2: [mesh1_helixangle_min, mesh1_helixangle_max]}
+    :param gear_width: Dictionary to define for each gear mesh the minimum and maximum gear width {node1: [node1_gearwidth_min,node1_gearwidth_max] ,node2: [node2_gearwidth_min,node2_gearwidth_max] ...}
+    :param frequency: List of two elements defining unacceptable frequency interval [[freq1_min,freq1_max], [freq2_min,freq2_max]...]
+    :param coefficient_profile_shift: Dictionary defining the minimum and maximum coefficient profile shift for each node {node1: [node1_coeffshift_min,node1_coeffshift_max],node2: [node2_coeffshift_min,node2_coeffshift_max] ...}
+    :param rack_list: Dictionary define all admissible rack {rack1:mechanical_components.meshes.Rack, rack2:mechanical_components.meshes.Rack ...}
+    :param rack_choice: Dictionary assign for each gear mesh a list of acceptable rack {node1:[rack1,rack2], node2:[rack1],node3:[rack4,rack5] ...}
+    :param material: Dictionary defining material for each gear mesh {node1:mechanical_components.meshes.Material, node2:mechanical_components.meshes.Material ...}
+    :param torque: Dictionary defining all input torque, one node where the torque is not specified is define as the 'output' {node1:torque1, node2:torque2, node3:'output'}
+    :param cycle: Dictionary defining the number of cycle for one node {node3: number_cycle3}
+    :param safety_factor: Safety factor used for the ISO design
+    
+    >>> list_cd=[[0.117,0.117],[0.12,0.13]]
+    >>> list_gear_set=[(1,0),(0,2)]
+    >>> list_speed={1:[1000*npy.pi/30.,1500*npy.pi/30.],0:[4100*npy.pi/30.,
+                   4300*npy.pi/30.],2:[200*npy.pi/30.,400*npy.pi/30.]}
+    >>> GA = meshes_opt.MeshAssemblyOptimizer(connections = list_gear_set,
+                                gear_speed = list_speed,
+                                center_distance = list_cd)
+    """
     def __init__(self, connections, gear_speed, center_distance, Z=None,
                  transverse_pressure_angle=None, helix_angle=None,
                  gear_width=None, frequency=[[0,0]],
                  coefficient_profile_shift=None, rack_list=None,
                  rack_choice=None, material=None, torque=None, cycle=None,
                  safety_factor=1):
-        # Valeur par defaut
+
         list_gear=[]
         for gs in connections:
             for g in gs:
                 if g not in list_gear:
                     list_gear.append(g)
-        # TODO: Check if this is a bug
-        nb_gear=len(list_gear)
         nb_set=len(connections)
                     
         if transverse_pressure_angle==None:
             transverse_pressure_angle=[]
             for i in range(nb_set):
-                transverse_pressure_angle.append([15/180*npy.pi,30/180*npy.pi])
+                transverse_pressure_angle.append([15/180.*npy.pi,30/180.*npy.pi])
             
         if helix_angle==None:
-            helix_angle={list_gear[0]:[15/180*npy.pi,25/180*npy.pi]}
+            helix_angle={list_gear[0]:[15/180.*npy.pi,25/180.*npy.pi]}
         
         if gear_width==None:
             gear_width={list_gear[0]:[15*1e-3,25*1e-3]}
@@ -311,7 +379,7 @@ class MeshAssemblyOptimizer:
                 
         if rack_list==None:
             rack_list={0:{'name':'Optim_Module','module':[1*1e-3,3*1e-3],
-                          'transverse_pressure_angle_rack':[20*npy.pi/180,20*npy.pi/180],
+                          'transverse_pressure_angle_rack':[20*npy.pi/180.,20*npy.pi/180.],
                           'coeff_gear_addendum':[1,1],
                           'coeff_gear_dedendum':[1.25,1.25],
                           'coeff_root_radius':[0.38,0.38],
@@ -368,7 +436,7 @@ class MeshAssemblyOptimizer:
             var_Z=self.AnalyseZ()
             self.Z=var_Z
 
-        self.AnalyzeCombination()
+        self.plex_calcul=self.AnalyzeCombination()
         
         for i,plex in enumerate(self.plex_calcul):
             plex['gear_graph']=self.gear_graph
@@ -389,7 +457,14 @@ class MeshAssemblyOptimizer:
         self.analyse=[]
         
     def AnalyseZ(self):
-        #nombre de dents adaptatif
+        """ Analyse of the minimum and maximum admissible teeth number for each gear mesh
+        
+        :results: dictionary define the minimum and maximum teeth number for each gear mesh {node1 : [Z1_min, Z1_max], node2 : [Z2_min, Z2_max] ...}
+        
+        >>> list_z = GA.AnalyseZ()
+        >>> print(list_z)
+        {1:[13,45], 2: [37,56]}
+        """
         Z=self.Z
         for i,(engr1,engr2) in enumerate(self.connections):
             cd_min=self.center_distance[i][0]
@@ -424,6 +499,31 @@ class MeshAssemblyOptimizer:
         return Z
 
     def AnalyzeCombination(self, verbose = False):
+        """ Analyse with decision tree all admissible configuration
+        
+        :results: list of all admissible solutions 
+        
+        >>> list_plex = GA.AnalyzeCombination()
+        >>> print(list_plex[0])
+        {'Z': {0: 53, 1: 180},
+         'center_distance': [[0.117, 0.117]],
+         'coefficient_profile_shift': {0: [-0.8, 0.8], 1: [-0.8, 0.8]},
+         'connections': [(1, 0)],
+         'cycle': {1: 1000000.0},
+         'list_gear': [1, 0],
+         'rack_choice': {0: 0, 1: 0},
+         'rack_list': {0: {'coeff_circular_tooth_thickness': [0.5, 0.5],
+                           'coeff_gear_addendum': [1, 1],
+                           'coeff_gear_dedendum': [1.25, 1.25],
+                           'coeff_root_radius': [0.38, 0.38],
+                           'module': [0.001, 0.003],
+                           'name': 'Optim_Module',
+                           'transverse_pressure_angle_rack': [0.3490658503988659,
+                                                              0.3490658503988659]}},
+         'safety_factor': 1,
+         'torque': {0: 'output', 1: 100},
+         'transverse_pressure_angle': [[0.2617993877991494, 0.5235987755982988]]}
+        """
         n1=self.node_init
         list_node=[n1]
         for (n1,n2) in self.connections_dfs:
@@ -447,7 +547,7 @@ class MeshAssemblyOptimizer:
         dt=tools.RegularDecisionTree(np)
         
         incr=0
-        self.plex_calcul=[]
+        plex_calcul=[]
         self.fonctionnel=[]
         self.fonctionnel_module=[]
 
@@ -551,7 +651,7 @@ class MeshAssemblyOptimizer:
                     liste_DF_min[engr_num]=z*module_inf
                 liste_pente_cd_module=[]
                 for set_num,(eng1,eng2) in enumerate(self.connections):
-                    cd_min=(liste_DF_min[eng1]+liste_DF_min[eng2])/2
+                    cd_min=(liste_DF_min[eng1]+liste_DF_min[eng2])/2.
                     liste_pente_cd_module.append(cd_min/module_inf)
                 cd_minmax_nv=[]
                 module_optimal=0
@@ -595,16 +695,13 @@ class MeshAssemblyOptimizer:
                     i=list_node.index(n)
                     gear[n]=list_gear[i][dt.current_node[i]]
                     rack[n]=list_rack[dt.current_node[i+self.nb_gear]]
-                # TODO: nom plus explicite que Temp!!!!!
-                Temp={}
-                Temp['Z']=gear
-#                Temp['cond_init']=res.x
-                Temp['cond_init']=0
-                Temp['rack_choice']=rack
-                Temp['center_distance']=cd_minmax_nv
+                Export={}
+                Export['Z']=gear
+                Export['rack_choice']=rack
+                Export['center_distance']=cd_minmax_nv
                 self.fonctionnel.append(fonctionnel)
                 self.fonctionnel_module.append(module_optimal)
-                self.plex_calcul.append(Temp)
+                plex_calcul.append(Export)
                 incr+=1
 #            print('valid sent to dt', valid)
             dt.NextNode(valid)
@@ -614,10 +711,17 @@ class MeshAssemblyOptimizer:
         else:
             if verbose:
                 print('No teeth combination found: increase center distances')
+        return plex_calcul
 
 
     def Optimize(self,nb_sol=1, list_sol=None, verbose=False):
+        """ Gear mesh assembly optimization for given plex configuration
         
+        :param nb_sol: number of solution desired, if list_sol = None we take nb_sol = len(plex) the optimize function analyse all the plex possibility
+        :param list_sol: list of number define the plex configuration [2,4,5]
+        
+        >>> GA.Optimize(list_sol=[1,2,3,4], verbose=True)
+        """
         compt_nb_sol=0
         if list_sol==None:
             liste_plex=self.plex_calcul
@@ -629,8 +733,7 @@ class MeshAssemblyOptimizer:
         for plex in liste_plex:
             ga=ContinuousMeshesAssemblyOptimizer(**plex)
             try:
-                ga.Optimize()
-            # BUG: Définir l'erreur à attraper!
+                ga.Optimize(verbose)
             except ValueError:
                 print('Convergence problem')
             if len(ga.solutions)>0:
@@ -645,10 +748,17 @@ class MeshAssemblyOptimizer:
                 if compt_nb_sol==nb_sol:
                     break
 
-    # TODO: Rename to optimize?
     def SearchOptimumCD(self, nb_sol = 1, verbose = False,
                         progress_callback = lambda x:x):
-        #Optimisation des nb_sol meilleures solutions vis à vis de la fonctionnelle
+        """ Gear mesh assembly optimization of the nearest solution with the specifications
+        
+            * near the minimum (cd1_min, cd2_min ...) of center-distance list [[cd1_min, cd1_max], [cd2_min, cd2_max] ...]
+            * maximum module of the specified rack
+        
+        :param nb_sol: number of solution desired, if -1 we analyse all the possibilities
+        
+        >>> GA.SearchOptimumCD(nb_sol=1, verbose=True)
+        """
         list_fonctionnel=npy.array(self.fonctionnel)
         
         #En cours de construction

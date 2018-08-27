@@ -6,7 +6,7 @@ A test case for bearing sizing with aeronautics specs:
  * high lifetime
 """
 
-import mechanical_components.bearings as bearings
+import mechanical_components.optimization.bearings as bearings_opt
 import numpy as npy
 
 
@@ -40,7 +40,7 @@ for Fa, Fr, N, Lnm in [[0.0, 307.9870364871444, 2027.272247705984, 216221.984178
 [0.0, 96.25579725936247, 954.5596739369282, 101810.09824836942],
 [0.0, 92.78795784180433, 954.5596739369282, 101810.09824836942]]:
     print(Fa, Fr, N, Lnm)
-    C1=bearings.BearingCombination()
+    C1=bearings_opt.BearingCombination()
     C1.OptimizerBearing(d = {'min': 0.01,'max': 0.10},
                 B = {'min':0.01,'max':0.08},
                 D = {'min':0.02,'max':0.15},
@@ -57,9 +57,9 @@ for Fa, Fr, N, Lnm in [[0.0, 307.9870364871444, 2027.272247705984, 216221.984178
                 typ = 'NF')
 
     print('Number of solutions: {}'.format(len(C1.solutions)))
-#for i,b in enumerate(C1.solutions):
-##    v=b.VolumeModel()
-#    b.FreeCADExport('Bearing_aeronautics_{}'.format(i))
+for i,b in enumerate(C1.solutions):
+#    v=b.VolumeModel()
+    b.FreeCADExport('Bearing_aeronautics_{}'.format(i))
     
     
 

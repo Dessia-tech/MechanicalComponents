@@ -5,7 +5,11 @@ Created on Tue May  1 17:13:16 2018
 
 @author: Pierrem
 """
+<<<<<<< HEAD
 import sys
+=======
+import sys as sys
+>>>>>>> master
 del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.bearings as bearings
 import numpy as npy
@@ -28,7 +32,8 @@ C1.OptimizerBearing(d={'min':0.02,'max':0.1},
                     B={'min':0.01,'max':0.1},
                     Lnm={'min':L10,'max':npy.inf},
                     L10={'min':L10,'max':npy.inf},
-                    Fr=Fr,Fa=Fa,n=N,typ='NF',nb_sol=10,verbose=True)
+                    Fr=Fr,Fa=Fa,n=N,typ='NF',nb_sol=10,
+                    verbose=True)
 
 for i,b in enumerate(C1.solutions):
 #    v=b.VolumeModel()
