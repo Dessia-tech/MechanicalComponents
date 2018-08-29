@@ -1,4 +1,5 @@
-import mechanical_components.meshes as meshes
+#import sys
+#del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
 

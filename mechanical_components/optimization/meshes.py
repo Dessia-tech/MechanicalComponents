@@ -581,36 +581,19 @@ class MeshAssemblyOptimizer:
 #                            valid=False
                 #analyse des vitesses du CDC
                 if valid:
-#                    print('@@@@@@@@@@@@@@@@@@@')
-                    v0_min, v0_max = self.gear_speed[list_node[0]]
-                    z0 = list_gear[0][dt.current_node[0]]
-#                    print('z0', z0)
-#                    print(list_node[0:dt.current_depth+1])
-                    for engr_index, engr_num in enumerate(list_node[0:dt.current_depth+1]):
-#                        print('###')
-                        if engr_index>0:# No need of checking input
-                            if engr_num in self.gear_speed.keys():
-                                z=list_gear[engr_index][dt.current_node[engr_index]]
-    #                            print('z', z)
-                                demul=z0/z
-    #                            print(demul, z, z0)
-                                vsi_min=self.gear_speed[engr_num][0] # Specified speed
-                                vsi_max=self.gear_speed[engr_num][1]
-                                
-                                vai_min = v0_min*demul # Actual speed
-                                vai_max = v0_max*demul
-                                
-    #                            vs_min = self.gear_speed
-    #                            print(demul)
-    #                            print(vsi_min, vsi_max, vai_min, vai_max)
-                                msi = 0.5 * (vsi_min+vsi_min)
-                                mai = 0.5* (vai_min + vai_max)
-                                dsi = vsi_max-vsi_min
-                                dai = vai_max-vai_min
-                                if abs(msi-mai) > 0.5*(dai+dsi):
-                                    valid = False
-    #                                print(valid)
-                                    break
+                    v0_min,v0_max=self.gear_speed[list_node[0]]
+                    z0=list_gear[0][dt.current_node[0]]
+                    for engr_index,engr_num in enumerate(list_node[0:dt.current_depth]):
+                        if engr_num in self.gear_speed.keys():
+                            z=list_gear[engr_index][dt.current_node[engr_index]]
+                            demul=z0/z
+                            vp_min=self.gear_speed[engr_num][0]/demul
+                            vp_max=self.gear_speed[engr_num][1]/demul
+                            v0_min=max(v0_min,vp_min)
+                            v0_max=min(v0_max,vp_max)
+                            if (v0_min>v0_max):
+                                valid=False
+                                break
                 #analyse frequence
                 if valid:
                     for freq in self.frequency:
