@@ -11,14 +11,14 @@ center_distances=[(0.09, 0.14),
                   (0.13, 0.163),
                   (0.085, 0.115),
                   (0.12, 0.14)]
-speeds = {0: [1950, 2000],
+speeds = {0: [1950, 1950],
           1: [670, 700],
           2: [1900, 1950],
           3: [750, 780],
           4: [700, 740],
           5: [800, 850],
           6: [950, 980]}
-connections = [(0, 1), (1, 2), (2, 3), (3, 4), (0, 5), (5, 6)]
+connections = [[(0, 1)], [(1, 2)], [(2, 3)], [(3, 4)], [(0, 5)], [(5, 6)]]
 list_rack = {0:{'name':'Catalogue_A','module':[2*1e-3,2*1e-3],
               'transverse_pressure_angle_rack':[20/180.*npy.pi,20/180.*npy.pi],
               'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],
@@ -33,6 +33,60 @@ GA=meshes_opt.MeshAssemblyOptimizer(connections = connections,
                                   torque = torques,
                                   rack_choice=rack_choices,
                                   verbose = True)
+
+def pgcd(a,b) :
+    while a%b != 0 :
+        a, b = b, a%b
+    return b
+compt_check_false=0
+for plex in GA.plex_calcul:
+    Z=plex['Z']
+    # validation of gear speed
+    w={}    
+    w[0]=1950.
+    w[1]=Z[0]/Z[1]*w[0]
+    w[2]=Z[1]/Z[2]*w[1]
+    w[3]=Z[2]/Z[3]*w[2]
+    w[4]=Z[3]/Z[4]*w[3]
+    w[5]=Z[0]/Z[5]*w[0]
+    w[6]=Z[5]/Z[6]*w[5]
+    check_valid=True
+    for num_mesh,interval_speed in speeds.items():
+        if round(w[num_mesh],4) not in interval([round(interval_speed[0],4),round(interval_speed[1],4)]):
+            check_valid=False
+    # validation of pgcd
+    if pgcd(Z[0],Z[1])!=1:
+        check_valid=False
+    if pgcd(Z[1],Z[2])!=1:
+        check_valid=False
+    if pgcd(Z[2],Z[3])!=1:
+        check_valid=False
+    if pgcd(Z[3],Z[4])!=1:
+        check_valid=False
+    if pgcd(Z[0],Z[5])!=1:
+        check_valid=False
+    if pgcd(Z[5],Z[6])!=1:
+        check_valid=False
+    # validation of internal ratio
+    if Z[0]/Z[1] not in interval([1/9.,9]):
+        check_valid=False
+    if Z[1]/Z[2] not in interval([1/9.,9]):
+        check_valid=False
+    if Z[2]/Z[3] not in interval([1/9.,9]):
+        check_valid=False
+    if Z[3]/Z[4] not in interval([1/9.,9]):
+        check_valid=False
+    if Z[0]/Z[5] not in interval([1/9.,9]):
+        check_valid=False
+    if Z[5]/Z[6] not in interval([1/9.,9]):
+        check_valid=False
+    if check_valid==False:
+        compt_check_false+=1
+        print('plex with teetch number: {}'.format(Z))
+        for num_mesh,speed_dat in w.items():
+            print('speed gear {}:{}'.format(num_mesh,speed_dat))
+        print(list_speed)
+print('Number of False solution is:{}'.format(compt_check_false))
 
 #Optimization for gear set with center-distance closed to the minimum boundary
 GA.SearchOptimumCD(nb_sol=1, verbose=True)
