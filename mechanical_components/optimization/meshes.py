@@ -192,6 +192,7 @@ class ContinuousMeshesAssemblyOptimizer:
         self.general_data={'Z': Z, 'connections': connections,
                  'material':material,'torque':torque,'cycle':cycle,
                  'safety_factor':safety_factor,'verbose':verbose}
+        self.db=db
         self.optimizer_data=self._convert_X2x(self.X0)
         print(self.optimizer_data)
         self.xt=dict(list(self.optimizer_data.items())+list(self.general_data.items()))
@@ -244,6 +245,63 @@ class ContinuousMeshesAssemblyOptimizer:
                     else:
                         value=self.db[0]
                     db_init=value
+        num_mesh=0
+        dict_db={} # temp storage of db dict
+        dict_df={} # temp storage of pitch diam
+        dict_cd={} # temp storage of center_distance
+        dict_tpa={} # temp storage of transversale_pressure_angle
+        for num_cd,list_connection in enumerate(self.connections):
+            for num_mesh_iter,(eng1,eng2) in enumerate(list_connection):
+                if num_mesh_iter==0: # in this case we must define center_distance
+                    if eng1 in dict_unknown['db']:
+                        db1=X[self._position_X('db',eng1)]
+                        dict_db[eng1]=db1
+                        if num_mesh in dict_unknown['transverse_pressure_angle']:
+                            db2=Z[eng2]/Z[eng1]*db1
+                            dict_db[eng2]=db2
+                            dict_tpa[num_mesh]=X[self._position_X('transverse_pressure_angle',num_mesh)]
+                            dict_df[eng1]=db1/npy.cos(dict_tpa[num_mesh])
+                            dict_df[eng2]=db2/npy.cos(dict_tpa[num_mesh])
+                            dict_cd[num_cd]=(dict_df[eng1]+dict_df[eng2])/2
+                    elif eng2 in dict_unknown['db']:
+                        db2=X[self._position_X('db',eng2)]
+                        dict_db[eng2]=db2
+                        if num_mesh in dict_unknown['transverse_pressure_angle']:
+                            db1=Z[eng1]/Z[eng2]*db2
+                            dict_db[eng1]=db1
+                            dict_tpa[num_mesh]=X[self._position_X('transverse_pressure_angle',num_mesh)]
+                            dict_df[eng1]=db1/npy.cos(dict_tpa[num_mesh])
+                            dict_df[eng2]=db2/npy.cos(dict_tpa[num_mesh])
+                            dict_cd[num_cd]=(dict_df[eng1]+dict_df[eng2])/2
+                else: # the center_distance is define
+                    if eng1 in dict_unknown['db']:
+                        db1=X[self._position_X('db',eng1)]
+                        cd=dict_cd[num_cd]
+                        dict_db[eng2]=Z[eng2]/Z[eng1]*db1
+                        dict_df[eng2]=2*cd*Z[eng2]/(Z[eng1]+Z[eng2])
+                        dict_df[eng1]=2*cd-dict_df[eng2]
+                        dict_tpa[num_mesh]=npy.arccos(dict_db[eng2]/dict_df[eng2])
+                    elif eng2 in dict_unknown['db']:
+                        db2=X[self._position_X('db',eng2)]
+                        cd=dict_cd[num_cd]
+                        dict_db[eng1]=Z[eng1]/Z[eng2]*db2
+                        dict_df[eng1]=2*cd*Z[eng1]/(Z[eng1]+Z[eng2])
+                        dict_df[eng2]=2*cd-dict_df[eng1]
+                        dict_tpa[num_mesh]=npy.arccos(dict_db[eng1]/dict_df[eng1])
+                    elif num_mesh in dict_unknown['transverse_pressure_angle']:
+                        dict_tpa[num_mesh]=X[self._position_X('transverse_pressure_angle',num_mesh)]
+                        cd=dict_cd[num_cd]
+                        dict_df[eng2]=2*cd*Z[eng2]/(Z[eng1]+Z[eng2])
+                        dict_df[eng1]=2*cd-dict_df[eng2]
+                        dict_db[eng1]=dict_df[eng1]*npy.cos(dict_tpa[num_mesh])
+                        dict_db[eng2]=dict_df[eng2]*npy.cos(dict_tpa[num_mesh])
+                    else:
+                        cd=dict_cd[num_cd]
+                        if eng1 in dict_db.keys():
+                        
+                num_mesh+=1
+                    
+            
         # calculation of the center_distance data
         engr_init=self.dict_global['db'][0]
         db={engr_init:db_init}
