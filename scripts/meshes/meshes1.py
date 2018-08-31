@@ -19,6 +19,10 @@ list_material={5:meshes_opt.hardened_alloy_steel}
 list_torque={1:186,5:'output'}
 list_cycle={1:1e12}
 
+print('#####################################')
+print('############ Decision Tree ##########')
+print('#####################################')
+
 GA=meshes_opt.MeshAssemblyOptimizer(Z={},
                                connections=list_gear_set,
                                gear_speed=list_speed,

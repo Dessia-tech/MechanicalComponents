@@ -806,6 +806,8 @@ class MeshAssembly:
         self.list_gear=list_gear
         
         # Definition of default parameters
+        minimum_gear_width=10e-3
+        
         if material==None:
             material={list_gear[0]:hardened_alloy_steel}
         for ne in list_gear:
@@ -821,8 +823,11 @@ class MeshAssembly:
         self.material=material
 
         self.DF, DB, self.connections_dfs, self.transverse_pressure_angle = self.GearGeometryParameter(Z)
-        self.cycle = self.CycleParameter(cycle, Z)
-        self.torque1, self.torque2, self.normal_load, self.tangential_load, self.radial_load = self.GearTorque(Z, torque, DB)
+        if len(cycle.keys())<len(self.list_gear): # the gear mesh optimizer calculate this dictionary
+            self.cycle = self.CycleParameter(cycle, Z)
+        else:
+            self.cycle=cycle
+        dic_torque, self.normal_load, self.tangential_load, self.radial_load = self.GearTorque(Z, torque, DB)
         
         self.meshes={}
         for num_engr in self.list_gear:
@@ -844,7 +849,7 @@ class MeshAssembly:
                                            coeff_gear_addendum, coeff_gear_dedendum,
                                            coeff_root_radius,
                                            coeff_circular_tooth_thickness)
-        self.gear_width,self.sigma_iso,self.sigma_lim=self.GearWidthDefinition(safety_factor)
+        self.gear_width,self.sigma_iso,self.sigma_lim=self.GearWidthDefinition(safety_factor,minimum_gear_width)
         for num_gear in self.list_gear:
             self.meshes[num_gear].gear_width=self.gear_width[num_gear]
             
@@ -965,48 +970,67 @@ class MeshAssembly:
         
         be careful, due to the parameters of the gear mesh assembly (define one pressure angle for each mesh) the diameter db2_a is different to db2_b (you have to define correctly transverse_pressure_angle to have db2_a=db2_b)
         """
-        ggd=self.gear_graph.degree(self.list_gear)
-        liste_node_init=[]
-        for ne,nb_connexion in ggd:
-            if (nb_connexion==1) and (torque[ne]!='output'):
-                liste_node_init.append(ne)
-        for ne,tq in torque.items():
-            if tq=='output':
-                node_output=ne
-        if 'output' not in torque.values():
-            path_list=[nx.shortest_path(self.gear_graph,source=liste_node_init[0],target=liste_node_init[1])]
-        else:
-            path_list=[nx.shortest_path(self.gear_graph,source=liste_node_init[0],target=node_output)]
-            for nd_init in liste_node_init[1:]:
-                path_list.append(nx.shortest_path(self.gear_graph,source=nd_init,target=node_output))
-        torque1={}
+        if 'output' in torque.values():
+            for num_gear,tq in torque.items():
+                if tq=='output':
+                    node_output=num_gear
+            torque_graph_dfs=list(nx.dfs_edges(self.gear_graph,node_output))
+            order_torque_calculation=[(eng2,eng1) for (eng1,eng2) in torque_graph_dfs[::-1]]
+            # calculation torque distribution
+            temp_torque={}
+            for eng1 in self.list_gear:
+                temp_torque[eng1]=0
+            for num_mesh_tq,(eng1,eng2) in enumerate(order_torque_calculation):
+                if eng1 in torque.keys():
+                    temp_torque[eng1]+=torque[eng1]
+                temp_torque[eng2]+=-temp_torque[eng1]*Z[eng2]/Z[eng1]
+            dic_torque={}
+            for num_mesh_tq,(eng1,eng2) in enumerate(order_torque_calculation):
+                dic_torque[(eng1,eng2)]=temp_torque[eng1]
+    
+#        ggd=self.gear_graph.degree(self.list_gear) # dictionary: key num of the gear and the value the number of connection
+#        liste_node_init=[]
+#        for num_gear,nb_connexion in ggd:
+#            if (nb_connexion==1) and (torque[num_gear]!='output'):
+#                liste_node_init.append(num_gear)
+#        for num_gear,tq in torque.items():
+#            if tq=='output':
+#                node_output=num_gear
+#        if 'output' not in torque.values():
+#            path_list=[nx.shortest_path(self.gear_graph,source=liste_node_init[0],target=liste_node_init[1])]
+#        else:
+#            path_list=[nx.shortest_path(self.gear_graph,source=liste_node_init[0],target=node_output)]
+#            for nd_init in liste_node_init[1:]:
+#                path_list.append(nx.shortest_path(self.gear_graph,source=nd_init,target=node_output))
+#        torque1={}
+#        normal_load={}
+#        tangential_load={}
+#        radial_load={}
+#        for node_init,path in zip(liste_node_init,path_list):
+#            torque_moteur_m=torque[node_init]
+#            for i,eng1 in enumerate(path[0:-1]):
+#                eng2=path[i+1]
+#                torque_recepteur=-torque_moteur_m*Z[eng2]/Z[eng1]
+#                if (eng2 in torque.keys()) and (torque[eng2]!='output'):
+#                    torque_recepteur+=torque[eng2]
+#                torque1[eng1]=torque_moteur_m
+#                torque2={}
+#                torque2[eng2]=torque_recepteur
+                 
         normal_load={}
         tangential_load={}
         radial_load={}
-        for node_init,path in zip(liste_node_init,path_list):
-            torque_moteur_m=torque[node_init]
-            for i,eng1 in enumerate(path[0:-1]):
-                eng2=path[i+1]
-                torque_recepteur=-torque_moteur_m*Z[eng2]/Z[eng1]
-                if (eng2 in torque.keys()) and (torque[eng2]!='output'):
-                    torque_recepteur+=torque[eng2]
-                torque1[eng1]=torque_moteur_m
-                torque2={}
-                torque2[eng2]=torque_recepteur
-        for node_init,path in zip(liste_node_init,path_list):
-            torque_moteur_m=torque[node_init]
-            for i,eng1 in enumerate(path[0:-1]):
-                eng2=path[i+1]
-                if (eng1, eng2) in self.connections:
-                    num_mesh=self.connections.index((eng1, eng2))
-                else:
-                    num_mesh=self.connections.index((eng2, eng1))
-
-                tq1=torque1[eng1]
-                normal_load[num_mesh]=abs(tq1)*2/(db[eng1])
-                tangential_load[num_mesh]=abs(tq1)*2/(self.DF[num_mesh][eng1])
-                radial_load[num_mesh]=npy.tan(self.transverse_pressure_angle[num_mesh])*tangential_load[num_mesh]
-        return torque1,torque2,normal_load,tangential_load,radial_load
+        for num_mesh,(eng1,eng2) in enumerate(self.connections):
+            if 'output' not in torque.values():
+                dic_torque=torque
+            try:
+                tq=dic_torque[(eng1,eng2)]
+            except:
+                tq=dic_torque[(eng2,eng1)]
+            normal_load[num_mesh]=abs(tq)*2/(db[eng1])
+            tangential_load[num_mesh]=abs(tq)*2/(self.DF[num_mesh][eng1])
+            radial_load[num_mesh]=npy.tan(self.transverse_pressure_angle[num_mesh])*tangential_load[num_mesh]
+        return dic_torque,normal_load,tangential_load,radial_load
     
     def CycleParameter(self,cycle,Z):
         """ Calculation of the gear mesh cycle
@@ -1022,7 +1046,7 @@ class MeshAssembly:
                 cycle[eng]=cycle[eng_init]*Z[eng_init]/Z[eng]
         return cycle
         
-    def GearWidthDefinition(self,safety_factor):
+    def GearWidthDefinition(self,safety_factor,minimum_gear_width):
         """ Calculation of the gear width
         
         :param safety_factor: Safety factor used for the ISO design
@@ -1041,7 +1065,7 @@ class MeshAssembly:
         sigma_lim=self.SigmaMaterialISO(safety_factor)
         gear_width={}
         for eng in self.list_gear:
-            gear_width[eng]=0
+            gear_width[eng]=minimum_gear_width
         for num_mesh,(eng1,eng2) in enumerate(self.connections):
             gear_width1=abs(self.tangential_load[num_mesh]
                             / (sigma_lim[num_mesh][eng1]

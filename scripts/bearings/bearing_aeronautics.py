@@ -9,10 +9,6 @@ A test case for bearing sizing with aeronautics specs:
 import mechanical_components.bearings as bearings
 import numpy as npy
 
-
-
-
-
 Fa=0 # Axial force
 Fr=90 # Radial force
 N=1000 # Rotational speed in rad/s

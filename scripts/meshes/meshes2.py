@@ -5,7 +5,7 @@ import numpy as npy
 
 #3 gears meshes test
 list_cd=[[0.08,0.12],[0.07,0.12]]
-connections=[(5,1),(1,2)]
+connections=[[(5,1)],[(1,2)]]
 list_speed={5:[1000*npy.pi/30,1200*npy.pi/30],1:[2000*npy.pi/30,
                2100*npy.pi/30],2:[1000*npy.pi/30,1200*npy.pi/30]}
 list_rack={0:{'name':'Racks_A','module':[2*1e-3,2*1e-3],
@@ -29,7 +29,7 @@ GA = meshes_opt.MeshAssemblyOptimizer(Z={},
                                   cycle = list_cycle,verbose=True)
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.SearchOptimumCD(nb_sol=1, verbose=True)
+GA.SearchOptimumCD(nb_sol=10, verbose=True)
 print('Number of solutions:',len(GA.solutions))
 solution=GA.solutions[-1]
 solution.SVGExport('meshes2.txt',{5 : [0,0], 2 : [0.15,0]})
