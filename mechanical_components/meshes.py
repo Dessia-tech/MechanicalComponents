@@ -922,7 +922,7 @@ class MeshAssembly:
         sigma_lim=self.SigmaMaterialISO(safety_factor)
         gear_width={}
         for eng in self.list_gear:
-            gear_width[eng]=0
+            gear_width[eng]=0.003# minimum gear width
         for ne,(eng1,eng2) in enumerate(self.connections):
             gear_width1=abs(self.tangential_load[ne]
                             / (sigma_lim[ne][eng1]
