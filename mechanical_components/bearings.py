@@ -346,7 +346,9 @@ class RadialRollerBearing:
             p.append(vm.Point2D((self.B/2.,self.F/2.)))
             p.append(vm.Point2D((self.B/2.,self.d/2.)))
             p.append(p[0])
-            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
+            # TODO handle radius of rollers
+#            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
+            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
         elif self.typ=='N' or self.typ=='NF':
             p=[vm.Point2D((0,self.d/2.))]
             p.append(vm.Point2D((-self.B/2.,self.d/2.)))
@@ -358,7 +360,8 @@ class RadialRollerBearing:
             p.append(vm.Point2D((self.B/2.,self.d1/2.)))
             p.append(vm.Point2D((self.B/2.,self.d/2.)))
             p.append(p[0])
-            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
+#            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
+            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
         elif self.typ=='NJ':
             p=[vm.Point2D((0,self.d/2.))]
             p.append(vm.Point2D((-self.B/2.,self.d/2.)))
@@ -368,7 +371,8 @@ class RadialRollerBearing:
             p.append(vm.Point2D((self.B/2.,self.F/2.)))
             p.append(vm.Point2D((self.B/2.,self.d/2.)))
             p.append(p[0])
-            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
+#            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
+            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
         return ref
     
     def ExternalRingContour(self):

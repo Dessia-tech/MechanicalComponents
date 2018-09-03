@@ -582,7 +582,7 @@ class MeshAssemblyOptimizer:
             if (dt.current_depth<=(self.nb_gear-1)) and (dt.current_depth>0):
                 z1=list_gear[dt.current_depth-1][dt.current_node[dt.current_depth-1]]
                 z2=list_gear[dt.current_depth][dt.current_node[dt.current_depth]]
-                # NVH analysis of gear mesh
+
                 if (pgcd(z1,z2)!=1):
                     valid=False
                 # gear ratio analysis
@@ -599,27 +599,22 @@ class MeshAssemblyOptimizer:
 #                            valid=False
                 # speed specification analysis
                 if valid:
-                    v0_min, v0_max = self.gear_speed[list_node[0]]
-                    z0 = list_gear[0][dt.current_node[0]]
-                    for engr_index, engr_num in enumerate(list_node[0:dt.current_depth+1]):
-                        if engr_index>0:# No need of checking input
-                            if engr_num in self.gear_speed.keys():
-                                z=list_gear[engr_index][dt.current_node[engr_index]]
-                                demul=z0/z
-                                vsi_min=self.gear_speed[engr_num][0] # Specified speed
-                                vsi_max=self.gear_speed[engr_num][1]
-                                
-                                vai_min = v0_min*demul # Actual speed
-                                vai_max = v0_max*demul
-                                msi = 0.5 * (vsi_min+vsi_min)
-                                mai = 0.5* (vai_min + vai_max)
-                                dsi = vsi_max-vsi_min
-                                dai = vai_max-vai_min
-                                if abs(msi-mai) > 0.5*(dai+dsi):
-                                    valid = False
-    #                                print(valid)
-                                    break
-                # frequncy analysis
+
+                    v0_min,v0_max=self.gear_speed[list_node[0]]
+                    z0=list_gear[0][dt.current_node[0]]
+                    for engr_index,engr_num in enumerate(list_node[1:dt.current_depth+1]):
+                        engr_index +=1
+                        if engr_num in self.gear_speed.keys():
+                            z=list_gear[engr_index][dt.current_node[engr_index]]
+                            demul=z0/z
+                            vp_min=self.gear_speed[engr_num][0]/demul
+                            vp_max=self.gear_speed[engr_num][1]/demul
+                            v0_min=max(v0_min,vp_min)
+                            v0_max=min(v0_max,vp_max)
+                            if (v0_min>v0_max):
+                                valid=False
+                                break
+                #analyse frequence
                 if valid:
                     for freq in self.frequency:
                         zm=list_gear[0][dt.current_node[0]]
@@ -714,7 +709,8 @@ class MeshAssemblyOptimizer:
                 Export['Z']=gear
                 Export['rack_choice']=rack
                 Export['center_distance']=cd_minmax_nv
-                Export['db']=db
+                Export['dw'] = v0_max - v0_min
+
                 self.fonctionnel.append(fonctionnel)
                 self.fonctionnel_module.append(module_optimal)
                 plex_calcul.append(Export)
@@ -740,12 +736,23 @@ class MeshAssemblyOptimizer:
         compt_nb_sol=0
         if list_sol==None:
             liste_plex=self.plex_calcul
+            # Using all combinatoric
+            # Sorting data, delta w max first
+            dw = [s['dw'] for s in liste_plex]
+            liste_plex2 = []
+            for i in npy.argsort(dw)[::-1]:
+                del liste_plex[i]['dw']
+                liste_plex2.append(liste_plex[i])
+            liste_plex = liste_plex2
+            
         else:
             liste_plex=[]
             for ind_plex in list_sol:
                 liste_plex.append(self.plex_calcul[ind_plex])
             nb_sol=len(liste_plex)
+        
         for plex in liste_plex:
+            
             ga=ContinuousMeshesAssemblyOptimizer(**plex)
             try:
                 ga.Optimize(verbose)
