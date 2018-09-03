@@ -214,28 +214,48 @@ class RadialRollerBearing:
         Cr=fc*self.bm*self.i*((self.Lwe*1e3)*npy.cos(self.alpha))**((self.material.weibull_c-self.material.weibull_h-1)/(self.material.weibull_c-self.material.weibull_h+1))*self.Z**((self.material.weibull_c-self.material.weibull_h-2*self.material.weibull_e+1)/(self.material.weibull_c-self.material.weibull_h+1))*(self.Dwe*1e3)**((self.material.weibull_c-self.material.weibull_h-3)/(self.material.weibull_c-self.material.weibull_h+1))
         return Cr
     
-    def EquivalentDynamicLoad(self,Fr,Fa=0):
-        #Charge radiale dynamique équivalente
+    def EquivalentDynamicLoad(self,fr, fa = 0):
+        """
+        Returns the equivalent dynamic radial force form a radial and axial force
+        
+        :param fr: radial force in Newtowns
+        :param fa: radial force in Newtowns
+        """
         e=1.5*npy.tan(self.alpha)
         if self.alpha!=0:
             if self.i==1:
-                if Fa/Fr<=e:
-                    Pr=Fr
+                if fa/fr<=e:
+                    Pr=fr
                 else:
-                    Pr=0.4*Fr+0.4/(npy.tan(self.alpha))*Fa
+                    Pr=0.4*fr+0.4/(npy.tan(self.alpha))*fa
             elif self.i==2:
-                if Fa/Fr<=e:
-                    Pr=Fr+0.45/(npy.tan(self.alpha))*Fa
+                if fa/fr<=e:
+                    Pr=fr+0.45/(npy.tan(self.alpha))*fa
                 else:
-                    Pr=0.67*Fr+0.67/(npy.tan(self.alpha))*Fa
+                    Pr=0.67*fr+0.67/(npy.tan(self.alpha))*fa
         else:
-            Pr=Fr
+            Pr=fr
         return Pr
     
-    def BaseLifeTime(self,Fr,Fa=0):
-        # Durée de vie en millions de tour associée à une fiabilité de 90%
+    def BaseLifeTime(self,Fr, Fa, N, t):
+        """
+        Lifetime in millions of cycles for 90% fiability
+        
+        :param Fr: a list of radial forces for each usecase
+        :param Fa: a list of axial forces for each usecase
+        :param N: a list of rotating speeds in rad/s for each usecase
+        :param N: a list of operating times in seconds for each usecase
+        
+        """
+        total_cycles = 0.
+        Pr = 0.
+        for fr, fa, ni, ti in zip(Fr, Fa, N, t):
+            cycles = ni * ti * 2 * math.pi
+            pr += cycles * self.EquivalentDynamicLoad(fr, fa)**(10/3.)
+            total_cycles += cycles
+        Pr = (Pr / total_cycles) ** 0.3
+
         Cr=self.BaseDynamicLoad()
-        Pr=self.EquivalentDynamicLoad(Fr,Fa)
         L10=(Cr/Pr)**(10/3.)
         return L10
         
