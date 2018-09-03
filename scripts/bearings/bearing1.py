@@ -5,7 +5,11 @@ Created on Tue May  1 17:13:16 2018
 
 @author: Pierrem
 """
+<<<<<<< HEAD
+import sys
+=======
 import sys as sys
+>>>>>>> master
 del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.bearings as bearings
 import numpy as npy
