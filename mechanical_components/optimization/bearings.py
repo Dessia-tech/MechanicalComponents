@@ -11,7 +11,7 @@ import numpy as npy
 from scipy.optimize import minimize
 
 # TODO: Cumulative damages
-class BearingCombination:
+class BearingOptimizer:
     """
     Objet avec 3 fonctions de selection des roulements cylindriques
      * Combinatoire sur les dimensions externe ISO
@@ -23,12 +23,18 @@ class BearingCombination:
         
         self.solutions=[]
     
-    def OptimizerBearing(self, d, D, B, Fr, Fa, n, L10=None, C0r=None, Cr=None,
-                         Lnm=None, grade=['Gr_gn'], S=0.9, T=40,
+    def Optimization(self, d, D, B, Fr, Fa, N, t, T, L10=None, C0r=None, Cr=None,
+                         Lnm=None, grade=['Gr_gn'], S=0.9,
                          oil=oil_iso_vg_1500, material=material_iso,
                          nb_sol=1, maxi=None, mini=None, rsmin=None, typ='NF',
                          verbose = False):
 
+#        self.d = d
+#        self.D = D
+#        self.B = B
+#        self.Fr = Fr
+#        self.Fa = Fa
+#        self.
         
         err_default=0.05
         def def_inter(data):
@@ -152,7 +158,7 @@ class BearingCombination:
                 F=x[0]-2*Dw
                 Zmax=int(2*npy.pi/(2*npy.arcsin((Dw/2)/(F/2+Dw/2))))
                 R1.Update(x[2],x[1],x[0],F,Zmax)
-                l10=R1.BaseLifeTime(Fr,Fa)
+                l10=R1.BaseLifeTime(Fr, Fa, N, t)
                 obj+=(1/l10)**2
                 obj+=(x[0]-x[1])**2 #minimisation de la hauteur de l'épaulement externe
                 obj+=(F-x[2])**2 #minimisation de la hauteur de l'épaulement interne
@@ -187,21 +193,21 @@ class BearingCombination:
                 F=x_opt[0]-2*Dw
                 Zmax=int(2*npy.pi/(2*npy.arcsin((Dw/2)/(F/2+Dw/2))))
                 R1.Update(x_opt[2],x_opt[1],x_opt[0],F,Zmax)
-                l10=R1.BaseLifeTime(Fr,Fa)
+                l10=R1.BaseLifeTime(Fr, Fa, N, t)
                 
                 liminf_lifetime=True
-                if not L10 is None:
+                if L10 is not None:
                     if (l10<L10['min']) or (l10>L10['max']):
                         liminf_lifetime=False
-                if not Lnm is None:
-                    lnm=R1.AdjustedLifeTime(Fr,n,Fa,S,T)
+                if Lnm is not None:
+                    lnm=R1.AdjustedLifeTime(Fr, Fa, N, t, T, S)
                     if (lnm<Lnm['min']) or (lnm>Lnm['max']):
                         liminf_lifetime=False
-                if not C0r is None:
+                if C0r is not None:
                     c0r=R1.BaseStaticLoad()
                     if (c0r<C0r['min']) or (c0r>C0r['max']):
                         liminf_lifetime=False
-                if not Cr is None:
+                if Cr is not None:
                     cr=R1.BaseDynamicLoad()
                     if (cr<Cr['min']) or (cr>Cr['max']):
                         liminf_lifetime=False
@@ -210,4 +216,9 @@ class BearingCombination:
                     if len(self.solutions)<nb_sol:
                         liminf_lifetime=False
                     if verbose:
-                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.solutions),l10,D,d,B,Dw,Zmax))
+                        print(R1)
+#                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.solutions),l10,D,d,B,Dw,Zmax))
+                        if L10 is not None:
+                            print('L10: {}, specification: {}'.format(l10, L10))
+                        if Lnm is not None:
+                            print('Lnm: {}, specification: {}'.format(lnm, Lnm))

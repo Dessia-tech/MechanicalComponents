@@ -14,7 +14,7 @@ import volmdlr.primitives2D as primitives2D
 import math
 from scipy.linalg import norm
 from scipy.optimize import minimize,fsolve
-import itertools
+#import itertools
 import networkx as nx
 
 import powertransmission.tools as tools
