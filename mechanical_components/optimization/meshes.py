@@ -15,6 +15,15 @@ import powertransmission.tools as tools
 from scipy.optimize import minimize
 import copy
 
+#class CompositeMeshAssembly:
+#    def __init__(Z, center_distance, connections, strong_link, transverse_pressure_angle,
+#                 coefficient_profile_shift,transverse_pressure_angle_rack,
+#                 coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
+#                 coeff_circular_tooth_thickness, material=None, torque=None, cycle=None,
+#                 safety_factor=1,verbose=False):
+        
+        
+
 class ContinuousMeshesAssemblyOptimizer:
     """
     Gear mesh assembly optimizer
@@ -92,18 +101,6 @@ class ContinuousMeshesAssemblyOptimizer:
             node_init=list(s_graph.nodes())[0]
             self.sub_graph_dfs.append(list(nx.dfs_edges(s_graph,node_init)))
         
-#        # Search of the min/max of the base diameter of the first gear mesh
-#        mesh1,mesh2=connections[0]
-#        Z1=Z[mesh1]
-#        Z2=Z[mesh2]
-#        cd1_min,cd1_max=self.center_distance[0]
-#        tpa1_min,tpa1_max=self.transverse_pressure_angle[0]
-#        df1_min=2*cd1_min*Z1/(Z1+Z2)
-#        db1_min=df1_min*npy.cos(tpa1_max)
-#        df1_max=2*cd1_max*Z1/(Z1+Z2)
-#        db1_max=df1_max*npy.cos(tpa1_min)
-#        self.db=[db1_min,db1_max]
-        
         # Search of unknown parameters (borne_min different of borne_max)
         dict_unknown={'db':[],'transverse_pressure_angle':[],
                  'coefficient_profile_shift':[],'transverse_pressure_angle_rack':[],
@@ -150,7 +147,7 @@ class ContinuousMeshesAssemblyOptimizer:
         for num_gear in list_gear:
             dict_global['db'].append(num_gear)
             dict_global['transverse_pressure_angle'].append(num_gear)
-                
+        #search another unknown
         for num_gear in list_gear:
             cps=coefficient_profile_shift[num_gear]
             dict_global['coefficient_profile_shift'].append(num_gear)
@@ -164,8 +161,8 @@ class ContinuousMeshesAssemblyOptimizer:
         print('The total number of unknown for the gear mesh assembly optimization is {}'.format(number_unknown))
         
         # Definition of the Bound matrix for the optimizer
-        Bounds=[]
-        list_order_unknown=[]
+        Bounds = []
+        list_order_unknown = []
         for key,list_unknown in dict_unknown.items():
             if len(list_unknown)>0:
                 if key=='db':
@@ -186,18 +183,19 @@ class ContinuousMeshesAssemblyOptimizer:
                     list_order_unknown.append(key)
                     for num_rack in list_unknown:
                         Bounds.append(self.rack_list[num_rack][key])
-        self.Bounds=npy.array(Bounds)
-        self.list_order_unknown=list_order_unknown
+        self.Bounds = npy.array(Bounds)
+        self.list_order_unknown = list_order_unknown
         
         # Definition initial condition
-        self.X0=self.CondInit()
+        self.X0 = self.CondInit()
         
-        self.db=db
-        optimizer_data=self._convert_X2x(self.X0)
-        dic_torque,dic_cycle=self.TorqueCycleMeshAssembly()
+        self.db = db
+        optimizer_data = self._convert_X2x(self.X0)
+        dic_torque,dic_cycle = self.TorqueCycleMeshAssembly()
+        print(optimizer_data)
         
         self.mesh_assembly = []
-        self.general_data=[]
+        self.general_data = []
         for num_graph,list_sub_graph in enumerate(self.sub_graph_dfs):
             num_mesh=0
             general_data={'Z': {}, 'connections': [],

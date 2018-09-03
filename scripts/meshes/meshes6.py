@@ -6,14 +6,17 @@ from interval import interval
 
 #3 gears meshes test
 list_cd=[[0.1,0.15],[0.1,0.15]]
-connections=[[(1,2),(4,5)],[(2,3),(5,6)]]
-list_strong_link=[[2,5]]
+connections=[[(1,2),(4,5),(7,8)],[(2,3),(5,6),(8,9)]]
+list_strong_link=[[2,5],[5,8]]
 list_speed={1:[900*npy.pi/30,900*npy.pi/30],
             2:[2000*npy.pi/30,2100*npy.pi/30],
             3:[900*npy.pi/30,920*npy.pi/30],
             4:[800*npy.pi/30,820*npy.pi/30],
             5:[2000*npy.pi/30,2100*npy.pi/30],
-            6:[800*npy.pi/30,820*npy.pi/30]}
+            6:[800*npy.pi/30,820*npy.pi/30],
+            7:[800*npy.pi/30,810*npy.pi/30],
+            8:[2000*npy.pi/30,2100*npy.pi/30],
+            9:[800*npy.pi/30,810*npy.pi/30]}
 list_tpa={0:[15/180.*npy.pi,25/180.*npy.pi],1:[15/180.*npy.pi,25/180.*npy.pi]}
 list_rack={0:{'name':'Racks_A','module':[1.8*1e-3,2*1e-3],
               'transverse_pressure_angle_rack':[20/180*npy.pi,20/180*npy.pi],
@@ -56,6 +59,9 @@ for plex in GA.plex_calcul:
     w[5]=w[2]
     w[4]=Z[5]/Z[4]*w[5]
     w[6]=Z[5]/Z[6]*w[5]
+    w[8]=w[2]
+    w[7]=Z[8]/Z[7]*w[8]
+    w[9]=Z[8]/Z[9]*w[8]
     check_valid=True
     for num_mesh,interval_speed in list_speed.items():
         if round(w[num_mesh],4) not in interval([round(interval_speed[0],4),round(interval_speed[1],4)]):
