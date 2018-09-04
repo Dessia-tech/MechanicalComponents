@@ -1,12 +1,13 @@
-#import sys
-#del sys.modules['mechanical_components.optimization']
+import sys
+del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
+from interval import interval
 
 ###############################################################
 #input for a specified gear mesh (modification of the modulus)
 list_cd=[[0.117,0.16]]
-list_gear_set=[(5,1)]
+list_gear_set=[[(5,1)]]
 list_speed={5:[1000*npy.pi/30,1500*npy.pi/30],1:[4100*npy.pi/30,
                4300*npy.pi/30]}
 list_rack={0:{'name':'Catalogue_A','module':[1*1e-3,2.5*1e-3],

@@ -789,6 +789,7 @@ class MeshAssembly:
                  safety_factor=1,verbose=False):
         
         self.center_distance=center_distance
+        self.Z=Z
         self.connections=connections
         self.transverse_pressure_angle_0=transverse_pressure_angle[0] # transverse pressure angle of the first gear mesh on the connections list order
         self.helix_angle=0
@@ -1397,44 +1398,6 @@ class MeshAssembly:
         """
         model = self.VolumeModel(centers, axis)
         model.FreeCADExport(python_path ,file_path, freecad_path, export_types)
-        
-    def PosAxis(self,position):
-        # Definition of the initial center for all gear (when not given by the user)
-        def fun(x):
-            obj=0
-            for num,it in enumerate(self.connections):
-                eng1=(self.list_gear).index(it[0])
-                eng2=(self.list_gear).index(it[1])
-                obj+=(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-self.center_distance[num])**2
-            return obj
-        def eg(x):
-            ine=[]
-            for k,val in position.items():
-                key=(self.list_gear).index(k)
-                ine.append(x[2*int(key)]-val[0])
-                ine.append(x[2*int(key)+1]-val[1])
-            return ine
-        def ineg(x):
-            ine=[]
-            for num,it in enumerate(self.connections):
-                eng1=(self.list_gear).index(it[0])
-                eng2=(self.list_gear).index(it[1])
-                ine.append(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-0.999*self.center_distance[num])
-                ine.append(1.001*self.center_distance[num]-((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5)
-            return ine
-        cons = ({'type': 'eq','fun' : eg},{'type': 'ineq','fun' : ineg})
-        drap=1
-        while drap==1:
-            x0=tuple(npy.random.random(2*self.gear_graph.number_of_nodes())*1)
-            Bound=[[0,1]]*(self.gear_graph.number_of_nodes()*2)
-            res = minimize(fun,x0, method='SLSQP', bounds=Bound,constraints=cons)
-            if (min(ineg(res.x))>0) and (max(eg(res.x))<1e-7):
-                drap=0
-        x_opt=res.x
-        centers={}
-        for engr_pos,engr_num in enumerate(self.list_gear):
-            centers[engr_num]=[x_opt[2*engr_pos],x_opt[2*engr_pos+1]]
-        return centers
     
     # TODO change this function to make it like PlotData in PWT: output is dict of geometrical shapes
     def SVGExport(self,name,position):
@@ -1452,7 +1415,7 @@ class MeshAssembly:
                 * {node1 : [0,0], node2 : [0.117,0]}
                 * {node1 : [0,0]}
         """
-        x_opt=self.PosAxis(position)
+        x_opt=position
         TG={}
         L1=[]
         Struct=[]
@@ -1491,8 +1454,9 @@ class MeshAssembly:
                 L1.extend(sol[0])
             L1.extend(sol[1])
         L1.extend(Struct)
-        G1=vm.Contour2D(L1)
-        G1.MPLPlot()
+#        G1=vm.Contour2D(L1)
+#        G1.MPLPlot()
+        return L1
         
     def Dict(self):
         """Export dictionary

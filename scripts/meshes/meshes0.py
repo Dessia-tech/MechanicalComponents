@@ -2,6 +2,7 @@ import sys
 del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
+from interval import interval
 
 #Optimization of one gear mesh with a fixed center-distance
 list_cd=[[0.117,0.117]]
@@ -68,5 +69,5 @@ GA.SearchOptimumCD(nb_sol=1, verbose=True)
 print('Nombre de solutions convergés:',len(GA.solutions))
 solution=GA.solutions[-1]
 solution.SVGExport('name.txt',{0 : [0,0]})
-solution.FreeCADExport('Gears1',centers = {0 : (0,0.117*npy.sin(0.1),0.117*npy.cos(0.1)),1 : (0,0,0)})
+#solution.FreeCADExport('Gears1',centers = {0 : (0,0.117*npy.sin(0.1),0.117*npy.cos(0.1)),1 : (0,0,0)})
 

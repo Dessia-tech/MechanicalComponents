@@ -8,8 +8,8 @@ from interval import interval
 list_cd=[[0.08,0.12],[0.08,0.1]]
 connections=[[(1,2),(3,4)],[(4,5)]]
 list_strong_link=[[1,3]]
-list_speed={1:[1000*npy.pi/30,1200*npy.pi/30],2:[2000*npy.pi/30,2100*npy.pi/30],
-            3:[1000*npy.pi/30,1550*npy.pi/30],4:[2000*npy.pi/30,2100*npy.pi/30],
+list_speed={1:[1000*npy.pi/30,1500*npy.pi/30],2:[2000*npy.pi/30,2100*npy.pi/30],
+            3:[1000*npy.pi/30,1500*npy.pi/30],4:[2000*npy.pi/30,2100*npy.pi/30],
             5:[2050*npy.pi/30,2050*npy.pi/30]}
 list_tpa={0:[18/180.*npy.pi,22/180.*npy.pi],1:[18/180.*npy.pi,22/180.*npy.pi]}
 list_rack={0:{'name':'Racks_A','module':[1.5*1e-3,2*1e-3],
@@ -82,10 +82,10 @@ for plex in GA.plex_calcul:
 print('Number of False solution is:{}'.format(compt_check_false))
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.SearchOptimumCD(nb_sol=1, verbose=True)
+GA.SearchOptimumCD(nb_sol=10, verbose=True)
 print('Number of solutions:',len(GA.solutions))
 solution=GA.solutions[-1]
-solution.SVGExport('meshes2.txt',{5 : [0,0], 2 : [0.15,0]})
+solution.SVGExport('meshes2.txt',{1 : [0,0]})
 #solution.FreeCADExport('meshes2')
  
 
