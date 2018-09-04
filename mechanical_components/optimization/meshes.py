@@ -425,7 +425,7 @@ class MeshAssemblyOptimizer:
                 material[ne]=hardened_alloy_steel
         
         if torque==None:
-            torque={list_gear[0]:100,list_gear[1]:'output'}
+            torque=[{list_gear[0]:100,list_gear[1]:'output'}]
             
         if cycle==None:
             cycle={list_gear[0]:1e6}
@@ -749,11 +749,11 @@ class MeshAssemblyOptimizer:
         else:
             liste_plex=[]
             for ind_plex in list_sol:
+                del self.plex_calcul[ind_plex]['dw']
                 liste_plex.append(self.plex_calcul[ind_plex])
             nb_sol=len(liste_plex)
         
         for plex in liste_plex:
-            
             ga=ContinuousMeshesAssemblyOptimizer(**plex)
             try:
                 ga.Optimize(verbose)
@@ -802,6 +802,7 @@ class MeshAssemblyOptimizer:
         liste_solutions=[]
         for num_plex in plex_analyse:
             plex=self.plex_calcul[num_plex]
+            del plex['dw']
             ga=ContinuousMeshesAssemblyOptimizer(**plex)
             try:
                 ga.Optimize(verbose)

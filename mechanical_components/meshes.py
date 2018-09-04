@@ -817,7 +817,7 @@ class MeshAssembly:
                 material[ne]=hardened_alloy_steel
         
         if torque==None:
-            torque={list_gear[0]:100,list_gear[1]:'output'}
+            torque=[{list_gear[0]:100,list_gear[1]:'output'}]
             
         if cycle==None:
             cycle={list_gear[0]:1e6}
@@ -826,7 +826,21 @@ class MeshAssembly:
 
         self.DF, DB, self.connections_dfs, self.transverse_pressure_angle = self.GearGeometryParameter(Z)
         self.cycle = self.CycleParameter(cycle, Z)
-        self.torque1, self.torque2, self.normal_load, self.tangential_load, self.radial_load = self.GearTorque(Z, torque, DB)
+        
+        self.normal_load={}
+        self.tangential_load={}
+        self.radial_load={}
+        for dic_tq in torque:
+            torque1, torque2, normal_load, tangential_load, radial_load = self.GearTorque(Z, dic_tq, DB)
+            for num_mesh in normal_load.keys():
+                try:
+                    self.normal_load[num_mesh]=max(self.normal_load[num_mesh],normal_load[num_mesh])
+                    self.tangential_load[num_mesh]=max(self.tangential_load[num_mesh],tangential_load[num_mesh])
+                    self.radial_load[num_mesh]=max(self.radial_load[num_mesh],radial_load[num_mesh])
+                except:
+                    self.normal_load[num_mesh]=normal_load[num_mesh]
+                    self.tangential_load[num_mesh]=tangential_load[num_mesh]
+                    self.radial_load[num_mesh]=radial_load[num_mesh]
         
         self.meshes={}
         for num_engr in self.list_gear:
