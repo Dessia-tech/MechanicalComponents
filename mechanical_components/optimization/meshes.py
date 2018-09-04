@@ -708,7 +708,8 @@ class MeshAssemblyOptimizer:
                 Export={}
                 Export['Z']=gear
                 Export['rack_choice']=rack
-                Export['center_distance']=cd_minmax_nv
+                Export['center_distance'] = cd_minmax_nv
+                Export['db'] = db
                 Export['dw'] = v0_max - v0_min
 
                 self.fonctionnel.append(fonctionnel)

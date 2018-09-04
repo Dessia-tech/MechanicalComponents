@@ -1041,18 +1041,18 @@ class MeshAssembly:
         coeff_yf_iso=self._CoeffYFIso()
         coeff_ye_iso=self._CoeffYEIso()
         coeff_yb_iso=self._CoeffYBIso()
-        
+
         sigma_lim=self.SigmaMaterialISO(safety_factor)
         gear_width={}
         for eng in self.list_gear:
             gear_width[eng]=0.003# minimum gear width
-        for ne,(eng1,eng2) in enumerate(self.connections):
-            gear_width1=abs(self.tangential_load[ne]
-                            / (sigma_lim[ne][eng1]
-                                * self.meshes[ne][eng1].rack.module)
-                            *coeff_yf_iso[ne][eng1]
-                            *coeff_ye_iso[ne]
-                            *coeff_yb_iso[ne][eng1])
+        for num_mesh,(eng1,eng2) in enumerate(self.connections):
+            gear_width1=abs(self.tangential_load[num_mesh]
+                        / (sigma_lim[num_mesh][eng1]
+                        * self.meshes[eng1].rack.module)
+                        *coeff_yf_iso[num_mesh][eng1]
+                        *coeff_ye_iso[num_mesh]
+                        *coeff_yb_iso[num_mesh][eng1])
                             
             gear_width2=abs(self.tangential_load[num_mesh]
                             /(sigma_lim[num_mesh][eng2]
