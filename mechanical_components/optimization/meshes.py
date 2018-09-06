@@ -120,7 +120,8 @@ class ContinuousMeshesAssemblyOptimizer:
         number_unknown=0
         for key,list_unknown in dict_unknown.items():
             number_unknown+=len(list_unknown)
-        print('The total number of unknown for the gear mesh assembly optimization is {}'.format(number_unknown))
+#        if verbose:
+#            print('The total number of unknown for the gear mesh assembly optimization is {}'.format(number_unknown))
         
         # Definition of the Bound matrix for the optimizer
         Bounds=[]
@@ -742,6 +743,7 @@ class MeshAssemblyOptimizer:
             dw = [s['dw'] for s in liste_plex]
             liste_plex2 = []
             for i in npy.argsort(dw)[::-1]:
+                print('dw: ', liste_plex[i]['dw'])
                 del liste_plex[i]['dw']
                 liste_plex2.append(liste_plex[i])
             liste_plex = liste_plex2

@@ -22,7 +22,7 @@ list_rack = {0:{'name':'Catalogue_A','module':[2*1e-3,2*1e-3],
               'coeff_gear_addendum':[1,1],'coeff_gear_dedendum':[1.25,1.25],
               'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.5,0.5]}}
 rack_choices = {0:[0], 1:[0], 2:[0],3:[0], 4:[0], 5:[0], 6:[0]}
-torques = {0: 16.4, 4: 30, 5: 0, 6: 'output'}
+torques = [{0: 16.4, 4: 30, 5: 0, 6: 'output'}]
 
 GA=meshes_opt.MeshAssemblyOptimizer(connections = connections, 
                                   gear_speed = speeds,
@@ -33,10 +33,10 @@ GA=meshes_opt.MeshAssemblyOptimizer(connections = connections,
                                   verbose = True)
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.SearchOptimumCD(nb_sol=1, verbose=True)
+GA.Optimize(nb_sol=35, verbose=True)
 print('Number of solutions:',len(GA.solutions))
-solution=GA.solutions[-1]
-solution.SVGExport('name.txt',{6 : [0,0], 4 : [0.5,0]})
+#solution=GA.solutions[-1]
+#solution.SVGExport('name.txt',{6 : [0,0], 4 : [0.5,0]})
 #solution.FreeCADExport('meshes3')
 
 
