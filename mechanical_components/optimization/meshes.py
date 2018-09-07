@@ -743,7 +743,7 @@ class MeshAssemblyOptimizer:
             dw = [s['dw'] for s in liste_plex]
             liste_plex2 = []
             for i in npy.argsort(dw)[::-1]:
-                print('dw: ', liste_plex[i]['dw'])
+#                print('dw: ', liste_plex[i]['dw'])
                 del liste_plex[i]['dw']
                 liste_plex2.append(liste_plex[i])
             liste_plex = liste_plex2
