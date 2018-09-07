@@ -39,7 +39,7 @@ GA=meshes_opt.MeshAssemblyOptimizer(connections = connections,
                                   verbose = True)
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.Optimize(nb_sol=35, verbose=True)
+GA.Optimize(nb_sol=1, verbose=True)
 print('Number of solutions:',len(GA.solutions))
 solution=GA.solutions[-1]
 #solution.SVGExport('name.txt',{6 : [0,0], 4 : [0.5,0]})

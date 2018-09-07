@@ -862,6 +862,7 @@ class MeshAssembly:
                                            coeff_gear_addendum, coeff_gear_dedendum,
                                            coeff_root_radius,
                                            coeff_circular_tooth_thickness)
+        
         self.gear_width,self.sigma_iso,self.sigma_lim=self.GearWidthDefinition(safety_factor)
         for num_gear in self.list_gear:
             self.meshes[num_gear].gear_width=self.gear_width[num_gear]
@@ -1011,6 +1012,7 @@ class MeshAssembly:
                 torque1[eng1]=torque_moteur_m
                 torque2={}
                 torque2[eng2]=torque_recepteur
+                torque_moteur_m=torque_recepteur
         for node_init,path in zip(liste_node_init,path_list):
             torque_moteur_m=torque[node_init]
             for i,eng1 in enumerate(path[0:-1]):
