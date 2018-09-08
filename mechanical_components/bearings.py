@@ -168,6 +168,12 @@ class RadialRollerBearing:
         self.Dpw,self.Lwe,self.jeu,self.ep=self.DefParam()
         self.mass=self.Mass()
         
+    def __str__(self):
+        s = '{}\n'.format(self.__class__.__name__)
+        s += 'Dimensions d:{} D:{} B:{} Dw:{} Z:{}'.format(self.d, self.D, self.B, self.Dw, self.Z)
+#        s += 'L10: {} Lnm: {}
+        return s
+        
     def Update(self,d1,D1,E,F,Z):
         self.d1=d1
         self.D1=D1
@@ -214,66 +220,114 @@ class RadialRollerBearing:
         Cr=fc*self.bm*self.i*((self.Lwe*1e3)*npy.cos(self.alpha))**((self.material.weibull_c-self.material.weibull_h-1)/(self.material.weibull_c-self.material.weibull_h+1))*self.Z**((self.material.weibull_c-self.material.weibull_h-2*self.material.weibull_e+1)/(self.material.weibull_c-self.material.weibull_h+1))*(self.Dwe*1e3)**((self.material.weibull_c-self.material.weibull_h-3)/(self.material.weibull_c-self.material.weibull_h+1))
         return Cr
     
-    def EquivalentDynamicLoad(self,Fr,Fa=0):
-        #Charge radiale dynamique équivalente
+    def EquivalentDynamicLoad(self,fr, fa = 0):
+        """
+        Returns the equivalent dynamic radial force form a radial and axial force
+        
+        :param fr: radial force in Newtowns
+        :param fa: radial force in Newtowns
+        """
         e=1.5*npy.tan(self.alpha)
         if self.alpha!=0:
             if self.i==1:
-                if Fa/Fr<=e:
-                    Pr=Fr
+                if fa/fr<=e:
+                    Pr=fr
                 else:
-                    Pr=0.4*Fr+0.4/(npy.tan(self.alpha))*Fa
+                    Pr=0.4*fr+0.4/(npy.tan(self.alpha))*fa
             elif self.i==2:
-                if Fa/Fr<=e:
-                    Pr=Fr+0.45/(npy.tan(self.alpha))*Fa
+                if fa/fr<=e:
+                    Pr=fr+0.45/(npy.tan(self.alpha))*fa
                 else:
-                    Pr=0.67*Fr+0.67/(npy.tan(self.alpha))*Fa
+                    Pr=0.67*fr+0.67/(npy.tan(self.alpha))*fa
         else:
-            Pr=Fr
+            Pr=fr
         return Pr
     
-    def BaseLifeTime(self,Fr,Fa=0):
-        # Durée de vie en millions de tour associée à une fiabilité de 90%
+    def BaseLifeTime(self,Fr, Fa, N, t):
+        """
+        Lifetime in millions of cycles for 90% fiability
+        
+        :param Fr: a list of radial forces for each usecase
+        :param Fa: a list of axial forces for each usecase
+        :param N: a list of rotating speeds in rad/s for each usecase
+        :param t: a list of operating times in seconds for each usecase
+        
+        """
+        total_cycles = 0.
+        Pr = 0.
+        for fr, fa, ni, ti in zip(Fr, Fa, N, t):
+            C = self.EquivalentDynamicLoad(fr, fa)**(10/3.)
+            if C != 0.:
+                cycles = ni * ti * 2 * math.pi
+                Pr += cycles * C
+                total_cycles += cycles
+        
+        Pr = (Pr / total_cycles) ** 0.3
         Cr=self.BaseDynamicLoad()
-        Pr=self.EquivalentDynamicLoad(Fr,Fa)
         L10=(Cr/Pr)**(10/3.)
         return L10
         
-    def AdjustedLifeTime(self,Fr,n,Fa=0,S=0.9,T=70):
-        # Durée de vie corrigée en millions de tour associée à une fiabilité de S% pour un roulement tournant à la vitesse n (rad/s) et à la température de l'huile T
-        a1=(1-self.material.c_gamma)*(npy.log(1/S)/npy.log(100/90.))**(1/self.material.weibull_e)+self.material.c_gamma
-        L10=self.BaseLifeTime(Fr,Fa)
-        Pr=self.EquivalentDynamicLoad(Fr,Fa)
-        C0r=self.BaseStaticLoad()
-        # viscosité cinématique de référence
-        if n<(1000*2*npy.pi/60.):
-            nu1=45000*(n*60/(2*npy.pi))**(-0.83)*(self.Dpw*1e3)**(-0.5)
-        else:
-            nu1=4500*(n*60/(2*npy.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
+    def AdjustedLifeTime(self, Fr, Fa, N, t, T, S=0.9):
+        """
+        Adjusted Lifetime in millions of cycles for a 100* S % fiability
         
-        coeff_oil=self.oil.oil_kinematic_viscosity_curve
-        nu=10**(10**(coeff_oil['A']*npy.log10(T)+coeff_oil['B']))-0.6
-        kappa=nu/nu1
-        #définition du paramètre de contamination
-        ec=self.oil.OilParameterContamination(self.Dpw,3)
-        #calcul de la limite de charge en fatigue
-        if self.Dpw<0.1:
-            Cu=C0r/8.2
-        else:
-            Cu=C0r/8.2*(100/(self.Dpw*1e3))**0.3
-        #calcul du coefficient a_iso
-        coeff=min(5,ec*Cu/Pr) # the ISO norm is not clear on the limit of this coeff (maybe 5?)
-        if kappa<0.4:
-            a_iso=0.1*((1-(1.5859-1.3993/(kappa**0.054381))*((coeff)**0.4))**(-9.185))
-        elif kappa<1:
-            a_iso=0.1*((1-(1.5859-1.2348/(kappa**0.19087))*((coeff)**0.4))**(-9.185))
-        else:
-            kappa=min(kappa,4)
-            a_iso=0.1*((1-(1.5859-1.2348/(kappa**0.071739))*((coeff)**0.4))**(-9.185))
-        a_iso=min(50,a_iso)
-        #calcul de la durée de vie corrigée
-        Lnm=a1*a_iso*L10
-        return Lnm
+        :param Fr: a list of radial forces for each usecase
+        :param Fa: a list of axial forces for each usecase
+        :param N: a list of rotating speeds in rad/s for each usecase
+        :param t: a list of operating times in seconds for each usecase
+        :param T: a list of operating temperature in celcius degree for each usecase
+        :param S: fiability between 0 and 1
+
+        """
+        total_cycles = 0.
+        nci_Lpi = 0.
+#        print(Fr, Fa)
+        for fr, fa, n, ti, Ti  in zip(Fr, Fa, N, t, T):
+            if (fr != 0.) or (fa != 0.):
+                cycles = n * ti * 2 * math.pi
+                total_cycles += cycles
+                
+                a1 = ((1-self.material.c_gamma)
+                     * (npy.log(1/S)/npy.log(100/90.))**(1/self.material.weibull_e)
+                     + self.material.c_gamma)
+                
+                L10 = self.BaseLifeTime([fr], [fa], [n], [ti])
+                Pr = self.EquivalentDynamicLoad(fr, fa)
+                C0r = self.BaseStaticLoad()
+                # viscosité cinématique de référence
+                if n<(1000*2*npy.pi/60.):
+                    nu1=45000*(n*60/(2*npy.pi))**(-0.83)*(self.Dpw*1e3)**(-0.5)
+                else:
+                    nu1=4500*(n*60/(2*npy.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
+                
+                coeff_oil = self.oil.oil_kinematic_viscosity_curve
+                nu = 10**(10**(coeff_oil['A']*npy.log10(Ti)+coeff_oil['B']))-0.6
+                kappa = nu/nu1
+                # Oil Contamination
+                ec=self.oil.OilParameterContamination(self.Dpw,3)
+                # Wear limit load
+                if self.Dpw<0.1:
+                    Cu=C0r/8.2
+                else:
+                    Cu=C0r/8.2*(100/(self.Dpw*1e3))**0.3
+                    
+                # a_iso computation
+                if Pr == 0.:
+                    coeff = 5.
+                else:                
+                    coeff = min(5., ec*Cu/Pr) # the ISO norm is not clear on the limit of this coeff (maybe 5?)
+                if kappa < 0.4:
+                    a_iso = 0.1*((1-(1.5859-1.3993/(kappa**0.054381))*((coeff)**0.4))**(-9.185))
+                elif kappa < 1:
+                    a_iso = 0.1*((1-(1.5859-1.2348/(kappa**0.19087))*((coeff)**0.4))**(-9.185))
+                else:
+                    kappa = min(kappa, 4)
+                    a_iso = 0.1*((1-(1.5859-1.2348/(kappa**0.071739))*((coeff)**0.4))**(-9.185))
+                a_iso = min(50., a_iso)
+    
+                Lpi = a1*a_iso*L10 # Corrected lifetime
+                nci_Lpi += cycles/Lpi
+        return total_cycles / nci_Lpi
         
     def Dict(self):
 

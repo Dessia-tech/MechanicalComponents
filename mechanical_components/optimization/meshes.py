@@ -341,7 +341,7 @@ class MeshAssemblyOptimizer:
                  gear_width=None, frequency=[[0,0]],
                  coefficient_profile_shift=None, rack_list=None,
                  rack_choice=None, material=None, torque=None, cycle=None,
-                 safety_factor=1):
+                 safety_factor=1,verbose=False):
 
         list_gear=[]
         for gs in connections:
@@ -724,6 +724,7 @@ class MeshAssemblyOptimizer:
         else:
             liste_plex=[]
             for ind_plex in list_sol:
+                del self.plex_calcul[ind_plex]['dw']
                 liste_plex.append(self.plex_calcul[ind_plex])
             nb_sol=len(liste_plex)
         
