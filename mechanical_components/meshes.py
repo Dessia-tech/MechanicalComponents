@@ -482,7 +482,7 @@ class Mesh:
         p=[vm.Point2D((x[0],y[0]))]
         for i in range(1,discret):
             p.append(vm.Point2D((x[i],y[i])))
-        ref=primitives2D.RoundedLines2D(p,{},False)
+        ref=primitives2D.RoundedLineSegments2D(p,{},False)
         if ind=='T':
             L=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.Z)
             self.rac=L.points[-1]
@@ -519,7 +519,7 @@ class Mesh:
             theta=npy.linspace(drap*self.phi_trochoide,phi0,discret)
         for t in theta:
             ref.append(vm.Point2D((self._Trochoide(t,ind))))
-        ref=primitives2D.RoundedLines2D(ref,{},False)
+        ref=primitives2D.RoundedLineSegments2D(ref,{},False)
         ref=ref.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
         
         if ind=='T':
@@ -563,7 +563,7 @@ class Mesh:
         p2=vm.Point2D((self._Trochoide(phi0,'R')))
         p2=p2.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
         
-        ref=primitives2D.RoundedLines2D([p1,p2],{},False)
+        ref=primitives2D.RoundedLineSegments2D([p1,p2],{},False)
         L2=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.Z)
         return L2
     
@@ -575,7 +575,7 @@ class Mesh:
         p2=p1.Rotation(vm.Point2D((0,0)),self.outside_active_angle/2)
         p3=p2.Rotation(vm.Point2D((0,0)),self.outside_active_angle/2)
         #ref=vm.Arc2D(p1,p2,p3)
-        ref=primitives2D.RoundedLines2D([p3,p2,p1],{},False)
+        ref=primitives2D.RoundedLineSegments2D([p3,p2,p1],{},False)
         L=ref.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.Z)
         return L
 
@@ -1138,14 +1138,14 @@ class MeshAssembly:
             
             if set_pos_dfs==0:
                 vect_x=tuple(-0.5*self.gear_width[eng1]*x.vector+[npy.dot(centers[eng1],x.vector),0,0])
-                t1=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z,[C1],extrusion_vector1)
+                t1=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z, C1, [], extrusion_vector1)
                 primitives.append(t1)
         
             vect_x=tuple(-0.5*self.gear_width[eng2]*x.vector+[npy.dot(centers[eng2],x.vector),0,0])
-            t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z,[C2],extrusion_vector2)
+            t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z, C2, [],extrusion_vector2)
             primitives.append(t2)
 
-        model=vm.VolumeModel(primitives)
+        model=vm.VolumeModel([(name, primitives)])
         return model
     
     def Mass(self):
