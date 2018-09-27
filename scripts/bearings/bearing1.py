@@ -5,35 +5,33 @@ Created on Tue May  1 17:13:16 2018
 
 @author: Pierrem
 """
-import sys as sys
+import sys
 del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.bearings as bearings
 import numpy as npy
 
-C1=bearings.BearingCombination()
+C1=bearings.BearingContinuousOptimizer()
 
 #Test 1
-Fa=2963.91573010028
-Fr=8230.476546051736
-N=44.48332994588729
-L10=63.71767661468127
+Fa = [2000]
+Fr = [8230.476546051736]
+N = [30.]
+t = [250000/30*3600]
+T = [70]
+L10 = 1500
 
-Fa=0
-Fr=3368
-N=249
-L10=1000
-
-C1.OptimizerBearing(d={'min':0.02,'max':0.1},
+C1.Optimization(d={'min':0.02,'max':0.1},
                     D={'min':0.04,'max':0.15},
                     B={'min':0.01,'max':0.1},
                     Lnm={'min':L10,'max':npy.inf},
-                    L10={'min':L10,'max':npy.inf},
-                    Fr=Fr,Fa=Fa,n=N,typ='NF',nb_sol=10,
+#                    L10={'min':L10,'max':npy.inf},
+                    Fr=Fr,Fa=Fa,N=N, t = t, T = T,typ='NF',nb_sol=10,
                     verbose=True)
 
 for i,b in enumerate(C1.solutions):
 #    v=b.VolumeModel()
     b.FreeCADExport('Bearing_{}'.format(i))
+    print(b.CheckFNRRules(Fr, Fa, N))
     
 ##Test 2
 #Fa=1340.1788731883905
