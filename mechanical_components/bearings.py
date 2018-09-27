@@ -355,7 +355,7 @@ class RadialRollerBearing:
             p.append(p[0])
             # TODO handle radius of rollers
 #            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
-            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
+            ref=vm.Contour2D(primitives2D.RoundedLineSegments2D(p,{},False).primitives)
         elif self.typ=='N' or self.typ=='NF':
             p=[vm.Point2D((0,self.d/2.))]
             p.append(vm.Point2D((-self.B/2.,self.d/2.)))
@@ -368,7 +368,7 @@ class RadialRollerBearing:
             p.append(vm.Point2D((self.B/2.,self.d/2.)))
             p.append(p[0])
 #            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
-            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
+            ref=vm.Contour2D(primitives2D.RoundedLineSegments2D(p,{},False).primitives)
         elif self.typ=='NJ':
             p=[vm.Point2D((0,self.d/2.))]
             p.append(vm.Point2D((-self.B/2.,self.d/2.)))
@@ -379,7 +379,7 @@ class RadialRollerBearing:
             p.append(vm.Point2D((self.B/2.,self.d/2.)))
             p.append(p[0])
 #            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
-            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
+            ref=vm.Contour2D(primitives2D.RoundedLineSegments2D(p,{},False).primitives)
         return ref
     
     def ExternalRingContour(self):
@@ -390,7 +390,7 @@ class RadialRollerBearing:
             p.append(vm.Point2D((self.B/2.,self.D/2.)))
             p.append(vm.Point2D((self.B/2.,self.E/2.)))
             p.append(p[0])
-            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
+            ref=vm.Contour2D(primitives2D.RoundedLineSegments2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
         elif self.typ=='NU' or self.typ=='NJ':
             p=[vm.Point2D((0,self.E/2.))]
             p.append(vm.Point2D((-self.B/2.+self.ep,self.E/2)))
@@ -402,7 +402,7 @@ class RadialRollerBearing:
             p.append(vm.Point2D((self.B/2.-self.ep,self.D1/2.)))
             p.append(vm.Point2D((self.B/2.-self.ep,self.E/2.)))
             p.append(p[0])
-            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
+            ref=vm.Contour2D(primitives2D.RoundedLineSegments2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
         elif self.typ=='NF':
             p=[vm.Point2D((0,self.E/2))]
             p.append(vm.Point2D((-self.B/2+self.ep,self.E/2)))
@@ -412,7 +412,7 @@ class RadialRollerBearing:
             p.append(vm.Point2D((self.B/2,self.D/2)))
             p.append(vm.Point2D((self.B/2,self.E/2)))
             p.append(p[0])
-            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
+            ref=vm.Contour2D(primitives2D.RoundedLineSegments2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
         return ref
     
     def RollerContour(self):
@@ -422,7 +422,7 @@ class RadialRollerBearing:
         p.append(vm.Point2D((self.Lw/2,self.Dw/2)))
         p.append(vm.Point2D((self.Lw/2,0.)))
         p.append(p[0])
-        ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{2:self.r_roller,3:self.r_roller},False).primitives)
+        ref=vm.Contour2D(primitives2D.RoundedLineSegments2D(p,{2:self.r_roller,3:self.r_roller},False).primitives)
         return ref
         
     def PlotData(self, x, heights, ys, zs, labels = True):
@@ -522,13 +522,15 @@ class RadialRollerBearing:
         
         z=vm.Vector3D(npy.cross(x.vector,y.vector))
         
-        #bague interne
+        #Internal Ring
         IRC=self.InternalRingContour()        
-        irc=primitives3D.RevolvedProfile(center,x, z,[IRC], center, x,angle=2*math.pi,name='irc')
-        #bague externe
+        irc=primitives3D.RevolvedProfile(center, x, z, [IRC], center,
+                                         x,angle=2*math.pi, name='Internal Ring')
+        #External Ring
         ERC=self.ExternalRingContour()
-        erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center, x, angle=2*math.pi,name='erc')
-        #roller
+        erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center,
+                                         x, angle=2*math.pi,name='External Ring')
+        #Rollers
         ROL=self.RollerContour()
         radius=self.F/2.+self.jeu+self.Dw/2.
         rol=[]
@@ -537,10 +539,10 @@ class RadialRollerBearing:
             center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
             rol.append(primitives3D.RevolvedProfile(center_roller, x, z, [ROL],
                                                     center_roller, x,
-                                                    angle=2*math.pi,name='rol'))
+                                                    angle=2*math.pi,name='Roller {}'.format(zi+1)))
         
         tot=[irc,erc]+rol
-        model=vm.VolumeModel(tot)
+        model=vm.VolumeModel([('', tot)])
         return model
 
     def FreeCADExport(self,file_path,export_types=['fcstd']):
