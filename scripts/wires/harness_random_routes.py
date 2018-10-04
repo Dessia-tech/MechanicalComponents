@@ -59,7 +59,8 @@ for i in range(n_wires):
                         'diameter': 0.005 + 0.005*random.random()})
     
 
-wo = wires_opt.WiringOptimizer(waypoints, routes, wires_specs)
-wiring = wo.Optimize()
+wo = wires_opt.WiringOptimizer(waypoints, routes)
+
+wiring = wo.Optimize(wires_specs)
 
 wiring.CADExport('harness')
