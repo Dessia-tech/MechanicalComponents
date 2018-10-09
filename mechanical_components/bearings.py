@@ -165,6 +165,8 @@ class RadialBearing:
         self.F = self.Dpw - self.Dw
         self.d1 = self.F + 0.6*self.Dw
         self.D1 = self.E - 0.6*self.Dw
+        self.radius = 5e-4
+        self.jeu = (self.E-self.F-2*self.Dw)/4.
     
     def BaseLifeTime(self,Fr, Fa, N, t, Cr):
         """
@@ -259,6 +261,44 @@ class RadialBearing:
                     check_rules = False
         return check_rules, val_rules
     
+    def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
+        center = vm.Point3D(npy.round(center,6))
+        x = vm.Vector3D(axis)
+        x.vector = x.vector/x.Norm()
+        
+        y = x.RandomUnitNormalVector()
+        y.vector = npy.round(y.vector,3)
+        y.vector = y.vector/y.Norm() 
+        
+        z=vm.Vector3D(npy.cross(x.vector,y.vector))
+        
+        #bague interne
+        IRC=self.InternalRingContour()        
+        irc=primitives3D.RevolvedProfile(center,x, z,[IRC], center, x,angle=2*math.pi,name='irc')
+        #bague externe
+        ERC=self.ExternalRingContour()
+        erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center, x, angle=2*math.pi,name='erc')
+        #roller
+        ROL=self.RollingContour()
+        radius=self.F/2.+self.jeu+self.Dw/2.
+        rol=[]
+        theta=2*npy.pi/self.Z
+        print(theta)
+        for zi in range(int(self.Z)):
+            center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
+            rol.append(primitives3D.RevolvedProfile(center_roller, x, z, [ROL],
+                                                    center_roller, x,
+                                                    angle=math.pi,name='rol'))
+        
+        tot=[irc,erc]+rol
+        model=vm.VolumeModel(tot)
+        return model
+
+    def FreeCADExport(self, name, python_path, path_lib_freecad='/usr/lib/freecad/lib', export_types=['fcstd']):
+        model = self.VolumeModel()
+        model.FreeCADExport(name, python_path, path_lib_freecad, export_types)
+
+    
 # =============================================================
 # Object générique roulement cylindrique
 # =============================================================
@@ -327,23 +367,7 @@ class ConceptRadialBallBearing(RadialBearing):
         a_iso = 0.1*(f(coeff)**(-9.3))
         return a_iso
     
-    def Plot(self, pos=0):
-        
-        radius = 5e-4
-        p0 = vm.Point2D((0, 0))
-        pc1 = p0.Translation((0, self.Dpw/2.))
-        pc2 = p0.Translation((0, -self.Dpw/2.))
-        c1 = vm.Circle2D(pc1, self.Dw/2.) 
-        c2 = vm.Circle2D(pc2, self.Dw/2.) 
-        pbe2 = vm.Point2D((-self.B/2., self.D1/2.))
-        pbe1 = pbe2.Translation((self.h, 0))
-        pbe3 = vm.Point2D((-self.B/2., self.D/2.))
-        pbe4 = vm.Point2D((self.B/2., self.D/2.))
-        pbe5 = vm.Point2D((self.B/2., self.D1/2.))
-        pbe6 = pbe5.Translation((-self.h, 0))
-        be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: radius, 
-                                                 2: radius, 3: radius, 4: radius}, False)
-        cbe1 = vm.Arc2D(pbe1, vm.Point2D((0, self.E/2)), pbe6)
+    def InternalRingContour(self):
         
         pbi2 = vm.Point2D((-self.B/2., self.d1/2.))
         pbi1 = pbi2.Translation((self.h, 0))
@@ -351,17 +375,41 @@ class ConceptRadialBallBearing(RadialBearing):
         pbi4 = vm.Point2D((self.B/2., self.d/2.))
         pbi5 = vm.Point2D((self.B/2., self.d1/2.))
         pbi6 = pbi5.Translation((-self.h, 0))
-        bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: radius, 
-                                                 2: radius, 3: radius, 4: radius}, False)
+        bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius, 
+                                                 2: self.radius, 3: self.radius, 4: self.radius}, False)
         cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, self.F/2)), pbi6)
+        return vm.Contour2D([bi1, cbi1])
         
-        bearing1 = vm.Contour2D([be1, cbe1, bi1, cbi1])
-        bearing2 = bearing1.Rotation(vm.Point2D((0, 0)), npy.pi, True)
-        bearing3 = vm.Contour2D([c1, c2, bearing1, bearing2])
-        bearing = bearing3.Translation((pos, 0),True)
-        return bearing
+    def ExternalRingContour(self):
+        
+        pbe2 = vm.Point2D((-self.B/2., self.D1/2.))
+        pbe1 = pbe2.Translation((self.h, 0))
+        pbe3 = vm.Point2D((-self.B/2., self.D/2.))
+        pbe4 = vm.Point2D((self.B/2., self.D/2.))
+        pbe5 = vm.Point2D((self.B/2., self.D1/2.))
+        pbe6 = pbe5.Translation((-self.h, 0))
+        be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 
+                                                 2: self.radius, 3: self.radius, 4: self.radius}, False)
+        cbe1 = vm.Arc2D(pbe1, vm.Point2D((0, self.E/2)), pbe6)
+        return vm.Contour2D([be1, cbe1])
     
-
+    def RollingContour(self):
+        
+        p0 = vm.Point2D((0, 0))
+        c1 = vm.Circle2D(p0, self.Dw/2.) 
+        return vm.Contour2D([c1])
+    
+    def Plot(self):
+        
+        be_sup = self.ExternalRingContour()
+        bi_sup = self.InternalRingContour()
+        ball_sup = self.RollingContour()
+        ball_sup.Translation((0, self.Dpw/2.))
+        
+        bearing_sup = vm.Contour2D([be_sup, bi_sup, ball_sup])
+        bearing_inf = bearing_sup.Rotation(vm.Point2D((0, 0)), npy.pi, True)
+        bg = vm.Contour2D([bearing_sup, bearing_inf])
+        return bg
         
 class ConceptAngularBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -452,39 +500,60 @@ class ConceptAngularBallBearing(RadialBearing):
         a_iso = 0.1*(f(coeff)**(-9.3))
         return a_iso
     
-    def Plot(self, pos=0):
+    def InternalRingContour(self, sign_V=1):
         
-        radius = 5e-4
         def graph(sign_V, sign_H):
-            p0 = vm.Point2D((0, 0))
-            pc = p0.Translation((0, sign_V*self.Dpw/2.))
-            c = vm.Circle2D(pc, self.Dw/2.) 
-            pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D1/2.))
-            pbe1 = pbe2.Translation((sign_H*self.h1, 0))
-            pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
-            pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
-            pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*self.D2/2.))
-            pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h2), sign_V*(self.Dpw/2. + self.Dw/2.*0.95)))
-            be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: radius, 
-                                                 2: radius, 3: radius, 4: radius}, False)
-            cbe1 = vm.Arc2D(pbe1, vm.Point2D((0, sign_V*self.E/2)), pbe6)
             pbi2 = vm.Point2D((-sign_H*self.B/2., sign_V*self.d2/2.))
             pbi1 = vm.Point2D((-sign_H*(self.B/2. - self.h2), sign_V*(self.Dpw/2. - self.Dw/2.*0.95)))
             pbi3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.d/2.))
             pbi4 = vm.Point2D((sign_H*self.B/2., sign_V*self.d/2.))
             pbi5 = vm.Point2D((sign_H*self.B/2., sign_V*self.d1/2.))
             pbi6 = pbi5.Translation((-sign_H*self.h1, 0))
-            bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: radius, 
-                                                 2: radius, 3: radius, 4: radius}, False)
+            bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius, 
+                                                 2: self.radius, 3: self.radius, 4: self.radius}, False)
             cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, sign_V*self.F/2)), pbi6)
-            bearing = vm.Contour2D([be1, cbe1, bi1, cbi1, c])
+            bearing = vm.Contour2D([bi1, cbi1])
             return bearing
+        sup_contour = graph(sign_V, sign_H = self.direction)
+        bearing1 = vm.Contour2D([sup_contour])
+        return bearing1
         
-        sup_contour = graph(sign_V = 1, sign_H = self.direction)
-        inf_contour = graph(sign_V = -1, sign_H = self.direction)
-        bearing1 = vm.Contour2D([sup_contour, inf_contour])
-        bearing = bearing1.Translation((pos, 0),True)
-        return bearing
+    def ExternalRingContour(self, sign_V=1):
+        
+        def graph(sign_V, sign_H):
+            pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D1/2.))
+            pbe1 = pbe2.Translation((sign_H*self.h1, 0))
+            pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
+            pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
+            pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*self.D2/2.))
+            pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h2), sign_V*(self.Dpw/2. + self.Dw/2.*0.95)))
+            be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 
+                                                 2: self.radius, 3: self.radius, 4: self.radius}, False)
+            cbe1 = vm.Arc2D(pbe1, vm.Point2D((0, sign_V*self.E/2)), pbe6)
+            bearing = vm.Contour2D([be1, cbe1])
+            return bearing
+        sup_contour = graph(sign_V, sign_H = self.direction)
+        bearing1 = vm.Contour2D([sup_contour])
+        return bearing1
+    
+    def RollingContour(self):
+        
+        p0 = vm.Point2D((0, 0))
+        c1 = vm.Circle2D(p0, self.Dw/2.) 
+        return vm.Contour2D([c1])
+    
+    def Plot(self):
+        
+        be_sup = self.ExternalRingContour(1)
+        be_inf = self.ExternalRingContour(-1)
+        bi_sup = self.InternalRingContour(1)
+        bi_inf = self.InternalRingContour(-1)
+        ball = self.RollingContour()
+        ball_sup = ball.Translation((0, self.Dpw/2.), True)
+        ball_inf = ball.Translation((0, -self.Dpw/2.), True)
+        
+        bg = vm.Contour2D([be_sup, bi_sup, ball_sup, be_inf, bi_inf, ball_inf])
+        return bg
             
 class ConceptSphericalBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -640,51 +709,9 @@ class ConceptRadialRollerBearing(RadialBearing):
         a_iso = 0.1*(f(coeff)**(-9.185))
         return a_iso
     
-    def Plot(self, pos=0):
+    def InternalRingContour(self, sign_V=1):
         
-        radius = 2e-4
         def graph(sign_V, sign_H):
-            p1 = vm.Point2D((-self.Lw/2.,sign_V*(self.Dpw/2.-self.Dw/2.)))
-            p2 = vm.Point2D((-self.Lw/2.,sign_V*(self.Dpw/2.+self.Dw/2.)))
-            p3 = vm.Point2D((self.Lw/2.,sign_V*(self.Dpw/2.+self.Dw/2.)))
-            p4 = vm.Point2D((self.Lw/2.,sign_V*(self.Dpw/2.-self.Dw/2.)))
-            rol = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4], {0: radius, 
-                                                 1: radius, 2: radius, 3: radius}, True)
-            if self.typ in ['NU', 'NJ', 'NUP']:
-                D1 = self.D1
-                pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*D1/2.))
-                pbe1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*D1/2.))
-                pbe0 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
-                pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
-                pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
-                pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*D1/2.))
-                pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*D1/2.))
-                pbe7 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
-                be1 = primitives2D.RoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
-                                   {1: radius, 2: radius, 3: radius, 4: radius, 5: radius, 6: radius}, True)
-            elif self.typ == 'NF':
-                D1 = self.D1
-                D2 = self.E + 0.1*(self.D - self.E)
-                pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*D1/2.))
-                pbe1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*D1/2.))
-                pbe0 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
-                pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
-                pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
-                pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*D2/2.))
-                pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
-                be1 = primitives2D.RoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
-                                   {1: radius, 2: radius, 3: radius, 4: radius, 5: radius}, True)
-            elif self.typ == 'N':
-                D1 = self.E + 0.1*(self.D - self.E)
-                pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*D1/2.))
-                pbe1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
-                pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
-                pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
-                pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*D1/2.))
-                pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
-                be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: radius, 
-                                   2: radius, 3: radius, 4: radius}, True)
-    
             if self.typ in ['NUP', 'N', 'NF']:
                 d1 = self.d1
                 pbi2 = vm.Point2D((-sign_H*self.B/2., sign_V*d1/2.))
@@ -696,7 +723,8 @@ class ConceptRadialRollerBearing(RadialBearing):
                 pbi6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*d1/2.))
                 pbi7 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
                 bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
-                                   {1: radius, 2: radius, 3: radius, 4: radius, 5: radius, 6: radius}, True)
+                                   {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
+                                    5: self.radius, 6: self.radius}, True)
             elif self.typ == 'NJ':
                 d1 = self.d1
                 d2 = self.F - 0.1*(self.F - self.d)
@@ -708,7 +736,8 @@ class ConceptRadialRollerBearing(RadialBearing):
                 pbi5 = vm.Point2D((sign_H*self.B/2., sign_V*d2/2.))
                 pbi6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
                 bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6],
-                                   {1: radius, 2: radius, 3: radius, 4: radius, 5: radius}, True)
+                                   {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
+                                    5: self.radius}, True)
             elif self.typ == 'NU':
                 d1 = self.F - 0.1*(self.F - self.d)
                 pbi2 = vm.Point2D((-sign_H*self.B/2., sign_V*d1/2.))
@@ -717,17 +746,82 @@ class ConceptRadialRollerBearing(RadialBearing):
                 pbi4 = vm.Point2D((sign_H*self.B/2., sign_V*self.d/2.))
                 pbi5 = vm.Point2D((sign_H*self.B/2., sign_V*d1/2.))
                 pbi6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
-                bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: radius, 
-                                   2: radius, 3: radius, 4: radius}, True)
+                bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius, 
+                                   2: self.radius, 3: self.radius, 4: self.radius}, True)
             
-            bearing = vm.Contour2D([be1, bi1, rol])
+            bearing = vm.Contour2D([bi1])
             return bearing
+        contour = graph(sign_V, sign_H = self.direction)
+        bg = vm.Contour2D([contour])
+        return bg
         
-        sup_contour = graph(sign_V = 1, sign_H = self.direction)
-        inf_contour = graph(sign_V = -1, sign_H = self.direction)
-        bearing1 = vm.Contour2D([sup_contour, inf_contour])
-        bearing = bearing1.Translation((pos, 0),True)
-        return bearing
+    def ExternalRingContour(self, sign_V=1):
+        
+        def graph(sign_V, sign_H):
+            if self.typ in ['NU', 'NJ', 'NUP']:
+                D1 = self.D1
+                pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*D1/2.))
+                pbe1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*D1/2.))
+                pbe0 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
+                pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
+                pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*D1/2.))
+                pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*D1/2.))
+                pbe7 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                be1 = primitives2D.RoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
+                                   {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
+                                    5: self.radius, 6: self.radius}, True)
+            elif self.typ == 'NF':
+                D1 = self.D1
+                D2 = self.E + 0.1*(self.D - self.E)
+                pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*D1/2.))
+                pbe1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*D1/2.))
+                pbe0 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
+                pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
+                pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*D2/2.))
+                pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                be1 = primitives2D.RoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
+                                   {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
+                                    5: self.radius}, True)
+            elif self.typ == 'N':
+                D1 = self.E + 0.1*(self.D - self.E)
+                pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*D1/2.))
+                pbe1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
+                pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
+                pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*D1/2.))
+                pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 
+                                   2: self.radius, 3: self.radius, 4: self.radius}, True)
+            bearing = vm.Contour2D([be1])
+            return bearing
+        contour = graph(sign_V, sign_H = self.direction)
+        bg = vm.Contour2D([contour])
+        return bg
+    
+    def RollingContour(self):
+        
+        p1 = vm.Point2D((-self.Lw/2.,-self.Dw/2.))
+        p2 = vm.Point2D((-self.Lw/2.,self.Dw/2.))
+        p3 = vm.Point2D((self.Lw/2.,self.Dw/2.))
+        p4 = vm.Point2D((self.Lw/2.,-self.Dw/2.))
+        rol = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4], {0: self.radius, 
+                                             1: self.radius, 2: self.radius, 3: self.radius}, True)
+        return vm.Contour2D([rol])
+    
+    def Plot(self):
+        
+        be_sup = self.ExternalRingContour(1)
+        be_inf = self.ExternalRingContour(-1)
+        bi_sup = self.InternalRingContour(1)
+        bi_inf = self.InternalRingContour(-1)
+        roller = self.RollingContour()
+        roller_sup = roller.Translation((0, self.Dpw/2.), True)
+        roller_inf = roller.Translation((0, -self.Dpw/2.), True)
+        
+        bg = vm.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
+        return bg
     
 class ConceptTaperedRollerBearing(ConceptRadialRollerBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -740,29 +834,12 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing):
         self.Dpw = (self.d + self.D)/2.
         self.Lw = 0.7*self.B
         self.beta = npy.arctan(self.Dw/self.Dpw*npy.sin(self.alpha))
+    
+    def InternalRingContour(self, sign_V=1):
         
-    def Plot(self, pos=0):
-        
-        radius = 3e-4
         shift_bi = 5e-4
         shift_be = 1e-3
         def graph(sign_V, sign_H):
-            p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
-            p1 = p0.Translation((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha)), True)
-            l0 = vm.Line2D(p0, p1)
-            l0.Rotation(p0, sign_H*sign_V*self.beta)
-            l0.Translation((-sign_H*self.Dw/2.*npy.sin(self.alpha), sign_V*self.Dw/2.*npy.cos(self.alpha)))
-            pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
-            pbe3T = pbe3.Translation((0, 1))
-            pbe4 = vm.Point2D((sign_H*(self.B/2. - shift_be), sign_V*self.D/2.))
-            pbe4T = pbe4.Translation((0, 1))
-            l3 = vm.Line2D(pbe3, pbe3T)
-            l4 = vm.Line2D(pbe4, pbe4T)
-            pbe2 = vm.Point2D.LinesIntersection(l0, l3)
-            pbe5 = vm.Point2D.LinesIntersection(l0, l4)
-            be1 = primitives2D.RoundedLineSegments2D([pbe2, pbe3, pbe4, pbe5], {0: radius, 
-                                                 1: radius, 2: radius, 3: radius}, True)
-    
             p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
             p1 = p0.Translation((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha)), True)
             l1 = vm.Line2D(p0, p1)
@@ -787,26 +864,71 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing):
             pbi7 = vm.Point2D.LinesIntersection(l2, l6)
             
             bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7], 
-                                                     {1: radius, 2: radius, 3: radius, 4: radius, 5: radius,
-                                                      6: radius}, True)
+                                                     {1: self.radius, 2: self.radius, 3: self.radius,
+                                                      4: self.radius, 5: self.radius,
+                                                      6: self.radius}, True)
             
+            bearing = vm.Contour2D([bi1])
+            return bearing
+        contour = graph(sign_V, sign_H = self.direction)
+        bg = vm.Contour2D([contour])
+        return bg
+        
+    def ExternalRingContour(self, sign_V=1):
+        
+        shift_bi = 5e-4
+        shift_be = 1e-3
+        def graph(sign_V, sign_H):
+            p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
+            p1 = p0.Translation((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha)), True)
+            l0 = vm.Line2D(p0, p1)
+            l0.Rotation(p0, sign_H*sign_V*self.beta)
+            l0.Translation((-sign_H*self.Dw/2.*npy.sin(self.alpha), sign_V*self.Dw/2.*npy.cos(self.alpha)))
+            pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
+            pbe3T = pbe3.Translation((0, 1))
+            pbe4 = vm.Point2D((sign_H*(self.B/2. - shift_be), sign_V*self.D/2.))
+            pbe4T = pbe4.Translation((0, 1))
+            l3 = vm.Line2D(pbe3, pbe3T)
+            l4 = vm.Line2D(pbe4, pbe4T)
+            pbe2 = vm.Point2D.LinesIntersection(l0, l3)
+            pbe5 = vm.Point2D.LinesIntersection(l0, l4)
+            be1 = primitives2D.RoundedLineSegments2D([pbe2, pbe3, pbe4, pbe5], {0: self.radius, 
+                                                 1: self.radius, 2: self.radius, 3: self.radius}, True)
+            bearing = vm.Contour2D([be1])
+            return bearing
+        contour = graph(sign_V, sign_H = self.direction)
+        bg = vm.Contour2D([contour])
+        return bg
+    
+    def RollingContour(self, sign_V=1):
+        
+        def graph(sign_V, sign_H):
             r1 = vm.Point2D((-sign_H*self.Lw/2., self.Dw/2. - self.Lw/2.*npy.tan(self.beta)))
             r2 = vm.Point2D((sign_H*self.Lw/2., self.Dw/2. + self.Lw/2.*npy.tan(self.beta)))
             r3 = vm.Point2D((sign_H*self.Lw/2., -self.Dw/2. - self.Lw/2.*npy.tan(self.beta)))
             r4 = vm.Point2D((-sign_H*self.Lw/2., -self.Dw/2. + self.Lw/2.*npy.tan(self.beta)))
-            rol = primitives2D.RoundedLineSegments2D([r1, r2, r3, r4], {0: radius, 
-                                                 1: radius, 2: radius, 3: radius}, True)
-            rol = rol.Rotation(vm.Point2D((0, 0)), sign_H*sign_V*self.alpha)
-            rol = rol.Translation((0, sign_V*self.Dpw/2.))
-            
-            bearing = vm.Contour2D([be1, rol, bi1])
-            return bearing
+            rol = primitives2D.RoundedLineSegments2D([r1, r2, r3, r4], {0: self.radius, 
+                                                 1: self.radius, 2: self.radius, 3: self.radius}, True)
+            return rol
+        contour = graph(sign_V, sign_H = self.direction)
+        bg = vm.Contour2D([contour])
+        return bg
+    
+    def Plot(self):
         
-        sup_contour = graph(sign_V = 1, sign_H = self.direction)
-        inf_contour = graph(sign_V = -1, sign_H = self.direction)
-        bearing1 = vm.Contour2D([sup_contour, inf_contour])
-        bearing = bearing1.Translation((pos, 0),True)
-        return bearing
+        be_sup = self.ExternalRingContour(1)
+        be_inf = self.ExternalRingContour(-1)
+        bi_sup = self.InternalRingContour(1)
+        bi_inf = self.InternalRingContour(-1)
+        roller_sup = self.RollingContour(1)
+        roller_sup = roller_sup.Rotation(vm.Point2D((0, 0)), self.direction*self.alpha, True)
+        roller_sup = roller_sup.Translation((0, self.Dpw/2.), True)
+        roller_inf = self.RollingContour(-1)
+        roller_inf = roller_inf.Rotation(vm.Point2D((0, 0)), -self.direction*self.alpha, True)
+        roller_inf = roller_inf.Translation((0, -self.Dpw/2.), True)
+        
+        bg = vm.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
+        return bg
     
 class BearingAssembly:
     def __init__(self, list_bearing, internal_pre_load=0, 
@@ -824,6 +946,12 @@ class BearingAssembly:
         self.d = npy.inf
         for bg in self.list_bearing:
             self.d = min(self.d, bg.d)
+            
+    def Update(self, pos, d_shaft_min, d_ext, length):
+        self.pos_x = pos
+        self.d_shaft_min = d_shaft_min
+        self.d_ext = d_ext
+        self.length = length
         
     def MassCalculate(self):
         mass = 0
@@ -831,7 +959,7 @@ class BearingAssembly:
             mass += bg.mass
         return mass
     
-    def ExternalBearing(self, sign):
+    def ExternalBearing(self, sign=1):
         B = self.B
         d = self.d
         D = self.D
@@ -848,7 +976,7 @@ class BearingAssembly:
                            vm.Point2D((B/2., sign*Dd/2.)), vm.Point2D((B/2., sign*D/2.))])
         return be
     
-    def InternalBearing(self, sign):
+    def InternalBearing(self, sign=1):
         B = self.B
         d = self.d
         D = self.D
@@ -865,19 +993,44 @@ class BearingAssembly:
                            vm.Point2D((B/2., sign*dd/2.)), vm.Point2D((B/2., sign*d/2.))])
         return bi
     
-    def Plot(self, pos):
+    def BearingBox(self, sign=1):
+        box = vm.Polygon2D([vm.Point2D((self.pos_x, sign*self.d_shaft_min/2.)),
+                      vm.Point2D((self.pos_x, sign*self.d_ext/2.)),
+                      vm.Point2D((self.pos_x + self.length, sign*self.d_ext/2.)),
+                      vm.Point2D((self.pos_x + self.length, sign*self.d_shaft_min/2.))])
+        return box
+    
+    def Plot(self, pos=0, a=None):
         
         be_sup = self.ExternalBearing(sign = 1)
-        be_sup.Translation((pos, 0))
         be_inf = self.ExternalBearing(sign = -1)
-        be_inf.Translation((pos, 0))
-        
         bi_sup = self.InternalBearing(sign = 1)
-        bi_sup.Translation((pos, 0))
         bi_inf = self.InternalBearing(sign = -1)
-        bi_inf.Translation((pos, 0))
+        contour = [be_sup, be_inf, bi_sup, bi_inf]
+        linkage_area = vm.Contour2D(contour)
+        linkage_area = linkage_area.Translation((pos, 0), True)
+        if a is None:
+            f, a = linkage_area.MPLPlot(style = '-g')
+        else:
+            linkage_area.MPLPlot(a,'-g')
         
-        return vm.Contour2D([be_sup, be_inf, bi_sup, bi_inf])
+        contour = []
+        pos_m = -self.B/2.
+        for bg in self.list_bearing:
+            cont = bg.Plot()
+            cont = cont.Translation((pos_m + bg.B/2., 0), True)
+            pos_m += bg.B
+            contour.append(cont)
+        assembly_bg = vm.Contour2D(contour)
+        assembly_bg = assembly_bg.Translation((pos, 0), True)
+        assembly_bg.MPLPlot(a,'-k')
+        
+        box_sup = self.BearingBox(1)
+        box_inf = self.BearingBox(-1)
+        cont_box = [box_sup, box_inf]
+        contour_box = vm.Contour2D(cont_box)
+        contour_box = contour_box.Translation((pos, 0), True)
+        contour_box.MPLPlot(a,'-r')
     
 #    def BearingLoad(self, fa, fr):
         
@@ -889,8 +1042,19 @@ class CompositiveBearingAssembly:
         self.mass = self.MassCalculate()
         self.pos_x = pos_x
         
-    def Update(self, pos_x):
+    def Update(self, pos_x, list_pos_unknown, list_load, d_shaft_min, axial_pos, 
+               d_ext, length):
         self.pos_x = pos_x
+        self.list_pos_unknown = list_pos_unknown
+        self.list_load = list_load
+        self.d_shaft_min = d_shaft_min
+        self.axial_pos = axial_pos
+        self.d_ext = d_ext
+        self.length = length
+        for num_linkage, assembly_bg in enumerate(self.list_bearing_assembly):
+            pos = self.axial_pos[num_linkage] - self.pos_x[num_linkage]
+            assembly_bg.Update(pos, self.d_shaft_min[num_linkage], self.d_ext[num_linkage],
+                               self.length[num_linkage])
         
     def MassCalculate(self):
         mass = 0
@@ -899,20 +1063,30 @@ class CompositiveBearingAssembly:
         return mass
     
     def Shaft(self):
-        poly_shaft = vm.Polygon2D([vm.Point2D((self.axial_pos[0] - 5e-3, -self.d_shaft_min[0]/2.)),
-                      vm.Point2D((self.axial_pos[0] - 5e-3, self.d_shaft_min[0]/2.)),
-                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., self.d_shaft_min[0]/2.)),
-                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., self.d_shaft_min[1]/2.)),
-                      vm.Point2D((self.axial_pos[1] + self.length[1] + 5e-3, self.d_shaft_min[1]/2.)),
-                      vm.Point2D((self.axial_pos[1] + self.length[1] + 5e-3, -self.d_shaft_min[1]/2.)),
-                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., -self.d_shaft_min[1]/2.)),
-                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., -self.d_shaft_min[0]/2.)),])
-    
+        
+        d1 = self.list_bearing_assembly[0].d
+        d2 = self.list_bearing_assembly[1].d
+        B1 = self.list_bearing_assembly[0].B
+        B2 = self.list_bearing_assembly[1].B
+        pos_mid = (self.pos_x[0] + self.pos_x[1])/2.
+        shaft = vm.Polygon2D([vm.Point2D((self.pos_x[0] - B1/2. - 5e-3, -d1/2.)),
+                      vm.Point2D((self.pos_x[0] - B1/2. - 5e-3, d1/2.)),
+                      vm.Point2D((pos_mid, d1/2.)),
+                      vm.Point2D((pos_mid, d2/2.)),
+                      vm.Point2D((self.pos_x[1] + B2/2. + 5e-3, d2/2.)),
+                      vm.Point2D((self.pos_x[1] + B2/2. + 5e-3, -d2/2.)),
+                      vm.Point2D((pos_mid, -d2/2.)),
+                      vm.Point2D((pos_mid, -d1/2.)),])
+        return shaft
     
     def Plot(self):
-        contour = []
+        
+        shaft = self.Shaft()
+        contour_shaft = vm.Contour2D([shaft])
+        f, a = contour_shaft.MPLPlot(style = '-k')
+        
         for assembly_bg, pos in zip(self.list_bearing_assembly, self.pos_x):
-            contour.append(assembly_bg.Plot(pos))
+            assembly_bg.Plot(pos, a)
     
     def ShaftLoad(self, pos1, pos2, list_pos_unknown, list_load, list_torque):
         
@@ -1032,175 +1206,89 @@ class RadialRollerBearing(ConceptRadialRollerBearing):
         d['material'] = self.material.Dict()
         return d
     
-    def InternalRingContour(self):
-        if self.typ == 'NU':
-            p = [vm.Point2D((0,self.d/2.))]
-            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
-            p.append(vm.Point2D((-self.B/2.,self.F/2.)))
-            p.append(vm.Point2D((self.B/2.,self.F/2.)))
-            p.append(vm.Point2D((self.B/2.,self.d/2.)))
-            p.append(p[0])
-            # TODO handle radius of rollers
-#            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
-            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
-        elif self.typ == 'N' or self.typ == 'NF':
-            p = [vm.Point2D((0,self.d/2.))]
-            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
-            p.append(vm.Point2D((-self.B/2.,self.d1/2.)))
-            p.append(vm.Point2D((-self.B/2.+self.ep,self.d1/2.)))
-            p.append(vm.Point2D((-self.B/2.+self.ep,self.F/2.)))
-            p.append(vm.Point2D((self.B/2.-self.ep,self.F/2.)))
-            p.append(vm.Point2D((self.B/2.-self.ep,self.d1/2.)))
-            p.append(vm.Point2D((self.B/2.,self.d1/2.)))
-            p.append(vm.Point2D((self.B/2.,self.d/2.)))
-            p.append(p[0])
-#            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
-            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
-        elif self.typ == 'NJ':
-            p = [vm.Point2D((0,self.d/2.))]
-            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
-            p.append(vm.Point2D((-self.B/2.,self.d1/2.)))
-            p.append(vm.Point2D((-self.B/2.+self.ep,self.d1/2.)))
-            p.append(vm.Point2D((-self.B/2.+self.ep,self.F/2.)))
-            p.append(vm.Point2D((self.B/2.,self.F/2.)))
-            p.append(vm.Point2D((self.B/2.,self.d/2.)))
-            p.append(p[0])
-#            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
-            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
-        return ref
-    
-    def ExternalRingContour(self):
-        if self.typ == 'N':
-            p = [vm.Point2D((0,self.E/2.))]
-            p.append(vm.Point2D((-self.B/2.,self.E/2.)))
-            p.append(vm.Point2D((-self.B/2.,self.D/2.)))
-            p.append(vm.Point2D((self.B/2.,self.D/2.)))
-            p.append(vm.Point2D((self.B/2.,self.E/2.)))
-            p.append(p[0])
-            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,
-                            3:self.r_roller,4:self.r_roller},False).primitives)
-        elif self.typ == 'NU' or self.typ == 'NJ':
-            p = [vm.Point2D((0,self.E/2.))]
-            p.append(vm.Point2D((-self.B/2.+self.ep,self.E/2)))
-            p.append(vm.Point2D((-self.B/2.+self.ep,self.D1/2)))
-            p.append(vm.Point2D((-self.B/2.,self.D1/2.)))
-            p.append(vm.Point2D((-self.B/2.,self.D/2.)))
-            p.append(vm.Point2D((self.B/2.,self.D/2.)))
-            p.append(vm.Point2D((self.B/2.,self.D1/2.)))
-            p.append(vm.Point2D((self.B/2.-self.ep,self.D1/2.)))
-            p.append(vm.Point2D((self.B/2.-self.ep,self.E/2.)))
-            p.append(p[0])
-            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,
-                            3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
-        elif self.typ == 'NF':
-            p = [vm.Point2D((0,self.E/2))]
-            p.append(vm.Point2D((-self.B/2+self.ep,self.E/2)))
-            p.append(vm.Point2D((-self.B/2+self.ep,self.D1/2)))
-            p.append(vm.Point2D((-self.B/2,self.D1/2)))
-            p.append(vm.Point2D((-self.B/2,self.D/2)))
-            p.append(vm.Point2D((self.B/2,self.D/2)))
-            p.append(vm.Point2D((self.B/2,self.E/2)))
-            p.append(p[0])
-            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,
-                            3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
-        return ref
-    
-    def RollerContour(self):
-        p = [vm.Point2D((0,0.))]
-        p.append(vm.Point2D((-self.Lw/2,0.)))
-        p.append(vm.Point2D((-self.Lw/2,self.Dw/2)))
-        p.append(vm.Point2D((self.Lw/2,self.Dw/2)))
-        p.append(vm.Point2D((self.Lw/2,0.)))
-        p.append(p[0])
-        ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{2:self.r_roller,3:self.r_roller},
-                                                       False).primitives)
-        return ref
-        
-    def PlotData(self, x, heights, ys, zs, labels = True):
-        transversal_plot_data = []
-        axial_plot_data = []
-        
-        component_height = 0.5 * (self.D-self.d)
-                
-        # TODO Check rollers seem to be to low
-        y = ys[0]
-        z = zs[0]
-        yroller = 0.25*(self.E+self.F)
-        # interface of upper section
-        axial_plot_data.append({'type' : 'rect',
-                            'x' : x - 0.5 * self.B,
-                            'y' : heights[0] + 0.5*self.d ,
-                            'width' : self.B,
-                            'height' : component_height,
-                            'color' : (0, 0, 0),
-                            'size' : 1,
-                            'dash' : 'none'})
-            
-        # Roller of upper section
-        axial_plot_data.append({'type' : 'rect',
-                            'x' : x - 0.5*self.Lw,
-                            'y' : heights[0] +  yroller -0.5*self.Dw,
-                            'width' : self.Lw,
-                            'height' : self.Dw,
-                            'color' : (0, 0, 0),
-                            'size' : 1,
-                            'dash' : 'none'})
-
-
-        # interface of lower section
-        axial_plot_data.append({'type' : 'rect',
-                            'x' : x - 0.5 * self.B,
-                            'y' : heights[0] - 0.5*self.D ,
-                            'width' : self.B,
-                            'height' : component_height,
-                            'color' : (0, 0, 0),
-                            'size' : 1,
-                            'dash' : 'none'})
-            
-        # Roller of upper section
-        axial_plot_data.append({'type' : 'rect',
-                            'x' : x - 0.5*self.Lw,
-                            'y' : heights[0] - yroller - 0.5*self.Dw,
-                            'width' : self.Lw,
-                            'height' : self.Dw,
-                            'color' : (0, 0, 0),
-                            'size' : 1,
-                            'dash' : 'none'})
-                    
-            
-                    
-        
-        transversal_plot_data.append({'type' : 'circle',
-                                  'cx' : y,
-                                  'cy' : z,
-                                  'r' : 0.5 * self.d,
-                                  'color' : [0, 0, 0],
-                                  'size' : 1,
-                                  'group' : 3,
-                                  'dash' : 'none',})
-            
-        transversal_plot_data.append({'type' : 'circle',
-                                  'cx' : y,
-                                  'cy' : z,
-                                  'r' : 0.5 * self.D,
-                                  'color' : [0, 0, 0],
-                                  'size' : 1,
-                                  'group' : 3,
-                                  'dash' : 'none',})
-    
-        for i in range(self.Z):
-            theta=2*npy.pi/self.Z*i
-            transversal_plot_data.append({'type' : 'circle',
-                                      'cx' : y + yroller * math.cos(theta),
-                                      'cy' : z + yroller * math.sin(theta),
-                                      'r' : 0.5 * self.Dw,
-                                      'color' : [0, 0, 0],
-                                      'size' : 1,
-                                      'group' : 3,
-                                      'dash' : 'none',})
-                    
-
-        return axial_plot_data, transversal_plot_data
+#    def InternalRingContour(self):
+#        if self.typ == 'NU':
+#            p = [vm.Point2D((0,self.d/2.))]
+#            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
+#            p.append(vm.Point2D((-self.B/2.,self.F/2.)))
+#            p.append(vm.Point2D((self.B/2.,self.F/2.)))
+#            p.append(vm.Point2D((self.B/2.,self.d/2.)))
+#            p.append(p[0])
+#            # TODO handle radius of rollers
+##            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
+#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
+#        elif self.typ == 'N' or self.typ == 'NF':
+#            p = [vm.Point2D((0,self.d/2.))]
+#            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
+#            p.append(vm.Point2D((-self.B/2.,self.d1/2.)))
+#            p.append(vm.Point2D((-self.B/2.+self.ep,self.d1/2.)))
+#            p.append(vm.Point2D((-self.B/2.+self.ep,self.F/2.)))
+#            p.append(vm.Point2D((self.B/2.-self.ep,self.F/2.)))
+#            p.append(vm.Point2D((self.B/2.-self.ep,self.d1/2.)))
+#            p.append(vm.Point2D((self.B/2.,self.d1/2.)))
+#            p.append(vm.Point2D((self.B/2.,self.d/2.)))
+#            p.append(p[0])
+##            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
+#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
+#        elif self.typ == 'NJ':
+#            p = [vm.Point2D((0,self.d/2.))]
+#            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
+#            p.append(vm.Point2D((-self.B/2.,self.d1/2.)))
+#            p.append(vm.Point2D((-self.B/2.+self.ep,self.d1/2.)))
+#            p.append(vm.Point2D((-self.B/2.+self.ep,self.F/2.)))
+#            p.append(vm.Point2D((self.B/2.,self.F/2.)))
+#            p.append(vm.Point2D((self.B/2.,self.d/2.)))
+#            p.append(p[0])
+##            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
+#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
+#        return ref
+#    
+#    def ExternalRingContour(self):
+#        if self.typ == 'N':
+#            p = [vm.Point2D((0,self.E/2.))]
+#            p.append(vm.Point2D((-self.B/2.,self.E/2.)))
+#            p.append(vm.Point2D((-self.B/2.,self.D/2.)))
+#            p.append(vm.Point2D((self.B/2.,self.D/2.)))
+#            p.append(vm.Point2D((self.B/2.,self.E/2.)))
+#            p.append(p[0])
+#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,
+#                            3:self.r_roller,4:self.r_roller},False).primitives)
+#        elif self.typ == 'NU' or self.typ == 'NJ':
+#            p = [vm.Point2D((0,self.E/2.))]
+#            p.append(vm.Point2D((-self.B/2.+self.ep,self.E/2)))
+#            p.append(vm.Point2D((-self.B/2.+self.ep,self.D1/2)))
+#            p.append(vm.Point2D((-self.B/2.,self.D1/2.)))
+#            p.append(vm.Point2D((-self.B/2.,self.D/2.)))
+#            p.append(vm.Point2D((self.B/2.,self.D/2.)))
+#            p.append(vm.Point2D((self.B/2.,self.D1/2.)))
+#            p.append(vm.Point2D((self.B/2.-self.ep,self.D1/2.)))
+#            p.append(vm.Point2D((self.B/2.-self.ep,self.E/2.)))
+#            p.append(p[0])
+#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,
+#                            3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
+#        elif self.typ == 'NF':
+#            p = [vm.Point2D((0,self.E/2))]
+#            p.append(vm.Point2D((-self.B/2+self.ep,self.E/2)))
+#            p.append(vm.Point2D((-self.B/2+self.ep,self.D1/2)))
+#            p.append(vm.Point2D((-self.B/2,self.D1/2)))
+#            p.append(vm.Point2D((-self.B/2,self.D/2)))
+#            p.append(vm.Point2D((self.B/2,self.D/2)))
+#            p.append(vm.Point2D((self.B/2,self.E/2)))
+#            p.append(p[0])
+#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,
+#                            3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
+#        return ref
+#    
+#    def RollerContour(self):
+#        p = [vm.Point2D((0,0.))]
+#        p.append(vm.Point2D((-self.Lw/2,0.)))
+#        p.append(vm.Point2D((-self.Lw/2,self.Dw/2)))
+#        p.append(vm.Point2D((self.Lw/2,self.Dw/2)))
+#        p.append(vm.Point2D((self.Lw/2,0.)))
+#        p.append(p[0])
+#        ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{2:self.r_roller,3:self.r_roller},
+#                                                       False).primitives)
+#        return ref
         
     def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
         center = vm.Point3D(npy.round(center,6))
@@ -1228,7 +1316,7 @@ class RadialRollerBearing(ConceptRadialRollerBearing):
             center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
             rol.append(primitives3D.RevolvedProfile(center_roller, x, z, [ROL],
                                                     center_roller, x,
-                                                    angle=2*math.pi,name='rol'))
+                                                    angle=math.pi,name='rol'))
         
         tot=[irc,erc]+rol
         model=vm.VolumeModel(tot)

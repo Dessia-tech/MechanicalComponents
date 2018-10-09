@@ -582,7 +582,8 @@ class CompositeBearingAssemblyOptimizer:
             
             if len(self.solutions) <= nb_sol:       
                 if status >= 0:
-                    composite_bg.Update(pos_x = sol_x)
+                    composite_bg.Update(sol_x, self.list_pos_unknown, self.list_load,
+                                        self.d_shaft_min, self.axial_pos, self.d_ext, self.length)
                     self.solutions.append(composite_bg)
             else:
                 break

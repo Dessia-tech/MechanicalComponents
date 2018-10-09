@@ -10,22 +10,24 @@ del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.bearings as bearings
 import numpy as npy
 
-S1 = bearings.CompositeBearingAssemblyOptimizer(list_pos_unknown = [[0.09,0.004,0]], 
+S1 = bearings.CompositeBearingAssemblyOptimizer(list_pos_unknown = [[0.001,0.005,0]], 
                     list_load = [[200, -2500, 0]], list_torque = [[0, 100, 0]],
                     list_speed = [200], list_time = [1e6],
                     d_shaft_min = [0.02, 0.025], axial_pos = [0, 0.1], d_ext = [0.05, 0.07], 
-                    length = [0.04, 0.04],
-                    typ_linkage = [['ball_joint'], ['cylindric_joint']],
-                    typ_mounting = [(0, 'pn')],
-                    number_bearing=[[1, 2], [1, 2]],
+                    length = [0.07, 0.04],
+                    typ_linkage = [['cylindric_joint'], ['cylindric_joint']],
+                    typ_mounting = [('p', 'n')],
+                    number_bearing=[[1], [1]],
                     nb_sol = [20, 10, 1])
 
 for sol in S1.solutions:
     print(sol.mass)
     
-S1.Optimize(index_sol = [1,2,3,4], nb_sol = 5, verbose = True)
+S1.Optimize(nb_sol = 20, verbose = True)
 for sol in S1.solutions:
     sol.Plot()
+#    sol.list_bearing_assembly[0].list_bearing[0].FreeCADExport('extrusion2',python_path = '/Applications/FreeCAD.app/Contents/MacOS/FreeCADCmd',
+#            path_lib_freecad = '/Applications/FreeCAD.app/Contents/lib', export_types=['step'])
 #for num_sol, sol in enumerate(S1.solutions):
 #    S1.Plot(sol)
 #    S1.Export(sol, num_sol)
