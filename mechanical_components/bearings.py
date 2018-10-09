@@ -16,6 +16,9 @@ from mechanical_components.bearings_snr import RadialRollerBearingSNR
 from mechanical_components.catalogs.dico_bearings_ISO \
     import dico_rlts_iso,dico_roller_iso,dico_radial_clearance_iso,dico_rules
 
+import genmechanics
+import genmechanics.linkages as linkages
+import genmechanics.loads as loads
 
 #oil_kinematic_viscosity
 iso_vg_1500={'data':[[47.21238870380181,922.5481847223729],
@@ -139,7 +142,7 @@ material_iso=Material()
 
 class RadialBearing:
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, typ_contact=None):
+                 material=material_iso, typ_contact=None, mass=None):
         self.d = d
         self.D = D
         self.B = B
@@ -151,6 +154,7 @@ class RadialBearing:
         self.oil = oil
         self.material = material
         self.typ_contact = typ_contact
+        self.mass = mass
         if Cr is not None:
             self.Cr = Cr
         if C0r is not None:
@@ -269,8 +273,8 @@ class RadialBearing:
 #    
 class ConceptRadialBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, typ_contact=None):
-        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
+                 material=material_iso, typ_contact=None, mass=None):
+        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact, mass)
         self.coeff_baselife = 3.
         
         # estimation for the graph 2D description
@@ -361,8 +365,9 @@ class ConceptRadialBallBearing(RadialBearing):
         
 class ConceptAngularBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, typ_contact=None, direction=1):
-        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
+                 material=material_iso, typ_contact=None, direction=1, mass=None):
+        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, 
+                               typ_contact, mass)
         self.coeff_baselife = 3.
         self.direction = direction
         
@@ -483,8 +488,8 @@ class ConceptAngularBallBearing(RadialBearing):
             
 class ConceptSphericalBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, typ_contact=None):
-        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
+                 material=material_iso, typ_contact=None, mass=None):
+        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact, mass)
         self.coeff_baselife = 3.
         
     def EquivalentStaticLoad(self, fr, fa=None):
@@ -535,9 +540,8 @@ class ConceptSphericalBallBearing(RadialBearing):
             
 class ConceptRadialRollerBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, typ_contact='linear_contact', direction=1, typ='N'):
-        
-        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
+                 material=material_iso, typ_contact='linear_contact', direction=1, typ='N', mass=None):
+        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact, mass)
         self.coeff_baselife = 10/3.
         self.direction = direction
         self.typ = typ
@@ -727,9 +731,9 @@ class ConceptRadialRollerBearing(RadialBearing):
     
 class ConceptTaperedRollerBearing(ConceptRadialRollerBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, typ_contact='linear_contact', direction=1):
+                 material=material_iso, typ_contact='linear_contact', direction=1, mass=None):
         ConceptRadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, 
-                                            material, typ_contact, direction)
+                                            material, typ_contact, direction, mass=mass)
         self.coeff_baselife = 10/3.
         
         # estimation for the graph 2D description
@@ -804,14 +808,135 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing):
         bearing = bearing1.Translation((pos, 0),True)
         return bearing
     
-#class BearingAssembly:
-#    def __init__(self, list_bearing, internal_pre_load=0, 
-#                 connection_be=['n', 'p'], connection_be=['n', 'p']):
+class BearingAssembly:
+    def __init__(self, list_bearing, internal_pre_load=0, 
+                 connection_bi=['n', 'p'], connection_be=['n', 'p']):
+        self.list_bearing = list_bearing
+        self.connection_be = connection_be
+        self.connection_bi = connection_bi
+        self.mass = self.MassCalculate()
+        self.B = 0
+        for bg in self.list_bearing:
+            self.B += bg.B
+        self.D = 0
+        for bg in self.list_bearing:
+            self.D = max(self.D, bg.D)
+        self.d = npy.inf
+        for bg in self.list_bearing:
+            self.d = min(self.d, bg.d)
+        
+    def MassCalculate(self):
+        mass = 0
+        for bg in self.list_bearing:
+            mass += bg.mass
+        return mass
+    
+    def ExternalBearing(self, sign):
+        B = self.B
+        d = self.d
+        D = self.D
+        ep = min(0.1*D, 0.1*d)
+        De = D + ep
+        Dg, Dd = D, D
+        if 'n' in self.connection_be:
+            Dg = Dg - ep
+        if 'p' in self.connection_be:
+            Dd = Dd -ep
+        be = vm.Polygon2D([vm.Point2D((-B/2., sign*D/2.)), vm.Point2D((-B/2., sign*Dg/2.)),
+                           vm.Point2D((-B/2. - ep, sign*Dg/2.)), vm.Point2D((-B/2. - ep, sign*De/2.)),
+                           vm.Point2D((B/2. + ep, sign*De/2.)), vm.Point2D((B/2. + ep, sign*Dd/2.)),
+                           vm.Point2D((B/2., sign*Dd/2.)), vm.Point2D((B/2., sign*D/2.))])
+        return be
+    
+    def InternalBearing(self, sign):
+        B = self.B
+        d = self.d
+        D = self.D
+        ep = min(0.1*D, 0.1*d)
+        di = d - ep
+        dg, dd = d, d
+        if 'n' in self.connection_bi:
+            dg = dg + ep
+        if 'p' in self.connection_bi:
+            dd = dd + ep
+        bi = vm.Polygon2D([vm.Point2D((-B/2., sign*d/2.)), vm.Point2D((-B/2., sign*dg/2.)),
+                           vm.Point2D((-B/2. - ep, sign*dg/2.)), vm.Point2D((-B/2. - ep, sign*di/2.)),
+                           vm.Point2D((B/2. + ep, sign*di/2.)), vm.Point2D((B/2. + ep, sign*dd/2.)),
+                           vm.Point2D((B/2., sign*dd/2.)), vm.Point2D((B/2., sign*d/2.))])
+        return bi
+    
+    def Plot(self, pos):
+        
+        be_sup = self.ExternalBearing(sign = 1)
+        be_sup.Translation((pos, 0))
+        be_inf = self.ExternalBearing(sign = -1)
+        be_inf.Translation((pos, 0))
+        
+        bi_sup = self.InternalBearing(sign = 1)
+        bi_sup.Translation((pos, 0))
+        bi_inf = self.InternalBearing(sign = -1)
+        bi_inf.Translation((pos, 0))
+        
+        return vm.Contour2D([be_sup, be_inf, bi_sup, bi_inf])
+    
+#    def BearingLoad(self, fa, fr):
+        
         
 class CompositiveBearingAssembly:
-    def __init__(self, list_bearing_assembly, list_position=None, pre_load=0):
+    def __init__(self, list_bearing_assembly, list_position=None, pre_load=0, pos_x=None):
         
         self.list_bearing_assembly = list_bearing_assembly
+        self.mass = self.MassCalculate()
+        self.pos_x = pos_x
+        
+    def Update(self, pos_x):
+        self.pos_x = pos_x
+        
+    def MassCalculate(self):
+        mass = 0
+        for li_bg in self.list_bearing_assembly:
+            mass += li_bg.mass
+        return mass
+    
+    def Shaft(self):
+        poly_shaft = vm.Polygon2D([vm.Point2D((self.axial_pos[0] - 5e-3, -self.d_shaft_min[0]/2.)),
+                      vm.Point2D((self.axial_pos[0] - 5e-3, self.d_shaft_min[0]/2.)),
+                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., self.d_shaft_min[0]/2.)),
+                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., self.d_shaft_min[1]/2.)),
+                      vm.Point2D((self.axial_pos[1] + self.length[1] + 5e-3, self.d_shaft_min[1]/2.)),
+                      vm.Point2D((self.axial_pos[1] + self.length[1] + 5e-3, -self.d_shaft_min[1]/2.)),
+                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., -self.d_shaft_min[1]/2.)),
+                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., -self.d_shaft_min[0]/2.)),])
+    
+    
+    def Plot(self):
+        contour = []
+        for assembly_bg, pos in zip(self.list_bearing_assembly, self.pos_x):
+            contour.append(assembly_bg.Plot(pos))
+    
+    def ShaftLoad(self, pos1, pos2, list_pos_unknown, list_load, list_torque):
+        
+        ground = genmechanics.Part('ground')
+        shaft1 = genmechanics.Part('shaft1')
+        p1 = npy.array([pos1,0,0])
+        p2 = npy.array([pos2,0,0])
+        bearing1 = linkages.FrictionlessBallLinkage(ground,shaft1,p1,[0,0,0],'bearing1')
+        bearing2 = linkages.FrictionlessLinearAnnularLinkage(ground,shaft1,p2,[0,0,0],'bearing2')
+        
+        load1 = []
+        for pos, ld, tq in zip(list_pos_unknown, list_load, list_torque):
+            load1.append(loads.KnownLoad(shaft1, pos, [0,0,0], ld, tq, 'input'))
+        load2 = loads.SimpleUnknownLoad(shaft1, [(pos1 + pos2)/2,0,0], [0,0,0], [], [0], 'output torque')
+        imposed_speeds = [(bearing1, 0, 100)]
+        
+        mech = genmechanics.Mechanism([bearing1,bearing2],ground,imposed_speeds,load1,[load2])
+        t1 = mech.GlobalLinkageForces(bearing1,1)
+        fa1 = -t1[0]
+        fr1 = (t1[1]**2 + t1[2]**2)**(0.5)
+        t2 = mech.GlobalLinkageForces(bearing2,1)
+        fa2 = -t2[0]
+        fr2 = (t2[1]**2 + t2[2]**2)**(0.5)
+        return fa1, fr1, fa2, fr2
         
 
 class RadialRollerBearing(ConceptRadialRollerBearing):

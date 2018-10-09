@@ -9,7 +9,7 @@ Created on Fri Aug 17 02:14:21 2018
 from mechanical_components.bearings import oil_iso_vg_1500, material_iso, dico_rlts_iso,dico_rules,dico_roller_iso
 from mechanical_components.bearings import ConceptRadialBallBearing, ConceptAngularBallBearing, \
         ConceptSphericalBallBearing, ConceptRadialRollerBearing, ConceptTaperedRollerBearing, \
-        CompositiveBearingAssembly
+        CompositiveBearingAssembly, BearingAssembly
 import numpy as npy
 from scipy.optimize import minimize
 import pandas
@@ -231,7 +231,6 @@ class BearingContinuousOptimizer:
                     if len(self.solutions)<nb_sol:
                         liminf_lifetime=False
                     if verbose:
-                        print(R1)
 #                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.solutions),l10,D,d,B,Dw,Zmax))
                         if L10 is not None:
                             print('L10: {}, specification: {}'.format(l10, L10))
@@ -244,6 +243,7 @@ with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_compone
 pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]
 pandas_sort = pandas_sort[pandas_sort['Z'].notnull()]
 pandas_sort = pandas_sort[pandas_sort['Dw'].notnull()]
+pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
 #        pandas_sort = pandas_sort[pandas_sort['alpha'].notnull()]
 pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
 pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
@@ -252,7 +252,8 @@ base_bearing = pandas_sort
 
 class BearingAssemblyOptimizer:
     
-    def __init__(self, linkage, behavior_link, nb_rlts, d, D, length):
+    def __init__(self, linkage, behavior_link, nb_rlts, d, D, length, nb_sol=[10, 10], 
+                 sort_arg = {'min':'mass'}):
         
         axis_load = ['n', 'p'] # 'p' when the axial load applied on shaft is directed from left to right
         typ_rlts = {'rol_NU':0, 'rol_N':0, 
@@ -308,18 +309,64 @@ class BearingAssemblyOptimizer:
                     mount = {'be':['p','n'], 'bi':['p','n']}
                 elif behavior_assembly is 'pn':
                     mount = {'be':[], 'bi':['p','n']}
-            li_rlts_pandas = self.SearchCatalog(d, D, length, li_rlts)
+            li_rlts_pandas = self.SearchCatalog(d, D, length, li_rlts, nb_sol = nb_sol[1])
             if li_rlts_pandas is not None:
-                solutions.extend(li_rlts_pandas)
+                for li_bearing in li_rlts_pandas:
+                    list_bearing = []
+                    for index_bearing, code_bearing in zip(li_bearing, li_rlts):
+                        list_bearing.append(self.GenereBearing(index_bearing, code_bearing))
+                    BA = BearingAssembly(list_bearing, connection_bi = mount['bi'], 
+                                     connection_be = mount['be'])
+                    solutions.append(BA)
         solutions_sort = self.SortSolutions(solutions, sort_arg = {'min':'mass'})
-        self.solutions = solutions_sort
+        self.solutions = solutions_sort[0:min(len(solutions_sort), nb_sol[0])]
         self.check = True
         if self.solutions == []:
             self.check = False
+            
+    def GenereBearing(self, index, code_bearing):
+        typ_rlt = base_bearing.loc[index,'typ_bearing']
+        d = base_bearing.loc[index,'d']
+        D = base_bearing.loc[index,'D']
+        B = base_bearing.loc[index,'B']
+        i = base_bearing.loc[index,'i']
+        Z = base_bearing.loc[index,'Z']
+        Dw = base_bearing.loc[index,'Dw']
+        mass = base_bearing.loc[index,'mass']
+        alp = base_bearing.loc[index,'alpha']
+        if str(alp) == 'nan':
+            alpha = 0
+        else:
+            alpha = alp
+        Cr = base_bearing.loc[index,'Cr']
+        C0r = base_bearing.loc[index,'C0r']
+        if typ_rlt == 'radial_roller_bearing':
+            if len(code_bearing.split('_')) == 3:
+                typ = code_bearing.split('_')[1]
+                direction = (code_bearing.split('_')[2] == 'n' and -1 or 1)
+            elif len(code_bearing.split('_')) == 2:
+                typ = code_bearing.split('_')[1]
+                direction = 1
+            return ConceptRadialRollerBearing(d, D, B, i, Z, Dw, alpha, Cr, C0r, 
+                                              mass = mass, typ = typ, direction = direction)
+        elif typ_rlt == 'radial_ball_bearing':
+            return ConceptRadialBallBearing(d, D, B, i, Z, Dw, alpha, Cr, C0r, mass = mass)
+        elif typ_rlt == 'angular_ball_bearing':
+            direction = (code_bearing.split('_')[1] == 'n' and 1 or -1)
+            return ConceptAngularBallBearing(d, D, B, i, Z, Dw, alpha,
+                                             Cr, C0r, direction = direction, mass = mass)
+        elif typ_rlt == 'spherical_ball_bearing':
+            return ConceptSphericalBallBearing(d, D, B, i, Z, Dw, alpha, 
+                                               Cr, C0r, mass = mass)
+        elif typ_rlt == 'tapered_roller_bearing':
+            direction = (code_bearing.split('_')[1] == 'n' and 1 or -1)
+            return ConceptTaperedRollerBearing(d, D, B, i, Z, Dw, alpha, 
+                                               Cr, C0r, mass = mass, direction = direction)
     
     def SearchCatalog(self, d, D, length, list_bearing=None, 
                constraint=[{'typ':'equal','var':'d'}, {'typ':'equal','var':'D'}],
-               verbose = False):
+               nb_sol=5,
+               verbose=False):
         
         valid = True
         
@@ -378,10 +425,11 @@ class BearingAssemblyOptimizer:
                         pandas_iter1 = pandas_iter[(pandas_iter.typ_bearing == name_bear) & (pandas_iter.mounting == typ_bear)]
                     else:
                         pandas_iter1 = pandas_iter[pandas_iter.typ_bearing == name_bear]
-                    pandas_iter1 = pandas_iter1.sort_values(by = ['B']).loc[:,['d','D','B','Cr','C0r','Z','typ_bearing']]
-                    optim_a_bearing.append(list(pandas_iter1.index)[0])
-                    pandas_iter1 = pandas_iter1.sort_values(by = ['Cr'], ascending=False)
-                    optim_b_bearing.append(list(pandas_iter1.index)[0])
+                    if not pandas_iter1.empty:
+                        pandas_iter1 = pandas_iter1.sort_values(by = ['B']).loc[:,['d','D','B','Cr','C0r','Z','typ_bearing']]
+                        optim_a_bearing.append(list(pandas_iter1.index)[0])
+                        pandas_iter1 = pandas_iter1.sort_values(by = ['Cr'], ascending=False)
+                        optim_b_bearing.append(list(pandas_iter1.index)[0])
                     
                 for list_optim in [optim_a_bearing, optim_b_bearing]:
                     length_iter = 0
@@ -390,14 +438,12 @@ class BearingAssemblyOptimizer:
                         length_iter += li
                     if length_iter <= length[1]:
                         pd_bearing.append(list_optim)
-            return pd_bearing
+            return pd_bearing[0:min(nb_sol, len(pd_bearing))]
         
     def SortSolutions(self, solutions, sort_arg):
         list_sort = []
         for sol in solutions:
-            val = 0
-            for item in sol:
-                val += base_bearing.loc[sol, sort_arg['min']].values[0]
+            val = getattr(sol,sort_arg['min'])
             list_sort.append(val)
         list_sort_arg=list(npy.argsort(list_sort))
         return npy.array(solutions)[list_sort_arg]
@@ -409,7 +455,8 @@ class CompositeBearingAssemblyOptimizer:
                  typ_linkage=[['all'], ['all']],
                  typ_mounting=None, number_bearing=[[1, 2], [1, 2]],
                  sort={'typ':'Lnm', 'min':1e4, 'max':npy.inf},
-                 path='Export_Solution.txt'):
+                 sort_arg = {'min':'mass'},
+                 path='Export_Solution.txt', nb_sol=[20, 10, 10]):
         
         nb_linkage = len(length)
         self.path = path
@@ -450,8 +497,10 @@ class CompositeBearingAssemblyOptimizer:
                 sol_BA[num_linkage] = []
                 for linkage, nb_rlts in product(list_linkage[num_linkage], 
                                                 number_bearing[num_linkage]):
-                    BA = BearingAssemblyOptimizer(linkage, behavior_link, nb_rlts, [self.d_shaft_min[num_linkage], self.d_ext[num_linkage]],
-                                                  [self.d_shaft_min[num_linkage], self.d_ext[num_linkage]], [0, self.length[num_linkage]])
+                    BA = BearingAssemblyOptimizer(linkage, behavior_link, nb_rlts, [self.d_shaft_min[num_linkage], 
+                                                self.d_ext[num_linkage]], [self.d_shaft_min[num_linkage], 
+                                                self.d_ext[num_linkage]], [0, self.length[num_linkage]],
+                                                nb_sol = nb_sol[1::])
                     if BA.check is True:
                         sol_BA[num_linkage].extend(BA.solutions)
             for num_linkage, behavior_link in enumerate(li_mounting):
@@ -461,7 +510,83 @@ class CompositeBearingAssemblyOptimizer:
             if analyze_solutions:
                 for composite_solution in product(*sol_BA.values()):
                     solutions.append(CompositiveBearingAssembly(composite_solution))
-        self.solutions = solutions
+        
+        solutions = self.SortSolutions(solutions, sort_arg)
+        self.solutions = solutions[0: min(len(solutions), nb_sol[0])]
+        
+    def SortSolutions(self, solutions, sort_arg):
+        list_sort = []
+        for composite_bg in solutions:
+            val = getattr(composite_bg,sort_arg['min'])
+            list_sort.append(val)
+        list_sort_arg=list(npy.argsort(list_sort))
+        return npy.array(solutions)[list_sort_arg]
+        
+    def Optimize(self, nb_sol=5, Lnm_min=1e4, index_sol=None, verbose=False):
+        if index_sol is not None:
+            list_sol = []
+            for num_sol, sol in enumerate(self.solutions):
+                if num_sol in index_sol:
+                    list_sol.append(sol)
+        else:
+            list_sol = self.solutions
+        self.solutions = []
+        for composite_bg in list_sol:
+            l1 = composite_bg.list_bearing_assembly[0].B
+            l2 = composite_bg.list_bearing_assembly[1].B
+            pos1_min = self.axial_pos[0] + l1/2
+            pos1_max = self.axial_pos[0] + self.length[0] - l1/2
+            pos2_min = self.axial_pos[1] + l2/2
+            pos2_max = self.axial_pos[1] + self.length[1] - l2/2
+            def fun(x):
+                fa1, fr1, fa2, fr2 = composite_bg.ShaftLoad(x[0], x[1], self.list_pos_unknown, 
+                                                    self.list_load, self.list_torque)
+#                Lnm1 = 0
+#                for rlt1 in list_bearing1:
+#                    Lnm1 += rlt1.AdjustedLifeTime(Fr = [fr1], Fa = [fa1], N = [300], t = [1e10], T = [60])
+#                Lnm2 = 0
+#                for rlt2 in list_bearing2:
+#                    Lnm2 += rlt2.AdjustedLifeTime(Fr = [fr2], Fa = [fa2], N = [300], t = [1e10], T = [60])
+                obj = 1/(fr1)**2
+                return obj
+            def fineq(x):
+                ineq = [0]
+#                fa1, fr1, fa2, fr2 = composite_bg.ShaftLoad(x[0], x[1], self.list_pos_unknown, 
+#                                                    self.list_load, self.list_torque)
+#                Lnm1 = 0
+#                for rlt1 in list_bearing1:
+#                    Lnm1 += rlt1.AdjustedLifeTime(Fr = [fr1], Fa = [fa1], N = [300], t = [1e10], T = [60])
+#                Lnm2 = 0
+#                for rlt2 in list_bearing2:
+#                    Lnm2 += rlt2.AdjustedLifeTime(Fr = [fr2], Fa = [fa2], N = [300], t = [1e10], T = [60])
+#                ineq.append(Lnm1 - Lnm_min)
+#                ineq.append(Lnm2 - Lnm_min)
+                return ineq
+            Bound = [[pos1_min, pos1_max], [pos2_min, pos2_max]]
+            sol_fun = npy.inf
+            for p1, p2 in product(Bound[0],Bound[1]):
+                cons = {'type': 'ineq','fun' : fineq}
+                res = minimize(fun, [p1, p2], method='SLSQP', bounds=Bound, constraints = cons)
+                if fun(res.x) < sol_fun:
+                    sol_fun = fun(res.x)
+                    sol_x = res.x
+                    status = res.status
+            for itera in range(0,5):
+                x0 = (npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(2)+npy.array(Bound)[:,0]
+                cons = {'type': 'ineq','fun' : fineq}
+                res = minimize(fun, x0, method='SLSQP', bounds=Bound, constraints = cons)
+                if fun(res.x) < sol_fun:
+                    sol_fun = fun(res.x)
+                    sol_x = res.x
+                    status = res.status
+            
+            if len(self.solutions) <= nb_sol:       
+                if status >= 0:
+                    composite_bg.Update(pos_x = sol_x)
+                    self.solutions.append(composite_bg)
+            else:
+                break
+    
         
 class ShaftOptimizer:
     def __init__(self, list_pos_unknown, list_load, list_torque, list_speed, list_time,
@@ -659,205 +784,8 @@ class ShaftOptimizer:
                             solution_mounting.append(mount)
 
         self.solution_mounting = solution_mounting
-                
-    def Optimization(self, nb_sol=5, Lnm_min=1e4):
-        R1 = BearingCatalogOptimizer()
-        solution_global = []
-        for i_sol, solution in enumerate(self.solution_mounting):
-            print('analyze design structure: {}'.format(solution))
-            if solution != self.solution_mounting[i_sol - 1]:
-                combination_rlts1 = R1.Search(d = [self.d_shaft_min[0], self.d_ext[0]], 
-                                 D = [self.d_shaft_min[0], self.d_ext[0]], 
-                                 length = [0.1*self.length[0], self.length[0]], 
-                                 list_bearing=solution[1]['list_rlts'])
-                combination_rlts2 = R1.Search(d = [self.d_shaft_min[1], self.d_ext[1]], 
-                                 D = [self.d_shaft_min[1], self.d_ext[1]], 
-                                 length = [0.1*self.length[1], self.length[1]], 
-                                 list_bearing=solution[2]['list_rlts'])
-    #                print(combination_rlts1, solution[1]['list_rlts'])
-    #                print(combination_rlts2, solution[2]['list_rlts'])
-    #                print(solution[1]['list_rlts'],solution[2]['list_rlts'],solution['typ'])
-                nb_sol_per_design_max = 1
-                nb_sol_per_design = 0
-                drap_sol_per_design = True
-                if len(solution_global) > nb_sol - 1:
-                    self.solutions = solution_global
-                    break
-                if (combination_rlts1 is not None) and (combination_rlts2 is not None):
-                    for comb_rlts1, comb_rlts2 in product(combination_rlts1,combination_rlts2):
-                        list_bearing1 = []
-                        for num_rlt1, rlt1 in enumerate(comb_rlts1):
-                            typ_rlt1 = R1.pd_FNR.loc[rlt1,'typ_bearing']
-                            d = R1.pd_FNR.loc[rlt1,'d']
-                            D = R1.pd_FNR.loc[rlt1,'D']
-                            B = R1.pd_FNR.loc[rlt1,'B']
-                            i = R1.pd_FNR.loc[rlt1,'i']
-                            Z = R1.pd_FNR.loc[rlt1,'Z']
-                            Dw = R1.pd_FNR.loc[rlt1,'Dw']
-                            alp = R1.pd_FNR.loc[rlt1,'alpha']
-                            if str(alp) == 'nan':
-                                alpha = 0
-                            else:
-                                alpha = alp
-                            Cr = R1.pd_FNR.loc[rlt1,'Cr']
-                            C0r = R1.pd_FNR.loc[rlt1,'C0r']
-                            code_bearing = solution[1]['list_rlts'][num_rlt1]
-                            if typ_rlt1 == 'radial_roller_bearing':
-                                if len(code_bearing.split('_')) == 3:
-                                    typ = code_bearing.split('_')[1]
-                                    direction = (code_bearing.split('_')[2] == 'n' and -1 or 1)
-                                elif len(code_bearing.split('_')) == 2:
-                                    typ = code_bearing.split('_')[1]
-                                    direction = 1
-                                print(typ, direction)
-                                list_bearing1.append(ConceptRadialRollerBearing(d, D, B, i, Z, Dw, alpha, Cr, C0r, 
-                                                                                typ = typ, direction = direction))
-                            elif typ_rlt1 == 'radial_ball_bearing':
-                                list_bearing1.append(ConceptRadialBallBearing(d, D, B, i, Z, Dw, alpha, Cr, C0r))
-                            elif typ_rlt1 == 'angular_ball_bearing':
-                                direction = (code_bearing.split('_')[1] == 'n' and 1 or -1)
-                                list_bearing1.append(ConceptAngularBallBearing(d, D, B, i, Z, Dw, alpha,
-                                                                               Cr, C0r, direction = direction))
-                            elif typ_rlt1 == 'spherical_ball_bearing':
-                                list_bearing1.append(ConceptSphericalBallBearing(d, D, B, i, Z, Dw, alpha, 
-                                                                                 Cr, C0r))
-                            elif typ_rlt1 == 'tapered_roller_bearing':
-                                direction = (code_bearing.split('_')[1] == 'n' and 1 or -1)
-                                list_bearing1.append(ConceptTaperedRollerBearing(d, D, B, i, Z, Dw, alpha, 
-                                                                                 Cr, C0r, direction = direction))
-                        list_bearing2 = []
-                        for num_rlt2, rlt2 in enumerate(comb_rlts2):
-                            typ_rlt2 = R1.pd_FNR.loc[rlt2,'typ_bearing']
-                            d = R1.pd_FNR.loc[rlt2,'d']
-                            D = R1.pd_FNR.loc[rlt2,'D']
-                            B = R1.pd_FNR.loc[rlt2,'B']
-                            i = R1.pd_FNR.loc[rlt2,'i']
-                            Z = R1.pd_FNR.loc[rlt2,'Z']
-                            Dw = R1.pd_FNR.loc[rlt2,'Dw']
-                            alp = R1.pd_FNR.loc[rlt2,'alpha']
-                            if str(alp) == 'nan':
-                                alpha = 0
-                            else:
-                                alpha = alp
-                            Cr = R1.pd_FNR.loc[rlt2,'Cr']
-                            C0r = R1.pd_FNR.loc[rlt2,'C0r']
-                            code_bearing = solution[2]['list_rlts'][num_rlt2]
-                            if typ_rlt2 == 'radial_roller_bearing':
-                                if len(code_bearing.split('_')) == 3:
-                                    typ = code_bearing.split('_')[1]
-                                    direction = (code_bearing.split('_')[2] == 'n' and -1 or 1)
-                                elif len(code_bearing.split('_')) == 2:
-                                    typ = code_bearing.split('_')[1]
-                                    direction = 1
-                                list_bearing2.append(ConceptRadialRollerBearing(d, D, B, i, Z, Dw, alpha, 
-                                                                                Cr, C0r, typ = typ, direction = direction))
-                            elif typ_rlt2 == 'radial_ball_bearing':
-                                list_bearing2.append(ConceptRadialBallBearing(d, D, B, i, Z, Dw, alpha, 
-                                                                              Cr, C0r))
-                            elif typ_rlt2 == 'angular_ball_bearing':
-                                direction = (code_bearing.split('_')[1] == 'n' and 1 or -1)
-                                list_bearing2.append(ConceptAngularBallBearing(d, D, B, i, Z, Dw, alpha, 
-                                                                               Cr, C0r, direction = direction))
-                            elif typ_rlt2 == 'spherical_ball_bearing':
-                                list_bearing2.append(ConceptSphericalBallBearing(d, D, B, i, Z, Dw, alpha, 
-                                                                                 Cr, C0r))
-                            elif typ_rlt2 == 'tapered_roller_bearing':
-                                direction = (code_bearing.split('_')[1] == 'n' and 1 or -1)
-                                list_bearing2.append(ConceptTaperedRollerBearing(d, D, B, i, Z, Dw, alpha, 
-                                                                                 Cr, C0r, direction = direction))
-                        l1 = 0
-                        for rlt1 in comb_rlts1:
-                            l1 += R1.pd_FNR.loc[rlt1,'B']
-                        l2 = 0
-                        for rlt2 in comb_rlts2:
-                            l2 += R1.pd_FNR.loc[rlt2,'B']
-                        pos1_min = self.axial_pos[0] + l1/2
-                        pos1_max = self.axial_pos[0] + self.length[0] - l1/2
-                        pos2_min = self.axial_pos[1] + l2/2
-                        pos2_max = self.axial_pos[1] + self.length[1] - l2/2
-                        def fun(x):
-                            fa1, fr1, fa2, fr2 = self.ShaftLoad(x[0], x[1], self.list_pos_unknown, 
-                                                                self.list_load, self.list_torque)
-                            Lnm1 = 0
-                            for rlt1 in list_bearing1:
-                                Lnm1 += rlt1.AdjustedLifeTime(Fr = [fr1], Fa = [fa1], N = [300], t = [1e10], T = [60])
-                            Lnm2 = 0
-                            for rlt2 in list_bearing2:
-                                Lnm2 += rlt2.AdjustedLifeTime(Fr = [fr2], Fa = [fa2], N = [300], t = [1e10], T = [60])
-                            obj = 1/(Lnm1 + Lnm2)**2
-                            return obj
-                        def fineq(x):
-                            ineq = []
-                            fa1, fr1, fa2, fr2 = self.ShaftLoad(x[0], x[1], self.list_pos_unknown, 
-                                                                self.list_load, self.list_torque)
-                            Lnm1 = 0
-                            for rlt1 in list_bearing1:
-                                Lnm1 += rlt1.AdjustedLifeTime(Fr = [fr1], Fa = [fa1], N = [300], t = [1e10], T = [60])
-                            Lnm2 = 0
-                            for rlt2 in list_bearing2:
-                                Lnm2 += rlt2.AdjustedLifeTime(Fr = [fr2], Fa = [fa2], N = [300], t = [1e10], T = [60])
-                            ineq.append(Lnm1 - Lnm_min)
-                            ineq.append(Lnm2 - Lnm_min)
-                            return ineq
-    
-                        Bound = [[pos1_min, pos1_max], [pos2_min, pos2_max]]
-                        sol_fun = npy.inf
-                        for p1, p2 in product(Bound[0],Bound[1]):
-                            cons = {'type': 'ineq','fun' : fineq}
-                            res = minimize(fun, [p1, p2], method='SLSQP', bounds=Bound, constraints = cons)
-                            if fun(res.x) < sol_fun:
-                                sol_fun = fun(res.x)
-                                sol_x = res.x
-                                status = res.status
-                        for itera in range(0,10):
-                            x0 = (npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(2)+npy.array(Bound)[:,0]
-                            cons = {'type': 'ineq','fun' : fineq}
-                            res = minimize(fun, x0, method='SLSQP', bounds=Bound, constraints = cons)
-                            if fun(res.x) < sol_fun:
-                                sol_fun = fun(res.x)
-                                sol_x = res.x
-                                status = res.status
-                        if status >= 0:
-                            if nb_sol_per_design <= nb_sol_per_design_max - 1:                         
-                                nb_sol_per_design += 1
-                            else:
-                                solution_temp = {}
-                                solution_temp['mounting'] = solution
-                                solution_temp['bearing1'] = list_bearing1
-                                solution_temp['bearing2'] = list_bearing2
-                                solution_temp['pos_bearing1'] = sol_x[0]
-                                solution_temp['pos_bearing2'] = sol_x[1]
-                                solution_temp['bearing1_catalog'] = comb_rlts1
-                                solution_temp['bearing2_catalog'] = comb_rlts2
-                                fa1, fr1, fa2, fr2 = self.ShaftLoad(sol_x[0], sol_x[1], self.list_pos_unknown, 
-                                                                self.list_load, self.list_torque)
-                                solution_temp['load'] = [fa1, fr1, fa2, fr2]
-                                solution_global.append(solution_temp)
-                                break            
                     
-    def ShaftLoad(self, pos1, pos2, list_pos_unknown, list_load, list_torque):
-        
-        ground = genmechanics.Part('ground')
-        shaft1 = genmechanics.Part('shaft1')
-        p1 = npy.array([pos1,0,0])
-        p2 = npy.array([pos2,0,0])
-        bearing1 = linkages.FrictionlessBallLinkage(ground,shaft1,p1,[0,0,0],'bearing1')
-        bearing2 = linkages.FrictionlessLinearAnnularLinkage(ground,shaft1,p2,[0,0,0],'bearing2')
-        
-        load1 = []
-        for pos, ld, tq in zip(list_pos_unknown, list_load, list_torque):
-            load1.append(loads.KnownLoad(shaft1, pos, [0,0,0], ld, tq, 'input'))
-        load2 = loads.SimpleUnknownLoad(shaft1, [(pos1 + pos2)/2,0,0], [0,0,0], [], [0], 'output torque')
-        imposed_speeds = [(bearing1, 0, 100)]
-        
-        mech = genmechanics.Mechanism([bearing1,bearing2],ground,imposed_speeds,load1,[load2])
-        t1 = mech.GlobalLinkageForces(bearing1,1)
-        fa1 = -t1[0]
-        fr1 = (t1[1]**2 + t1[2]**2)**(0.5)
-        t2 = mech.GlobalLinkageForces(bearing2,1)
-        fa2 = -t2[0]
-        fr2 = (t2[1]**2 + t2[2]**2)**(0.5)
-        return fa1, fr1, fa2, fr2
+    
     
     def Plot(self, solution):
         
