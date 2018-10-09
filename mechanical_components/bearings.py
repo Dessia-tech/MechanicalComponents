@@ -8,6 +8,10 @@ import volmdlr.primitives2D as primitives2D
 import math
 from scipy.optimize import minimize,fsolve
 
+import volmdlr as vm
+import volmdlr.primitives2D as primitives2D
+import volmdlr.primitives3D as primitives3D
+
 from mechanical_components.bearings_snr import RadialRollerBearingSNR
 from mechanical_components.catalogs.dico_bearings_ISO \
     import dico_rlts_iso,dico_roller_iso,dico_radial_clearance_iso,dico_rules
@@ -134,10 +138,11 @@ class Material:
 material_iso=Material()
 
 class RadialBearing:
-    def __init__(self, d, D, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, typ_contact=None):
         self.d = d
         self.D = D
+        self.B = B
         self.Dpw = (d + D)/2.
         self.i = i
         self.Z = Z
@@ -150,6 +155,12 @@ class RadialBearing:
             self.Cr = Cr
         if C0r is not None:
             self.C0r = C0r
+            
+        # estimation parameter for plot (define exactly on geometry object)
+        self.E = self.Dpw + self.Dw
+        self.F = self.Dpw - self.Dw
+        self.d1 = self.F + 0.6*self.Dw
+        self.D1 = self.E - 0.6*self.Dw
     
     def BaseLifeTime(self,Fr, Fa, N, t, Cr):
         """
@@ -205,7 +216,6 @@ class RadialBearing:
                 a1 = ((1-self.material.c_gamma)
                      * (npy.log(1/S)/npy.log(100/90.))**(1/self.material.weibull_e)
                      + self.material.c_gamma)
-                
                 L10 = self.BaseLifeTime([fr], [fa], [n], [ti], self.Cr)
                 Pr = self.EquivalentDynamicLoad(fr, fa)
                 # viscosité cinématique de référence
@@ -258,10 +268,15 @@ class RadialBearing:
 #    #Butée axiale à rouleaux avec cage intégrée
 #    
 class ConceptRadialBallBearing(RadialBearing):
-    def __init__(self, d, D, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, typ_contact=None):
-        RadialBearing.__init__(self, d, D, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
+        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
         self.coeff_baselife = 3.
+        
+        # estimation for the graph 2D description
+        h1 = self.Dw/2. - (self.E - self.D1)/2.
+        self.h = self.B/2. - self.Dw/2.*npy.sin(npy.arccos(h1/(self.Dw/2.))) - 1e-4
+        
         
     def EquivalentStaticLoad(self, fr, fa=None):
         #Charge radiale statique équivalente
@@ -272,7 +287,9 @@ class ConceptRadialBallBearing(RadialBearing):
     
     def EquivalentDynamicLoad(self, fr, fa = 0):
         alphap = fsolve((lambda alphap:npy.cos(5/180*npy.pi)/npy.cos(alphap) \
-                    -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2)*npy.sin(alphap)))**(2/3.))),self.alpha)[0]
+                    -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2) \
+                    *npy.sin(alphap)))**(2/3.))),self.alpha+1)[0]
+#        alphap = 0.001
         ksi = 1.05
         nu = 1-npy.sin(5/180.*npy.pi)/2.5
         e = ksi*npy.tan(alphap)
@@ -305,12 +322,57 @@ class ConceptRadialBallBearing(RadialBearing):
         coeff = min(coeff0, ec*Cu/Pr)
         a_iso = 0.1*(f(coeff)**(-9.3))
         return a_iso
+    
+    def Plot(self, pos=0):
+        
+        radius = 5e-4
+        p0 = vm.Point2D((0, 0))
+        pc1 = p0.Translation((0, self.Dpw/2.))
+        pc2 = p0.Translation((0, -self.Dpw/2.))
+        c1 = vm.Circle2D(pc1, self.Dw/2.) 
+        c2 = vm.Circle2D(pc2, self.Dw/2.) 
+        pbe2 = vm.Point2D((-self.B/2., self.D1/2.))
+        pbe1 = pbe2.Translation((self.h, 0))
+        pbe3 = vm.Point2D((-self.B/2., self.D/2.))
+        pbe4 = vm.Point2D((self.B/2., self.D/2.))
+        pbe5 = vm.Point2D((self.B/2., self.D1/2.))
+        pbe6 = pbe5.Translation((-self.h, 0))
+        be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: radius, 
+                                                 2: radius, 3: radius, 4: radius}, False)
+        cbe1 = vm.Arc2D(pbe1, vm.Point2D((0, self.E/2)), pbe6)
+        
+        pbi2 = vm.Point2D((-self.B/2., self.d1/2.))
+        pbi1 = pbi2.Translation((self.h, 0))
+        pbi3 = vm.Point2D((-self.B/2., self.d/2.))
+        pbi4 = vm.Point2D((self.B/2., self.d/2.))
+        pbi5 = vm.Point2D((self.B/2., self.d1/2.))
+        pbi6 = pbi5.Translation((-self.h, 0))
+        bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: radius, 
+                                                 2: radius, 3: radius, 4: radius}, False)
+        cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, self.F/2)), pbi6)
+        
+        bearing1 = vm.Contour2D([be1, cbe1, bi1, cbi1])
+        bearing2 = bearing1.Rotation(vm.Point2D((0, 0)), npy.pi, True)
+        bearing3 = vm.Contour2D([c1, c2, bearing1, bearing2])
+        bearing = bearing3.Translation((pos, 0),True)
+        return bearing
+    
+
         
 class ConceptAngularBallBearing(RadialBearing):
-    def __init__(self, d, D, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, typ_contact=None):
-        RadialBearing.__init__(self, d, D, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
+    def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+                 material=material_iso, typ_contact=None, direction=1):
+        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
         self.coeff_baselife = 3.
+        self.direction = direction
+        
+        # estimation for the graph 2D description
+        h1 = self.Dw/2. - (self.E - self.D1)/2.
+        self.h1 = self.B/2. - self.Dw/2.*npy.sin(npy.arccos(h1/(self.Dw/2.))) - 1e-4
+        h2 = 0.95*self.Dw/2.
+        self.h2 = self.B/2. - self.Dw/2.*npy.sin(npy.arccos(h2/(self.Dw/2.))) - 1e-4
+        self.D2 = 0.6*(self.D - self.E) + self.E
+        self.d2 = 0.6*(self.F - self.d) + self.d
         
     def EquivalentStaticLoad(self, fr, fa=None):
         #Charge radiale statique équivalente
@@ -384,11 +446,45 @@ class ConceptAngularBallBearing(RadialBearing):
         coeff = min(coeff0, ec*Cu/Pr)
         a_iso = 0.1*(f(coeff)**(-9.3))
         return a_iso
+    
+    def Plot(self, pos=0):
+        
+        radius = 5e-4
+        def graph(sign_V, sign_H):
+            p0 = vm.Point2D((0, 0))
+            pc = p0.Translation((0, sign_V*self.Dpw/2.))
+            c = vm.Circle2D(pc, self.Dw/2.) 
+            pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D1/2.))
+            pbe1 = pbe2.Translation((sign_H*self.h1, 0))
+            pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
+            pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
+            pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*self.D2/2.))
+            pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h2), sign_V*(self.Dpw/2. + self.Dw/2.*0.95)))
+            be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: radius, 
+                                                 2: radius, 3: radius, 4: radius}, False)
+            cbe1 = vm.Arc2D(pbe1, vm.Point2D((0, sign_V*self.E/2)), pbe6)
+            pbi2 = vm.Point2D((-sign_H*self.B/2., sign_V*self.d2/2.))
+            pbi1 = vm.Point2D((-sign_H*(self.B/2. - self.h2), sign_V*(self.Dpw/2. - self.Dw/2.*0.95)))
+            pbi3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.d/2.))
+            pbi4 = vm.Point2D((sign_H*self.B/2., sign_V*self.d/2.))
+            pbi5 = vm.Point2D((sign_H*self.B/2., sign_V*self.d1/2.))
+            pbi6 = pbi5.Translation((-sign_H*self.h1, 0))
+            bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: radius, 
+                                                 2: radius, 3: radius, 4: radius}, False)
+            cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, sign_V*self.F/2)), pbi6)
+            bearing = vm.Contour2D([be1, cbe1, bi1, cbi1, c])
+            return bearing
+        
+        sup_contour = graph(sign_V = 1, sign_H = self.direction)
+        inf_contour = graph(sign_V = -1, sign_H = self.direction)
+        bearing1 = vm.Contour2D([sup_contour, inf_contour])
+        bearing = bearing1.Translation((pos, 0),True)
+        return bearing
             
 class ConceptSphericalBallBearing(RadialBearing):
-    def __init__(self, d, D, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, typ_contact=None):
-        RadialBearing.__init__(self, d, D, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
+        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
         self.coeff_baselife = 3.
         
     def EquivalentStaticLoad(self, fr, fa=None):
@@ -438,10 +534,18 @@ class ConceptSphericalBallBearing(RadialBearing):
         return a_iso
             
 class ConceptRadialRollerBearing(RadialBearing):
-    def __init__(self, d, D, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, typ_contact=None):
-        RadialBearing.__init__(self, d, D, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
+    def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+                 material=material_iso, typ_contact='linear_contact', direction=1, typ='N'):
+        
+        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact)
         self.coeff_baselife = 10/3.
+        self.direction = direction
+        self.typ = typ
+        
+        # estimation for the graph 2D description
+        self.Dpw = (self.d + self.D)/2.
+        self.Lw = 0.7*self.B
+        self.h = self.B/2. - self.Lw/2. - 1e-4
         
     def EquivalentStaticLoad(self, fr, fa=None):
         #Charge radiale statique équivalente
@@ -531,14 +635,192 @@ class ConceptRadialRollerBearing(RadialBearing):
         coeff = min(coeff0, ec*Cu/Pr)
         a_iso = 0.1*(f(coeff)**(-9.185))
         return a_iso
+    
+    def Plot(self, pos=0):
+        
+        radius = 2e-4
+        def graph(sign_V, sign_H):
+            p1 = vm.Point2D((-self.Lw/2.,sign_V*(self.Dpw/2.-self.Dw/2.)))
+            p2 = vm.Point2D((-self.Lw/2.,sign_V*(self.Dpw/2.+self.Dw/2.)))
+            p3 = vm.Point2D((self.Lw/2.,sign_V*(self.Dpw/2.+self.Dw/2.)))
+            p4 = vm.Point2D((self.Lw/2.,sign_V*(self.Dpw/2.-self.Dw/2.)))
+            rol = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4], {0: radius, 
+                                                 1: radius, 2: radius, 3: radius}, True)
+            if self.typ in ['NU', 'NJ', 'NUP']:
+                D1 = self.D1
+                pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*D1/2.))
+                pbe1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*D1/2.))
+                pbe0 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
+                pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
+                pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*D1/2.))
+                pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*D1/2.))
+                pbe7 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                be1 = primitives2D.RoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
+                                   {1: radius, 2: radius, 3: radius, 4: radius, 5: radius, 6: radius}, True)
+            elif self.typ == 'NF':
+                D1 = self.D1
+                D2 = self.E + 0.1*(self.D - self.E)
+                pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*D1/2.))
+                pbe1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*D1/2.))
+                pbe0 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
+                pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
+                pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*D2/2.))
+                pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                be1 = primitives2D.RoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
+                                   {1: radius, 2: radius, 3: radius, 4: radius, 5: radius}, True)
+            elif self.typ == 'N':
+                D1 = self.E + 0.1*(self.D - self.E)
+                pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*D1/2.))
+                pbe1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
+                pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
+                pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*D1/2.))
+                pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.E/2.)))
+                be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: radius, 
+                                   2: radius, 3: radius, 4: radius}, True)
+    
+            if self.typ in ['NUP', 'N', 'NF']:
+                d1 = self.d1
+                pbi2 = vm.Point2D((-sign_H*self.B/2., sign_V*d1/2.))
+                pbi1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*d1/2.))
+                pbi0 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
+                pbi3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.d/2.))
+                pbi4 = vm.Point2D((sign_H*self.B/2., sign_V*self.d/2.))
+                pbi5 = vm.Point2D((sign_H*self.B/2., sign_V*d1/2.))
+                pbi6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*d1/2.))
+                pbi7 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
+                bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
+                                   {1: radius, 2: radius, 3: radius, 4: radius, 5: radius, 6: radius}, True)
+            elif self.typ == 'NJ':
+                d1 = self.d1
+                d2 = self.F - 0.1*(self.F - self.d)
+                pbi2 = vm.Point2D((-sign_H*self.B/2., sign_V*d1/2.))
+                pbi1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*d1/2.))
+                pbi0 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
+                pbi3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.d/2.))
+                pbi4 = vm.Point2D((sign_H*self.B/2., sign_V*self.d/2.))
+                pbi5 = vm.Point2D((sign_H*self.B/2., sign_V*d2/2.))
+                pbi6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
+                bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6],
+                                   {1: radius, 2: radius, 3: radius, 4: radius, 5: radius}, True)
+            elif self.typ == 'NU':
+                d1 = self.F - 0.1*(self.F - self.d)
+                pbi2 = vm.Point2D((-sign_H*self.B/2., sign_V*d1/2.))
+                pbi1 = vm.Point2D((-sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
+                pbi3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.d/2.))
+                pbi4 = vm.Point2D((sign_H*self.B/2., sign_V*self.d/2.))
+                pbi5 = vm.Point2D((sign_H*self.B/2., sign_V*d1/2.))
+                pbi6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
+                bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: radius, 
+                                   2: radius, 3: radius, 4: radius}, True)
+            
+            bearing = vm.Contour2D([be1, bi1, rol])
+            return bearing
+        
+        sup_contour = graph(sign_V = 1, sign_H = self.direction)
+        inf_contour = graph(sign_V = -1, sign_H = self.direction)
+        bearing1 = vm.Contour2D([sup_contour, inf_contour])
+        bearing = bearing1.Translation((pos, 0),True)
+        return bearing
+    
+class ConceptTaperedRollerBearing(ConceptRadialRollerBearing):
+    def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+                 material=material_iso, typ_contact='linear_contact', direction=1):
+        ConceptRadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, 
+                                            material, typ_contact, direction)
+        self.coeff_baselife = 10/3.
+        
+        # estimation for the graph 2D description
+        self.Dpw = (self.d + self.D)/2.
+        self.Lw = 0.7*self.B
+        self.beta = npy.arctan(self.Dw/self.Dpw*npy.sin(self.alpha))
+        
+    def Plot(self, pos=0):
+        
+        radius = 3e-4
+        shift_bi = 5e-4
+        shift_be = 1e-3
+        def graph(sign_V, sign_H):
+            p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
+            p1 = p0.Translation((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha)), True)
+            l0 = vm.Line2D(p0, p1)
+            l0.Rotation(p0, sign_H*sign_V*self.beta)
+            l0.Translation((-sign_H*self.Dw/2.*npy.sin(self.alpha), sign_V*self.Dw/2.*npy.cos(self.alpha)))
+            pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
+            pbe3T = pbe3.Translation((0, 1))
+            pbe4 = vm.Point2D((sign_H*(self.B/2. - shift_be), sign_V*self.D/2.))
+            pbe4T = pbe4.Translation((0, 1))
+            l3 = vm.Line2D(pbe3, pbe3T)
+            l4 = vm.Line2D(pbe4, pbe4T)
+            pbe2 = vm.Point2D.LinesIntersection(l0, l3)
+            pbe5 = vm.Point2D.LinesIntersection(l0, l4)
+            be1 = primitives2D.RoundedLineSegments2D([pbe2, pbe3, pbe4, pbe5], {0: radius, 
+                                                 1: radius, 2: radius, 3: radius}, True)
+    
+            p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
+            p1 = p0.Translation((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha)), True)
+            l1 = vm.Line2D(p0, p1)
+            l1.Rotation(p0, -sign_H*sign_V*self.beta)
+            l1.Translation((0.8*sign_H*self.Dw/2.*npy.sin(self.alpha), -sign_V*0.8*self.Dw/2.*npy.cos(self.alpha)))
+            l2 = l1.Translation((0.2*sign_H*self.Dw/2.*npy.sin(self.alpha), -sign_V*0.2*self.Dw/2.*npy.cos(self.alpha)), True)
+            pbi3 = vm.Point2D((-sign_H*(self.B/2. - shift_bi), sign_V*self.d/2.))
+            pbi3T = pbi3.Translation((0, 1))
+            pbi4 = vm.Point2D((sign_H*(self.B/2.), sign_V*self.d/2.))
+            pbi4T = pbi4.Translation((0, 1))
+            l3 = vm.Line2D(pbi3, pbi3T)
+            l4 = vm.Line2D(pbi4, pbi4T)
+            pbi2 = vm.Point2D.LinesIntersection(l1, l3)
+            pbi5 = vm.Point2D.LinesIntersection(l1, l4)
+            l5 = vm.Line2D(vm.Point2D((-sign_H*self.Lw/2.,0)), vm.Point2D((-sign_H*self.Lw/2.,1)))
+            l5.Rotation(vm.Point2D((0,sign_V*self.Dpw/2.)),sign_V*sign_H*self.alpha)
+            l6 = vm.Line2D(vm.Point2D((sign_H*self.Lw/2.,0)), vm.Point2D((sign_H*self.Lw/2.,1)))
+            l6.Rotation(vm.Point2D((0,sign_V*self.Dpw/2.)),sign_V*sign_H*self.alpha)
+            pbi1 = vm.Point2D.LinesIntersection(l1, l5)
+            pbi0 = vm.Point2D.LinesIntersection(l2, l5)
+            pbi6 = vm.Point2D.LinesIntersection(l1, l6)
+            pbi7 = vm.Point2D.LinesIntersection(l2, l6)
+            
+            bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7], 
+                                                     {1: radius, 2: radius, 3: radius, 4: radius, 5: radius,
+                                                      6: radius}, True)
+            
+            r1 = vm.Point2D((-sign_H*self.Lw/2., self.Dw/2. - self.Lw/2.*npy.tan(self.beta)))
+            r2 = vm.Point2D((sign_H*self.Lw/2., self.Dw/2. + self.Lw/2.*npy.tan(self.beta)))
+            r3 = vm.Point2D((sign_H*self.Lw/2., -self.Dw/2. - self.Lw/2.*npy.tan(self.beta)))
+            r4 = vm.Point2D((-sign_H*self.Lw/2., -self.Dw/2. + self.Lw/2.*npy.tan(self.beta)))
+            rol = primitives2D.RoundedLineSegments2D([r1, r2, r3, r4], {0: radius, 
+                                                 1: radius, 2: radius, 3: radius}, True)
+            rol = rol.Rotation(vm.Point2D((0, 0)), sign_H*sign_V*self.alpha)
+            rol = rol.Translation((0, sign_V*self.Dpw/2.))
+            
+            bearing = vm.Contour2D([be1, rol, bi1])
+            return bearing
+        
+        sup_contour = graph(sign_V = 1, sign_H = self.direction)
+        inf_contour = graph(sign_V = -1, sign_H = self.direction)
+        bearing1 = vm.Contour2D([sup_contour, inf_contour])
+        bearing = bearing1.Translation((pos, 0),True)
+        return bearing
+    
+#class BearingAssembly:
+#    def __init__(self, list_bearing, internal_pre_load=0, 
+#                 connection_be=['n', 'p'], connection_be=['n', 'p']):
+        
+class CompositiveBearingAssembly:
+    def __init__(self, list_bearing_assembly, list_position=None, pre_load=0):
+        
+        self.list_bearing_assembly = list_bearing_assembly
+        
 
 class RadialRollerBearing(ConceptRadialRollerBearing):
     #Roulement à rouleaux
     def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i, 
                  alpha, bm=1.1, oil=oil_iso_vg_1500, material=material_iso):
-        ConceptRadialRollerBearing.__init__(self, i, Z, Dw, alpha ,oil, material, typ_contact = 'linear_contact')
+        ConceptRadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha ,
+                                oil, material, typ_contact = 'linear_contact')
         self.typ = typ
-        self.B = B
         self.d1 = d1
         self.D1 = D1
         self.E = E
