@@ -319,7 +319,10 @@ class BearingAssemblyOptimizer:
                                      connection_be = mount['be'])
                     solutions.append(BA)
         solutions_sort = self.SortSolutions(solutions, sort_arg = {'min':'mass'})
-        self.solutions = solutions_sort[0:min(len(solutions_sort), nb_sol[0])]
+        if nb_sol[0] is not None:
+            self.solutions = solutions_sort[0:min(len(solutions_sort), nb_sol[0])]
+        else:
+            self.solutions = solutions_sort[0:]
         self.check = True
         if self.solutions == []:
             self.check = False
@@ -438,7 +441,10 @@ class BearingAssemblyOptimizer:
                         length_iter += li
                     if length_iter <= length[1]:
                         pd_bearing.append(list_optim)
-            return pd_bearing[0:min(nb_sol, len(pd_bearing))]
+            if nb_sol is not None:
+                return pd_bearing[0:min(nb_sol, len(pd_bearing))]
+            else:
+                return pd_bearing[0:]
         
     def SortSolutions(self, solutions, sort_arg):
         list_sort = []
@@ -474,10 +480,7 @@ class CompositeBearingAssemblyOptimizer:
             typ_mounting = []
             for typ_iter in product(['pn', 0, 'n', 'p'], repeat = nb_linkage):
                 if typ_iter is not (0,)*nb_linkage:
-                    if 'pn' in typ_iter:
-                        if ('p' not in typ_iter) and ('n' not in typ_iter):
-                            typ_mounting.append(typ_iter)
-                    else:
+                    if set(typ_iter) not in [set(('pn', 'p')), set(('pn', 'n')), set(('pn', 'pn')), set((0, 0))]:
                         typ_mounting.append(typ_iter)
         self.typ_mounting = typ_mounting
         for mount in self.typ_mounting:
@@ -512,7 +515,10 @@ class CompositeBearingAssemblyOptimizer:
                     solutions.append(CompositiveBearingAssembly(composite_solution))
         
         solutions = self.SortSolutions(solutions, sort_arg)
-        self.solutions = solutions[0: min(len(solutions), nb_sol[0])]
+        if nb_sol[0] is not None:
+            self.solutions = solutions[0: min(len(solutions), nb_sol[0])]
+        else:
+            self.solutions = solutions[0:]
         
     def SortSolutions(self, solutions, sort_arg):
         list_sort = []
@@ -547,10 +553,10 @@ class CompositeBearingAssemblyOptimizer:
 #                Lnm2 = 0
 #                for rlt2 in list_bearing2:
 #                    Lnm2 += rlt2.AdjustedLifeTime(Fr = [fr2], Fa = [fa2], N = [300], t = [1e10], T = [60])
-                obj = 1/(fr1)**2
+                obj = 1/(fr1 + fr2)**2
                 return obj
             def fineq(x):
-                ineq = [0]
+                ineq = []
 #                fa1, fr1, fa2, fr2 = composite_bg.ShaftLoad(x[0], x[1], self.list_pos_unknown, 
 #                                                    self.list_load, self.list_torque)
 #                Lnm1 = 0
@@ -580,13 +586,19 @@ class CompositeBearingAssemblyOptimizer:
                     sol_x = res.x
                     status = res.status
             
-            if len(self.solutions) <= nb_sol:       
+            if nb_sol is not None:
+                if len(self.solutions) <= nb_sol:       
+                    if status >= 0:
+                        composite_bg.Update(sol_x, self.list_pos_unknown, self.list_load,
+                                            self.d_shaft_min, self.axial_pos, self.d_ext, self.length)
+                        self.solutions.append(composite_bg)
+                else:
+                    break
+            else:
                 if status >= 0:
                     composite_bg.Update(sol_x, self.list_pos_unknown, self.list_load,
                                         self.d_shaft_min, self.axial_pos, self.d_ext, self.length)
                     self.solutions.append(composite_bg)
-            else:
-                break
     
         
 class ShaftOptimizer:

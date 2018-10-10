@@ -936,7 +936,9 @@ class BearingAssembly:
         self.list_bearing = list_bearing
         self.connection_be = connection_be
         self.connection_bi = connection_bi
-        self.mass = self.MassCalculate()
+        self.mass = 0
+        for bg in self.list_bearing:
+            self.mass += bg.mass
         self.B = 0
         for bg in self.list_bearing:
             self.B += bg.B
@@ -952,12 +954,6 @@ class BearingAssembly:
         self.d_shaft_min = d_shaft_min
         self.d_ext = d_ext
         self.length = length
-        
-    def MassCalculate(self):
-        mass = 0
-        for bg in self.list_bearing:
-            mass += bg.mass
-        return mass
     
     def ExternalBearing(self, sign=1):
         B = self.B
