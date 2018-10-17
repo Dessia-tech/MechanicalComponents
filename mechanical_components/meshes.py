@@ -1110,10 +1110,10 @@ class MeshAssembly:
             if position2[1]==position1[1]:
                 if position2[2]-position1[2]>0:
                     angle0=npy.pi/2
-                    print(1)
+#                    print(1)
                 else:
                     angle0=-npy.pi/2
-                    print(2)
+#                    print(2)
             else:
                 angle0=-npy.arctan((position2[2]-position1[2])/(position2[1]-position1[1]))
                 if (position2[2]-position1[2])<0:
@@ -1133,8 +1133,8 @@ class MeshAssembly:
             C1=vm.Contour2D(Gears3D_Rotate[0])
             C2=vm.Contour2D(Gears3D_Rotate[1])
             
-            extrusion_vector1 = (self.gear_width[eng1]*x).vector
-            extrusion_vector2 = (self.gear_width[eng2]*x).vector
+            extrusion_vector1 = (self.gear_width[eng1]*x)
+            extrusion_vector2 = (self.gear_width[eng2]*x)
             
             if set_pos_dfs==0:
                 vect_x=tuple(-0.5*self.gear_width[eng1]*x.vector+[npy.dot(centers[eng1],x.vector),0,0])
@@ -1259,7 +1259,7 @@ class MeshAssembly:
                 * {node1 : [0,0]}
         """
         x_opt=self.PosAxis(position)
-        print(x_opt)
+#        print(x_opt)
         TG={}
         L1=[]
         Struct=[]
