@@ -54,12 +54,12 @@ class WiringOptimizer:
         return nx.number_connected_components(G)
         
     
-    def RouteAndCreateMaximumHarnesses(self,  wires_specs):
+    def Route(self, wires_specs):
         shortest_paths = []
         shortest_paths_lengths = []
         for wire_spec in wires_specs:
-            print(wire_spec['source'] in self.waypoints)
-            print(wire_spec['destination'] in self.waypoints)
+#            print(wire_spec['source'] in self.waypoints)
+#            print(wire_spec['destination'] in self.waypoints)
             shortest_path = nx.shortest_path(self.graph,
                                              wire_spec['source'],
                                              wire_spec['destination'],
