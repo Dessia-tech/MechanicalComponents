@@ -1,6 +1,8 @@
 exclude compile.py
 recursive-include scripts/ *.py
-prune mechanical_components/optimization/
+exclude mechanical_components/optimization/bearings.py
+exclude mechanical_components/optimization/meshes.py
+exclude mechanical_components/optimization/wires.py
 global-exclude *_protected.pyx
 prune .git
 
