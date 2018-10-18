@@ -1,3 +1,6 @@
-include compile.py
-include mechanical_components/catalogs/dico_bearings_ISO.py
+exclude compile.py
 recursive-include scripts/ *.py
+prune mechanical_components/optimization/
+global-exclude *_protected.pyx
+prune .git
+
