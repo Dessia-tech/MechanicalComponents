@@ -60,10 +60,10 @@ protected_files = ['mechanical_components/optimization/bearings.py',
 
 error_msg = 'Error, report this error to DessIA support with this traceback token: {}'.format(hashlib.sha256(str(mac).encode()).hexdigest())
 protection_lines = ['valid_license = True\n',
-                    't = time.time()\n',
-                    'if t > {}:\n'.format(expiration), 
+                    't_execution = time.time()\n',
+                    'if t_execution > {}:\n'.format(expiration), 
                     '    valid_license = False\n',
-                    'if t < {}:\n'.format(not_before),
+                    'if t_execution < {}:\n'.format(not_before),
                     '    valid_license = False\n',
                     'if getnode() != {}:\n'.format(mac),
                     '    valid_license = False\n',
