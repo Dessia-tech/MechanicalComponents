@@ -21,10 +21,12 @@ p7 = vm.Point3D((0, 0, 0.32))
 waypoints = [p1, p2, p3, p4, p5, p6, p7]
 routes = [(p1, p2), (p2, p4), (p2, p4), (p4, p6), (p3, p6), (p6, p7)]
 
-wires_specs = [{'source': p1, 'destination': p7, 'diameter': 0.008},
-               {'source': p3, 'destination': p7, 'diameter': 0.006}]
+wires_specs = [{'source': p1, 'destination': p7, 'diameter': 0.008, 'name': 'wire1'},
+               {'source': p3, 'destination': p7, 'diameter': 0.006, 'name': 'wire2'}]
 
-wo = wires_opt.WiringOptimizer(waypoints, routes, wires_specs)
-wiring = wo.Optimize()
+wo = wires_opt.WiringOptimizer(waypoints, routes)
+wiring = wo.Route(wires_specs)
+
+wiring.Draw()
 
 wiring.CADExport()
