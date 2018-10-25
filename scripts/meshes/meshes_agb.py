@@ -38,7 +38,10 @@ print('Number of solutions:',len(GA.solutions))
 #solution=GA.solutions[-1]
 #solution.SVGExport('name.txt',{6 : [0,0], 4 : [0.5,0]})
 #solution.FreeCADExport('meshes3')
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> master
 

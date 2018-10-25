@@ -34,7 +34,7 @@ for i,b in enumerate(C1.solutions):
 #    v=b.VolumeModel()
     b.FreeCADExport(fcstd_filepath = 'Bearing_{}'.format(i), python_path = '/Applications/FreeCAD.app/Contents/MacOS/FreeCADCmd',
             path_lib_freecad = '/Applications/FreeCAD.app/Contents/lib')
-    print(b.CheckFNRRules(Fr, Fa, N))
+#    print(b.CheckFNRRules(Fr, Fa, N))
     
 ##Test 2
 #Fa=1340.1788731883905

@@ -973,3 +973,4 @@ class ShaftOptimizer:
 #df=B1.Optimization([0.02,0.03],[0.035,0.045],[0.01,0.02],100,100,1,1,1)
 #print(df.loc[:,['d','D','B']])
 
+

@@ -61,3 +61,4 @@ for i_bearing, (Fa, Fr, N, Lnm) in enumerate([[0.0, 307.9870364871444, 2027.2722
     
     
 
+
