@@ -10,7 +10,7 @@ del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.bearings as bearings
 import numpy as npy
 
-C1=bearings.BearingContinuousOptimizer()
+C1=bearings.RollerBearingContinuousOptimizer()
 
 #Test 1
 Fa = [2000]
@@ -20,17 +20,19 @@ t = [250000/30*3600]
 T = [70]
 L10 = 1500
 
-C1.Optimization(d={'min':0.02,'max':0.1},
-                    D={'min':0.04,'max':0.15},
-                    B={'min':0.01,'max':0.1},
-                    Lnm={'min':L10,'max':npy.inf},
+C1.Optimization(d = {'min':0.02,'max':0.1},
+                    D = {'min':0.04,'max':0.15},
+                    B = {'min':0.01,'max':0.1},
+                    Lnm = {'min':L10,'max':npy.inf},
 #                    L10={'min':L10,'max':npy.inf},
-                    Fr=Fr,Fa=Fa,N=N, t = t, T = T,typ='NF',nb_sol=10,
-                    verbose=True)
+                    Fr = Fr, Fa = Fa, N = N, t = t, T = T, typ = 'NF', 
+                    nb_sol = 10,
+                    verbose = True)
 
 for i,b in enumerate(C1.solutions):
 #    v=b.VolumeModel()
-    b.FreeCADExport('Bearing_{}'.format(i))
+    b.FreeCADExport(name = 'Bearing_{}'.format(i), python_path = '/Applications/FreeCAD.app/Contents/MacOS/FreeCADCmd',
+            path_lib_freecad = '/Applications/FreeCAD.app/Contents/lib')
     print(b.CheckFNRRules(Fr, Fa, N))
     
 ##Test 2

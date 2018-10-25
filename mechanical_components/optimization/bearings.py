@@ -9,7 +9,7 @@ Created on Fri Aug 17 02:14:21 2018
 from mechanical_components.bearings import oil_iso_vg_1500, material_iso, dico_rlts_iso,dico_rules,dico_roller_iso
 from mechanical_components.bearings import ConceptRadialBallBearing, ConceptAngularBallBearing, \
         ConceptSphericalBallBearing, ConceptRadialRollerBearing, ConceptTaperedRollerBearing, \
-        CompositiveBearingAssembly, BearingAssembly
+        CompositiveBearingAssembly, BearingAssembly, RadialRollerBearing
 import numpy as npy
 from scipy.optimize import minimize
 import pandas
@@ -26,7 +26,7 @@ import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 
 # TODO: Cumulative damages
-class BearingContinuousOptimizer:
+class RollerBearingContinuousOptimizer:
     """
     Objet avec 3 fonctions de selection des roulements cylindriques
      * Combinatoire sur les dimensions externe ISO
@@ -167,7 +167,7 @@ class BearingContinuousOptimizer:
             [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup]=liste_sol_roller_iso[fonct_sort[i]]
             i+=1
             # Var X: (E,D1,d1)
-            R1=RadialRollerBearing('N',B,d,D,0,0,Lw,Dw,rsmin,0,0,0,1,0)
+            R1 = RadialRollerBearing(d, D, B, i = 1, Z = 0, Lw = Lw, Dw = Dw, radius = rsmin)
             def fun(x):
                 obj=0
                 F=x[0]-2*Dw
@@ -202,7 +202,7 @@ class BearingContinuousOptimizer:
                 if (min(ineg(res.x))>=0):
                     valid_optim=0
                     
-            #Validation finale vis à vis des brones du CDC
+            #Validation finale vis à vis des bornes du CDC
             if valid_optim==0:
                 x_opt=res.x
                 F=x_opt[0]-2*Dw
@@ -293,11 +293,38 @@ class BearingAssemblyOptimizer:
                 continue
             elif (behavior_link is 0) and (behavior_assembly in ['p', 'n']):
                 continue
+            
             # selection combinatory
-            if (('ang_p' in li_rlts) or ('ang_n' in li_rlts)) and \
-                        (('tap_p' in li_rlts) or ('tap_n' in li_rlts)):
+            # if one angular we don't want a tapered and so on
+            if (('ang_p' in li_rlts) or ('ang_n' in li_rlts)) and (('tap_p' in li_rlts) or ('tap_n' in li_rlts)):
                 continue
+            #if 'n' and 'p' so we want two tappered or two angular
+            if ('p' in li_rlts_temp) and ('n' in li_rlts_temp): 
+                if (('tap_p' in li_rlts) and ('tap_n' in li_rlts)):
+                    pass
+                elif (('ang_p' in li_rlts) and ('ang_n' in li_rlts)):
+                    pass
+                else:
+                    continue
+                
+            if behavior_link in ['pn', 'p']:
+                if typ_rlts[li_rlts[0]] in ['n', 0]:
+                    continue
+                if typ_rlts[li_rlts[-1]] in ['n', 0]:
+                    continue
+                loc_axial_load = []
+                ind_bg_axial = 0
+                for num_bg, bg in enumerate(li_rlts[0:-1]):
+                    if bg == li_rlts[num_bg + 1]:
+                        ind_bg_axial += 1
+                    else:
+                        loc_axial_load.append(ind_bg_axial)
+                        ind_bg_axial = 0
+                    
+                        
+#            if behavior_link in ['pn', 'n']:
 
+                
             if behavior_link is 'pn':
                 mount = {'be':['p','n'], 'bi':['p','n']}
             elif behavior_link is 'p':

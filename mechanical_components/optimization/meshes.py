@@ -707,8 +707,8 @@ class MeshAssemblyOptimizer:
                 if eng2 not in list_gear:
                     list_gear.append(eng2)
         number_mesh=0
-        for list_connections in connections:
-            for (eng1,eng2) in list_connections:
+        for gs in connections:
+            for (eng1,eng2) in gs:
                 number_mesh+=1
                     
         # default parameters

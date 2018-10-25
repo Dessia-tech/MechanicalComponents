@@ -68,6 +68,6 @@ GA.SearchOptimumCD(nb_sol=1, verbose=True)
 #Export SVG and FreeCAD
 print('Nombre de solutions convergés:',len(GA.solutions))
 solution=GA.solutions[-1]
-solution.SVGExport('name.txt',{0 : [0,0]})
+solution.SVGExport('name.txt',{0 : [0.1,0]})
 #solution.FreeCADExport('Gears1',centers = {0 : (0,0.117*npy.sin(0.1),0.117*npy.cos(0.1)),1 : (0,0,0)})
 

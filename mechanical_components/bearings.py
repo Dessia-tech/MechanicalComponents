@@ -7,6 +7,8 @@ import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 import math
 from scipy.optimize import minimize,fsolve
+import networkx as nx
+import matplotlib.pyplot as plt
 
 import volmdlr as vm
 import volmdlr.primitives2D as primitives2D
@@ -283,11 +285,11 @@ class RadialBearing:
         radius=self.F/2.+self.jeu+self.Dw/2.
         rol=[]
         theta=2*npy.pi/self.Z
-        print(theta)
+        
         for zi in range(int(self.Z)):
-            center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
-            rol.append(primitives3D.RevolvedProfile(center_roller, x, z, [ROL],
-                                                    center_roller, x,
+            centeradius = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
+            rol.append(primitives3D.RevolvedProfile(centeradius, x, z, [ROL],
+                                                    centeradius, x,
                                                     angle=math.pi,name='rol'))
         
         tot=[irc,erc]+rol
@@ -297,6 +299,25 @@ class RadialBearing:
     def FreeCADExport(self, name, python_path, path_lib_freecad='/usr/lib/freecad/lib', export_types=['fcstd']):
         model = self.VolumeModel()
         model.FreeCADExport(name, python_path, path_lib_freecad, export_types)
+        
+    def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None]):
+
+        if G is None:
+            G = nx.DiGraph()
+            nd_m = 0
+        else:
+            nd_m = max([a for a in li_nd if a is not None] + [max(G.nodes)])
+        li = li_nd
+        for pos, nd in enumerate(li_nd):
+            if nd is None:
+                li[pos] = nd_m + 1
+                nd_m = li[pos]
+        G.add_edges_from([(li[4], li[0])])
+        G.add_edges_from([(li[1], li[5])])
+        G.add_edges_from([(li[6], li[2])])
+        G.add_edges_from([(li[3], li[7])])
+
+        return G, li
 
     
 # =============================================================
@@ -316,6 +337,7 @@ class ConceptRadialBallBearing(RadialBearing):
                  material=material_iso, typ_contact=None, mass=None):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact, mass)
         self.coeff_baselife = 3.
+        self.name = 'RadialBallBearing'
         
         # estimation for the graph 2D description
         h1 = self.Dw/2. - (self.E - self.D1)/2.
@@ -410,6 +432,21 @@ class ConceptRadialBallBearing(RadialBearing):
         bearing_inf = bearing_sup.Rotation(vm.Point2D((0, 0)), npy.pi, True)
         bg = vm.Contour2D([bearing_sup, bearing_inf])
         return bg
+    
+    def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None], pos_x=0):
+        
+        G, li = RadialBearing.Graph(self, G, li_nd)
+        
+        G.add_edges_from([(li[6], li[0])])
+        G.add_edges_from([(li[1], li[7])])
+        G.add_edges_from([(li[4], li[2])])
+        G.add_edges_from([(li[3], li[5])])
+        decal_y = 0.1
+        li_pos = {li[0]: (pos_x, 1), li[1]: (pos_x, 1 - decal_y), 
+                  li[2]: (pos_x, decal_y), li[3]: (pos_x, 0),
+                  li[4]: (pos_x + 1, 1), li[5]: (pos_x + 1, 1 - decal_y), 
+                  li[6]: (pos_x + 1, decal_y), li[7]: (pos_x + 1, 0)}
+        return G, li, li_pos
         
 class ConceptAngularBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -418,6 +455,7 @@ class ConceptAngularBallBearing(RadialBearing):
                                typ_contact, mass)
         self.coeff_baselife = 3.
         self.direction = direction
+        self.name = 'AngularBallBearing'
         
         # estimation for the graph 2D description
         h1 = self.Dw/2. - (self.E - self.D1)/2.
@@ -510,7 +548,7 @@ class ConceptAngularBallBearing(RadialBearing):
             pbi5 = vm.Point2D((sign_H*self.B/2., sign_V*self.d1/2.))
             pbi6 = pbi5.Translation((-sign_H*self.h1, 0))
             bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius, 
-                                                 2: self.radius, 3: self.radius, 4: self.radius}, False)
+                                                 2: self.radius, 3: self.radius, 4: self.radius}, False, adapt_radius = True)
             cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, sign_V*self.F/2)), pbi6)
             bearing = vm.Contour2D([bi1, cbi1])
             return bearing
@@ -527,8 +565,7 @@ class ConceptAngularBallBearing(RadialBearing):
             pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
             pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*self.D2/2.))
             pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h2), sign_V*(self.Dpw/2. + self.Dw/2.*0.95)))
-            be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 
-                                                 2: self.radius, 3: self.radius, 4: self.radius}, False)
+            be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius}, False, adapt_radius = True)
             cbe1 = vm.Arc2D(pbe1, vm.Point2D((0, sign_V*self.E/2)), pbe6)
             bearing = vm.Contour2D([be1, cbe1])
             return bearing
@@ -551,15 +588,54 @@ class ConceptAngularBallBearing(RadialBearing):
         ball = self.RollingContour()
         ball_sup = ball.Translation((0, self.Dpw/2.), True)
         ball_inf = ball.Translation((0, -self.Dpw/2.), True)
-        
         bg = vm.Contour2D([be_sup, bi_sup, ball_sup, be_inf, bi_inf, ball_inf])
         return bg
+    
+    def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None], pos_x=0):
+        
+        G, li = RadialBearing.Graph(self, G, li_nd)
+        li.extend([max(li) + 1, max(li) + 2, max(li) + 3])
+    
+        decal_x = 0.3
+        decal_y = 0.1
+    
+        if self.direction == 1:
+            G.add_edges_from([(li[4], li[8])])
+            G.add_edges_from([(li[8], li[2])])
+            G.add_edges_from([(li[3], li[9])])
+            G.add_edges_from([(li[9], li[5])])
+            G.add_edges_from([(li[10], li[8])])
+            G.add_edges_from([(li[10], li[9])])
+            li_pos = {li[0]: (pos_x + decal_x, 1), li[1]: (pos_x + decal_x, 1 - decal_y), 
+              li[2]: (pos_x, decal_y), li[3]: (pos_x, 0),
+              li[4]: (pos_x + 1, 1), li[5]: (pos_x + 1, 1 - decal_y), 
+              li[6]: (pos_x + 1 - decal_x, decal_y), li[7]: (pos_x + 1 - decal_x, 0)}
+            li_pos[li[8]] = ((li_pos[li[4]][0] + li_pos[li[2]][0])/2., (li_pos[li[4]][1] + li_pos[li[2]][1])/2.)
+            li_pos[li[9]] = ((li_pos[li[5]][0] + li_pos[li[3]][0])/2., (li_pos[li[5]][1] + li_pos[li[3]][1])/2.)
+            li_pos[li[10]] = ((li_pos[li[3]][0] + li_pos[li[7]][0])/2., -0.5)
+        elif self.direction == -1:
+            G.add_edges_from([(li[1], li[8])])
+            G.add_edges_from([(li[8], li[7])])
+            G.add_edges_from([(li[6], li[9])])
+            G.add_edges_from([(li[9], li[0])])
+            G.add_edges_from([(li[10], li[8])])
+            G.add_edges_from([(li[10], li[9])])
+            li_pos = {li[0]: (pos_x, 1), li[1]: (pos_x, 1 - decal_y), 
+              li[2]: (pos_x + decal_x, decal_y), li[3]: (pos_x + decal_x, 0),
+              li[4]: (pos_x + 1 - decal_x, 1), li[5]: (pos_x + 1 - decal_x, 1 - decal_y), 
+              li[6]: (pos_x + 1, decal_y), li[7]: (pos_x + 1, 0)}
+            li_pos[li[8]] = ((li_pos[li[1]][0] + li_pos[li[7]][0])/2., (li_pos[li[1]][1] + li_pos[li[7]][1])/2.)
+            li_pos[li[9]] = ((li_pos[li[6]][0] + li_pos[li[0]][0])/2., (li_pos[li[6]][1] + li_pos[li[0]][1])/2.)
+            li_pos[li[10]] = ((li_pos[li[3]][0] + li_pos[li[7]][0])/2., -0.5)
+            
+        return G, li, li_pos
             
 class ConceptSphericalBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, typ_contact=None, mass=None):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact, mass)
         self.coeff_baselife = 3.
+        self.name = 'SphericalBallBearing'
         
     def EquivalentStaticLoad(self, fr, fa=None):
         #Charge radiale statique équivalente
@@ -614,6 +690,7 @@ class ConceptRadialRollerBearing(RadialBearing):
         self.coeff_baselife = 10/3.
         self.direction = direction
         self.typ = typ
+        self.name = 'RadialRollerBearing'
         
         # estimation for the graph 2D description
         self.Dpw = (self.d + self.D)/2.
@@ -810,6 +887,15 @@ class ConceptRadialRollerBearing(RadialBearing):
                                              1: self.radius, 2: self.radius, 3: self.radius}, True)
         return vm.Contour2D([rol])
     
+    def RollingContourCAD(self):
+        
+        p1 = vm.Point2D((-self.Lw/2., 0))
+        p2 = vm.Point2D((-self.Lw/2., self.Dw/2.))
+        p3 = vm.Point2D((self.Lw/2., self.Dw/2.))
+        p4 = vm.Point2D((self.Lw/2., 0))
+        rol = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4], {1: self.radius, 2: self.radius}, True)
+        return vm.Contour2D([rol])
+    
     def Plot(self):
         
         be_sup = self.ExternalRingContour(1)
@@ -823,12 +909,36 @@ class ConceptRadialRollerBearing(RadialBearing):
         bg = vm.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
         return bg
     
-class ConceptTaperedRollerBearing(ConceptRadialRollerBearing):
+    def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None], pos_x=0):
+        
+        G, li = RadialBearing.Graph(self, G, li_nd)
+        
+        if self.typ in ['NUP']:
+            G.add_edges_from([(li[6], li[0])])
+            G.add_edges_from([(li[1], li[7])])
+            G.add_edges_from([(li[4], li[2])])
+            G.add_edges_from([(li[3], li[5])])
+        elif (self.typ == 'NJ' and self.direction == 1) or (self.typ == 'NF' and self.direction == -1):
+            G.add_edges_from([(li[4], li[2])])
+            G.add_edges_from([(li[3], li[5])])
+        elif (self.typ == 'NJ' and self.direction == -1) or (self.typ == 'NF' and self.direction == 1):
+            G.add_edges_from([(li[6], li[0])])
+            G.add_edges_from([(li[1], li[7])])
+            
+        decal_y = 0.1
+        li_pos = {li[0]: (pos_x, 1), li[1]: (pos_x, 1 - decal_y), 
+                  li[2]: (pos_x, decal_y), li[3]: (pos_x, 0),
+                  li[4]: (pos_x + 1, 1), li[5]: (pos_x + 1, 1 - decal_y), 
+                  li[6]: (pos_x + 1, decal_y), li[7]: (pos_x + 1, 0)}
+        return G, li, li_pos
+    
+class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBallBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, typ_contact='linear_contact', direction=1, mass=None):
         ConceptRadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, 
                                             material, typ_contact, direction, mass=mass)
         self.coeff_baselife = 10/3.
+        self.name = 'TaperedRollerBearing'
         
         # estimation for the graph 2D description
         self.Dpw = (self.d + self.D)/2.
@@ -930,6 +1040,12 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing):
         bg = vm.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
         return bg
     
+    def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None], pos_x=0):
+        
+        G, li, li_pos = ConceptAngularBallBearing.Graph(self, G, li_nd, pos_x)
+            
+        return G, li, li_pos
+    
 class BearingAssembly:
     def __init__(self, list_bearing, internal_pre_load=0, 
                  connection_bi=['n', 'p'], connection_be=['n', 'p']):
@@ -948,6 +1064,14 @@ class BearingAssembly:
         self.d = npy.inf
         for bg in self.list_bearing:
             self.d = min(self.d, bg.d)
+            
+        G, positions, li_axial_link, nd_axial_load = self.Graph()
+        plt.figure()
+        nx.draw_networkx(G, pos = positions)
+            
+        self.graph = G
+        check = self.CheckViability(li_axial_link, nd_axial_load)
+        print(check)
             
     def Update(self, pos, d_shaft_min, d_ext, length):
         self.pos_x = pos
@@ -1014,6 +1138,7 @@ class BearingAssembly:
         pos_m = -self.B/2.
         for bg in self.list_bearing:
             cont = bg.Plot()
+            print(cont)
             cont = cont.Translation((pos_m + bg.B/2., 0), True)
             pos_m += bg.B
             contour.append(cont)
@@ -1028,9 +1153,77 @@ class BearingAssembly:
         contour_box = contour_box.Translation((pos, 0), True)
         contour_box.MPLPlot(a,'-r')
     
-#    def BearingLoad(self, fa, fr):
+    def Graph(self):
+        bg_0 = self.list_bearing[0]
+        G, li, li_pos = bg_0.Graph()
+        positions = li_pos
         
+        li_axial_link = li[0:8]
+        nd_axial_load = {}
+        if len(li) > 8:
+            nd_axial_load[0] = li[-3:-1]
+            
+        for pos, bg in enumerate(self.list_bearing[1:]):
+            if bg_0.name in ['RadialRollerBearing', 'RadialBallBearing']:
+                if bg.name in ['RadialRollerBearing', 'RadialBallBearing']:
+                    li_m = li[4: 8] + [None]*4
+                elif bg.direction == 1:
+                    li_m = li[4: 6] + [None]*6
+                elif bg.direction == -1:
+                    li_m = [None]*2 + li[6: 8] + [None]*4
+            elif bg_0.direction == 1:
+                if bg.name in ['RadialRollerBearing', 'RadialBallBearing']:
+                    li_m = [None]*2 + li[6: 8] + [None]*4
+                elif bg.direction == 1:
+                    li_m = li[4: 8] + [None]*4
+                elif bg.direction == -1:
+                    li_m = [None]*2 + li[6: 8] + [None]*4
+            elif bg_0.direction == -1:
+                if bg.name in ['RadialRollerBearing', 'RadialBallBearing']:
+                    li_m = li[4: 6] + [None]*6
+                elif bg.direction == 1:
+                    li_m = li[4: 6] + [None]*6
+                elif bg.direction == -1:
+                    li_m = li[4: 8] + [None]*4
+            G, li, li_pos = bg.Graph(G, li_m, pos + 1)
+            li_axial_link[4:8] = li[4:8]
+            if len(li) > 8:
+                nd_axial_load[pos + 1] = li[-3:-1]
+            positions = dict(list(li_pos.items()) + list(positions.items()))
+            bg_0 = bg
+        return G, positions, li_axial_link, nd_axial_load
+    
+    def CheckViability(self, li_axial_link, nd_axial_load):
+        li_link = []
+        if 'n' in self.connection_be:
+            li_link.append(li_axial_link[0])
+        if 'p' in self.connection_be:
+            li_link.append(li_axial_link[5])
+        if 'n' in self.connection_bi:
+            li_link.append(li_axial_link[2])
+        if 'p' in self.connection_bi:
+            li_link.append(li_axial_link[7])
         
+        print(li_link, li_axial_link)
+        print(self.connection_be, self.connection_bi)
+        print(nd_axial_load)
+        
+        valid = True
+        for pos, li_nd in nd_axial_load.items():
+            for nd in li_nd:
+                valid_iter = False
+                for bg in li_link:
+                    if nx.has_path(self.graph, nd, bg):
+            #            short_path = [p for p in nx.all_shortest_paths(G,source=ipt, target=bg)]
+                        valid_iter = True
+                if not valid_iter:
+                    valid = False
+        return valid
+    
+    def BearingAssemblyLoad(self, fa, fr):
+        G, positions, li_axial_link, nd_axial_load = self.Graph()
+        return G, positions
+    
 class CompositiveBearingAssembly:
     def __init__(self, list_bearing_assembly, list_position=None, pre_load=0, pos_x=None):
         
@@ -1083,6 +1276,12 @@ class CompositiveBearingAssembly:
         
         for assembly_bg, pos in zip(self.list_bearing_assembly, self.pos_x):
             assembly_bg.Plot(pos, a)
+            
+    def Graph(self):
+        for li_bg in self.list_bearing_assembly:
+            G, positions, li_axial_link, nd_axial_load = li_bg.Graph()
+            plt.figure()
+            nx.draw_networkx(G, pos = positions)
     
     def ShaftLoad(self, pos1, pos2, list_pos_unknown, list_load, list_torque):
         
@@ -1103,6 +1302,9 @@ class CompositiveBearingAssembly:
         t1 = mech.GlobalLinkageForces(bearing1,1)
         fa1 = -t1[0]
         fr1 = (t1[1]**2 + t1[2]**2)**(0.5)
+        for li_bg in self.list_bearing_assembly:
+            fa = li_bg.BearingAssemblyLoad(fa = 0, fr = fr1)
+        fa1 = 1
         t2 = mech.GlobalLinkageForces(bearing2,1)
         fa2 = -t2[0]
         fr2 = (t2[1]**2 + t2[2]**2)**(0.5)
@@ -1111,21 +1313,30 @@ class CompositiveBearingAssembly:
 
 class RadialRollerBearing(ConceptRadialRollerBearing):
     #Roulement à rouleaux
-    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i, 
-                 alpha, bm=1.1, oil=oil_iso_vg_1500, material=material_iso):
+    def __init__(self, d, D, B, i, Z, Dw, d1=None, D1=None, Lw=None, radius=None, E=None, F=None, 
+                 alpha=0, bm=1.1, oil=oil_iso_vg_1500, material=material_iso, direction=1, typ='N'):
         ConceptRadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha ,
-                                oil, material, typ_contact = 'linear_contact')
-        self.typ = typ
-        self.d1 = d1
-        self.D1 = D1
-        self.E = E
-        self.F = F
+                                oil = oil, material = material, typ_contact = 'linear_contact',
+                                direction = direction, typ = typ)
+
         #diametre rouleau moyen
         self.Dwe = Dw
-        self.Lw = Lw
-        self.r_roller = r_roller
         self.bm = bm
-        self.Dpw,self.Lwe,self.jeu,self.ep = self.DefParam()
+        
+        if d1 is not None:
+            self.d1 = d1
+        if D1 is not None:
+            self.D1 = D1
+        if Lw is not None:
+            self.Lw = Lw
+        if E is not None:
+            self.E = E
+        if F is not None:
+            self.F = F
+        if radius is not None:
+            self.radius = radius
+                
+        self.Dpw, self.Lwe, self.jeu, self.ep = self.DefParam()
         self.mass = self.Mass()
         
     def __str__(self):
@@ -1145,7 +1356,7 @@ class RadialRollerBearing(ConceptRadialRollerBearing):
         
     def DefParam(self):
         Dpw = (self.E+self.F)/2.
-        Lwe = self.Lw-2*self.r_roller
+        Lwe = self.Lw-2*self.radius
         jeu = (self.E-self.F-2*self.Dw)/4.
         ep = (self.B-self.Lw-2*jeu)/2.
         return Dpw,Lwe,jeu,ep
@@ -1202,90 +1413,6 @@ class RadialRollerBearing(ConceptRadialRollerBearing):
         d['material'] = self.material.Dict()
         return d
     
-#    def InternalRingContour(self):
-#        if self.typ == 'NU':
-#            p = [vm.Point2D((0,self.d/2.))]
-#            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
-#            p.append(vm.Point2D((-self.B/2.,self.F/2.)))
-#            p.append(vm.Point2D((self.B/2.,self.F/2.)))
-#            p.append(vm.Point2D((self.B/2.,self.d/2.)))
-#            p.append(p[0])
-#            # TODO handle radius of rollers
-##            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller},False).primitives)
-#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
-#        elif self.typ == 'N' or self.typ == 'NF':
-#            p = [vm.Point2D((0,self.d/2.))]
-#            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
-#            p.append(vm.Point2D((-self.B/2.,self.d1/2.)))
-#            p.append(vm.Point2D((-self.B/2.+self.ep,self.d1/2.)))
-#            p.append(vm.Point2D((-self.B/2.+self.ep,self.F/2.)))
-#            p.append(vm.Point2D((self.B/2.-self.ep,self.F/2.)))
-#            p.append(vm.Point2D((self.B/2.-self.ep,self.d1/2.)))
-#            p.append(vm.Point2D((self.B/2.,self.d1/2.)))
-#            p.append(vm.Point2D((self.B/2.,self.d/2.)))
-#            p.append(p[0])
-##            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
-#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
-#        elif self.typ == 'NJ':
-#            p = [vm.Point2D((0,self.d/2.))]
-#            p.append(vm.Point2D((-self.B/2.,self.d/2.)))
-#            p.append(vm.Point2D((-self.B/2.,self.d1/2.)))
-#            p.append(vm.Point2D((-self.B/2.+self.ep,self.d1/2.)))
-#            p.append(vm.Point2D((-self.B/2.+self.ep,self.F/2.)))
-#            p.append(vm.Point2D((self.B/2.,self.F/2.)))
-#            p.append(vm.Point2D((self.B/2.,self.d/2.)))
-#            p.append(p[0])
-##            ref=vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
-#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{},False).primitives)
-#        return ref
-#    
-#    def ExternalRingContour(self):
-#        if self.typ == 'N':
-#            p = [vm.Point2D((0,self.E/2.))]
-#            p.append(vm.Point2D((-self.B/2.,self.E/2.)))
-#            p.append(vm.Point2D((-self.B/2.,self.D/2.)))
-#            p.append(vm.Point2D((self.B/2.,self.D/2.)))
-#            p.append(vm.Point2D((self.B/2.,self.E/2.)))
-#            p.append(p[0])
-#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,
-#                            3:self.r_roller,4:self.r_roller},False).primitives)
-#        elif self.typ == 'NU' or self.typ == 'NJ':
-#            p = [vm.Point2D((0,self.E/2.))]
-#            p.append(vm.Point2D((-self.B/2.+self.ep,self.E/2)))
-#            p.append(vm.Point2D((-self.B/2.+self.ep,self.D1/2)))
-#            p.append(vm.Point2D((-self.B/2.,self.D1/2.)))
-#            p.append(vm.Point2D((-self.B/2.,self.D/2.)))
-#            p.append(vm.Point2D((self.B/2.,self.D/2.)))
-#            p.append(vm.Point2D((self.B/2.,self.D1/2.)))
-#            p.append(vm.Point2D((self.B/2.-self.ep,self.D1/2.)))
-#            p.append(vm.Point2D((self.B/2.-self.ep,self.E/2.)))
-#            p.append(p[0])
-#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,
-#                            3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller,7:self.r_roller,8:self.r_roller},False).primitives)
-#        elif self.typ == 'NF':
-#            p = [vm.Point2D((0,self.E/2))]
-#            p.append(vm.Point2D((-self.B/2+self.ep,self.E/2)))
-#            p.append(vm.Point2D((-self.B/2+self.ep,self.D1/2)))
-#            p.append(vm.Point2D((-self.B/2,self.D1/2)))
-#            p.append(vm.Point2D((-self.B/2,self.D/2)))
-#            p.append(vm.Point2D((self.B/2,self.D/2)))
-#            p.append(vm.Point2D((self.B/2,self.E/2)))
-#            p.append(p[0])
-#            ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{1:self.r_roller,2:self.r_roller,
-#                            3:self.r_roller,4:self.r_roller,5:self.r_roller,6:self.r_roller},False).primitives)
-#        return ref
-#    
-#    def RollerContour(self):
-#        p = [vm.Point2D((0,0.))]
-#        p.append(vm.Point2D((-self.Lw/2,0.)))
-#        p.append(vm.Point2D((-self.Lw/2,self.Dw/2)))
-#        p.append(vm.Point2D((self.Lw/2,self.Dw/2)))
-#        p.append(vm.Point2D((self.Lw/2,0.)))
-#        p.append(p[0])
-#        ref = vm.Contour2D(primitives2D.RoundedLines2D(p,{2:self.r_roller,3:self.r_roller},
-#                                                       False).primitives)
-#        return ref
-        
     def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
         center = vm.Point3D(npy.round(center,6))
         x = vm.Vector3D(axis)
@@ -1304,51 +1431,51 @@ class RadialRollerBearing(ConceptRadialRollerBearing):
         ERC=self.ExternalRingContour()
         erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center, x, angle=2*math.pi,name='erc')
         #roller
-        ROL=self.RollerContour()
+        ROL=self.RollingContourCAD()
         radius=self.F/2.+self.jeu+self.Dw/2.
         rol=[]
         theta=2*npy.pi/self.Z
         for zi in range(int(self.Z)):
-            center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
-            rol.append(primitives3D.RevolvedProfile(center_roller, x, z, [ROL],
-                                                    center_roller, x,
-                                                    angle=math.pi,name='rol'))
-        
+            centeradius = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
+            rol.append(primitives3D.RevolvedProfile(centeradius, x, z, [ROL],
+                                                    centeradius, x,
+                                                    angle=2*math.pi,name='rol'))
         tot=[irc,erc]+rol
-        model=vm.VolumeModel(tot)
+        
+        model = vm.VolumeModel([('bearing', tot)])
         return model
 
-    def FreeCADExport(self,file_path,export_types=['fcstd']):
+    def FreeCADExport(self, python_path, name='python', path_lib_freecad='/usr/lib/freecad/lib',export_types=['fcstd']):
         model = self.VolumeModel()
-        model.FreeCADExport('python',file_path,'/usr/lib/freecad/lib',export_types)
+        model.FreeCADExport(name,python_path,path_lib_freecad,export_types)
 
 class DrawnCupNeedleRollerBearing(RadialRollerBearing):
     #Douille à aiguilles
-    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
+    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
                  alpha,bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
                  oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,
+        RadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
                                      F, Z, i, alpha, bm, weibull_e, weibull_c,
                                      weibull_h, B1, mu_delta, c_gamma, oil_name)
         
 class NeedleRollerBearing(RadialRollerBearing):
     #Cage à aiguilles
-    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
+    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
                  alpha, bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
                  oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,
+        RadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
                                      F, Z, i, alpha, bm, weibull_e, weibull_c,
                                      weibull_h, B1, mu_delta, c_gamma, oil_name)
 
 class SphericalRollerBearing(RadialRollerBearing):
     #Roulement à rotule à rouleaux
-    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E, F, Z, i,
+    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
                  alpha,bm=1.15, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
                  oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, r_roller, E,
+        RadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
                                      F, Z, i, alpha, bm, weibull_e, weibull_c,
                                      weibull_h, B1, mu_delta, c_gamma,
                                      oil_name)
