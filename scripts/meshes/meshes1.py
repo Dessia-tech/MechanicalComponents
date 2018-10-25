@@ -1,5 +1,5 @@
 import sys
-del sys.modules['mechanical_components.optimization']
+#del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
 from interval import interval
@@ -36,7 +36,7 @@ GA=meshes_opt.MeshAssemblyOptimizer(Z={},
                                cycle=list_cycle)
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.SearchOptimumCD(nb_sol=1,verbose=True)
+GA.OptimizeCD(nb_sol=1,verbose=True)
 print('Nombre de solutions convergés:',len(GA.solutions))
 solution=GA.solutions[-1]
 #solution.SVGExport('name.txt',{5:[0,0]})
@@ -69,7 +69,7 @@ GA=meshes_opt.MeshAssemblyOptimizer(Z={},
                                cycle=list_cycle)
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.SearchOptimumCD(nb_sol=1,verbose=True)
+GA.OptimizeCD(nb_sol=1,verbose=True)
 print('Nombre de solutions convergés:',len(GA.solutions))
 solution=GA.solutions[-1]
 #solution.SVGExport('meshes1.txt',{5:[0,0]})

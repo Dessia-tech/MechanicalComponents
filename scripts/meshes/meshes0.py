@@ -1,5 +1,5 @@
 import sys
-del sys.modules['mechanical_components.optimization']
+#del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
 from interval import interval
@@ -9,13 +9,15 @@ list_cd=[[0.117,0.117]]
 list_gear_set=[[(1,0)]]
 list_speed={1:[1000*npy.pi/30,1000*npy.pi/30],0:[4100*npy.pi/30,
                4300*npy.pi/30]}
+list_torque={1:100,0:'output'}
 
 print('#####################################')
 print('############ Decision Tree ##########')
 print('#####################################')
 GA = meshes_opt.MeshAssemblyOptimizer(Z={}, connections = list_gear_set,
                                 gear_speed = list_speed,
-                                center_distance = list_cd, verbose = True)
+                                center_distance = list_cd, verbose = True,
+                                torque = list_torque)
 
 #Optimization for a short list of architecture generate with the decision tree
 print('#####################################')
@@ -63,7 +65,7 @@ print('#####################################')
 print('######## Intelligent optimizer ######')
 print('#####################################')
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.SearchOptimumCD(nb_sol=1, verbose=True)
+GA.OptimizeCD(nb_sol=1, verbose=True)
 
 #Export SVG and FreeCAD
 print('Nombre de solutions convergés:',len(GA.solutions))

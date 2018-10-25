@@ -27,6 +27,7 @@ import volmdlr.primitives2D as primitives2D
 
 # TODO: Cumulative damages
 class RollerBearingContinuousOptimizer:
+
     """
     Objet avec 3 fonctions de selection des roulements cylindriques
      * Combinatoire sur les dimensions externe ISO
@@ -174,6 +175,7 @@ class RollerBearingContinuousOptimizer:
                 Zmax=int(2*npy.pi/(2*npy.arcsin((Dw/2)/(F/2+Dw/2))))
                 R1.Update(x[2],x[1],x[0],F,Zmax)
                 l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
+
                 obj+=(1/l10)**2
                 obj+=(x[0]-x[1])**2 #minimisation de la hauteur de l'épaulement externe
                 obj+=(F-x[2])**2 #minimisation de la hauteur de l'épaulement interne
@@ -209,6 +211,7 @@ class RollerBearingContinuousOptimizer:
                 Zmax=int(2*npy.pi/(2*npy.arcsin((Dw/2)/(F/2+Dw/2))))
                 R1.Update(x_opt[2],x_opt[1],x_opt[0],F,Zmax)
                 l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
+
                 
                 liminf_lifetime=True
                 if L10 is not None:
@@ -216,6 +219,7 @@ class RollerBearingContinuousOptimizer:
                         liminf_lifetime=False
                 if Lnm is not None:
                     lnm=R1.AdjustedLifeTime(Fr, Fa, N, t, T, R1.BaseDynamicLoad(), R1.BaseStaticLoad(), S)
+
                     if (lnm<Lnm['min']) or (lnm>Lnm['max']):
                         liminf_lifetime=False
                 if C0r is not None:
@@ -235,6 +239,7 @@ class RollerBearingContinuousOptimizer:
                         if L10 is not None:
                             print('L10: {}, specification: {}'.format(l10, L10))
                         if Lnm is not None:
+
                             print('Lnm: {}, specification: {}'.format(lnm, Lnm))
                             
 with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),'mechanical_components/catalogs/tableau_rlts_SNR.csv') as rlts_FNR:
@@ -967,3 +972,4 @@ class ShaftOptimizer:
 #B1 = BearingCatalogOptimizer()
 #df=B1.Optimization([0.02,0.03],[0.035,0.045],[0.01,0.02],100,100,1,1,1)
 #print(df.loc[:,['d','D','B']])
+

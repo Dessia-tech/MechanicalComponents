@@ -123,6 +123,7 @@ oil_iso_vg_10=Oil(iso_vg_10,dict_oil_contamination)
 class Material:
     def __init__(self, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05):
+
         """
         Definition of the object material for ring
         
@@ -136,6 +137,7 @@ class Material:
         self.B1 = B1
         self.mu_delta = mu_delta
         self.c_gamma = c_gamma
+
 
     def Dict(self):
         return self.__dict__
@@ -1415,6 +1417,7 @@ class RadialRollerBearing(ConceptRadialRollerBearing):
 
 class DrawnCupNeedleRollerBearing(RadialRollerBearing):
     #Douille à aiguilles
+
     def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
                  alpha,bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,

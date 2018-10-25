@@ -16,7 +16,7 @@ import volmdlr.primitives2D as primitives2D
 import math
 from scipy.linalg import norm
 from scipy.optimize import minimize,fsolve
-import itertools
+#import itertools
 import networkx as nx
 
 import powertransmission.tools as tools
@@ -288,9 +288,13 @@ class Rack:
         self.whole_depth=self.gear_addendum+self.gear_dedendum
         self.clearance=self.root_radius-self.root_radius*npy.sin(self.transverse_pressure_angle)
 
+
         # trochoide parameter
-        self.a=self.tooth_space/2-self.gear_dedendum*npy.tan(self.transverse_pressure_angle)-self.root_radius*npy.tan(1/2*npy.arctan(npy.cos(self.transverse_pressure_angle)/(npy.sin(self.transverse_pressure_angle))))
-        self.b=self.gear_dedendum-self.root_radius
+        self.a = (self.tooth_space/2. 
+                 - self.gear_dedendum * npy.tan(self.transverse_pressure_angle)
+                 - self.root_radius * npy.tan(0.5*npy.arctan(npy.cos(self.transverse_pressure_angle)
+                                                 /(npy.sin(self.transverse_pressure_angle)))))
+        self.b = self.gear_dedendum - self.root_radius
 
     def Update(self,module,transverse_pressure_angle=None,coeff_gear_addendum=1,
                coeff_gear_dedendum=1.25,coeff_root_radius=0.38,coeff_circular_tooth_thickness=0.5):
@@ -818,7 +822,7 @@ class MeshAssembly:
                 material[ne]=hardened_alloy_steel
         
         if torque==None:
-            torque={list_gear[0]:100,list_gear[1]:'output'}
+            torque=[{list_gear[0]:100,list_gear[1]:'output'}]
             
         if cycle==None:
             cycle={list_gear[0]:1e6}
@@ -826,11 +830,13 @@ class MeshAssembly:
         self.material=material
 
         self.DF, DB, self.connections_dfs, self.transverse_pressure_angle = self.GearGeometryParameter(Z)
+
         if len(cycle.keys())<len(self.list_gear): # the gear mesh optimizer calculate this dictionary
             self.cycle = self.CycleParameter(cycle, Z)
         else:
-            self.cycle=cycle
+            self.cycle = cycle
         dic_torque, self.normal_load, self.tangential_load, self.radial_load = self.GearTorque(Z, torque, DB)
+
         
         self.meshes={}
         for num_engr in self.list_gear:
@@ -852,7 +858,9 @@ class MeshAssembly:
                                            coeff_gear_addendum, coeff_gear_dedendum,
                                            coeff_root_radius,
                                            coeff_circular_tooth_thickness)
+
         self.gear_width,self.sigma_iso,self.sigma_lim=self.GearWidthDefinition(safety_factor,minimum_gear_width)
+
         for num_gear in self.list_gear:
             self.meshes[num_gear].gear_width=self.gear_width[num_gear]
             
@@ -1023,6 +1031,7 @@ class MeshAssembly:
         normal_load={}
         tangential_load={}
         radial_load={}
+
         for num_mesh,(eng1,eng2) in enumerate(self.connections):
             if 'output' not in torque.values():
                 dic_torque=torque
@@ -1064,18 +1073,19 @@ class MeshAssembly:
         coeff_yf_iso=self._CoeffYFIso()
         coeff_ye_iso=self._CoeffYEIso()
         coeff_yb_iso=self._CoeffYBIso()
-        
+
         sigma_lim=self.SigmaMaterialISO(safety_factor)
         gear_width={}
         for eng in self.list_gear:
             gear_width[eng]=minimum_gear_width
+
         for num_mesh,(eng1,eng2) in enumerate(self.connections):
             gear_width1=abs(self.tangential_load[num_mesh]
-                            / (sigma_lim[num_mesh][eng1]
-                                * self.meshes[eng1].rack.module)
-                            *coeff_yf_iso[num_mesh][eng1]
-                            *coeff_ye_iso[num_mesh]
-                            *coeff_yb_iso[num_mesh][eng1])
+                        / (sigma_lim[num_mesh][eng1]
+                        * self.meshes[eng1].rack.module)
+                        *coeff_yf_iso[num_mesh][eng1]
+                        *coeff_ye_iso[num_mesh]
+                        *coeff_yb_iso[num_mesh][eng1])
                             
             gear_width2=abs(self.tangential_load[num_mesh]
                             /(sigma_lim[num_mesh][eng2]

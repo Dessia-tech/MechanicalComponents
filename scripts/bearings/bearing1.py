@@ -6,7 +6,7 @@ Created on Tue May  1 17:13:16 2018
 @author: Pierrem
 """
 import sys
-del sys.modules['mechanical_components.optimization']
+#del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.bearings as bearings
 import numpy as npy
 
@@ -28,6 +28,7 @@ C1.Optimization(d = {'min':0.02,'max':0.1},
                     Fr = Fr, Fa = Fa, N = N, t = t, T = T, typ = 'NF', 
                     nb_sol = 10,
                     verbose = True)
+
 
 for i,b in enumerate(C1.solutions):
 #    v=b.VolumeModel()
