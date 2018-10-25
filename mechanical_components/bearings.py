@@ -281,7 +281,7 @@ class RadialBearing:
         ERC=self.ExternalRingContour()
         erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center, x, angle=2*math.pi,name='erc')
         #roller
-        ROL=self.RollingContour()
+        ROL=self.RollingContourCAD()
         radius=self.F/2.+self.jeu+self.Dw/2.
         rol=[]
         theta=2*npy.pi/self.Z
@@ -290,15 +290,15 @@ class RadialBearing:
             centeradius = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
             rol.append(primitives3D.RevolvedProfile(centeradius, x, z, [ROL],
                                                     centeradius, x,
-                                                    angle=math.pi,name='rol'))
+                                                    angle=2*math.pi,name='rol'))
         
         tot=[irc,erc]+rol
-        model=vm.VolumeModel(tot)
-        return model
-
-    def FreeCADExport(self, name, python_path, path_lib_freecad='/usr/lib/freecad/lib', export_types=['fcstd']):
+        model = vm.VolumeModel([('bearing', tot)])
+        return model    
+    
+    def FreeCADExport(self, fcstd_filepath, python_path='python', path_lib_freecad='/usr/lib/freecad/lib',export_types=['fcstd']):
         model = self.VolumeModel()
-        model.FreeCADExport(name, python_path, path_lib_freecad, export_types)
+        model.FreeCADExport(fcstd_filepath,python_path,path_lib_freecad,export_types)
         
     def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None]):
 
@@ -1412,42 +1412,6 @@ class RadialRollerBearing(ConceptRadialRollerBearing):
         d['oil'] = self.oil.Dict()
         d['material'] = self.material.Dict()
         return d
-    
-    def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
-        center = vm.Point3D(npy.round(center,6))
-        x = vm.Vector3D(axis)
-        x.vector = x.vector/x.Norm()
-        
-        y = x.RandomUnitNormalVector()
-        y.vector = npy.round(y.vector,3)
-        y.vector = y.vector/y.Norm() 
-        
-        z=vm.Vector3D(npy.cross(x.vector,y.vector))
-        
-        #bague interne
-        IRC=self.InternalRingContour()        
-        irc=primitives3D.RevolvedProfile(center,x, z,[IRC], center, x,angle=2*math.pi,name='irc')
-        #bague externe
-        ERC=self.ExternalRingContour()
-        erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center, x, angle=2*math.pi,name='erc')
-        #roller
-        ROL=self.RollingContourCAD()
-        radius=self.F/2.+self.jeu+self.Dw/2.
-        rol=[]
-        theta=2*npy.pi/self.Z
-        for zi in range(int(self.Z)):
-            centeradius = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
-            rol.append(primitives3D.RevolvedProfile(centeradius, x, z, [ROL],
-                                                    centeradius, x,
-                                                    angle=2*math.pi,name='rol'))
-        tot=[irc,erc]+rol
-        
-        model = vm.VolumeModel([('bearing', tot)])
-        return model
-
-    def FreeCADExport(self, python_path, name='python', path_lib_freecad='/usr/lib/freecad/lib',export_types=['fcstd']):
-        model = self.VolumeModel()
-        model.FreeCADExport(name,python_path,path_lib_freecad,export_types)
 
 class DrawnCupNeedleRollerBearing(RadialRollerBearing):
     #Douille à aiguilles

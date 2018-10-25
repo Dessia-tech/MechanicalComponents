@@ -8,9 +8,11 @@ Created on Fri Aug 17 02:13:01 2018
 
 import numpy as npy
 from scipy import interpolate
+
 import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
+
 import math
 from scipy.linalg import norm
 from scipy.optimize import minimize,fsolve
@@ -1334,14 +1336,14 @@ class MeshAssembly:
             
             if set_pos_dfs==0:
                 vect_x=tuple(-0.5*self.gear_width[eng1]*x.vector+[npy.dot(centers[eng1],x.vector),0,0])
-                t1=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z,[C1],extrusion_vector1)
+                t1=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z, C1, [], vm.Vector3D(extrusion_vector1))
                 primitives.append(t1)
         
             vect_x=tuple(-0.5*self.gear_width[eng2]*x.vector+[npy.dot(centers[eng2],x.vector),0,0])
-            t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z,[C2],extrusion_vector2)
+            t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z, C2, [], vm.Vector3D(extrusion_vector2))
             primitives.append(t2)
 
-        model=vm.VolumeModel(primitives)
+        model = vm.VolumeModel([('mesh', primitives)])
         return model
     
     def Mass(self):
@@ -1385,9 +1387,10 @@ class MeshAssembly:
 #        # Ploting axial because mesh doesn't know its width
 #        
 #        return axial_plot_data, transversal_plot_data
-
-    def FreeCADExport(self, file_path, centers = {}, axis = (1,0,0), export_types=['fcstd'], python_path = 'python',
-                      freecad_path = '/usr/lib/freecad/lib'):
+        
+    def FreeCADExport(self, fcstd_filepath, centers = {}, axis = (1,0,0), 
+                      python_path='python', path_lib_freecad='/usr/lib/freecad/lib',
+                      export_types=['fcstd']):
         """ Export 3D volume to FreeCAD
         
         :param file_path: file path for the freecad file
@@ -1397,7 +1400,7 @@ class MeshAssembly:
         :results: export of a FreeCAD file
         """
         model = self.VolumeModel(centers, axis)
-        model.FreeCADExport(python_path ,file_path, freecad_path, export_types)
+        model.FreeCADExport(fcstd_filepath,python_path,path_lib_freecad,export_types)
     
     # TODO change this function to make it like PlotData in PWT: output is dict of geometrical shapes
     def SVGExport(self,name,position):

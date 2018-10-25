@@ -82,7 +82,7 @@ for plex in GA.plex_calcul:
 print('Number of False solution is:{}'.format(compt_check_false))
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.SearchOptimumCD(nb_sol=10, verbose=True)
+GA.OptimizeCD(nb_sol=1, verbose=True)
 print('Number of solutions:',len(GA.solutions))
 solution=GA.solutions[-1]
 solution.SVGExport('meshes2.txt',{1 : [0,0]})

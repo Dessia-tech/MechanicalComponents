@@ -102,10 +102,10 @@ class CompositeMeshAssembly:
                     position_svg[num_gear]=pos
             L.extend(mesh_assembly_iter.SVGExport('gear',position_svg))
         G1=vm.Contour2D(L)
-        G1.MPLPlot()
+        G1.MPLPlot()        
         
-    def FreeCADExport(self, file_path, centers = {}, axis = (1,0,0), export_types=['fcstd'], python_path = 'python',
-                      freecad_path = '/usr/lib/freecad/lib'):
+    def FreeCADExport(self, fcstd_filepath, centers = {}, axis = (1,0,0), export_types=['fcstd'], python_path = 'python',
+                      path_lib_freecad = '/usr/lib/freecad/lib'):
         """ Export 3D volume to FreeCAD
         
         :param file_path: file path for the freecad file
@@ -114,8 +114,8 @@ class CompositeMeshAssembly:
         
         :results: export of a FreeCAD file
         """
-        model = self.VolumeModel(centers, axis)
-        model.FreeCADExport(python_path ,file_path, freecad_path, export_types)
+        for ma in self.mesh_assembly:
+            ma.FreeCADExport(fcstd_filepath, centers, axis, python_path, path_lib_freecad, export_types)
         
     def Update(self,optimizer_data):
         output_x=[]
@@ -798,7 +798,7 @@ class MeshAssemblyOptimizer:
             self.Z=var_Z
             
         print(self.Z,self.list_gear)
-        self.plex_calcul=self.AnalyzeCombination(verbose)
+        self.plex_calcul = self.AnalyzeCombination(verbose)
         
         for i,plex in enumerate(self.plex_calcul):
             plex['rack_list']=self.rack_list
@@ -1171,7 +1171,7 @@ class MeshAssemblyOptimizer:
                 if compt_nb_sol==nb_sol:
                     break
 
-    def SearchOptimumCD(self, nb_sol = 1, verbose = False,
+    def OptimizeCD(self, nb_sol = 1, verbose = False,
                         progress_callback = lambda x:x):
         """ Gear mesh assembly optimization of the nearest solution with the specifications
         
@@ -1190,13 +1190,13 @@ class MeshAssemblyOptimizer:
         fonct_entraxe=[]
         for ind_plex in sort_fonct_module[::-1]:
             fonct_entraxe.append(list_fonctionnel[ind_plex])
-            if compt_fonct_mod==5*nb_sol:
-                break
+#            if compt_fonct_mod==5*nb_sol:
+#                break
             compt_fonct_mod+=1
         list_fonct_entraxe=npy.array(fonct_entraxe)
         sort_list_fonct_entraxe=npy.argsort(list_fonct_entraxe)
         plex_analyse=[]
-        for ind_plex in range(nb_sol):
+        for ind_plex in range(min(5*nb_sol, len(self.fonctionnel))):
             plex_analyse.append(sort_fonct_module[::-1][sort_list_fonct_entraxe[ind_plex]])
         
         compt_nb_sol=0
@@ -1234,14 +1234,15 @@ class MeshAssemblyOptimizer:
                         print('valid solution n°{}'.format(compt_nb_sol))
                         for num_graph in range(len(solutions.mesh_assembly)):
                             print('Module gear set n°{}: {}'.format(num_graph,solutions.mesh_assembly[num_graph].meshes[list(solutions.mesh_assembly[num_graph].meshes.keys())[0]].rack.module))
-                    if compt_nb_sol==nb_sol:
-                        break
+                    
                 else:
                     if verbose: 
                         print('unvalid solution')
             else:
                 if verbose:
                     print('Convergence Problem')
+            if compt_nb_sol==nb_sol:
+                break
         # admissible solution are sorted toward the updated functional
         list_fonctionnel_nv=[]
         for solutions in liste_solutions:

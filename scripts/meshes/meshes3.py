@@ -89,12 +89,13 @@ for plex in GA.plex_calcul:
 print('Number of False solution is:{}'.format(compt_check_false))
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.SearchOptimumCD(nb_sol=10, verbose=True)
-print('Number of solutions:',len(GA.solutions))
-solution=GA.solutions[-1]
-solution.SVGExport('meshes3.txt',{6 : [0,0], 4 : [0.5,0]})
+GA.OptimizeCD(nb_sol = 1, verbose = True)
+print('Number of solutions:', len(GA.solutions))
+solution = GA.solutions[-1]
+#solution.SVGExport('meshes3.txt', {6 : [0,0], 4 : [0.5,0]})
 #solution.FreeCADExport('meshes3')
 
-
+solution.FreeCADExport(fcstd_filepath = 'meshes3', python_path = '/Applications/FreeCAD.app/Contents/MacOS/FreeCADCmd',
+            path_lib_freecad = '/Applications/FreeCAD.app/Contents/lib')
 
 

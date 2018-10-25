@@ -108,7 +108,7 @@ GA=meshes_opt.MeshAssemblyOptimizer(Z={},
                                cycle=list_cycle)
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.SearchOptimumCD(nb_sol=10,verbose=True)
+GA.OptimizeCD(nb_sol=10,verbose=True)
 print('Nombre de solutions convergés:',len(GA.solutions))
 solution=GA.solutions[-1]
 solution.SVGExport('meshes1.txt',{5:[0,0]})
