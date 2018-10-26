@@ -66,7 +66,8 @@ setup(name='mechanical_components',
       packages=['mechanical_components', 'mechanical_components.catalogs',
                 'mechanical_components.optimization'],
       setup_requires=['numpy'],
-      install_requires=['scipy','volmdlr','persistent', 'pandas'],
+      install_requires=['scipy','volmdlr','numpy', 'pandas', 'dectree',
+                        'networkx', 'matplotlib'],
       data_files=[('mechanical_components/catalogs',['mechanical_components/catalogs/ferroflex.csv'])]
       )
 

@@ -177,6 +177,7 @@ class Wiring:
                 waypoints_draw = [line.points[0]]
             else:
                 waypoints_draw = [line.points[1]]
+
             nwaypoints = len(wire.waypoints)
             for iwaypoint in range(nwaypoints-2):
                 waypoint1_2D = wire.waypoints[iwaypoint].PlaneProjection2D(x3D, y3D)
