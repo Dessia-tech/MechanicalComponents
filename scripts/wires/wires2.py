@@ -20,7 +20,7 @@ waypoints = [p1, p2, p3, p4, p5, p6, p7]
 routes = [(p1, p2), (p7, p2), (p2, p3), (p3, p4), (p4, p5), (p4, p6)]
 
 wires_specs = [{'source': p1, 'destination': p4, 'diameter': 0.004},
-#               {'source': p7, 'destination': p5, 'diameter': 0.006},
+               {'source': p7, 'destination': p5, 'diameter': 0.006},
                {'source': p2, 'destination': p6, 'diameter': 0.003}
               ]
 wo = wires_opt.WiringOptimizer(waypoints, routes)

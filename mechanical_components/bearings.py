@@ -11,7 +11,7 @@ import math
 
 
 
-from mechanical_components.catalogs.dico_bearings_ISO \
+from mechanical_components.catalogs.ISO_bearings \
     import dico_rlts_iso,dico_roller_iso,dico_radial_clearance_iso,dico_rules
 
 

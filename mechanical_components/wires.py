@@ -171,16 +171,14 @@ class Wiring:
 
                         
         for wire in self.wires:
-            print('== Wire ==')
-#            ax.plot([w[0] for w in wire.waypoints], [w[1] for w in wire.waypoints], 'o-g') 
-            wire.waypoints[0]
-            
-            waypoints_draw = [line.points[0]]
+            waypoint0_2D = wire.waypoints[0].PlaneProjection2D(x3D, y3D)
+            line = wire_lines[wire][frozenset((wire.waypoints[0], wire.waypoints[1]))]
+            if line.points[0].PointDistance(waypoint0_2D) < line.points[1].PointDistance(waypoint0_2D):
+                waypoints_draw = [line.points[0]]
+            else:
+                waypoints_draw = [line.points[1]]
             nwaypoints = len(wire.waypoints)
-#            print(wire.waypoints)
             for iwaypoint in range(nwaypoints-2):
-#                print(wire_lines[wire])
-#                print(iwaypoint, wire.waypoints[iwaypoint], wire.waypoints[iwaypoint-1])
                 waypoint1_2D = wire.waypoints[iwaypoint].PlaneProjection2D(x3D, y3D)
                 waypoint2_2D = wire.waypoints[iwaypoint+1].PlaneProjection2D(x3D, y3D)
                 waypoint3_2D = wire.waypoints[iwaypoint+2].PlaneProjection2D(x3D, y3D)
@@ -195,12 +193,9 @@ class Wiring:
                 
                 if (line1.Length() == 0) or (line2.Length() == 0):
                     waypoints_draw.append(wire.waypoints[iwaypoint+1])
-                    print('1')
-#                    pass
                 else:
                     u1 = line1.DirectionVector(unit = True)
                     u2 = line2.DirectionVector(unit = True)
-                    print(u1, u2)
                     if abs(u1.Dot(u2)) != 1:
 #                        waypoints_draw.append(vm.Point2D.LinesIntersection(line1, line2))
                         bv = u2 - u1# bissector vector towards inner of corner
@@ -208,14 +203,12 @@ class Wiring:
 #                        bl.MPLPlot(ax, style='--')
                         i1 = vm.Point2D.LinesIntersection(bl, line1_draw)
                         i2 = vm.Point2D.LinesIntersection(bl, line2_draw)
-                        i1.MPLPlot(ax, style='xb')
-                        i2.MPLPlot(ax, style='or')
+#                        i1.MPLPlot(ax, style='xb')
+#                        i2.MPLPlot(ax, style='or')
                         if waypoint2_2D.PointDistance(i1) < waypoint2_2D.PointDistance(i2):
                             waypoints_draw.append(i2)
-                            print('2')
                         else:
                             waypoints_draw.append(i1)
-                            print('3')
 
 #                        b.Normalize()
                         
@@ -224,12 +217,17 @@ class Wiring:
                     else:
 #                        pass
                         waypoints_draw.append(line2.points[0])
-                        print('4')
-            waypoints_draw.append(wire_lines[wire][frozenset((wire.waypoints[nwaypoints-2], wire.waypoints[nwaypoints-1]))].points[0])
+
+            waypointn_2D = wire.waypoints[-1].PlaneProjection2D(x3D, y3D)
+            line = wire_lines[wire][frozenset((wire.waypoints[-2], wire.waypoints[-1]))]
+            if line.points[0].PointDistance(waypointn_2D) < line.points[1].PointDistance(waypointn_2D):
+                waypoints_draw.append(line.points[0])
+            else:
+                waypoints_draw.append(line.points[1])
             
             x = [w[0] for w in waypoints_draw]
             y = [w[1] for w in waypoints_draw]
-            ax.plot(x, y, 'o-')
+            ax.plot(x, y, 'o-k')
 
         ax.set_aspect('equal')
         return fig, ax
