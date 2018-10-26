@@ -13,6 +13,7 @@ import itertools
 import networkx as nx
 import powertransmission.tools as tools
 from scipy.optimize import minimize
+import dectree
 
 class ContinuousMeshesAssemblyOptimizer:
     """
@@ -544,7 +545,7 @@ class MeshAssemblyOptimizer:
         demul_int_min=1/9.
         demul_int_max=9
 #        print(np)
-        dt=tools.RegularDecisionTree(np)
+        dt = dectree.RegularDecisionTree(np)
         
         incr=0
         plex_calcul=[]

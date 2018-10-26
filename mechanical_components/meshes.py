@@ -1039,8 +1039,9 @@ class MeshAssembly:
         for (i,center,k) in zip(list_gear,list_center,list_rot):
             model_export=[]
             for m in i:
-                model_trans=m.Translation(center)
-                model_trans_rot=model_trans.Rotation(vm.Point2D(center),k)
+                center = vm.Point2D(center)
+                model_trans = m.Translation(center)
+                model_trans_rot = model_trans.Rotation(center, k)
                 model_export.append(model_trans_rot)
             export.append(model_export)
         return export

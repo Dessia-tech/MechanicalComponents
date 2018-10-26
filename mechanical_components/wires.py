@@ -173,8 +173,8 @@ class Wiring:
         for wire in self.wires:
             print('== Wire ==')
 #            ax.plot([w[0] for w in wire.waypoints], [w[1] for w in wire.waypoints], 'o-g') 
-            wire.waypoints[0]
-            
+            line = wire_lines[wire][frozenset((wire.waypoints[0], wire.waypoints[1]))]
+            if wire.waypoints[0].
             waypoints_draw = [line.points[0]]
             nwaypoints = len(wire.waypoints)
 #            print(wire.waypoints)
