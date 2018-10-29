@@ -261,11 +261,13 @@ class RadialRollerBearing:
                 cycles = ni * ti * 2 * math.pi
                 Pr += cycles * C
                 total_cycles += cycles
-        
-        Pr = (Pr / total_cycles) ** 0.3
-        Cr=self.BaseDynamicLoad()
-        L10=(Cr/Pr)**(10/3.)
-        return L10
+        if total_cycles == 0.:
+            return math.inf
+        else:
+            Pr = (Pr / total_cycles) ** 0.3
+            Cr = self.BaseDynamicLoad()
+            L10 = (Cr/Pr)**(10/3.)
+            return L10
         
     def AdjustedLifeTime(self, Fr, Fa, N, t, T, S=0.9):
         """
@@ -283,7 +285,7 @@ class RadialRollerBearing:
         nci_Lpi = 0.
 #        print(Fr, Fa)
         for fr, fa, n, ti, Ti  in zip(Fr, Fa, N, t, T):
-            if (fr != 0.) or (fa != 0.):
+            if (((fr != 0.) or (fa != 0.)) and (n > 0.)):
                 cycles = n * ti * 2 * math.pi
                 total_cycles += cycles
                 
@@ -296,6 +298,7 @@ class RadialRollerBearing:
                 C0r = self.BaseStaticLoad()
                 # viscosité cinématique de référence
                 if n<(1000*2*npy.pi/60.):
+                    print((n*60/(2*npy.pi)), (self.Dpw*1e3)**(-0.5))
                     nu1=45000*(n*60/(2*npy.pi))**(-0.83)*(self.Dpw*1e3)**(-0.5)
                 else:
                     nu1=4500*(n*60/(2*npy.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
@@ -327,7 +330,10 @@ class RadialRollerBearing:
     
                 Lpi = a1*a_iso*L10 # Corrected lifetime
                 nci_Lpi += cycles/Lpi
-        return total_cycles / nci_Lpi
+        if nci_Lpi > 0.:
+            return total_cycles / nci_Lpi
+        else:
+            return math.inf 
         
     def Dict(self):
 
