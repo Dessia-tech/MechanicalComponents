@@ -835,7 +835,7 @@ class MeshAssembly:
             self.cycle = self.CycleParameter(cycle, Z)
         else:
             self.cycle = cycle
-        dic_torque, self.normal_load, self.tangential_load, self.radial_load = self.GearTorque(Z, torque, DB)
+        self.torque, self.normal_load, self.tangential_load, self.radial_load = self.GearTorque(Z, torque, DB)
 
         
         self.meshes={}

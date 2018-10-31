@@ -347,8 +347,9 @@ class BearingAssemblyOptimizer:
                     list_bearing = []
                     for index_bearing, code_bearing in zip(li_bearing, li_rlts):
                         list_bearing.append(self.GenereBearing(index_bearing, code_bearing))
-                    BA = BearingAssembly(list_bearing, connection_bi = mount['bi'], 
-                                     connection_be = mount['be'])
+                    radial_load_linkage = [True]*len(list_bearing)
+                    BA = BearingAssembly(list_bearing, radial_load_linkage, connection_bi = mount['bi'], 
+                                     connection_be = mount['be'], behavior_link = behavior_link)
                     solutions.append(BA)
         solutions_sort = self.SortSolutions(solutions, sort_arg = {'min':'mass'})
         if nb_sol[0] is not None:
@@ -434,7 +435,6 @@ class BearingAssemblyOptimizer:
             if len(list(tab_rlts_temp.index)) == 0:
                 valid = False
             list_index.extend(list(tab_rlts_temp.index))
-            
         if valid:
             list_index = list(set(list_index))
     #        tab_rlts = tab_rlts.loc[tab_rlts['typ_bearing'].isin(list_typ_bearing)]
@@ -471,7 +471,7 @@ class BearingAssemblyOptimizer:
                     for index_bearing in list_optim:
                         li = tab_rlts.loc[index_bearing,'B']
                         length_iter += li
-                    if length_iter <= length[1]:
+                    if (length_iter <= length[1]) and (len(list_optim) == len(list_bearing)):
                         pd_bearing.append(list_optim)
             if nb_sol is not None:
                 return pd_bearing[0:min(nb_sol, len(pd_bearing))]

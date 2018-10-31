@@ -253,7 +253,6 @@ class ContinuousMeshesAssemblyOptimizer:
         self.connections=connections
         self.strong_link=strong_link
         self.torque=torque
-        print(self.torque)
         self.cycle=cycle
         # Initailization
         self.solutions=[]
@@ -420,7 +419,6 @@ class ContinuousMeshesAssemblyOptimizer:
                             valid_strong_ling=True
                     if valid_strong_ling:
                         torque_graph.add_edges_from([(num_gear,li_shaft2[pos_gear])],typ='same_speed')
-        print(11, self.torque)
         for num_gear,tq in self.torque.items():
             if tq=='output':
                 node_output=num_gear
@@ -716,7 +714,7 @@ class MeshAssemblyOptimizer:
                   
         # default parameters
         if len(transverse_pressure_angle.keys())<number_mesh:
-            for num_mesh in range(number_mesh):
+            for num_mesh in list_gear:
                 if num_mesh not in transverse_pressure_angle.keys():
                     transverse_pressure_angle[num_mesh]=[15/180*npy.pi,30/180*npy.pi]
 
@@ -751,12 +749,28 @@ class MeshAssemblyOptimizer:
                 speed_max=speed_interval_max
             
         if rack_list==None:
-            rack_list={0:{'name':'Optim_Module','module':[1*1e-3,2.5*1e-3],
-                          'transverse_pressure_angle_rack':[20*npy.pi/180.,20*npy.pi/180.],
-                          'coeff_gear_addendum':[1,1],
-                          'coeff_gear_dedendum':[1.25,1.25],
-                          'coeff_root_radius':[0.38,0.38],
-                          'coeff_circular_tooth_thickness':[0.5,0.5]}}
+#            rack_list={0:{'name':'Optim_Module','module':[1*1e-3,2.5*1e-3],
+#                          'transverse_pressure_angle_rack':[20*npy.pi/180.,20*npy.pi/180.],
+#                          'coeff_gear_addendum':[1,1],
+#                          'coeff_gear_dedendum':[1.25,1.25],
+#                          'coeff_root_radius':[0.38,0.38],
+#                          'coeff_circular_tooth_thickness':[0.5,0.5]}}
+            rack_list={0:{}}
+        for num_rack, rack in rack_list.items():
+            if 'module' not in rack.keys():
+                rack_list[num_rack]['module'] = [1*1e-3,2.5*1e-3]
+            if 'transverse_pressure_angle_rack' not in rack.keys():
+                rack_list[num_rack]['transverse_pressure_angle_rack'] = [20*npy.pi/180.,20*npy.pi/180.]
+            if 'coeff_gear_addendum' not in rack.keys():
+                rack_list[num_rack]['coeff_gear_addendum'] = [1,1]
+            if 'coeff_gear_dedendum' not in rack.keys():
+                rack_list[num_rack]['coeff_gear_dedendum'] = [1.25,1.25]
+            if 'coeff_root_radius' not in rack.keys():
+                rack_list[num_rack]['coeff_root_radius'] = [0.38,0.38]
+            if 'coeff_circular_tooth_thickness' not in rack.keys():
+                rack_list[num_rack]['coeff_circular_tooth_thickness'] = [0.5,0.5]
+            if 'name' not in rack.keys():
+                rack_list[num_rack]['name'] = 'Optim_Module'
                         
             
         if rack_choice==None:
@@ -800,7 +814,6 @@ class MeshAssemblyOptimizer:
             var_Z=self.AnalyseZ()
             self.Z=var_Z
             
-        print(self.Z,self.list_gear)
         self.plex_calcul = self.AnalyzeCombination(verbose)
         
         for i,plex in enumerate(self.plex_calcul):
@@ -1025,7 +1038,6 @@ class MeshAssemblyOptimizer:
                     
                 # frequncy analysis
 #                if valid:
-#                    print(2)
 #                    for freq in self.frequency:
 #                        zm=list_Z[0][dt.current_node[0]]
 #                        for engr_num,engr_ind in enumerate(dt.current_node):
@@ -1126,7 +1138,6 @@ class MeshAssemblyOptimizer:
                     rack[n]=list_rack[dt.current_node[i+nb_gear]]
                 Export={}
                 Export['Z']=gear
-#                print(gear)
                 Export['rack_choice']=rack
                 Export['center_distance'] = cd_minmax_nv
                 Export['db'] = db

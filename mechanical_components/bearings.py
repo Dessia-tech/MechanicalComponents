@@ -6,6 +6,8 @@ import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 import math
+from copy import deepcopy
+
 from scipy.optimize import minimize,fsolve
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -304,6 +306,12 @@ class RadialBearing:
         
     def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None]):
 
+        nb_bearing = 0
+        if G is not None:
+            for tup in list(G.edges(data = True)):
+                if 'bearing' in tup[2].keys():
+                    nb_bearing = max(nb_bearing, tup[2]['bearing'])
+        
         if G is None:
             G = nx.DiGraph()
             nd_m = 0
@@ -314,10 +322,10 @@ class RadialBearing:
             if nd is None:
                 li[pos] = nd_m + 1
                 nd_m = li[pos]
-        G.add_edges_from([(li[4], li[0])])
-        G.add_edges_from([(li[1], li[5])])
-        G.add_edges_from([(li[6], li[2])])
-        G.add_edges_from([(li[3], li[7])])
+        G.add_edges_from([(li[4], li[0])], typ = 'ring', bearing = nb_bearing + 1)
+        G.add_edges_from([(li[1], li[5])], typ = 'ring', bearing = nb_bearing + 1)
+        G.add_edges_from([(li[6], li[2])], typ = 'ring', bearing = nb_bearing + 1)
+        G.add_edges_from([(li[3], li[7])], typ = 'ring', bearing = nb_bearing + 1)
 
         return G, li
 
@@ -435,14 +443,29 @@ class ConceptRadialBallBearing(RadialBearing):
         bg = vm.Contour2D([bearing_sup, bearing_inf])
         return bg
     
-    def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None], pos_x=0):
+    def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None], pos_x=0, sub_graph=None, copy=False):
         
+        if copy:
+            G = deepcopy(G)
         G, li = RadialBearing.Graph(self, G, li_nd)
         
-        G.add_edges_from([(li[6], li[0])])
-        G.add_edges_from([(li[1], li[7])])
-        G.add_edges_from([(li[4], li[2])])
-        G.add_edges_from([(li[3], li[5])])
+        nb_bearing = 0
+        if G is not None:
+            for tup in list(G.edges(data = True)):
+                if 'bearing' in tup[2].keys():
+                    nb_bearing = max(nb_bearing, tup[2]['bearing'])
+                    
+        if sub_graph == 1:
+            G.add_edges_from([(li[4], li[2])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[3], li[5])], typ = 'internal', bearing = nb_bearing)
+        elif sub_graph == -1:
+            G.add_edges_from([(li[6], li[0])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[1], li[7])], typ = 'internal', bearing = nb_bearing)
+        else:
+            G.add_edges_from([(li[4], li[2])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[3], li[5])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[6], li[0])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[1], li[7])], typ = 'internal', bearing = nb_bearing)
         decal_y = 0.1
         li_pos = {li[0]: (pos_x, 1), li[1]: (pos_x, 1 - decal_y), 
                   li[2]: (pos_x, decal_y), li[3]: (pos_x, 0),
@@ -554,7 +577,7 @@ class ConceptAngularBallBearing(RadialBearing):
             cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, sign_V*self.F/2)), pbi6)
             bearing = vm.Contour2D([bi1, cbi1])
             return bearing
-        sup_contour = graph(sign_V, sign_H = self.direction)
+        sup_contour = graph(sign_V, sign_H = -self.direction)
         bearing1 = vm.Contour2D([sup_contour])
         return bearing1
         
@@ -571,7 +594,7 @@ class ConceptAngularBallBearing(RadialBearing):
             cbe1 = vm.Arc2D(pbe1, vm.Point2D((0, sign_V*self.E/2)), pbe6)
             bearing = vm.Contour2D([be1, cbe1])
             return bearing
-        sup_contour = graph(sign_V, sign_H = self.direction)
+        sup_contour = graph(sign_V, sign_H = -self.direction)
         bearing1 = vm.Contour2D([sup_contour])
         return bearing1
     
@@ -595,19 +618,25 @@ class ConceptAngularBallBearing(RadialBearing):
     
     def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None], pos_x=0):
         
+        nb_bearing = 0
+        if G is not None:
+            for tup in list(G.edges(data = True)):
+                if 'bearing' in tup[2].keys():
+                    nb_bearing = max(nb_bearing, tup[2]['bearing'])
+                    
         G, li = RadialBearing.Graph(self, G, li_nd)
-        li.extend([max(li) + 1, max(li) + 2, max(li) + 3])
-    
+        if len(li) == 8:
+            li.extend([max(li) + 1, max(li) + 2, max(li) + 3])
         decal_x = 0.3
         decal_y = 0.1
     
         if self.direction == 1:
-            G.add_edges_from([(li[4], li[8])])
-            G.add_edges_from([(li[8], li[2])])
-            G.add_edges_from([(li[3], li[9])])
-            G.add_edges_from([(li[9], li[5])])
-            G.add_edges_from([(li[10], li[8])])
-            G.add_edges_from([(li[10], li[9])])
+            G.add_edges_from([(li[4], li[8])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[8], li[2])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[3], li[9])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[9], li[5])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[10], li[8])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[10], li[9])], typ = 'internal', bearing = nb_bearing)
             li_pos = {li[0]: (pos_x + decal_x, 1), li[1]: (pos_x + decal_x, 1 - decal_y), 
               li[2]: (pos_x, decal_y), li[3]: (pos_x, 0),
               li[4]: (pos_x + 1, 1), li[5]: (pos_x + 1, 1 - decal_y), 
@@ -616,12 +645,12 @@ class ConceptAngularBallBearing(RadialBearing):
             li_pos[li[9]] = ((li_pos[li[5]][0] + li_pos[li[3]][0])/2., (li_pos[li[5]][1] + li_pos[li[3]][1])/2.)
             li_pos[li[10]] = ((li_pos[li[3]][0] + li_pos[li[7]][0])/2., -0.5)
         elif self.direction == -1:
-            G.add_edges_from([(li[1], li[8])])
-            G.add_edges_from([(li[8], li[7])])
-            G.add_edges_from([(li[6], li[9])])
-            G.add_edges_from([(li[9], li[0])])
-            G.add_edges_from([(li[10], li[8])])
-            G.add_edges_from([(li[10], li[9])])
+            G.add_edges_from([(li[1], li[8])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[8], li[7])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[6], li[9])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[9], li[0])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[10], li[8])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[10], li[9])], typ = 'internal', bearing = nb_bearing)
             li_pos = {li[0]: (pos_x, 1), li[1]: (pos_x, 1 - decal_y), 
               li[2]: (pos_x + decal_x, decal_y), li[3]: (pos_x + decal_x, 0),
               li[4]: (pos_x + 1 - decal_x, 1), li[5]: (pos_x + 1 - decal_x, 1 - decal_y), 
@@ -629,7 +658,6 @@ class ConceptAngularBallBearing(RadialBearing):
             li_pos[li[8]] = ((li_pos[li[1]][0] + li_pos[li[7]][0])/2., (li_pos[li[1]][1] + li_pos[li[7]][1])/2.)
             li_pos[li[9]] = ((li_pos[li[6]][0] + li_pos[li[0]][0])/2., (li_pos[li[6]][1] + li_pos[li[0]][1])/2.)
             li_pos[li[10]] = ((li_pos[li[3]][0] + li_pos[li[7]][0])/2., -0.5)
-            
         return G, li, li_pos
             
 class ConceptSphericalBallBearing(RadialBearing):
@@ -803,7 +831,7 @@ class ConceptRadialRollerBearing(RadialBearing):
                 pbi7 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
                 bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                                    {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
-                                    5: self.radius, 6: self.radius}, True)
+                                    5: self.radius, 6: self.radius}, True, adapt_radius = True)
             elif self.typ == 'NJ':
                 d1 = self.d1
                 d2 = self.F - 0.1*(self.F - self.d)
@@ -816,7 +844,7 @@ class ConceptRadialRollerBearing(RadialBearing):
                 pbi6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
                 bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6],
                                    {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
-                                    5: self.radius}, True)
+                                    5: self.radius}, True, adapt_radius = True)
             elif self.typ == 'NU':
                 d1 = self.F - 0.1*(self.F - self.d)
                 pbi2 = vm.Point2D((-sign_H*self.B/2., sign_V*d1/2.))
@@ -826,7 +854,8 @@ class ConceptRadialRollerBearing(RadialBearing):
                 pbi5 = vm.Point2D((sign_H*self.B/2., sign_V*d1/2.))
                 pbi6 = vm.Point2D((sign_H*(self.B/2. - self.h), sign_V*(self.F/2.)))
                 bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius, 
-                                   2: self.radius, 3: self.radius, 4: self.radius}, True)
+                                   2: self.radius, 3: self.radius, 4: self.radius}, 
+                                   True, adapt_radius = True)
             
             bearing = vm.Contour2D([bi1])
             return bearing
@@ -911,21 +940,37 @@ class ConceptRadialRollerBearing(RadialBearing):
         bg = vm.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
         return bg
     
-    def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None], pos_x=0):
+    def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None], 
+              pos_x=0, sub_graph=None, copy=False):
         
+        if copy:
+            G = deepcopy(G)
         G, li = RadialBearing.Graph(self, G, li_nd)
         
+        nb_bearing = 0
+        if G is not None:
+            for tup in list(G.edges(data = True)):
+                if 'bearing' in tup[2].keys():
+                    nb_bearing = max(nb_bearing, tup[2]['bearing'])
+                    
         if self.typ in ['NUP']:
-            G.add_edges_from([(li[6], li[0])])
-            G.add_edges_from([(li[1], li[7])])
-            G.add_edges_from([(li[4], li[2])])
-            G.add_edges_from([(li[3], li[5])])
+            if sub_graph == 1:
+                G.add_edges_from([(li[4], li[2])], typ = 'internal', bearing = nb_bearing)
+                G.add_edges_from([(li[3], li[5])], typ = 'internal', bearing = nb_bearing)
+            elif sub_graph == -1:
+                G.add_edges_from([(li[6], li[0])], typ = 'internal', bearing = nb_bearing)
+                G.add_edges_from([(li[1], li[7])], typ = 'internal', bearing = nb_bearing)
+            else:
+                G.add_edges_from([(li[4], li[2])], typ = 'internal', bearing = nb_bearing)
+                G.add_edges_from([(li[3], li[5])], typ = 'internal', bearing = nb_bearing)
+                G.add_edges_from([(li[6], li[0])], typ = 'internal', bearing = nb_bearing)
+                G.add_edges_from([(li[1], li[7])], typ = 'internal', bearing = nb_bearing)
         elif (self.typ == 'NJ' and self.direction == 1) or (self.typ == 'NF' and self.direction == -1):
-            G.add_edges_from([(li[4], li[2])])
-            G.add_edges_from([(li[3], li[5])])
+            G.add_edges_from([(li[4], li[2])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[3], li[5])], typ = 'internal', bearing = nb_bearing)
         elif (self.typ == 'NJ' and self.direction == -1) or (self.typ == 'NF' and self.direction == 1):
-            G.add_edges_from([(li[6], li[0])])
-            G.add_edges_from([(li[1], li[7])])
+            G.add_edges_from([(li[6], li[0])], typ = 'internal', bearing = nb_bearing)
+            G.add_edges_from([(li[1], li[7])], typ = 'internal', bearing = nb_bearing)
             
         decal_y = 0.1
         li_pos = {li[0]: (pos_x, 1), li[1]: (pos_x, 1 - decal_y), 
@@ -982,7 +1027,7 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBall
             
             bearing = vm.Contour2D([bi1])
             return bearing
-        contour = graph(sign_V, sign_H = self.direction)
+        contour = graph(sign_V, sign_H = -self.direction)
         bg = vm.Contour2D([contour])
         return bg
         
@@ -1008,7 +1053,7 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBall
                                                  1: self.radius, 2: self.radius, 3: self.radius}, True)
             bearing = vm.Contour2D([be1])
             return bearing
-        contour = graph(sign_V, sign_H = self.direction)
+        contour = graph(sign_V, sign_H = -self.direction)
         bg = vm.Contour2D([contour])
         return bg
     
@@ -1022,7 +1067,7 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBall
             rol = primitives2D.RoundedLineSegments2D([r1, r2, r3, r4], {0: self.radius, 
                                                  1: self.radius, 2: self.radius, 3: self.radius}, True)
             return rol
-        contour = graph(sign_V, sign_H = self.direction)
+        contour = graph(sign_V, sign_H = -self.direction)
         bg = vm.Contour2D([contour])
         return bg
     
@@ -1045,18 +1090,20 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBall
     def Graph(self, G=None, li_nd=[None, None, None, None, None, None, None, None], pos_x=0):
         
         G, li, li_pos = ConceptAngularBallBearing.Graph(self, G, li_nd, pos_x)
-            
         return G, li, li_pos
     
 class BearingAssembly:
-    def __init__(self, list_bearing, internal_pre_load=0, 
-                 connection_bi=['n', 'p'], connection_be=['n', 'p']):
+    def __init__(self, list_bearing, radial_load_linkage, internal_pre_load=0, 
+                 connection_bi=['n', 'p'], connection_be=['n', 'p'], behavior_link='pn'):
         self.list_bearing = list_bearing
+        self.radial_load_linkage = radial_load_linkage
         self.connection_be = connection_be
         self.connection_bi = connection_bi
+        self.behavior_link = behavior_link
         self.mass = 0
         for bg in self.list_bearing:
-            self.mass += bg.mass
+            if bg.mass is not None:
+                self.mass += bg.mass
         self.B = 0
         for bg in self.list_bearing:
             self.B += bg.B
@@ -1066,14 +1113,30 @@ class BearingAssembly:
         self.d = npy.inf
         for bg in self.list_bearing:
             self.d = min(self.d, bg.d)
+        
+        self.graph, self.positions, self.li_axial_link, self.nd_axial_load = self.Graph()
+        
+        li_link = []
+        if 'n' in self.connection_be:
+            li_link.append(self.li_axial_link[0])
+        if 'p' in self.connection_be:
+            li_link.append(self.li_axial_link[5])
+        if 'n' in self.connection_bi:
+            li_link.append(self.li_axial_link[2])
+        if 'p' in self.connection_bi:
+            li_link.append(self.li_axial_link[7])
+        self.li_link = li_link
             
-        G, positions, li_axial_link, nd_axial_load = self.Graph()
-        plt.figure()
-        nx.draw_networkx(G, pos = positions)
-            
-        self.graph = G
-        check = self.CheckViability(li_axial_link, nd_axial_load)
-        print(check)
+        try:
+            check = self.CheckViability(self.li_link, self.nd_axial_load)
+        except:
+            self.PlotGraph()
+            raise KeyError('No solution found for bearing mounting')
+        
+    def PlotGraph(self):
+        for key_graph, val_graph in self.graph.items():
+            plt.figure()
+            nx.draw_networkx(val_graph, pos = self.positions)
             
     def Update(self, pos, d_shaft_min, d_ext, length):
         self.pos_x = pos
@@ -1122,7 +1185,7 @@ class BearingAssembly:
                       vm.Point2D((self.pos_x + self.length, sign*self.d_shaft_min/2.))])
         return box
     
-    def Plot(self, pos=0, a=None):
+    def Plot(self, pos=0, a=None, box=True):
         
         be_sup = self.ExternalBearing(sign = 1)
         be_inf = self.ExternalBearing(sign = -1)
@@ -1140,7 +1203,6 @@ class BearingAssembly:
         pos_m = -self.B/2.
         for bg in self.list_bearing:
             cont = bg.Plot()
-            print(cont)
             cont = cont.Translation((pos_m + bg.B/2., 0), True)
             pos_m += bg.B
             contour.append(cont)
@@ -1148,46 +1210,73 @@ class BearingAssembly:
         assembly_bg = assembly_bg.Translation((pos, 0), True)
         assembly_bg.MPLPlot(a,'-k')
         
-        box_sup = self.BearingBox(1)
-        box_inf = self.BearingBox(-1)
-        cont_box = [box_sup, box_inf]
-        contour_box = vm.Contour2D(cont_box)
-        contour_box = contour_box.Translation((pos, 0), True)
-        contour_box.MPLPlot(a,'-r')
+        if box:
+            box_sup = self.BearingBox(1)
+            box_inf = self.BearingBox(-1)
+            cont_box = [box_sup, box_inf]
+            contour_box = vm.Contour2D(cont_box)
+            contour_box = contour_box.Translation((pos, 0), True)
+            contour_box.MPLPlot(a,'-r')
     
     def Graph(self):
+        G = {}
         bg_0 = self.list_bearing[0]
-        G, li, li_pos = bg_0.Graph()
+        if (bg_0.name == 'RadialBallBearing') or (bg_0.name == 'RadialRollerBearing' and bg_0.typ == 'NUP'):
+            G[(1,)], li, li_pos = bg_0.Graph(li_nd=[None, None, None, None, None, None, None, None], sub_graph = 1)
+            G[(-1,)], li, li_pos = bg_0.Graph(li_nd=[None, None, None, None, None, None, None, None], sub_graph = -1)
+        else:
+            G[(0,)], li, li_pos = bg_0.Graph(li_nd=[None, None, None, None, None, None, None, None])
         positions = li_pos
-        
         li_axial_link = li[0:8]
         nd_axial_load = {}
         if len(li) > 8:
             nd_axial_load[0] = li[-3:-1]
             
         for pos, bg in enumerate(self.list_bearing[1:]):
+            if (bg.name == 'RadialBallBearing') or (bg.name == 'RadialRollerBearing' and bg.typ == 'NUP'):
+                double_graph = True
+            else:
+                double_graph = False
+                
             if bg_0.name in ['RadialRollerBearing', 'RadialBallBearing']:
                 if bg.name in ['RadialRollerBearing', 'RadialBallBearing']:
                     li_m = li[4: 8] + [None]*4
                 elif bg.direction == 1:
-                    li_m = li[4: 6] + [None]*6
-                elif bg.direction == -1:
                     li_m = [None]*2 + li[6: 8] + [None]*4
+                elif bg.direction == -1:
+                    li_m = li[4: 6] + [None]*6
             elif bg_0.direction == 1:
                 if bg.name in ['RadialRollerBearing', 'RadialBallBearing']:
-                    li_m = [None]*2 + li[6: 8] + [None]*4
+                    li_m = li[4: 6] + [None]*6
                 elif bg.direction == 1:
                     li_m = li[4: 8] + [None]*4
                 elif bg.direction == -1:
-                    li_m = [None]*2 + li[6: 8] + [None]*4
+                    li_m = li[4: 6] + [None]*6
             elif bg_0.direction == -1:
                 if bg.name in ['RadialRollerBearing', 'RadialBallBearing']:
-                    li_m = li[4: 6] + [None]*6
+                    li_m = [None]*2 + li[6: 8] + [None]*4
                 elif bg.direction == 1:
-                    li_m = li[4: 6] + [None]*6
+                    li_m = [None]*2 + li[6: 8] + [None]*4
                 elif bg.direction == -1:
                     li_m = li[4: 8] + [None]*4
-            G, li, li_pos = bg.Graph(G, li_m, pos + 1)
+            Gp = {}
+            for key_G, value_G in G.items():
+                if double_graph:
+                    if key_G[-1] == 1:
+                        add = *key_G,1
+                        Gp[add], li, li_pos = bg.Graph(value_G, li_m, pos + 1, sub_graph = 1)
+                    elif key_G[-1] == -1:
+                        add = *key_G,-1
+                        Gp[add], li, li_pos = bg.Graph(value_G, li_m, pos + 1, sub_graph = -1)
+                    else:
+                        add = *key_G,1
+                        Gp[add], li, li_pos = bg.Graph(value_G, li_m, pos + 1, sub_graph = 1, copy = True)
+                        add = *key_G,-1
+                        Gp[add], li, li_pos = bg.Graph(value_G, li_m, pos + 1, sub_graph = -1, copy = True)
+                else:
+                    add = *key_G,0
+                    Gp[add], li, li_pos = bg.Graph(value_G, li_m, pos + 1)
+            G = dict(list(Gp.items()))
             li_axial_link[4:8] = li[4:8]
             if len(li) > 8:
                 nd_axial_load[pos + 1] = li[-3:-1]
@@ -1195,37 +1284,67 @@ class BearingAssembly:
             bg_0 = bg
         return G, positions, li_axial_link, nd_axial_load
     
-    def CheckViability(self, li_axial_link, nd_axial_load):
-        li_link = []
-        if 'n' in self.connection_be:
-            li_link.append(li_axial_link[0])
-        if 'p' in self.connection_be:
-            li_link.append(li_axial_link[5])
-        if 'n' in self.connection_bi:
-            li_link.append(li_axial_link[2])
-        if 'p' in self.connection_bi:
-            li_link.append(li_axial_link[7])
+    def CheckViability(self, li_link, nd_axial_load):
         
-        print(li_link, li_axial_link)
-        print(self.connection_be, self.connection_bi)
-        print(nd_axial_load)
-        
-        valid = True
-        for pos, li_nd in nd_axial_load.items():
-            for nd in li_nd:
-                valid_iter = False
-                for bg in li_link:
-                    if nx.has_path(self.graph, nd, bg):
-            #            short_path = [p for p in nx.all_shortest_paths(G,source=ipt, target=bg)]
-                        valid_iter = True
-                if not valid_iter:
-                    valid = False
+        valid = False
+        valid_graph = {}
+        for key_graph, val_graph in self.graph.items():
+            short_path = []
+            valid_sub_graph = True
+            for pos, li_nd in nd_axial_load.items():
+                for nd in li_nd:
+                    valid_iter = False
+                    for bg in li_link:
+                        if nx.has_path(val_graph, nd, bg):
+                            short_path.append([p for p in nx.all_shortest_paths(val_graph, 
+                                              source = nd, target = bg)])
+                            valid_iter = True
+                    if not valid_iter:
+                        valid_sub_graph = False
+            if valid_sub_graph:
+                valid = True
+                g = nx.DiGraph()
+                for path in short_path:
+                    for pt in path:
+                        g.add_path(pt)
+                valid_graph[val_graph] = g
+#                plt.figure()
+#                nx.draw_networkx(g, pos = self.positions)
         return valid
     
     def BearingAssemblyLoad(self, fa, fr):
-        G, positions, li_axial_link, nd_axial_load = self.Graph()
-        return G, positions
+        nb_radial_bearing = len([i for i in self.radial_load_linkage if i == True])
+        fr_per_bearing = fr/(nb_radial_bearing*1.)
+        
+#        for key_graph, val_graph in self.graph.items():
+#            for pos, li_nd in self.nd_axial_load.items():
+#                for nd in li_nd:
+#                    for bg in self.li_link:
+#                        if nx.has_path(val_graph, nd, bg):
+#                            short_path = [p for p in nx.all_shortest_paths(val_graph, 
+#                                              source = nd, target = bg)]
+#                            g = nx.DiGraph()
+#                            for path in short_path:
+#                                g.add_path(path)
+#                            for node1, node2 in list(nx.dfs_edges(g, nd)):
+#                                n1 = g.degree[node1]
+#                                n2 = g.degree[node2]
+#                                print(n1, n2)
+#                            plt.figure()
+#                            nx.draw_networkx(g)
+#                            return g
+            
+#            g_nv = nx.DiGraph()
+#            for (node1, node2) in self.nd_axial_load.values():
+#                g1 = nx.dfs_edges(sub_gr, node1)
+#                g2 = nx.dfs_edges(sub_gr, node2)
+#                
+#                g_nv.add_edges_from(list(g1))
+#                g_nv.add_edges_from(list(g2))
+#            plt.figure()
+#            nx.draw_networkx(g_nv)
     
+            
 class CompositiveBearingAssembly:
     def __init__(self, list_bearing_assembly, list_position=None, pre_load=0, pos_x=None):
         
@@ -1289,8 +1408,8 @@ class CompositiveBearingAssembly:
         
         ground = genmechanics.Part('ground')
         shaft1 = genmechanics.Part('shaft1')
-        p1 = npy.array([pos1,0,0])
-        p2 = npy.array([pos2,0,0])
+        p1 = npy.array([pos1, 0, 0])
+        p2 = npy.array([pos2, 0, 0])
         bearing1 = linkages.FrictionlessBallLinkage(ground,shaft1,p1,[0,0,0],'bearing1')
         bearing2 = linkages.FrictionlessLinearAnnularLinkage(ground,shaft1,p2,[0,0,0],'bearing2')
         
@@ -1301,16 +1420,22 @@ class CompositiveBearingAssembly:
         imposed_speeds = [(bearing1, 0, 100)]
         
         mech = genmechanics.Mechanism([bearing1,bearing2],ground,imposed_speeds,load1,[load2])
-        t1 = mech.GlobalLinkageForces(bearing1,1)
-        fa1 = -t1[0]
-        fr1 = (t1[1]**2 + t1[2]**2)**(0.5)
-        for li_bg in self.list_bearing_assembly:
-            fa = li_bg.BearingAssemblyLoad(fa = 0, fr = fr1)
-        fa1 = 1
-        t2 = mech.GlobalLinkageForces(bearing2,1)
-        fa2 = -t2[0]
-        fr2 = (t2[1]**2 + t2[2]**2)**(0.5)
-        return fa1, fr1, fa2, fr2
+        
+        axial_load = 0
+        for load in list_load:
+            axial_load += load[0]
+        
+        li_fa = []
+        li_fr = []
+        for li_bg, bg in zip(self.list_bearing_assembly, [bearing1, bearing2]):
+            tensor = mech.GlobalLinkageForces(bg,1)
+            fr = (tensor[1]**2 + tensor[2]**2)**(0.5)
+            fa = li_bg.BearingAssemblyLoad(fa = 0, fr = fr)
+            li_fa.append(fa)
+            li_fr.append(fr)
+        
+
+        return li_fa, li_fr
         
 
 class RadialRollerBearing(ConceptRadialRollerBearing):

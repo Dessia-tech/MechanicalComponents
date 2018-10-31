@@ -6,7 +6,7 @@ Created on Fri Oct  5 09:53:05 2018
 @author: Pierrem
 """
 import sys as sys
-del sys.modules['mechanical_components.optimization']
+#del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.bearings as bearings
 import numpy as npy
 
@@ -21,7 +21,7 @@ S1 = bearings.CompositeBearingAssemblyOptimizer(list_pos_unknown = [[-0.001,0.00
                     nb_sol = [10, 5, 2])
 
 
-S1.Optimize(nb_sol = 20, verbose = True)
+S1.Optimize(nb_sol = 10, verbose = True)
 for sol in S1.solutions:
     sol.Plot()
     sol.Graph()
