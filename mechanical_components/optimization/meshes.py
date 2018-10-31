@@ -14,7 +14,9 @@ import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 import itertools
 import networkx as nx
-import powertransmission.tools as tools
+#import powertransmission.tools as tools
+import dectree
+
 from scipy.optimize import minimize
 import copy
 
@@ -202,7 +204,7 @@ class CompositeMeshAssembly:
             opt_pos=dict_line[num_eng]
             centers[num_eng]=[x_opt[2*opt_pos],x_opt[2*opt_pos+1]]
         return centers
-        
+
 
 class ContinuousMeshesAssemblyOptimizer:
     """
@@ -966,8 +968,8 @@ class MeshAssemblyOptimizer:
         
         demul_int_min=1/9.
         demul_int_max=9
-        dt=tools.RegularDecisionTree(np)
-        
+        dt=dectree.RegularDecisionTree(np)
+
         incr=0
         plex_calcul=[]
         self.fonctionnel=[]

@@ -6,7 +6,10 @@ Created on Fri Aug 17 00:44:13 2018
 @author: steven
 """
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
@@ -16,6 +19,7 @@ import calendar
 #from shutil import copyfile
 
 import hashlib
+<<<<<<< HEAD
 
 mac = 238177197203103 #STS-1
 
@@ -32,11 +36,67 @@ protection_lines = ['valid_license = True\n',
                     'if t > {}:\n'.format(expiration), 
                     '    valid_license = False\n',
                     'if t < {}:\n'.format(not_before),
+=======
+import sys
+
+args_delete = []
+for arg in sys.argv:
+    if arg.startswith('--mac='):
+        mac = arg[6:]
+        print('Compiling for MAC adress: {}'.format(mac))
+        args_delete.append(arg)
+    if arg.startswith('--exp_year='):
+        year = int(arg[11:])
+        args_delete.append(arg)
+    if arg.startswith('--exp_month='):
+        month = int(arg[12:])
+        args_delete.append(arg)
+for arg in args_delete:
+    sys.argv.remove(arg)        
+
+try:
+    month
+except NameError:
+    print('Month of expiration undefined: pass with --exp_month= option')
+    raise NameError
+
+try:
+    year
+except NameError:
+    print('Year of expiration undefined: pass with --exp_year= option')
+    raise NameError
+    
+try:
+    mac
+except NameError:
+    print('MAC address undefined: pass with --mac= option')
+    raise NameError
+
+expiration = int(calendar.timegm(time.struct_time((year, month, 1, 0, 0, 0 ,0, 0, 0))))
+print('Expiration date: {}/{}: {}'.format(month, year, expiration))
+not_before = int(time.time())
+
+protected_files = ['mechanical_components/optimization/bearings.py',
+                   'mechanical_components/optimization/meshes.py',
+                   'mechanical_components/optimization/wires.py']
+
+error_msg = 'Error, report this error to DessIA support with this traceback token: {}'.format(hashlib.sha256(str(mac).encode()).hexdigest())
+protection_lines = ['valid_license = True\n',
+                    't_execution = time.time()\n',
+                    'if t_execution > {}:\n'.format(expiration), 
+                    '    valid_license = False\n',
+                    'if t_execution < {}:\n'.format(not_before),
+>>>>>>> master
                     '    valid_license = False\n',
                     'if getnode() != {}:\n'.format(mac),
                     '    valid_license = False\n',
                     'if not valid_license:\n',
+<<<<<<< HEAD
                     '    return "{}"\n\n'.format(error_msg)
+=======
+                    '    print("{}")\n\n'.format(error_msg),
+                    '    raise RuntimeError\n'
+>>>>>>> master
                     ]
 
 
@@ -88,7 +148,12 @@ for file in protected_files:
                 if line.startswith('    """'):
                     new_file_lines.append(line)
                     line_index += 1
+<<<<<<< HEAD
                     line = lines[line_index]  
+=======
+                    line = lines[line_index]
+                    
+>>>>>>> master
                     while not line.startswith('    """'):
                         new_file_lines.append(line)
                         line_index += 1
@@ -122,7 +187,11 @@ for file in protected_files:
                 if line.startswith('        """'):
                     new_file_lines.append(line)    
                     line_index += 1
+<<<<<<< HEAD
                     line = lines[line_index]
+=======
+                    line = lines[line_index]                
+>>>>>>> master
                     while not line.startswith('        """'):
                         new_file_lines.append(line)
                         line_index += 1
@@ -153,7 +222,12 @@ for file, file_to_compile in zip(protected_files, files_to_compile):
 #    module. '_compiled'
     module = module[:-3]
     ext_modules.append(Extension(module,  [file_to_compile]))
+<<<<<<< HEAD
     
+=======
+
+print(ext_modules)
+>>>>>>> master
 setup(
     name = 'powertransmission',
     cmdclass = {'build_ext': build_ext},

@@ -54,20 +54,20 @@ def get_version():
                  
     return version
 
-#import powertransmission
 setup(name='mechanical_components',
       version=get_version(),
       description="Design of elementary components by AI",
       long_description='',
       keywords='',
       url='',
-      zip_safe=False,
-#      cmdclass['register']=None,
-      author='Steven Masfaraud',
-      author_email='masfaraud@dessia.tech',
-      packages=['mechanical_components', 'mechanical_components.optimization'],
+      zip_safe=False,# To ensure static files can be loaded
+      author='DessIA Technologies',
+      author_email='root@dessia.tech',
+      packages=['mechanical_components', 'mechanical_components.catalogs',
+                'mechanical_components.optimization'],
       setup_requires=['numpy'],
-      install_requires=['scipy','volmdlr','persistent', 'pandas'],
+      install_requires=['scipy','volmdlr','numpy', 'pandas', 'dectree',
+                        'networkx', 'matplotlib'],
       data_files=[('mechanical_components/catalogs',['mechanical_components/catalogs/ferroflex.csv'])]
       )
 

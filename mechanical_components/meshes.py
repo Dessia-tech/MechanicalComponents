@@ -639,7 +639,7 @@ class Mesh:
         phi0=a/(self.dff/2)
         p2=vm.Point2D((self._Trochoide(phi0,'R')))
         p2=p2.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
-        
+
         list_2D=primitives2D.RoundedLineSegments2D([p1,p2],{},False)
         export_2D=list_2D.Rotation(vm.Point2D((0,0)),-number*2*npy.pi/self.z)
         return export_2D
@@ -1252,8 +1252,9 @@ class MeshAssembly:
         for (i,center,k) in zip(list_gear,list_center,list_rot):
             model_export=[]
             for m in i:
-                model_trans=m.Translation(center)
-                model_trans_rot=model_trans.Rotation(vm.Point2D(center),k)
+                center = vm.Point2D(center)
+                model_trans = m.Translation(center)
+                model_trans_rot = model_trans.Rotation(center, k)
                 model_export.append(model_trans_rot)
             export.append(model_export)
         return export
@@ -1322,6 +1323,7 @@ class MeshAssembly:
                     angle0=npy.pi/2
                 else:
                     angle0=-npy.pi/2
+
             else:
                 angle0=-npy.arctan((position2[2]-position1[2])/(position2[1]-position1[1]))
                 if (position2[2]-position1[2])<0:
@@ -1341,8 +1343,8 @@ class MeshAssembly:
             C1=vm.Contour2D(Gears3D_Rotate[0])
             C2=vm.Contour2D(Gears3D_Rotate[1])
             
-            extrusion_vector1 = (self.gear_width[eng1]*x).vector
-            extrusion_vector2 = (self.gear_width[eng2]*x).vector
+            extrusion_vector1 = (self.gear_width[eng1]*x)
+            extrusion_vector2 = (self.gear_width[eng2]*x)
             
             if set_pos_dfs==0:
                 vect_x=tuple(-0.5*self.gear_width[eng1]*x.vector+[npy.dot(centers[eng1],x.vector),0,0])
@@ -1353,7 +1355,7 @@ class MeshAssembly:
             t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z, C2, [], vm.Vector3D(extrusion_vector2))
             primitives.append(t2)
 
-        model = vm.VolumeModel([('mesh', primitives)])
+        model = vm.VolumeModel([(name, primitives)])
         return model
     
     def Mass(self):

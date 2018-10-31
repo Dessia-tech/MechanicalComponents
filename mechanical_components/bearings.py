@@ -17,7 +17,7 @@ import volmdlr.primitives2D as primitives2D
 import volmdlr.primitives3D as primitives3D
 
 from mechanical_components.bearings_snr import RadialRollerBearingSNR
-from mechanical_components.catalogs.dico_bearings_ISO \
+from mechanical_components.catalogs.ISO_bearings \
     import dico_rlts_iso,dico_roller_iso,dico_radial_clearance_iso,dico_rules
 
 import genmechanics
@@ -192,13 +192,14 @@ class RadialBearing:
                 cycles = ni * ti * 2 * math.pi
                 Pr += cycles * C
                 total_cycles += cycles
-        
-        Pr = (Pr / total_cycles) ** (1/self.coeff_baselife)
-#        Cr=self.BaseDynamicLoad()
 
-        L10=(Cr/Pr)**(self.coeff_baselife)
-        return L10
-    
+        if total_cycles == 0.:
+            return math.inf
+        else:
+            Pr = (Pr / total_cycles) ** (1/self.coeff_baselife)
+            L10 = (Cr/Pr)**(self.coeff_baselife)
+            return L10
+        
     def AdjustedLifeTime(self, Fr, Fa, N, t, T, Cr=None, C0r=None, S=0.9):
         """
         Adjusted Lifetime in millions of cycles for a 100* S % fiability
@@ -221,7 +222,7 @@ class RadialBearing:
         nci_Lpi = 0.
 #        print(Fr, Fa)
         for fr, fa, n, ti, Ti  in zip(Fr, Fa, N, t, T):
-            if (fr != 0.) or (fa != 0.):
+            if (((fr != 0.) or (fa != 0.)) and (n > 0.)):
                 cycles = n * ti * 2 * math.pi
                 total_cycles += cycles
                 
@@ -266,7 +267,7 @@ class RadialBearing:
                 if check_rules_iter == False:
                     check_rules = False
         return check_rules, val_rules
-    
+
     def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
         center = vm.Point3D(npy.round(center,6))
         x = vm.Vector3D(axis)
@@ -278,29 +279,33 @@ class RadialBearing:
         
         z=vm.Vector3D(npy.cross(x.vector,y.vector))
         
-        #bague interne
+        #Internal Ring
         IRC=self.InternalRingContour()        
-        irc=primitives3D.RevolvedProfile(center,x, z,[IRC], center, x,angle=2*math.pi,name='irc')
-        #bague externe
+        irc=primitives3D.RevolvedProfile(center, x, z, [IRC], center,
+                                         x,angle=2*math.pi, name='Internal Ring')
+        #External Ring
         ERC=self.ExternalRingContour()
-        erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center, x, angle=2*math.pi,name='erc')
+        erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center,
+                                         x, angle=2*math.pi,name='External Ring')
         #roller
         ROL=self.RollingContourCAD()
+        
         radius=self.F/2.+self.jeu+self.Dw/2.
         rol=[]
         theta=2*npy.pi/self.Z
         
         for zi in range(int(self.Z)):
-            centeradius = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
-            rol.append(primitives3D.RevolvedProfile(centeradius, x, z, [ROL],
-                                                    centeradius, x,
-                                                    angle=2*math.pi,name='rol'))
+            center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
+            rol.append(primitives3D.RevolvedProfile(center_roller, x, z, [ROL],
+                                                    center_roller, x,
+                                                    angle=2*math.pi,name='Roller {}'.format(zi+1)))
         
         tot=[irc,erc]+rol
-        model = vm.VolumeModel([('bearing', tot)])
-        return model    
+        model=vm.VolumeModel([('', tot)])
+        return model   
     
-    def FreeCADExport(self, fcstd_filepath, python_path='python', path_lib_freecad='/usr/lib/freecad/lib',export_types=['fcstd']):
+    def FreeCADExport(self, fcstd_filepath, python_path='python', 
+                      path_lib_freecad='/usr/lib/freecad/lib',export_types=['fcstd']):
         model = self.VolumeModel()
         model.FreeCADExport(fcstd_filepath,python_path,path_lib_freecad,export_types)
         

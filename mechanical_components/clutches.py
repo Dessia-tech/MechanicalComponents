@@ -700,26 +700,23 @@ class HydraulicCylinder:
         p9 = p8.Translation((-0.010, 0))
         p10 = p9.Translation((0, -0.050))
         
-        piston_rod_line = primitives2D.RoundedLines2D([p1, p2, p3, p4, p5, p6, p7, p8, p9, p10], {2:0.002, 3:0.002, 4:0.002, 7:0.002, 8:0.002, 9:0.002}, True)
+        piston_rod_line = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4, p5, p6, p7, p8, p9, p10],
+                                                      {2:0.002, 3:0.002, 4:0.002, 7:0.002, 8:0.002, 9:0.002}, True)
         piston_rod_contour = vm.Contour2D([piston_rod_line])
         return piston_rod_contour
     
     def PistonVolume(self):
         """
         Defines the piston volume (piston rod & piston head)
-        """
-        p0_coord = (0, 0, 0)
-        zp_coord = (0, 0, 1)       
-        p0 = vm.Point3D(p0_coord)
-        xp = vm.Vector3D((1, 0, 0))
-        yp = vm.Vector3D((0, 1, 0))
-        zp = vm.Vector3D(zp_coord)
+        """     
         
         primitives = []
         
-        piston_rod = primitives3D.RevolvedProfile(p0.Translation((0, 0, 0.070 + 0.050)), zp, yp, [self.piston_rod_contour], p0, zp, 2*math.pi, 'piston_rod')
+        piston_rod = primitives3D.RevolvedProfile(vm.Point3D((0, 0, 0.070 + 0.050)),
+                                                  vm.z3D, vm.y3D, [self.piston_rod_contour],
+                                                  vm.o3D, vm.z3D, 2*math.pi, 'piston_rod')
         
-        piston_head = primitives3D.HollowCylinder((0, 0, 0.070), zp_coord, self.inner_radius, self.outer_radius, 0.100, 'piston_head')
+        piston_head = primitives3D.HollowCylinder((0, 0, 0.070), vm.z3D, self.inner_radius, self.outer_radius, 0.100, 'piston_head')
         
         primitives.extend([piston_rod, piston_head])
 #        primitives.append(piston_head)
@@ -737,19 +734,15 @@ class HydraulicCylinder:
         
         return contour
     
-    def SpringVolume(self):
-        p0_coord = (0, 0, 0)
-        zp_coord = (0, 0, 1)
-        
-        p0 = vm.Point3D(p0_coord)
-        pc = p0.Translation((self.spring_outer_diameter/2, 0, 0))
-        
-        xp = vm.Vector3D((1, 0, 0))
-        yp = vm.Vector3D((0, 1, 0))
-        zp = vm.Vector3D(zp_coord)
-        
+    def SpringVolume(self):        
+#        pc = vm.Point3D((self.spring_outer_diameter/2, 0, 0))
+                
         primitives = []
-        volume = primitives3D.HelicalExtrudedProfile(p0, xp, zp, (0, 0, 0), (0, self.spring_free_length, 0), self.spring_free_length/self.spring_n_windings, self.spring_contour, name = 'spring')
+        volume = primitives3D.HelicalExtrudedProfile(vm.o3D, vm.x3D, vm.z3D,
+                                                     vm.o3D,
+                                                     vm.Vector3D((0, self.spring_free_length, 0)),
+                                                     self.spring_free_length/self.spring_n_windings,
+                                                     self.spring_contour, name = 'spring')
         primitives.append(volume)
         
         return primitives

@@ -73,8 +73,8 @@ solution=GA.solutions[-1]
 #solution.SVGExport('name.txt',{0 : [0.1,0]})
 
 #solution.FreeCADExport('Gears1',centers = {0 : (0,0.117*npy.sin(0.1),0.117*npy.cos(0.1)),1 : (0,0,0)})
-solution.FreeCADExport(fcstd_filepath = 'mesh1', python_path = '/Applications/FreeCAD.app/Contents/MacOS/FreeCADCmd',
-            path_lib_freecad = '/Applications/FreeCAD.app/Contents/lib', 
-            centers = {0 : (0,0.117*npy.sin(0.1),0.117*npy.cos(0.1)),1 : (0,0,0)})
+#solution.FreeCADExport(fcstd_filepath = 'mesh1', python_path = '/Applications/FreeCAD.app/Contents/MacOS/FreeCADCmd',
+#            path_lib_freecad = '/Applications/FreeCAD.app/Contents/lib', 
+#            centers = {0 : (0,0.117*npy.sin(0.1),0.117*npy.cos(0.1)),1 : (0,0,0)})
 
 
