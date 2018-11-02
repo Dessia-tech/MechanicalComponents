@@ -254,7 +254,10 @@ class RadialBearing:
     
                 Lpi = a1*a_iso*L10 # Corrected lifetime
                 nci_Lpi += cycles/Lpi
-        return total_cycles / nci_Lpi
+        if nci_Lpi > 0:          
+            return total_cycles / nci_Lpi
+        else:
+            return math.inf
     
     def CheckFNRRules(self, Fr, Fa, N):
         check_rules = True
@@ -818,7 +821,10 @@ class ConceptRadialRollerBearing(RadialBearing):
             f = lambda coeff:(1-(1.5859-1.2348/(kappa**0.071739))*((coeff)**0.4))
         coeff0 = fsolve(f,ec*Cu/Pr)[0]
         coeff = min(coeff0, ec*Cu/Pr)
-        a_iso = 0.1*(f(coeff)**(-9.185))
+        if f(coeff) > 0:
+            a_iso = 0.1*(f(coeff)**(-9.185))
+        else:
+            return 100.
         return a_iso
     
     def InternalRingContour(self, sign_V=1):
