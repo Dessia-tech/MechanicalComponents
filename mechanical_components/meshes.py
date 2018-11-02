@@ -7,6 +7,7 @@ Created on Fri Aug 17 02:13:01 2018
 """
 
 import numpy as npy
+npy.seterr(all='raise', under='ignore')
 from scipy import interpolate
 
 import volmdlr as vm
