@@ -20,7 +20,7 @@ from scipy.optimize import minimize,fsolve
 #import itertools
 import networkx as nx
 
-import powertransmission.tools as tools
+#import powertransmission.tools as tools
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 

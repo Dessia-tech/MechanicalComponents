@@ -7,11 +7,10 @@ from interval import interval
 #3 gears meshes test
 list_cd=[[0.1,0.15]]
 connections=[[(1,2),(3,4),(5,6)]]
-list_strong_link=[[2,4],[4,6]]
+list_strong_link=[[2, 4], [4, 6]]
 list_speed={1:[900*npy.pi/30,900*npy.pi/30],
             2:[2000*npy.pi/30,2100*npy.pi/30],
             3:[900*npy.pi/30,920*npy.pi/30],
-            4:[2000*npy.pi/30,2100*npy.pi/30],
             5:[900*npy.pi/30,910*npy.pi/30],
             6:[2000*npy.pi/30,2100*npy.pi/30]}
 list_tpa={0:[15/180.*npy.pi,25/180.*npy.pi],1:[15/180.*npy.pi,25/180.*npy.pi]}

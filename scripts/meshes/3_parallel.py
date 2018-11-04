@@ -18,8 +18,8 @@ speeds = {0: (393.24146705049753, 394.8175851549084),
 
 center_distances = [(0.166883767540157, 0.1854264083779522)]
 cycles = {0: 15918810165.932156}
-torques = {0: 'output', 1: -25.300350840558927, 2: 'output',
-           3: -48.27944605534433, 4: 'output', 5: -12.650870370875234}
+torques = {0: 'output', 1: -25.300350840558927,
+           3: -48.27944605534433, 5: -12.650870370875234}
 
 
 GA = meshes_opt.MeshAssemblyOptimizer(Z={},
@@ -27,7 +27,8 @@ GA = meshes_opt.MeshAssemblyOptimizer(Z={},
                                   strong_link = rigid_links,
                                   gear_speed = speeds,
                                   center_distance = center_distances,
-                                  cycle = cycles,verbose=True)
+                                  cycle = cycles,verbose=True,
+                                  torque = torques)
 
 
 

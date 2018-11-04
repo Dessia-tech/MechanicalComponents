@@ -816,6 +816,7 @@ class MeshAssemblyOptimizer:
             var_Z=self.AnalyseZ()
             self.Z=var_Z
             
+        print(self.Z)
         self.plex_calcul = self.AnalyzeCombination(verbose)
         
         for i,plex in enumerate(self.plex_calcul):
@@ -906,8 +907,10 @@ class MeshAssemblyOptimizer:
                 demul_max=self.gear_speed[engr1][1]/self.gear_speed[engr2][0]
                 DF1_max=2*cd_max/(1+demul_min)
                 Z1_max=int(DF1_max/module1_min)+1
+                Z1_max = min(Z1_max, 100)
                 DF2_max=2*cd_max*demul_max/(1+demul_max)
                 Z2_max=int(DF2_max/module2_min)+1
+                Z2_max = min(Z2_max, 100)
                 DF1_min=2*cd_min/(1+demul_max)
                 Z1_min=int(DF1_min/module1_max)-1
                 DF2_min=2*cd_min*demul_min/(1+demul_min)
