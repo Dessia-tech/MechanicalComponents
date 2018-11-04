@@ -819,7 +819,10 @@ class ConceptRadialRollerBearing(RadialBearing):
             f = lambda coeff:(1-(1.5859-1.2348/(kappa**0.19087))*((coeff)**0.4))
         else:
             f = lambda coeff:(1-(1.5859-1.2348/(kappa**0.071739))*((coeff)**0.4))
-        coeff0 = fsolve(f,ec*Cu/Pr)[0]
+        try:
+            coeff0 = fsolve(f,ec*Cu/Pr)[0]
+        except FloatingPointError:# TODO check this for a better solution
+            coeff0 = ec*Cu/Pr
         coeff = min(coeff0, ec*Cu/Pr)
         if f(coeff) > 0:
             a_iso = 0.1*(f(coeff)**(-9.185))
