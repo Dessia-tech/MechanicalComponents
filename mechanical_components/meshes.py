@@ -1356,7 +1356,7 @@ class MeshAssembly:
             t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z, C2, [], vm.Vector3D(extrusion_vector2))
             primitives.append(t2)
 
-        model = vm.VolumeModel([(name, primitives)])
+        model = vm.VolumeModel([(Dname, primitives)])
         return model
     
     def Mass(self):
