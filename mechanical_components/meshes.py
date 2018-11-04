@@ -1364,13 +1364,13 @@ class MeshAssembly:
         
         :results: mass of all gear mesh
         """
-        DF = [0]*len(self.gear_width.keys())
+        DF = {}
         for i,(ic1, ic2) in enumerate(self.connections):
             DF[ic1] = self.DF[i][ic1]
             DF[ic2] = self.DF[i][ic2]
         
         mass = 0.
-        for i,df in enumerate(DF):
+        for i,df in DF.items():
             mass +=  self.gear_width[i] * self.material[i].volumic_mass* math.pi * (0.5*DF[i])**2
         return mass
     
