@@ -890,7 +890,7 @@ class MeshAssemblyOptimizer:
         >>> print(list_z)
         {1:[13,45], 2: [37,56]}
         """
-        Z_max = 110
+        Z_max = 115
         
         Z=self.Z
         for i,shaft_mesh in enumerate(self.connections):
