@@ -77,6 +77,7 @@ dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},
 
 class Oil:
     def __init__(self,oil_data,dict_oil_contamination):
+        self.oil_data = oil_data
         self.oil_kinematic_viscosity_curve = self.KinematicViscosity(oil_data)
         self.dict_oil_contamination = dict_oil_contamination
     
@@ -108,6 +109,26 @@ class Oil:
         for k,v in self.dict_oil_contamination.items():
             if (Dpw>=k) and (Dpw<list(v.keys())[0]):
                 return list(v.values())[0][grade]
+            
+    def Dict(self):
+        """Export dictionary
+        """
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
+            
+        return d
+    
+    @classmethod
+    def Dict2Obj(cls, d):
+        obj = cls(oil_data = d['oil_data'],dict_oil_contamination = d['dict_oil_contamination'])
+        return obj
     
 oil_iso_vg_1500=Oil(iso_vg_1500,dict_oil_contamination)
 oil_iso_vg_1000=Oil(iso_vg_1000,dict_oil_contamination)
@@ -144,7 +165,26 @@ class Material:
 
 
     def Dict(self):
-        return self.__dict__
+        """Export dictionary
+        """
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
+            
+        return d
+    
+    @classmethod
+    def Dict2Obj(cls, d):
+        obj = cls(weibull_e = d['weibull_e'], weibull_c = d['weibull_c'], 
+                  weibull_h = d['weibull_h'],
+                  B1 = d['B1'], mu_delta = d['mu_delta'], c_gamma = d['c_gamma'])
+        return obj
 
 material_iso=Material()
 
@@ -157,6 +197,20 @@ class LoadNode:
             self.load = None
         if self.ext_load is not None:
             self.load = 0
+    def Dict(self):
+        """Export dictionary
+        """
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
+            
+        return d
 
 class LoadBearing:
     
@@ -600,6 +654,44 @@ class RadialBearing(LoadBearing):
                     
         load_arrow = vm.Contour2D(list_line)
         return load_arrow
+    
+    def Dict(self):
+        """Export dictionary
+        """
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
+
+        li_nd = []
+        for nd in self.list_node:
+            li_nd.append(nd.Dict())
+        d['list_node'] = li_nd
+        
+        d['material'] = self.material.Dict()
+        d['oil'] = self.oil.Dict()
+        
+        di_next = {}
+        for key, val in self.next.items():
+            pos_obj = self.list_node.index(key)
+            di_next[pos_obj] = []
+            for v in val:
+                pos_v = self.list_node.index(v)
+                di_next[pos_obj].append(pos_v)
+        d['next'] = di_next
+        
+        di_position = {}
+        for key, val in self.positions.items():
+            pos_obj = self.list_node.index(key)
+            di_position[pos_obj] = val
+        d['positions'] = di_position
+        
+        return d
         
 # =============================================================
 # Object générique roulement cylindrique
@@ -740,6 +832,19 @@ class ConceptRadialBallBearing(RadialBearing):
           li[4]: (pos_x + 1 - decal_x, 1), li[5]: (pos_x + 1 - decal_x, 1 - decal_y), 
           li[6]: (pos_x + 1, decal_y), li[7]: (pos_x + 1, 0)}
         self.positions = li_pos
+        
+    @classmethod
+    def Dict2Obj(cls, d):
+        if 'Cr' not in d.keys():
+            d['Cr'] = None
+        if 'C0r' not in d.keys():
+            d['C0r'] = None
+        obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
+                  Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
+                  oil = Oil.Dict2Obj(d['oil']), 
+                  material = Material.Dict2Obj(d['material']),  
+                  typ_contact = d['typ_contact'], mass = d['mass'])
+        return obj
         
 class ConceptAngularBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -906,7 +1011,20 @@ class ConceptAngularBallBearing(RadialBearing):
               li[4]: (pos_x + 1 - decal_x, 1), li[5]: (pos_x + 1 - decal_x, 1 - decal_y), 
               li[6]: (pos_x + 1, decal_y), li[7]: (pos_x + 1, 0)}
         self.positions = li_pos
-    
+        
+    @classmethod
+    def Dict2Obj(cls, d):
+        if 'Cr' not in d.keys():
+            d['Cr'] = None
+        if 'C0r' not in d.keys():
+            d['C0r'] = None
+        obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
+                  Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
+                  oil = Oil.Dict2Obj(d['oil']), 
+                  material = Material.Dict2Obj(d['material']),  
+                  typ_contact = d['typ_contact'], direction = d['direction'],
+                  mass = d['mass'])
+        return obj
             
 class ConceptSphericalBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -960,6 +1078,20 @@ class ConceptSphericalBallBearing(RadialBearing):
         coeff = min(coeff0, ec*Cu/Pr)
         a_iso = 0.1*(f(coeff)**(-9.3))
         return a_iso
+    
+    @classmethod
+    def Dict2Obj(cls, d):
+        if 'Cr' not in d.keys():
+            d['Cr'] = None
+        if 'C0r' not in d.keys():
+            d['C0r'] = None
+        obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
+                  Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
+                  oil = Oil.Dict2Obj(d['oil']), 
+                  material = Material.Dict2Obj(d['material']),  
+                  typ_contact = d['typ_contact'], 
+                  mass = d['mass'])
+        return obj
             
 class ConceptRadialRollerBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -1227,6 +1359,20 @@ class ConceptRadialRollerBearing(RadialBearing):
           li[6]: (pos_x + 1, decal_y), li[7]: (pos_x + 1, 0)}
         self.positions = li_pos
     
+    @classmethod
+    def Dict2Obj(cls, d):
+        if 'Cr' not in d.keys():
+            d['Cr'] = None
+        if 'C0r' not in d.keys():
+            d['C0r'] = None
+        obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
+                  Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
+                  oil = Oil.Dict2Obj(d['oil']), 
+                  material = Material.Dict2Obj(d['material']),  
+                  typ_contact = d['typ_contact'], direction = d['direction'],
+                  typ = d['typ'], mass = d['mass'])
+        return obj
+    
 class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBallBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, typ_contact='linear_contact', direction=1, mass=None):
@@ -1338,7 +1484,20 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBall
     def Graph(self, list_node=None, num=None, pos_x=0):
         
         ConceptAngularBallBearing.Graph(self, list_node, num, pos_x)
-    
+        
+    @classmethod
+    def Dict2Obj(cls, d):
+        if 'Cr' not in d.keys():
+            d['Cr'] = None
+        if 'C0r' not in d.keys():
+            d['C0r'] = None
+        obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
+                  Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
+                  oil = Oil.Dict2Obj(d['oil']), 
+                  material = Material.Dict2Obj(d['material']),  
+                  typ_contact = d['typ_contact'], direction = d['direction'],
+                  mass = d['mass'])
+        return obj
    
 class ObjBearingAssembly:
     def __init__(self, list_bearing, num):
@@ -1384,7 +1543,7 @@ class BearingAssembly:
         for bg in list_bearing:
             self.d = min(self.d, bg.d)
         
-        self.graph = self.Graph(list_bearing)
+        self.graph, self.li_case = self.Graph(list_bearing)
         if self.graph == []:
             self.check = False
         else:
@@ -1545,6 +1704,7 @@ class BearingAssembly:
             case_graph.append(list_direction)
                 
         graph = []
+        li_case = []
         for case in case_graph:
             li = []
             for bg in list_bearing:
@@ -1554,7 +1714,8 @@ class BearingAssembly:
             check = self.CheckViability(list_bg_export)
             if check:
                 graph.append(deepcopy(list_bg_export))
-        return graph
+                li_case.append(case)
+        return graph, li_case
             
     def ConnectionBearing(self, case, list_bearing):
         compt = 0
@@ -1760,6 +1921,7 @@ class BearingAssembly:
                 best_graph = best
                 indice_m = indice
         self.best_graph = self.graph[best_graph]
+        self.case = self.li_case[best_graph]
         #resume of the axial load
         n0 = self.best_graph[0].list_node[0].load
         n2 = self.best_graph[0].list_node[2].load
@@ -1772,16 +1934,63 @@ class BearingAssembly:
                 
         return fa
     
+    def Dict(self):
+        """Export dictionary
+        """
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
+            
+        del d['list_bearing']
+        li_bg = []
+        for bg in self.best_graph:
+            li_bg.append(bg.Dict())
+        d['list_bearing'] = li_bg
+        del d['best_graph']
+            
+        del d['graph']
+        return d
+    
+    @classmethod
+    def Dict2Obj(cls, d):
+        li_bg = []
+        for li in d['list_bearing']:
+            if li['name'] == 'RadialRollerBearing':
+                BA = ConceptRadialRollerBearing.Dict2Obj(li)
+            elif li['name'] == 'TaperedRollerBearing':
+                BA = ConceptTaperedRollerBearing.Dict2Obj(li)
+            elif li['name'] == 'SphericalBallBearing':
+                BA = ConceptSphericalBallBearing.Dict2Obj(li)
+            elif li['name'] == 'AngularBallBearing':
+                BA = ConceptAngularBallBearing.Dict2Obj(li)
+            elif li['name'] == 'RadialBallBearing':
+                BA = ConceptRadialBallBearing.Dict2Obj(li)
+            li_bg.append(BA)
+        obj = cls(list_bearing = li_bg, radial_load_linkage = d['radial_load_linkage'], 
+                  internal_pre_load = 0, connection_bi = d['connection_bi'], 
+                  connection_be = d['connection_be'], behavior_link = d['behavior_link'])
+        obj.best_graph = obj.ConnectionBearing(case = d['case'], list_bearing = li_bg)
+        return obj
             
 class CompositiveBearingAssembly:
     def __init__(self, list_bearing_assembly, list_position=None, pre_load=0, pos_x=None):
         
         self.list_bearing_assembly = list_bearing_assembly
         self.mass = self.MassCalculate()
+        if pos_x is not None:
+            pos_x = list(pos_x)
         self.pos_x = pos_x
         
     def Update(self, pos_x, list_pos_unknown, list_load, d_shaft_min, axial_pos, 
                d_ext, length):
+        if pos_x is not None:
+            pos_x = list(pos_x)
         self.pos_x = pos_x
         self.list_pos_unknown = list_pos_unknown
         self.list_load = list_load
@@ -1862,7 +2071,38 @@ class CompositiveBearingAssembly:
             li_fr.append(fr)
         
         return li_fa, li_fr
+    
+    def Dict(self):
+        """Export dictionary
+        """
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
+                
+        li_bg = []
+        for item in self.list_bearing_assembly:
+            li_bg.append(item.Dict())
+        d['list_bearing_assembly'] = li_bg
+            
+        return d
         
+    @classmethod
+    def Dict2Obj(cls, d):
+        li_bg = []
+        for li in d['list_bearing_assembly']:
+            BA = BearingAssembly.Dict2Obj(li)
+            li_bg.append(BA)
+                 
+        obj = cls(list_bearing_assembly = li_bg, list_position = None, pre_load = 0, 
+                  pos_x = d['pos_x'])
+        return obj
+    
 
 class RadialRollerBearing(ConceptRadialRollerBearing):
     #Roulement à rouleaux

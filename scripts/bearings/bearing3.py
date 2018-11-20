@@ -18,15 +18,22 @@ S1 = bearings.CompositeBearingAssemblyOptimizer(list_pos_unknown = [[-0.001,0.00
                     typ_linkage = [['cylindric_joint'], ['cylindric_joint']],
                     typ_mounting = None,
                     number_bearing=[[1], [2]],
-                    nb_sol = [10, 5, 2])
+                    nb_sol = [10, 1, 1])
 
 
-S1.Optimize(nb_sol = 10, verbose = True)
-for sol in S1.solutions:
-    sol.Plot(typ='Load')
+S1.Optimize(nb_sol = 1, verbose = True)
+#for sol in S1.solutions:
+#    sol.Plot(typ='Load')
 #    sol.Graph()
 #    sol.list_bearing_assembly[0].list_bearing[0].FreeCADExport('extrusion2',python_path = '/Applications/FreeCAD.app/Contents/MacOS/FreeCADCmd',
 #            path_lib_freecad = '/Applications/FreeCAD.app/Contents/lib', export_types=['step'])
 #for num_sol, sol in enumerate(S1.solutions):
 #    S1.Plot(sol)
 #    S1.Export(sol, num_sol)
+    
+d = sol.Dict()
+import json
+print(json.dumps(d))
+
+sol = bearings.CompositiveBearingAssembly.Dict2Obj(d)
+sol.Plot(typ='Graph', box=False)

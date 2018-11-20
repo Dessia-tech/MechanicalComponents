@@ -29,8 +29,11 @@ BA = bearings.BearingAssembly(list_bearing, radial_load_linkage = [True]*5, inte
 #BA.PlotGraph()
 BA.BearingAssemblyLoad(fa = 0, fr = 200)
 BA.Plot(box = False, typ = 'Load')
-BA.PlotGraph()
+#BA.PlotGraph()
 
-#for bg in BA.best_graph:
-#    for nd in bg.list_node:
-#        print(bg.num, nd.num, nd.load, nd.ext_load)
+d = BA.Dict()
+import json
+print(json.dumps(d))
+
+sol = bearings.BearingAssembly.Dict2Obj(d)
+sol.Plot(typ='Graph', box=False)
