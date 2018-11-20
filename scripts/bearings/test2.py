@@ -24,8 +24,13 @@ b5 = bearings.ConceptRadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1,
                                        Z = 20, Dw = 0.005, alpha = 0)
 list_bearing = [b1, b2, b3, b4, b5]
 BA = bearings.BearingAssembly(list_bearing, radial_load_linkage = [True]*5, internal_pre_load = 0, 
-                 connection_bi = ['n', 'p'], connection_be = ['n', 'p'], behavior_link = 'pn')
-BA.PlotGraph()
-BA.Plot(box = False)
+                 connection_bi = ['p'], connection_be = ['n', 'p'], behavior_link = 'pn')
 
-g = BA.BearingAssemblyLoad(fa = 1000, fr = 200)
+#BA.PlotGraph()
+BA.BearingAssemblyLoad(fa = 0, fr = 200)
+BA.Plot(box = False, typ = 'Load')
+BA.PlotGraph()
+
+#for bg in BA.best_graph:
+#    for nd in bg.list_node:
+#        print(bg.num, nd.num, nd.load, nd.ext_load)

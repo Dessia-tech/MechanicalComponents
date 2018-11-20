@@ -350,7 +350,8 @@ class BearingAssemblyOptimizer:
                     radial_load_linkage = [True]*len(list_bearing)
                     BA = BearingAssembly(list_bearing, radial_load_linkage, connection_bi = mount['bi'], 
                                      connection_be = mount['be'], behavior_link = behavior_link)
-                    solutions.append(BA)
+                    if BA.check:
+                        solutions.append(BA)
         solutions_sort = self.SortSolutions(solutions, sort_arg = {'min':'mass'})
         if nb_sol[0] is not None:
             self.solutions = solutions_sort[0:min(len(solutions_sort), nb_sol[0])]
@@ -577,7 +578,7 @@ class CompositeBearingAssemblyOptimizer:
             pos2_min = self.axial_pos[1] + l2/2
             pos2_max = self.axial_pos[1] + self.length[1] - l2/2
             def fun(x):
-                fa1, fr1, fa2, fr2 = composite_bg.ShaftLoad(x[0], x[1], self.list_pos_unknown, 
+                (fa1, fr1), (fa2, fr2) = composite_bg.ShaftLoad(x[0], x[1], self.list_pos_unknown, 
                                                     self.list_load, self.list_torque)
 #                Lnm1 = 0
 #                for rlt1 in list_bearing1:
@@ -588,7 +589,7 @@ class CompositeBearingAssemblyOptimizer:
                 obj = 1/(fr1 + fr2)**2
                 return obj
             def fineq(x):
-                ineq = []
+                ineq = [0]
 #                fa1, fr1, fa2, fr2 = composite_bg.ShaftLoad(x[0], x[1], self.list_pos_unknown, 
 #                                                    self.list_load, self.list_torque)
 #                Lnm1 = 0

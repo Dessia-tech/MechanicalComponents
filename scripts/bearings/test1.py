@@ -14,6 +14,7 @@ B1 = bearings.BearingAssemblyOptimizer(linkage = 'cylindric_joint', behavior_lin
                                        nb_rlts = 3, d = [0.02, 0.03], D = [0.04, 0.06], 
                                        length = [0, 0.08], nb_sol = [10, 2])
 
-for bg in B1.solutions:
-    bg.Plot(box = False)
-    bg.PlotGraph()
+for i, bg in enumerate(B1.solutions):
+#    bg.PlotGraph()
+    a=bg.BearingAssemblyLoad(10,1)
+    bg.Plot(box = False, typ='Load')
