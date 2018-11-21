@@ -1499,29 +1499,29 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBall
                   mass = d['mass'])
         return obj
    
-class ObjBearingAssembly:
-    def __init__(self, list_bearing, num):
-        self.list_bearing = list_bearing
-        self.num = num
-    def Load(self):
-        for bg in self.list_bearing + self.list_bearing[::-1]:
-            bg.CheckNone()
-            bg.PropagateNone()
-            bg.CheckNone()
-        valid = True
-        list_valid = [0]
-        while valid:
-            list_valid_m =list_valid
-            list_valid = []
-            for bg in self.list_bearing:
-                bg.Load()
-            for bg in self.list_bearing:
-                for nd in bg.list_node:
-                    list_valid.append(nd.load)
-            if list_valid == list_valid_m:
-                valid = False
+#class ObjBearingCombination:
+#    def __init__(self, list_bearing, num):
+#        self.list_bearing = list_bearing
+#        self.num = num
+#    def Load(self):
+#        for bg in self.list_bearing + self.list_bearing[::-1]:
+#            bg.CheckNone()
+#            bg.PropagateNone()
+#            bg.CheckNone()
+#        valid = True
+#        list_valid = [0]
+#        while valid:
+#            list_valid_m =list_valid
+#            list_valid = []
+#            for bg in self.list_bearing:
+#                bg.Load()
+#            for bg in self.list_bearing:
+#                for nd in bg.list_node:
+#                    list_valid.append(nd.load)
+#            if list_valid == list_valid_m:
+#                valid = False
  
-class BearingAssembly:
+class BearingCombination:
     def __init__(self, list_bearing, radial_load_linkage, internal_pre_load=0, 
                  connection_bi=['n', 'p'], connection_be=['n', 'p'], behavior_link='pn'):
         self.list_bearing = list_bearing
@@ -1863,9 +1863,7 @@ class BearingAssembly:
                 
                             
     
-    def BearingAssemblyLoad(self, fa, fr, results=None):
-        if results is not None:
-            results.Inputs(fa, fr)
+    def BearingCombinationLoad(self, fa, fr):
             
         nb_radial_bearing = len([i for i in self.radial_load_linkage if i == True])
         fr_per_bearing = fr/(nb_radial_bearing*1.)
@@ -1935,11 +1933,7 @@ class BearingAssembly:
             if n is not None:
                 fa += n
         
-        if results is not None:
-            results.Outputs(fa)
-            return fa, results
-        else:
-            return fa
+        return fa
     
     def Dict(self):
         """Export dictionary
@@ -1983,9 +1977,18 @@ class BearingAssembly:
                   internal_pre_load = 0, connection_bi = d['connection_bi'], 
                   connection_be = d['connection_be'], behavior_link = d['behavior_link'])
         obj.best_graph = obj.ConnectionBearing(case = d['case'], list_bearing = li_bg)
+        for num_bg, bg in enumerate(obj.best_graph):
+            dict_bg = d['list_bearing'][num_bg]
+            for num_nd, nd in enumerate(bg.list_node):
+                nd.load = dict_bg['list_node'][num_nd]['load']
+                nd.ext_load = dict_bg['list_node'][num_nd]['ext_load']
+            bg.transversale_load = dict_bg['transversale_load']
+            bg.external_ring_load = dict_bg['external_ring_load']
+            bg.internal_ring_load = dict_bg['internal_ring_load']
+            
         return obj
             
-class CompositeBearingAssembly:
+class BearingAssembly:
     def __init__(self, list_bearing_assembly, list_position=None, pre_load=0, pos_x=None):
         
         self.list_bearing_assembly = list_bearing_assembly
@@ -2041,18 +2044,14 @@ class CompositeBearingAssembly:
         
         for assembly_bg, pos in zip(self.list_bearing_assembly, self.pos_x):
             assembly_bg.Plot(pos, a, box, typ)
+            
     def Graph(self):
         for li_bg in self.list_bearing_assembly:
             G, positions, li_axial_link, nd_axial_load = li_bg.Graph()
             plt.figure()
             nx.draw_networkx(G, pos = positions)
     
-    def ShaftLoad(self, pos1, pos2, list_pos_unknown, list_load, list_torque,
-                  results=None):
-        
-        if results is not None:
-            results.Inputs(pos1, pos2, list_pos_unknown, list_load, list_torque)
-            li_results_bearing_assembly = []
+    def ShaftLoad(self, pos1, pos2, list_pos_unknown, list_load, list_torque):
         
         ground = genmechanics.Part('ground')
         shaft1 = genmechanics.Part('shaft1')
@@ -2078,21 +2077,11 @@ class CompositeBearingAssembly:
         for li_bg, bg in zip(self.list_bearing_assembly, [bearing1, bearing2]):
             tensor = mech.GlobalLinkageForces(bg,1)
             fr = (tensor[1]**2 + tensor[2]**2)**(0.5)
-            if results is not None:
-                re_bearing_assembly = ResultsBearingAssembly()
-                fa, re_bearing_assembly = li_bg.BearingAssemblyLoad(fa = axial_load, fr = fr, 
-                                               results = re_bearing_assembly)
-                li_results_bearing_assembly.append(re_bearing_assembly)
-            else:
-                fa = li_bg.BearingAssemblyLoad(fa = axial_load, fr = fr)
+            fa = li_bg.BearingCombinationLoad(fa = axial_load, fr = fr)
             li_fa.append(fa)
             li_fr.append(fr)
         
-        if results is not None:
-            results.Outputs(li_fa, li_fr, li_results_bearing_assembly)
-            return results
-        else:
-            return li_fa, li_fr
+        return li_fa, li_fr
         
     
     def Dict(self):
@@ -2119,46 +2108,15 @@ class CompositeBearingAssembly:
     def Dict2Obj(cls, d):
         li_bg = []
         for li in d['list_bearing_assembly']:
-            BA = BearingAssembly.Dict2Obj(li)
+            BA = BearingCombination.Dict2Obj(li)
             li_bg.append(BA)
                  
         obj = cls(list_bearing_assembly = li_bg, list_position = None, pre_load = 0, 
                   pos_x = d['pos_x'])
+        obj.Update(pos_x = d['pos_x'], list_pos_unknown = d['list_pos_unknown'], 
+                   list_load = d['list_load'], d_shaft_min = d['d_shaft_min'],
+                   axial_pos = d['axial_pos'], d_ext = d['d_ext'], length = d['length'])
         return obj
-    
-#class ResultsBearing:
-#    
-class ResultsBearingAssembly:
-    def __init__(self):
-        self.inputs = []
-        self.outputs = []
-        
-    def Inputs(self, fa, fr):
-        inputs = {}
-        inputs['fa'] = fa
-        inputs['fr'] = fr
-        self.inputs.append(inputs)
-        
-    def Outputs(self, fa):
-        self.outputs.append({'fa': fa})
-    
-class ResultsCompositeBearingAssembly:
-    def __init__(self):
-        self.inputs = []
-        self.outputs = []
-        
-    def Inputs(self, pos1, pos2, list_pos_unknown, list_load, list_torque):
-        inputs = {}
-        inputs['pos1'] = pos1
-        inputs['pos2'] = pos2
-        inputs['list_pos_unknown'] = list_pos_unknown
-        inputs['list_load'] = list_load
-        inputs['list_torque'] = list_torque
-        self.inputs.append(inputs)
-        
-    def Outputs(self,li_fa, li_fr, results_bearing_assembly):
-        self.outputs.append({'li_fa': li_fa, 'li_fr': li_fr, 
-                             'results_bearing_assembly': results_bearing_assembly})
 
 class RadialRollerBearing(ConceptRadialRollerBearing):
     #Roulement à rouleaux

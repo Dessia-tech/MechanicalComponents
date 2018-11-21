@@ -10,7 +10,7 @@ import sys as sys
 import mechanical_components.optimization.bearings as bearings
 import numpy as npy
 
-S1 = bearings.CompositeBearingAssemblyOptimizer(list_pos_unknown = [[-0.001,0.005,0]], 
+S1 = bearings.BearingAssemblyOptimizer(list_pos_unknown = [[-0.001,0.005,0]], 
                     list_load = [[2000, -2500, 100]], list_torque = [[0, 100, 0]],
                     list_speed = [200], list_time = [1e6],
                     d_shaft_min = [0.02, 0.025], axial_pos = [0, 0.1], d_ext = [0.05, 0.07], 
@@ -18,7 +18,7 @@ S1 = bearings.CompositeBearingAssemblyOptimizer(list_pos_unknown = [[-0.001,0.00
                     typ_linkage = [['cylindric_joint'], ['cylindric_joint']],
                     typ_mounting = None,
                     number_bearing=[[1], [2]],
-                    nb_sol = [10, 1, 1])
+                    nb_sol = [2, 1, 1])
 
 
 S1.Optimize(nb_sol = 1, verbose = True)
@@ -30,10 +30,12 @@ for sol in S1.architectures:
 #for num_sol, sol in enumerate(S1.solutions):
 #    S1.Plot(sol)
 #    S1.Export(sol, num_sol)
-    
-d = sol.Dict()
+
+results = S1.results
+d = results.Dict()
 import json
 print(json.dumps(d))
+obj = bearings.ResultsBearingAssembly.Dict2Obj(d)
+obj.architectures[0].Plot(typ='Load', box=True)
 
-sol = bearings.CompositeBearingAssembly.Dict2Obj(d)
-sol.Plot(typ='Graph', box=False)
+optim = obj.DefOptimizer()

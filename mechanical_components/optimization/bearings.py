@@ -9,8 +9,7 @@ Created on Fri Aug 17 02:14:21 2018
 from mechanical_components.bearings import oil_iso_vg_1500, material_iso, dico_rlts_iso,dico_rules,dico_roller_iso
 from mechanical_components.bearings import ConceptRadialBallBearing, ConceptAngularBallBearing, \
         ConceptSphericalBallBearing, ConceptRadialRollerBearing, ConceptTaperedRollerBearing, \
-        CompositeBearingAssembly, BearingAssembly, RadialRollerBearing, \
-        ResultsCompositeBearingAssembly, ResultsBearingAssembly
+        BearingAssembly, BearingCombination, RadialRollerBearing
 import numpy as npy
 from scipy.optimize import minimize
 import pandas
@@ -256,7 +255,7 @@ pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
 base_bearing = pandas_sort
 
 
-class BearingAssemblyOptimizer:
+class BearingCombinationOptimizer:
     
     def __init__(self, linkage, behavior_link, nb_rlts, d, D, length, nb_sol=[10, 10], 
                  sort_arg = {'min':'mass'}):
@@ -349,7 +348,7 @@ class BearingAssemblyOptimizer:
                     for index_bearing, code_bearing in zip(li_bearing, li_rlts):
                         list_bearing.append(self.GenereBearing(index_bearing, code_bearing))
                     radial_load_linkage = [True]*len(list_bearing)
-                    BA = BearingAssembly(list_bearing, radial_load_linkage, connection_bi = mount['bi'], 
+                    BA = BearingCombination(list_bearing, radial_load_linkage, connection_bi = mount['bi'], 
                                      connection_be = mount['be'], behavior_link = behavior_link)
                     if BA.check:
                         architectures.append(BA)
@@ -488,18 +487,11 @@ class BearingAssemblyOptimizer:
         list_sort_arg=list(npy.argsort(list_sort))
         return npy.array(architectures)[list_sort_arg]
         
-
-class CompositeBearingAssemblyOptimizer:
+class ResultsBearingAssembly:
     def __init__(self, list_pos_unknown, list_load, list_torque, list_speed, list_time,
-                 d_shaft_min=0.02, axial_pos=[0, 0.1], d_ext=[0.05, 0.05], length=[0.04, 0.04],
-                 typ_linkage=[['all'], ['all']],
-                 typ_mounting=None, number_bearing=[[1, 2], [1, 2]],
-                 sort={'typ':'Lnm', 'min':1e4, 'max':npy.inf},
-                 sort_arg = {'min':'mass'},
-                 path='Export_Solution.txt', nb_sol=[20, 10, 10]):
-        
-        nb_linkage = len(length)
-        self.path = path
+                 d_shaft_min, axial_pos, d_ext, length,
+                 typ_linkage, typ_mounting, number_bearing,
+                 sort, sort_arg, path, nb_sol):
         self.list_pos_unknown = list_pos_unknown
         self.list_load = list_load
         self.list_torque = list_torque
@@ -510,6 +502,90 @@ class CompositeBearingAssemblyOptimizer:
         self.d_ext = d_ext
         self.length = length
         self.typ_linkage = typ_linkage
+        self.typ_mounting = typ_mounting
+        self.number_bearing = number_bearing
+        self.sort = sort
+        self.sort_arg = sort_arg
+        self.path = path
+        self.nb_sol = nb_sol
+        self.architectures = []
+    
+    def Dict(self):
+        """Export dictionary
+        """
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
+                
+        d['architectures'] = []
+        for architectures in self.architectures:
+            d['architectures'].append(architectures.Dict())
+            
+        return d
+        
+    @classmethod
+    def Dict2Obj(cls, d):
+        obj = cls(list_pos_unknown = d['list_pos_unknown'], 
+                  list_load = d['list_load'], 
+                  list_torque = d['list_torque'],
+                  list_speed = d['list_speed'],
+                  list_time = d['list_time'],
+                  d_shaft_min = d['d_shaft_min'],
+                  axial_pos = d['axial_pos'],
+                  d_ext = d['d_ext'],
+                  length = d['length'],
+                  typ_linkage = d['typ_linkage'],
+                  typ_mounting = d['typ_mounting'],
+                  number_bearing = d['number_bearing'],
+                  sort = d['sort'],
+                  sort_arg = d['sort_arg'],
+                  path = d['path'], nb_sol = d['nb_sol'])
+        for architectures in d['architectures']:
+            obj.architectures.append(BearingAssembly.Dict2Obj(architectures))
+            
+        return obj
+    
+    def DefOptimizer(self):
+        obj = BearingAssemblyOptimizer.DefOptimizer(self.list_pos_unknown, 
+                 self.list_load, 
+                 self.list_torque, self.list_speed, self.list_time,
+                 self.d_shaft_min, self.axial_pos, self.d_ext, self.length,
+                 self.typ_linkage, self.typ_mounting, self.number_bearing,
+                 self.sort, self.sort_arg, self.path, self.nb_sol)
+        return obj
+    
+class BearingAssemblyOptimizer:
+    def __init__(self, list_pos_unknown, list_load, list_torque, list_speed, list_time,
+                 d_shaft_min=0.02, axial_pos=[0, 0.1], d_ext=[0.05, 0.05], length=[0.04, 0.04],
+                 typ_linkage=[['all'], ['all']],
+                 typ_mounting=None, number_bearing=[[1, 2], [1, 2]],
+                 sort={'typ':'Lnm', 'min':1e4, 'max':npy.inf},
+                 sort_arg = {'min':'mass'},
+                 path='Export_Solution.txt', nb_sol=[20, 10, 10]):
+        
+        self.list_pos_unknown = list_pos_unknown
+        self.list_load = list_load
+        self.list_torque = list_torque
+        self.list_speed = list_speed
+        self.list_time = list_time
+        self.d_shaft_min = d_shaft_min
+        self.axial_pos = axial_pos
+        self.d_ext = d_ext
+        self.length = length
+        self.typ_linkage = typ_linkage
+        self.number_bearing = number_bearing
+        self.sort = sort
+        self.sort_arg = sort_arg
+        self.path = path
+        self.nb_sol = nb_sol
+        
+        nb_linkage = len(length)
         if typ_mounting == None:
             typ_mounting = []
             for typ_iter in product(['pn', 0, 'n', 'p'], repeat = nb_linkage):
@@ -521,23 +597,30 @@ class CompositeBearingAssemblyOptimizer:
             if set(mount) in [set(('pn', 'p')), set(('pn', 'n')), set(('pn', 'pn')), set((0, 0))]:
                 raise KeyError('Modify the typ_linkage data')
                 
-        self.sort = sort
+        self.results = ResultsBearingAssembly(self.list_pos_unknown, self.list_load, 
+                 self.list_torque, self.list_speed, self.list_time,
+                 self.d_shaft_min, self.axial_pos, self.d_ext, self.length,
+                 self.typ_linkage, self.typ_mounting, self.number_bearing,
+                 self.sort, self.sort_arg, self.path, self.nb_sol)
+                
+        
+    def CombinationOptimize(self, sort_arg):
         list_linkage = self.typ_linkage 
         for num_link,list_link in enumerate(self.typ_linkage):
             if 'all' in list_link:
                 list_linkage[num_link] = ['ball_joint', 'cylindric_joint']
 
-        architectures = []
+        archi = []
         for li_mounting in self.typ_mounting:
             sol_BA = {}
             for num_linkage, behavior_link in enumerate(li_mounting):
                 sol_BA[num_linkage] = []
                 for linkage, nb_rlts in product(list_linkage[num_linkage], 
-                                                number_bearing[num_linkage]):
-                    BA = BearingAssemblyOptimizer(linkage, behavior_link, nb_rlts, [self.d_shaft_min[num_linkage], 
+                                                self.number_bearing[num_linkage]):
+                    BA = BearingCombinationOptimizer(linkage, behavior_link, nb_rlts, [self.d_shaft_min[num_linkage], 
                                                 self.d_ext[num_linkage]], [self.d_shaft_min[num_linkage], 
                                                 self.d_ext[num_linkage]], [0, self.length[num_linkage]],
-                                                nb_sol = nb_sol[1::])
+                                                nb_sol = self.nb_sol[1::])
                     if BA.check is True:
                         sol_BA[num_linkage].extend(BA.architectures)
             for num_linkage, behavior_link in enumerate(li_mounting):
@@ -546,13 +629,14 @@ class CompositeBearingAssemblyOptimizer:
                     analyze_architectures = False
             if analyze_architectures:
                 for composite_solution in product(*sol_BA.values()):
-                    architectures.append(CompositeBearingAssembly(composite_solution))
+                    archi.append(BearingAssembly(composite_solution))
         
-        architectures = self.Sortarchitectures(architectures, sort_arg)
-        if nb_sol[0] is not None:
-            self.architectures = architectures[0: min(len(architectures), nb_sol[0])]
+        archi = self.Sortarchitectures(archi, sort_arg)
+        if self.nb_sol[0] is not None:
+            architectures = archi[0: min(len(archi), self.nb_sol[0])]
         else:
-            self.architectures = architectures[0:]
+            architectures = archi[0:]
+        return architectures
         
     def Sortarchitectures(self, architectures, sort_arg):
         list_sort = []
@@ -563,6 +647,9 @@ class CompositeBearingAssemblyOptimizer:
         return npy.array(architectures)[list_sort_arg]
         
     def Optimize(self, nb_sol=5, Lnm_min=1e4, index_sol=None, verbose=False):
+        
+        self.architectures = self.CombinationOptimize(self.sort_arg)
+        
         if index_sol is not None:
             list_sol = []
             for num_sol, sol in enumerate(self.architectures):
@@ -571,7 +658,6 @@ class CompositeBearingAssemblyOptimizer:
         else:
             list_sol = self.architectures
         self.architectures = []
-        self.results = []
         for composite_bg in list_sol:
             l1 = composite_bg.list_bearing_assembly[0].B
             l2 = composite_bg.list_bearing_assembly[1].B
@@ -627,12 +713,7 @@ class CompositeBearingAssemblyOptimizer:
                         composite_bg.Update(sol_x, self.list_pos_unknown, self.list_load,
                                             self.d_shaft_min, self.axial_pos, self.d_ext, self.length)
                         self.architectures.append(composite_bg)
-                        results = ResultsCompositeBearingAssembly()
-                        results = composite_bg.ShaftLoad(pos1 = sol_x[0], pos2 = sol_x[1], 
-                                  list_pos_unknown = self.list_pos_unknown,
-                                  list_load = self.list_load, 
-                                  list_torque = self.list_torque, results = results)
-                        self.results.append(results)
+                        self.results.architectures.append(composite_bg)
                 else:
                     break
             else:
@@ -640,12 +721,20 @@ class CompositeBearingAssemblyOptimizer:
                     composite_bg.Update(sol_x, self.list_pos_unknown, self.list_load,
                                         self.d_shaft_min, self.axial_pos, self.d_ext, self.length)
                     self.architectures.append(composite_bg)
-                    results = ResultsCompositeBearingAssembly()
-                    results = composite_bg.ShaftLoad(pos1 = sol_x[0], pos2 = sol_x[1], 
-                              list_pos_unknown = self.list_pos_unknown,
-                              list_load = self.list_load, 
-                              list_torque = self.list_torque, results = results)
-                    self.results.append(results)
+                    self.results.architectures.append(composite_bg)
+                    
+    @classmethod
+    def DefOptimizer(cls, list_pos_unknown, list_load, 
+                 list_torque, list_speed, list_time,
+                 d_shaft_min, axial_pos, d_ext, length,
+                 typ_linkage, typ_mounting, number_bearing,
+                 sort, sort_arg, path, nb_sol):
+        obj = cls(list_pos_unknown, list_load, 
+                 list_torque, list_speed, list_time,
+                 d_shaft_min, axial_pos, d_ext, length,
+                 typ_linkage, typ_mounting, number_bearing,
+                 sort, sort_arg, path, nb_sol)
+        return obj
     
         
 class ShaftOptimizer:

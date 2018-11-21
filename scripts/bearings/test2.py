@@ -23,17 +23,17 @@ b4 = bearings.ConceptAngularBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1,
 b5 = bearings.ConceptRadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0)
 list_bearing = [b1, b2, b3, b4, b5]
-BA = bearings.BearingAssembly(list_bearing, radial_load_linkage = [True]*5, internal_pre_load = 0, 
+BA = bearings.BearingCombination(list_bearing, radial_load_linkage = [True]*5, internal_pre_load = 0, 
                  connection_bi = ['p'], connection_be = ['n', 'p'], behavior_link = 'pn')
 
 #BA.PlotGraph()
-BA.BearingAssemblyLoad(fa = 0, fr = 200)
-BA.Plot(box = False, typ = 'Load')
+fa = BA.BearingCombinationLoad(fa = 0, fr = 200)
+#BA.Plot(box = False, typ = 'Load')
 #BA.PlotGraph()
 
 d = BA.Dict()
 import json
 print(json.dumps(d))
 
-sol = bearings.BearingAssembly.Dict2Obj(d)
-sol.Plot(typ='Graph', box=False)
+sol = bearings.BearingCombination.Dict2Obj(d)
+sol.Plot(typ='Load', box=True)
