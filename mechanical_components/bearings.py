@@ -1863,7 +1863,10 @@ class BearingAssembly:
                 
                             
     
-    def BearingAssemblyLoad(self, fa, fr):
+    def BearingAssemblyLoad(self, fa, fr, results=None):
+        if results is not None:
+            results.Inputs(fa, fr)
+            
         nb_radial_bearing = len([i for i in self.radial_load_linkage if i == True])
         fr_per_bearing = fr/(nb_radial_bearing*1.)
         
@@ -1931,8 +1934,12 @@ class BearingAssembly:
         for n in [n0, n2, n5, n7]:
             if n is not None:
                 fa += n
-                
-        return fa
+        
+        if results is not None:
+            results.Outputs(fa)
+            return fa, results
+        else:
+            return fa
     
     def Dict(self):
         """Export dictionary
@@ -1978,7 +1985,7 @@ class BearingAssembly:
         obj.best_graph = obj.ConnectionBearing(case = d['case'], list_bearing = li_bg)
         return obj
             
-class CompositiveBearingAssembly:
+class CompositeBearingAssembly:
     def __init__(self, list_bearing_assembly, list_position=None, pre_load=0, pos_x=None):
         
         self.list_bearing_assembly = list_bearing_assembly
@@ -2040,7 +2047,12 @@ class CompositiveBearingAssembly:
             plt.figure()
             nx.draw_networkx(G, pos = positions)
     
-    def ShaftLoad(self, pos1, pos2, list_pos_unknown, list_load, list_torque):
+    def ShaftLoad(self, pos1, pos2, list_pos_unknown, list_load, list_torque,
+                  results=None):
+        
+        if results is not None:
+            results.Inputs(pos1, pos2, list_pos_unknown, list_load, list_torque)
+            li_results_bearing_assembly = []
         
         ground = genmechanics.Part('ground')
         shaft1 = genmechanics.Part('shaft1')
@@ -2066,11 +2078,22 @@ class CompositiveBearingAssembly:
         for li_bg, bg in zip(self.list_bearing_assembly, [bearing1, bearing2]):
             tensor = mech.GlobalLinkageForces(bg,1)
             fr = (tensor[1]**2 + tensor[2]**2)**(0.5)
-            fa = li_bg.BearingAssemblyLoad(fa = axial_load, fr = fr)
+            if results is not None:
+                re_bearing_assembly = ResultsBearingAssembly()
+                fa, re_bearing_assembly = li_bg.BearingAssemblyLoad(fa = axial_load, fr = fr, 
+                                               results = re_bearing_assembly)
+                li_results_bearing_assembly.append(re_bearing_assembly)
+            else:
+                fa = li_bg.BearingAssemblyLoad(fa = axial_load, fr = fr)
             li_fa.append(fa)
             li_fr.append(fr)
         
-        return li_fa, li_fr
+        if results is not None:
+            results.Outputs(li_fa, li_fr, li_results_bearing_assembly)
+            return results
+        else:
+            return li_fa, li_fr
+        
     
     def Dict(self):
         """Export dictionary
@@ -2103,6 +2126,39 @@ class CompositiveBearingAssembly:
                   pos_x = d['pos_x'])
         return obj
     
+#class ResultsBearing:
+#    
+class ResultsBearingAssembly:
+    def __init__(self):
+        self.inputs = []
+        self.outputs = []
+        
+    def Inputs(self, fa, fr):
+        inputs = {}
+        inputs['fa'] = fa
+        inputs['fr'] = fr
+        self.inputs.append(inputs)
+        
+    def Outputs(self, fa):
+        self.outputs.append({'fa': fa})
+    
+class ResultsCompositeBearingAssembly:
+    def __init__(self):
+        self.inputs = []
+        self.outputs = []
+        
+    def Inputs(self, pos1, pos2, list_pos_unknown, list_load, list_torque):
+        inputs = {}
+        inputs['pos1'] = pos1
+        inputs['pos2'] = pos2
+        inputs['list_pos_unknown'] = list_pos_unknown
+        inputs['list_load'] = list_load
+        inputs['list_torque'] = list_torque
+        self.inputs.append(inputs)
+        
+    def Outputs(self,li_fa, li_fr, results_bearing_assembly):
+        self.outputs.append({'li_fa': li_fa, 'li_fr': li_fr, 
+                             'results_bearing_assembly': results_bearing_assembly})
 
 class RadialRollerBearing(ConceptRadialRollerBearing):
     #Roulement à rouleaux

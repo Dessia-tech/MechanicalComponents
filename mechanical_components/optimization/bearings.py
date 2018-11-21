@@ -9,7 +9,8 @@ Created on Fri Aug 17 02:14:21 2018
 from mechanical_components.bearings import oil_iso_vg_1500, material_iso, dico_rlts_iso,dico_rules,dico_roller_iso
 from mechanical_components.bearings import ConceptRadialBallBearing, ConceptAngularBallBearing, \
         ConceptSphericalBallBearing, ConceptRadialRollerBearing, ConceptTaperedRollerBearing, \
-        CompositiveBearingAssembly, BearingAssembly, RadialRollerBearing
+        CompositeBearingAssembly, BearingAssembly, RadialRollerBearing, \
+        ResultsCompositeBearingAssembly, ResultsBearingAssembly
 import numpy as npy
 from scipy.optimize import minimize
 import pandas
@@ -37,7 +38,7 @@ class RollerBearingContinuousOptimizer:
     """
     def __init__(self):
         
-        self.solutions=[]
+        self.architectures=[]
     
     def Optimization(self, d, D, B, Fr, Fa, N, t, T, L10=None, C0r=None, Cr=None,
                          Lnm=None, grade=['Gr_gn'], S=0.9,
@@ -231,11 +232,11 @@ class RollerBearingContinuousOptimizer:
                     if (cr<Cr['min']) or (cr>Cr['max']):
                         liminf_lifetime=False
                 if liminf_lifetime==True:
-                    self.solutions.append(R1)
-                    if len(self.solutions)<nb_sol:
+                    self.architectures.append(R1)
+                    if len(self.architectures)<nb_sol:
                         liminf_lifetime=False
                     if verbose:
-#                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.solutions),l10,D,d,B,Dw,Zmax))
+#                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.architectures),l10,D,d,B,Dw,Zmax))
                         if L10 is not None:
                             print('L10: {}, specification: {}'.format(l10, L10))
                         if Lnm is not None:
@@ -268,7 +269,7 @@ class BearingAssemblyOptimizer:
                     'ang_p':'p', 'ang_n':'n', 'tap_p':'p', 'tap_n':'n'}
         ring_mounting = ['n', 'p']
         
-        solutions = []
+        architectures = []
         for li_rlts in product(typ_rlts.keys(), repeat = nb_rlts):
             if (linkage is 'ball_joint'):
                 if (nb_rlts > 1):
@@ -351,14 +352,14 @@ class BearingAssemblyOptimizer:
                     BA = BearingAssembly(list_bearing, radial_load_linkage, connection_bi = mount['bi'], 
                                      connection_be = mount['be'], behavior_link = behavior_link)
                     if BA.check:
-                        solutions.append(BA)
-        solutions_sort = self.SortSolutions(solutions, sort_arg = {'min':'mass'})
+                        architectures.append(BA)
+        architectures_sort = self.Sortarchitectures(architectures, sort_arg = {'min':'mass'})
         if nb_sol[0] is not None:
-            self.solutions = solutions_sort[0:min(len(solutions_sort), nb_sol[0])]
+            self.architectures = architectures_sort[0:min(len(architectures_sort), nb_sol[0])]
         else:
-            self.solutions = solutions_sort[0:]
+            self.architectures = architectures_sort[0:]
         self.check = True
-        if self.solutions == []:
+        if self.architectures == []:
             self.check = False
             
     def GenereBearing(self, index, code_bearing):
@@ -479,13 +480,13 @@ class BearingAssemblyOptimizer:
             else:
                 return pd_bearing[0:]
         
-    def SortSolutions(self, solutions, sort_arg):
+    def Sortarchitectures(self, architectures, sort_arg):
         list_sort = []
-        for sol in solutions:
+        for sol in architectures:
             val = getattr(sol,sort_arg['min'])
             list_sort.append(val)
         list_sort_arg=list(npy.argsort(list_sort))
-        return npy.array(solutions)[list_sort_arg]
+        return npy.array(architectures)[list_sort_arg]
         
 
 class CompositeBearingAssemblyOptimizer:
@@ -526,7 +527,7 @@ class CompositeBearingAssemblyOptimizer:
             if 'all' in list_link:
                 list_linkage[num_link] = ['ball_joint', 'cylindric_joint']
 
-        solutions = []
+        architectures = []
         for li_mounting in self.typ_mounting:
             sol_BA = {}
             for num_linkage, behavior_link in enumerate(li_mounting):
@@ -538,38 +539,39 @@ class CompositeBearingAssemblyOptimizer:
                                                 self.d_ext[num_linkage]], [0, self.length[num_linkage]],
                                                 nb_sol = nb_sol[1::])
                     if BA.check is True:
-                        sol_BA[num_linkage].extend(BA.solutions)
+                        sol_BA[num_linkage].extend(BA.architectures)
             for num_linkage, behavior_link in enumerate(li_mounting):
-                analyze_solutions = True
+                analyze_architectures = True
                 if sol_BA[num_linkage] == []:
-                    analyze_solutions = False
-            if analyze_solutions:
+                    analyze_architectures = False
+            if analyze_architectures:
                 for composite_solution in product(*sol_BA.values()):
-                    solutions.append(CompositiveBearingAssembly(composite_solution))
+                    architectures.append(CompositeBearingAssembly(composite_solution))
         
-        solutions = self.SortSolutions(solutions, sort_arg)
+        architectures = self.Sortarchitectures(architectures, sort_arg)
         if nb_sol[0] is not None:
-            self.solutions = solutions[0: min(len(solutions), nb_sol[0])]
+            self.architectures = architectures[0: min(len(architectures), nb_sol[0])]
         else:
-            self.solutions = solutions[0:]
+            self.architectures = architectures[0:]
         
-    def SortSolutions(self, solutions, sort_arg):
+    def Sortarchitectures(self, architectures, sort_arg):
         list_sort = []
-        for composite_bg in solutions:
+        for composite_bg in architectures:
             val = getattr(composite_bg,sort_arg['min'])
             list_sort.append(val)
         list_sort_arg=list(npy.argsort(list_sort))
-        return npy.array(solutions)[list_sort_arg]
+        return npy.array(architectures)[list_sort_arg]
         
     def Optimize(self, nb_sol=5, Lnm_min=1e4, index_sol=None, verbose=False):
         if index_sol is not None:
             list_sol = []
-            for num_sol, sol in enumerate(self.solutions):
+            for num_sol, sol in enumerate(self.architectures):
                 if num_sol in index_sol:
                     list_sol.append(sol)
         else:
-            list_sol = self.solutions
-        self.solutions = []
+            list_sol = self.architectures
+        self.architectures = []
+        self.results = []
         for composite_bg in list_sol:
             l1 = composite_bg.list_bearing_assembly[0].B
             l2 = composite_bg.list_bearing_assembly[1].B
@@ -620,18 +622,30 @@ class CompositeBearingAssemblyOptimizer:
                     status = res.status
             
             if nb_sol is not None:
-                if len(self.solutions) <= nb_sol:       
+                if len(self.architectures) <= nb_sol:       
                     if status >= 0:
                         composite_bg.Update(sol_x, self.list_pos_unknown, self.list_load,
                                             self.d_shaft_min, self.axial_pos, self.d_ext, self.length)
-                        self.solutions.append(composite_bg)
+                        self.architectures.append(composite_bg)
+                        results = ResultsCompositeBearingAssembly()
+                        results = composite_bg.ShaftLoad(pos1 = sol_x[0], pos2 = sol_x[1], 
+                                  list_pos_unknown = self.list_pos_unknown,
+                                  list_load = self.list_load, 
+                                  list_torque = self.list_torque, results = results)
+                        self.results.append(results)
                 else:
                     break
             else:
                 if status >= 0:
                     composite_bg.Update(sol_x, self.list_pos_unknown, self.list_load,
                                         self.d_shaft_min, self.axial_pos, self.d_ext, self.length)
-                    self.solutions.append(composite_bg)
+                    self.architectures.append(composite_bg)
+                    results = ResultsCompositeBearingAssembly()
+                    results = composite_bg.ShaftLoad(pos1 = sol_x[0], pos2 = sol_x[1], 
+                              list_pos_unknown = self.list_pos_unknown,
+                              list_load = self.list_load, 
+                              list_torque = self.list_torque, results = results)
+                    self.results.append(results)
     
         
 class ShaftOptimizer:
@@ -968,7 +982,7 @@ class ShaftOptimizer:
         file.close()
         
 
-#print(S1.list_solutions)
+#print(S1.list_architectures)
     
 #B1 = BearingCatalogOptimizer()
 #df=B1.Optimization([0.02,0.03],[0.035,0.045],[0.01,0.02],100,100,1,1,1)
