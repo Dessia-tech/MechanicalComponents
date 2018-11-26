@@ -562,7 +562,7 @@ class ResultsBearingAssembly:
     
 class BearingAssemblyOptimizer:
     def __init__(self, list_pos_unknown, list_load, list_torque, list_speed, list_time,
-                 d_shaft_min=0.02, axial_pos=[0, 0.1], d_ext=[0.05, 0.05], length=[0.04, 0.04],
+                 d_shaft_min=[0.02, 0.02], axial_pos=[0, 0.1], d_ext=[0.05, 0.05], length=[0.04, 0.04],
                  typ_linkage=[['all'], ['all']],
                  typ_mounting=None, number_bearing=[[1, 2], [1, 2]],
                  sort={'typ':'Lnm', 'min':1e4, 'max':npy.inf},
@@ -595,7 +595,7 @@ class BearingAssemblyOptimizer:
         self.typ_mounting = typ_mounting
         for mount in self.typ_mounting:
             if set(mount) in [set(('pn', 'p')), set(('pn', 'n')), set(('pn', 'pn')), set((0, 0))]:
-                raise KeyError('Modify the typ_linkage data')
+                raise KeyError('Modify the typ_mounting data')
                 
         self.results = ResultsBearingAssembly(self.list_pos_unknown, self.list_load, 
                  self.list_torque, self.list_speed, self.list_time,

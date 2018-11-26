@@ -1996,6 +1996,15 @@ class BearingAssembly:
         if pos_x is not None:
             pos_x = list(pos_x)
         self.pos_x = pos_x
+        self.B = 0
+        for bc in list_bearing_assembly:
+            self.B += bc.B
+        self.D = 0
+        for bc in list_bearing_assembly:
+            self.D = max(bc.D, self.D)
+        self.d = 0
+        for bc in list_bearing_assembly:
+            self.d = max(bc.d, self.d)
         
     def Update(self, pos_x, list_pos_unknown, list_load, d_shaft_min, axial_pos, 
                d_ext, length):
