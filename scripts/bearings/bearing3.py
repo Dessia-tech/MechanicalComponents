@@ -6,11 +6,11 @@ Created on Fri Oct  5 09:53:05 2018
 @author: Pierrem
 """
 import sys as sys
-#del sys.modules['mechanical_components.optimization']
-import mechanical_components.optimization.bearings as bearings
+import mechanical_components.bearings as bearings
+import mechanical_components.optimization.bearings as bearings_opt
 import numpy as npy
 
-S1 = bearings.BearingAssemblyOptimizer(list_pos_unknown = [[-0.001,0.005,0]], 
+S1 = bearings_opt.BearingAssemblyOptimizer(list_pos_unknown = [[-0.001,0.005,0]], 
                     list_load = [[2000, -2500, 100]], list_torque = [[0, 100, 0]],
                     list_speed = [200], list_time = [1e6],
                     d_shaft_min = [0.02, 0.025], axial_pos = [0, 0.1], d_ext = [0.05, 0.07], 
@@ -35,7 +35,7 @@ results = S1.results
 d = results.Dict()
 import json
 print(json.dumps(d))
-obj = bearings.ResultsBearingAssembly.Dict2Obj(d)
+obj = bearings.BearingAssemblyResults.DictToObject(d)
 obj.architectures[0].Plot(typ='Load', box=True)
 
-optim = obj.DefOptimizer()
+#optim = obj.DefOptimizer()
