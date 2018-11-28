@@ -9,7 +9,7 @@ Created on Fri Aug 17 02:14:21 2018
 from mechanical_components.bearings import oil_iso_vg_1500, material_iso, dico_rlts_iso,dico_rules,dico_roller_iso
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
         SphericalBallBearing, RadialRollerBearing, TaperedRollerBearing, \
-        BearingAssembly, BearingCombination, DetailedRadialRollerBearing, BearingAssemblyResults
+        BearingAssembly, BearingCombination, DetailedRadialRollerBearing, BearingAssemblyOptimizationResults
 import numpy as npy
 from scipy.optimize import minimize
 import pandas
@@ -524,7 +524,7 @@ class BearingAssemblyOptimizer:
             if set(mount) in [set(('pn', 'p')), set(('pn', 'n')), set(('pn', 'pn')), set((0, 0))]:
                 raise KeyError('Modify the typ_mounting data')
                 
-        self.results = BearingAssemblyResults(self.boundaries, self.speeds, self.times,
+        self.results = BearingAssemblyOptimizationResults(self.boundaries, self.speeds, self.times,
                  self.d_shaft_min, self.axial_pos, self.d_ext, self.length,
                  self.typ_linkage, self.typ_mounting, self.number_bearing,
                  self.sort, self.sort_arg, self.path, self.nb_sol)
@@ -572,7 +572,7 @@ class BearingAssemblyOptimizer:
         list_sort_arg=list(npy.argsort(list_sort))
         return npy.array(architectures)[list_sort_arg]
         
-    def Optimize(self, nb_sol=5, Lnm_min=1e4, index_sol=None, verbose=False):
+    def Optimize(self, number_solutions=5, Lnm_min=1e4, index_sol=None, verbose=False):
         
         self.architectures = self.CombinationOptimize(self.sort_arg)
         if index_sol is not None:
@@ -584,8 +584,8 @@ class BearingAssemblyOptimizer:
             list_sol = self.architectures
         self.architectures = []
         for composite_bg in list_sol:
-            l1 = composite_bg.bearing_assemblies[0].B
-            l2 = composite_bg.bearing_assemblies[1].B
+            l1 = composite_bg.bearing_combinations[0].B
+            l2 = composite_bg.bearing_combinations[1].B
             pos1_min = self.axial_pos[0] + l1/2
             pos1_max = self.axial_pos[0] + self.length[0] - l1/2
             pos2_min = self.axial_pos[1] + l2/2
@@ -631,13 +631,13 @@ class BearingAssemblyOptimizer:
                     sol_x = res.x
                     status = res.status
             
-            if nb_sol is not None:
-                if len(self.architectures) <= nb_sol:       
+            if number_solutions is not None:
+                if len(self.architectures) <= number_solutions:       
                     if status >= 0:
                         composite_bg.Update(sol_x, self.d_shaft_min, self.axial_pos, 
                                             self.d_ext, self.length)
                         self.architectures.append(composite_bg)
-                        self.results.architectures.append(composite_bg)
+                        self.results.bearing_assemblies.append(composite_bg)
                 else:
                     break
             else:
@@ -645,7 +645,7 @@ class BearingAssemblyOptimizer:
                     composite_bg.Update(sol_x, self.d_shaft_min, self.axial_pos, 
                                         self.d_ext, self.length)
                     self.architectures.append(composite_bg)
-                    self.results.architectures.append(composite_bg)
+                    self.results.bearing_assemblies.append(composite_bg)
                     
     @classmethod
     def DefOptimizer(cls, boundaries, speeds, times,

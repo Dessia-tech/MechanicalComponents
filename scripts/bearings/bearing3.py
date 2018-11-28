@@ -5,10 +5,10 @@ Created on Fri Oct  5 09:53:05 2018
 
 @author: Pierrem
 """
-import sys
+#import sys
 import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
-import numpy as npy
+#import numpy as npy
 
 S1 = bearings_opt.BearingAssemblyOptimizer(boundaries = [[(-0.001, 0.005, 0), (2000, -2500, 100), (0, 100, 0)]], 
                     speeds = [200], times = [1e6],
@@ -20,7 +20,7 @@ S1 = bearings_opt.BearingAssemblyOptimizer(boundaries = [[(-0.001, 0.005, 0), (2
                     nb_sol = [2, 1, 1])
 
 
-S1.Optimize(nb_sol = 1, verbose = True)
+S1.Optimize(number_solutions = 1, verbose = True)
 for sol in S1.architectures:
     sol.Plot(typ='Load')
 #    sol.Graph()
@@ -34,7 +34,7 @@ results = S1.results
 d = results.Dict()
 import json
 print(json.dumps(d))
-obj = bearings.BearingAssemblyResults.DictToObject(d)
-obj.architectures[0].Plot(typ='Load', box=True)
+obj = bearings.BearingAssemblyOptimizationResults.DictToObject(d)
+obj.bearing_assemblies[0].Plot(typ='Load', box=True)
 
 #optim = obj.DefOptimizer()
