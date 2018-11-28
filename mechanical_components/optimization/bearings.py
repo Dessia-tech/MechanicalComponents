@@ -490,7 +490,7 @@ class BearingCombinationOptimizer:
 
     
 class BearingAssemblyOptimizer:
-    def __init__(self, list_pos_unknown, list_load, list_torque, list_speed, list_time,
+    def __init__(self, boundaries, speeds, times,
                  d_shaft_min=[0.02, 0.02], axial_pos=[0, 0.1], d_ext=[0.05, 0.05], length=[0.04, 0.04],
                  typ_linkage=[['all'], ['all']],
                  typ_mounting=None, number_bearing=[[1, 2], [1, 2]],
@@ -498,11 +498,9 @@ class BearingAssemblyOptimizer:
                  sort_arg = {'min':'mass'},
                  path='Export_Solution.txt', nb_sol=[20, 10, 10]):
         
-        self.list_pos_unknown = list_pos_unknown
-        self.list_load = list_load
-        self.list_torque = list_torque
-        self.list_speed = list_speed
-        self.list_time = list_time
+        self.boundaries = boundaries
+        self.speeds = speeds
+        self.times = times
         self.d_shaft_min = d_shaft_min
         self.axial_pos = axial_pos
         self.d_ext = d_ext
@@ -526,8 +524,7 @@ class BearingAssemblyOptimizer:
             if set(mount) in [set(('pn', 'p')), set(('pn', 'n')), set(('pn', 'pn')), set((0, 0))]:
                 raise KeyError('Modify the typ_mounting data')
                 
-        self.results = BearingAssemblyResults(self.list_pos_unknown, self.list_load, 
-                 self.list_torque, self.list_speed, self.list_time,
+        self.results = BearingAssemblyResults(self.boundaries, self.speeds, self.times,
                  self.d_shaft_min, self.axial_pos, self.d_ext, self.length,
                  self.typ_linkage, self.typ_mounting, self.number_bearing,
                  self.sort, self.sort_arg, self.path, self.nb_sol)
@@ -578,7 +575,6 @@ class BearingAssemblyOptimizer:
     def Optimize(self, nb_sol=5, Lnm_min=1e4, index_sol=None, verbose=False):
         
         self.architectures = self.CombinationOptimize(self.sort_arg)
-        
         if index_sol is not None:
             list_sol = []
             for num_sol, sol in enumerate(self.architectures):
@@ -595,8 +591,7 @@ class BearingAssemblyOptimizer:
             pos2_min = self.axial_pos[1] + l2/2
             pos2_max = self.axial_pos[1] + self.length[1] - l2/2
             def fun(x):
-                (fa1, fr1), (fa2, fr2) = composite_bg.ShaftLoad(x[0], x[1], self.list_pos_unknown, 
-                                                    self.list_load, self.list_torque)
+                (fa1, fr1), (fa2, fr2) = composite_bg.ShaftLoad(x[0], x[1], self.boundaries)
 #                Lnm1 = 0
 #                for rlt1 in list_bearing1:
 #                    Lnm1 += rlt1.AdjustedLifeTime(Fr = [fr1], Fa = [fa1], N = [300], t = [1e10], T = [60])
@@ -639,27 +634,25 @@ class BearingAssemblyOptimizer:
             if nb_sol is not None:
                 if len(self.architectures) <= nb_sol:       
                     if status >= 0:
-                        composite_bg.Update(sol_x, self.list_pos_unknown, self.list_load,
-                                            self.d_shaft_min, self.axial_pos, self.d_ext, self.length)
+                        composite_bg.Update(sol_x, self.d_shaft_min, self.axial_pos, 
+                                            self.d_ext, self.length)
                         self.architectures.append(composite_bg)
                         self.results.architectures.append(composite_bg)
                 else:
                     break
             else:
                 if status >= 0:
-                    composite_bg.Update(sol_x, self.list_pos_unknown, self.list_load,
-                                        self.d_shaft_min, self.axial_pos, self.d_ext, self.length)
+                    composite_bg.Update(sol_x, self.d_shaft_min, self.axial_pos, 
+                                        self.d_ext, self.length)
                     self.architectures.append(composite_bg)
                     self.results.architectures.append(composite_bg)
                     
     @classmethod
-    def DefOptimizer(cls, list_pos_unknown, list_load, 
-                 list_torque, list_speed, list_time,
+    def DefOptimizer(cls, boundaries, speeds, times,
                  d_shaft_min, axial_pos, d_ext, length,
                  typ_linkage, typ_mounting, number_bearing,
                  sort, sort_arg, path, nb_sol):
-        obj = cls(list_pos_unknown, list_load, 
-                 list_torque, list_speed, list_time,
+        obj = cls(boundaries, speeds, times,
                  d_shaft_min, axial_pos, d_ext, length,
                  typ_linkage, typ_mounting, number_bearing,
                  sort, sort_arg, path, nb_sol)

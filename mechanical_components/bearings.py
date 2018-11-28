@@ -1669,7 +1669,7 @@ class BearingCombination:
         
         contour = []
         pos_m = -self.B/2.
-        for num_bg, bg in enumerate(self.list_bearing):
+        for num_bg, bg in enumerate(self.bearings):
             cont = bg.PlotData(pos = pos_m + bg.B/2. + pos)
 #            cont1 = cont.Translation(vm.Vector2D((pos_m + bg.B/2. + pos, 0)), True)
 #            cont_bg = vm.Contour2D([cont1])
@@ -2082,13 +2082,11 @@ class BearingAssembly:
         for bc in bearing_assemblies:
             self.d = max(bc.d, self.d)
         
-    def Update(self, axial_positions, list_pos_unknown, loads, d_shaft_min, axial_pos, 
+    def Update(self, axial_positions, d_shaft_min, axial_pos, 
                d_ext, length):
 #        if axial_position is not None:
 #            axial_position = list(axial_position)
         self.axial_positions = axial_positions
-        self.list_pos_unknown = list_pos_unknown
-        self.loads = loads
         self.d_shaft_min = d_shaft_min
         self.axial_pos = axial_pos
         self.d_ext = d_ext
@@ -2136,8 +2134,7 @@ class BearingAssembly:
             plt.figure()
             nx.draw_networkx(G, pos = positions)
     
-    def ShaftLoad(self, pos1, pos2, list_pos_unknown, loads, torques):
-        
+    def ShaftLoad(self, pos1, pos2, boundaries):
         ground = genmechanics.Part('ground')
         shaft1 = genmechanics.Part('shaft1')
         p1 = npy.array([pos1, 0, 0])
@@ -2146,15 +2143,14 @@ class BearingAssembly:
         bearing2 = linkages.FrictionlessLinearAnnularLinkage(ground,shaft1,p2,[0,0,0],'bearing2')
         
         load1 = []
-        for pos, ld, tq in zip(list_pos_unknown, loads, torques):
+        for pos, ld, tq in boundaries:
             load1.append(gm_loads.KnownLoad(shaft1, pos, [0,0,0], ld, tq, 'input'))
         load2 = gm_loads.SimpleUnknownLoad(shaft1, [(pos1 + pos2)/2,0,0], [0,0,0], [], [0], 'output torque')
         imposed_speeds = [(bearing1, 0, 100)]
         
         mech = genmechanics.Mechanism([bearing1,bearing2],ground,imposed_speeds,load1,[load2])
-        
         axial_load = 0
-        for load in loads:
+        for (pos_load,load,tq) in boundaries:
             axial_load += load[0]
         
         li_fa = []
@@ -2199,8 +2195,7 @@ class BearingAssembly:
                  
         obj = cls(bearing_assemblies = li_bg, positions = None, pre_load = 0, 
                   axial_positions = d['axial_positions'])
-        obj.Update(axial_positions = d['axial_positions'], list_pos_unknown = d['list_pos_unknown'], 
-                   loads = d['loads'], d_shaft_min = d['d_shaft_min'],
+        obj.Update(axial_positions = d['axial_positions'], d_shaft_min = d['d_shaft_min'],
                    axial_pos = d['axial_pos'], d_ext = d['d_ext'], length = d['length'])
         return obj
 
@@ -2341,15 +2336,13 @@ class DetailedSphericalRollerBearing(DetailedRadialRollerBearing):
         
 class BearingAssemblyResults:
     # TODO: mettre points d'applications et efforts dans meme structure
-    def __init__(self, list_pos_unknown, loads, torques, speeds, list_time,
+    def __init__(self, boundaries, speeds, times,
                  d_shaft_min, axial_pos, d_ext, length,
                  typ_linkage, typ_mounting, number_bearing,
                  sort, sort_arg, path, nb_sol):
-        self.list_pos_unknown = list_pos_unknown
-        self.loads = loads
-        self.torques = torques
+        self.boundaries = boundaries
         self.speeds = speeds
-        self.list_time = list_time
+        self.times = times
         self.d_shaft_min = d_shaft_min
         self.axial_pos = axial_pos
         self.d_ext = d_ext
@@ -2385,11 +2378,9 @@ class BearingAssemblyResults:
         
     @classmethod
     def DictToObject(cls, d):
-        obj = cls(list_pos_unknown = d['list_pos_unknown'], 
-                  loads = d['loads'], 
-                  torques = d['torques'],
+        obj = cls(boundaries = d['boundaries'], 
                   speeds = d['speeds'],
-                  list_time = d['list_time'],
+                  times = d['times'],
                   d_shaft_min = d['d_shaft_min'],
                   axial_pos = d['axial_pos'],
                   d_ext = d['d_ext'],
