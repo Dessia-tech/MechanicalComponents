@@ -601,26 +601,26 @@ class RadialBearing(LoadBearing):
                 list_line = [vm.LineSegment2D(positions[self.list_node[3]], positions[self.list_node[5]])]
                 list_line.append(vm.LineSegment2D(positions[self.list_node[4]], positions[self.list_node[2]]))
                 load_arrow = vm.Contour2D(list_line)
-                load_arrow = load_arrow.Translation((pos, 0), True)
+                load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
                 load_arrow.MPLPlot(a,'-b', True, width = self.B/10./max_load*self.transversale_load)
         elif (self.direction == -1) or (self.sub_direction == -1):
             if self.transversale_load != 0:
                 list_line = [vm.LineSegment2D(positions[self.list_node[6]], positions[self.list_node[0]])]
                 list_line.append(vm.LineSegment2D(positions[self.list_node[1]], positions[self.list_node[7]]))
                 load_arrow = vm.Contour2D(list_line)
-                load_arrow = load_arrow.Translation((pos, 0), True)
+                load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
                 load_arrow.MPLPlot(a,'-b', True, width = self.B/10./max_load*self.transversale_load)
         if self.internal_ring_load != 0:
             list_line = [vm.LineSegment2D(positions[self.list_node[3]], positions[self.list_node[7]])]
             list_line.append(vm.LineSegment2D(positions[self.list_node[6]], positions[self.list_node[2]]))
             load_arrow = vm.Contour2D(list_line)
-            load_arrow = load_arrow.Translation((pos, 0), True)
+            load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
             load_arrow.MPLPlot(a,'-b', True, width = self.B/10./max_load*self.internal_ring_load)
         if self.external_ring_load != 0:
             list_line = [vm.LineSegment2D(positions[self.list_node[1]], positions[self.list_node[5]])]
             list_line.append(vm.LineSegment2D(positions[self.list_node[4]], positions[self.list_node[0]]))
             load_arrow = vm.Contour2D(list_line)
-            load_arrow = load_arrow.Translation((pos, 0), True)
+            load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
             load_arrow.MPLPlot(a,'-b', True, width = self.B/10./max_load*self.external_ring_load)
 
     
@@ -762,27 +762,27 @@ class RadialBallBearing(RadialBearing):
     def InternalRingContour(self):
         
         pbi2 = vm.Point2D((-self.B/2., self.d1/2.))
-        pbi1 = pbi2.Translation((self.h, 0))
+        pbi1 = pbi2.Translation(vm.Vector2D((self.h, 0)))
         pbi3 = vm.Point2D((-self.B/2., self.d/2.))
         pbi4 = vm.Point2D((self.B/2., self.d/2.))
         pbi5 = vm.Point2D((self.B/2., self.d1/2.))
-        pbi6 = pbi5.Translation((-self.h, 0))
-        bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius, 
-                                                 2: self.radius, 3: self.radius, 4: self.radius}, False)
+        pbi6 = pbi5.Translation(vm.Vector2D((-self.h, 0)))
+        bi1 = primitives2D.RoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1], {1: self.radius, 
+                                                     2: self.radius, 3: self.radius, 4: self.radius}, False)
         cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, self.F/2)), pbi6)
         return vm.Contour2D([bi1, cbi1])
         
     def ExternalRingContour(self):
         
         pbe2 = vm.Point2D((-self.B/2., self.D1/2.))
-        pbe1 = pbe2.Translation((self.h, 0))
+        pbe1 = pbe2.Translation(vm.Vector2D((self.h, 0)))
         pbe3 = vm.Point2D((-self.B/2., self.D/2.))
         pbe4 = vm.Point2D((self.B/2., self.D/2.))
         pbe5 = vm.Point2D((self.B/2., self.D1/2.))
-        pbe6 = pbe5.Translation((-self.h, 0))
+        pbe6 = pbe5.Translation(vm.Vector2D((-self.h, 0)))
         be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 
                                                  2: self.radius, 3: self.radius, 4: self.radius}, False)
-        cbe1 = vm.Arc2D(pbe1, vm.Point2D((0, self.E/2)), pbe6)
+        cbe1 = vm.Arc2D(pbe6, vm.Point2D((0, self.E/2)), pbe1)
         return vm.Contour2D([be1, cbe1])
     
     def RollingContour(self):
@@ -796,13 +796,37 @@ class RadialBallBearing(RadialBearing):
         be_sup = self.ExternalRingContour()
         bi_sup = self.InternalRingContour()
         ball_sup = self.RollingContour()
-        ball_sup.Translation((0, self.Dpw/2.))
+        ball_sup.Translation(vm.Vector2D((0, self.Dpw/2.)))
         
         bearing_sup = vm.Contour2D([be_sup, bi_sup, ball_sup])
         bearing_inf = bearing_sup.Rotation(vm.Point2D((0, 0)), npy.pi, True)
         
         bg = vm.Contour2D([bearing_sup, bearing_inf])
         return bg
+    
+    def PlotData(self, pos=0):
+        
+        be_sup = self.ExternalRingContour()
+        be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3 = [be_sup1.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
+        bi_sup = self.InternalRingContour()
+        bi_sup1 = bi_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(bi_sup1.PlotData('bi_sup', fill = 'url(#diagonal-stripe-1)'))
+        ball_sup = self.RollingContour()
+        ball_sup.Translation(vm.Vector2D((0, self.Dpw/2.)))
+        ball_sup1 = ball_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(ball_sup1.PlotData('ball_sup', fill = None))
+        
+        be_inf = be_sup.Rotation(vm.Point2D((0, 0)), npy.pi, True)
+        be_inf1 = be_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(be_inf1.PlotData('be_inf', fill = 'url(#diagonal-stripe-1)'))
+        bi_inf = bi_sup.Rotation(vm.Point2D((0, 0)), npy.pi, True)
+        bi_inf1 = bi_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(bi_inf1.PlotData('bi_inf', fill = 'url(#diagonal-stripe-1)'))
+        ball_inf = ball_sup.Rotation(vm.Point2D((0, 0)), npy.pi, True)
+        ball_inf1 = ball_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(ball_inf1.PlotData('ball_inf', fill = None))
+        return export_D3
     
     def Graph(self, list_node=None, num=None, pos_x=0, sub_direction=1):
                 
@@ -941,8 +965,8 @@ class AngularBallBearing(RadialBearing):
             pbi3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.d/2.))
             pbi4 = vm.Point2D((sign_H*self.B/2., sign_V*self.d/2.))
             pbi5 = vm.Point2D((sign_H*self.B/2., sign_V*self.d1/2.))
-            pbi6 = pbi5.Translation((-sign_H*self.h1, 0))
-            bi1 = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius, 
+            pbi6 = pbi5.Translation(vm.Vector2D((-sign_H*self.h1, 0)))
+            bi1 = primitives2D.RoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1], {1: self.radius, 
                                                  2: self.radius, 3: self.radius, 4: self.radius}, False, adapt_radius = True)
             cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, sign_V*self.F/2)), pbi6)
             bearing = vm.Contour2D([bi1, cbi1])
@@ -955,13 +979,13 @@ class AngularBallBearing(RadialBearing):
         
         def graph(sign_V, sign_H):
             pbe2 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D1/2.))
-            pbe1 = pbe2.Translation((sign_H*self.h1, 0))
+            pbe1 = pbe2.Translation(vm.Vector2D((sign_H*self.h1, 0)))
             pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
             pbe4 = vm.Point2D((sign_H*self.B/2., sign_V*self.D/2.))
             pbe5 = vm.Point2D((sign_H*self.B/2., sign_V*self.D2/2.))
             pbe6 = vm.Point2D((sign_H*(self.B/2. - self.h2), sign_V*(self.Dpw/2. + self.Dw/2.*0.95)))
             be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius}, False, adapt_radius = True)
-            cbe1 = vm.Arc2D(pbe1, vm.Point2D((0, sign_V*self.E/2)), pbe6)
+            cbe1 = vm.Arc2D(pbe6, vm.Point2D((0, sign_V*self.E/2)), pbe1)
             bearing = vm.Contour2D([be1, cbe1])
             return bearing
         sup_contour = graph(sign_V, sign_H = -self.direction)
@@ -981,10 +1005,34 @@ class AngularBallBearing(RadialBearing):
         bi_sup = self.InternalRingContour(1)
         bi_inf = self.InternalRingContour(-1)
         ball = self.RollingContour()
-        ball_sup = ball.Translation((0, self.Dpw/2.), True)
-        ball_inf = ball.Translation((0, -self.Dpw/2.), True)
+        ball_sup = ball.Translation(vm.Vector2D((0, self.Dpw/2.)), True)
+        ball_inf = ball.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
         bg = vm.Contour2D([be_sup, bi_sup, ball_sup, be_inf, bi_inf, ball_inf])
         return bg
+    
+    def PlotData(self, pos=0):
+        
+        be_sup = self.ExternalRingContour(1)
+        be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3 = [be_sup1.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
+        bi_sup = self.InternalRingContour(1)
+        bi_sup1 = bi_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(bi_sup1.PlotData('bi_sup', fill = 'url(#diagonal-stripe-1)'))
+        ball = self.RollingContour()
+        ball_sup = ball.Translation(vm.Vector2D((0, self.Dpw/2.)), True)
+        ball_sup1 = ball_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(ball_sup1.PlotData('ball_sup', fill = None))
+        
+        be_inf = self.ExternalRingContour(-1)
+        be_inf1 = be_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(be_inf1.PlotData('be_inf', fill = 'url(#diagonal-stripe-1)'))
+        bi_inf = self.InternalRingContour(-1)
+        bi_inf1 = bi_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(bi_inf1.PlotData('bi_inf', fill = 'url(#diagonal-stripe-1)'))
+        ball_inf = ball.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
+        ball_inf1 = ball_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(ball_inf1.PlotData('ball_inf', fill = None))
+        return export_D3
     
     def Graph(self, list_node=None, num=None, pos_x=0):
                 
@@ -1318,8 +1366,8 @@ class RadialRollerBearing(RadialBearing):
         bi_sup = self.InternalRingContour(1)
         bi_inf = self.InternalRingContour(-1)
         roller = self.RollingContour()
-        roller_sup = roller.Translation((0, self.Dpw/2.), True)
-        roller_inf = roller.Translation((0, -self.Dpw/2.), True)
+        roller_sup = roller.Translation(vm.Vector2D((0, self.Dpw/2.)), True)
+        roller_inf = roller.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
         
         bg = vm.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
         return bg
@@ -1390,15 +1438,15 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 #        shift_be = 1e-3
         def graph(sign_V, sign_H):
             p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
-            p1 = p0.Translation((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha)), True)
+            p1 = p0.Translation(vm.Vector2D((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha))), True)
             l1 = vm.Line2D(p0, p1)
             l1.Rotation(p0, -sign_H*sign_V*self.beta)
-            l1.Translation((0.8*sign_H*self.Dw/2.*npy.sin(self.alpha), -sign_V*0.8*self.Dw/2.*npy.cos(self.alpha)))
-            l2 = l1.Translation((0.2*sign_H*self.Dw/2.*npy.sin(self.alpha), -sign_V*0.2*self.Dw/2.*npy.cos(self.alpha)), True)
+            l1.Translation(vm.Vector2D((0.8*sign_H*self.Dw/2.*npy.sin(self.alpha), -sign_V*0.8*self.Dw/2.*npy.cos(self.alpha))))
+            l2 = l1.Translation(vm.Vector2D((0.2*sign_H*self.Dw/2.*npy.sin(self.alpha), -sign_V*0.2*self.Dw/2.*npy.cos(self.alpha))), True)
             pbi3 = vm.Point2D((-sign_H*(self.B/2. - shift_bi), sign_V*self.d/2.))
-            pbi3T = pbi3.Translation((0, 1))
+            pbi3T = pbi3.Translation(vm.Vector2D((0, 1)))
             pbi4 = vm.Point2D((sign_H*(self.B/2.), sign_V*self.d/2.))
-            pbi4T = pbi4.Translation((0, 1))
+            pbi4T = pbi4.Translation(vm.Vector2D((0, 1)))
             l3 = vm.Line2D(pbi3, pbi3T)
             l4 = vm.Line2D(pbi4, pbi4T)
             pbi2 = vm.Point2D.LinesIntersection(l1, l3)
@@ -1429,14 +1477,14 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         shift_be = 1e-3
         def graph(sign_V, sign_H):
             p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
-            p1 = p0.Translation((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha)), True)
+            p1 = p0.Translation(vm.Vector2D((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha))), True)
             l0 = vm.Line2D(p0, p1)
             l0.Rotation(p0, sign_H*sign_V*self.beta)
-            l0.Translation((-sign_H*self.Dw/2.*npy.sin(self.alpha), sign_V*self.Dw/2.*npy.cos(self.alpha)))
+            l0.Translation(vm.Vector2D((-sign_H*self.Dw/2.*npy.sin(self.alpha), sign_V*self.Dw/2.*npy.cos(self.alpha))))
             pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
-            pbe3T = pbe3.Translation((0, 1))
+            pbe3T = pbe3.Translation(vm.Vector2D((0, 1)))
             pbe4 = vm.Point2D((sign_H*(self.B/2. - shift_be), sign_V*self.D/2.))
-            pbe4T = pbe4.Translation((0, 1))
+            pbe4T = pbe4.Translation(vm.Vector2D((0, 1)))
             l3 = vm.Line2D(pbe3, pbe3T)
             l4 = vm.Line2D(pbe4, pbe4T)
             pbe2 = vm.Point2D.LinesIntersection(l0, l3)
@@ -1471,10 +1519,10 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         bi_inf = self.InternalRingContour(-1)
         roller_sup = self.RollingContour(1)
         roller_sup = roller_sup.Rotation(vm.Point2D((0, 0)), self.direction*self.alpha, True)
-        roller_sup = roller_sup.Translation((0, self.Dpw/2.), True)
+        roller_sup = roller_sup.Translation(vm.Vector2D((0, self.Dpw/2.)), True)
         roller_inf = self.RollingContour(-1)
         roller_inf = roller_inf.Rotation(vm.Point2D((0, 0)), -self.direction*self.alpha, True)
-        roller_inf = roller_inf.Translation((0, -self.Dpw/2.), True)
+        roller_inf = roller_inf.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
         
         bg = vm.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
         return bg
@@ -1608,6 +1656,50 @@ class BearingCombination:
                       vm.Point2D((self.axials_positions + self.length, sign*self.d_shaft_min/2.))])
         return box
     
+    def PlotData(self, pos=0, a=None, box=True, typ='Graph'):
+        
+        be_sup = vm.Contour2D([self.ExternalBearing(sign = 1)]).Translation(vm.Vector2D((pos, 0)), True)
+        export_data = [be_sup.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
+        be_inf = vm.Contour2D([self.ExternalBearing(sign = -1)]).Translation(vm.Vector2D((pos, 0)), True)
+        export_data.append(be_inf.PlotData('be_inf', fill = 'url(#diagonal-stripe-1)'))
+        bi_sup = vm.Contour2D([self.InternalBearing(sign = 1)]).Translation(vm.Vector2D((pos, 0)), True)
+        export_data.append(bi_sup.PlotData('bi_sup', fill = 'url(#diagonal-stripe-1)'))
+        bi_inf = vm.Contour2D([self.InternalBearing(sign = -1)]).Translation(vm.Vector2D((pos, 0)), True)
+        export_data.append(bi_inf.PlotData('bi_inf', fill = 'url(#diagonal-stripe-1)'))
+        
+        contour = []
+        pos_m = -self.B/2.
+        for num_bg, bg in enumerate(self.bearings):
+            cont = bg.PlotData(pos = pos_m + bg.B/2. + pos)
+#            cont1 = cont.Translation(vm.Vector2D((pos_m + bg.B/2. + pos, 0)), True)
+#            cont_bg = vm.Contour2D([cont1])
+            pos_m += bg.B
+#            export = cont_bg.Plot3D()
+            export_data.extend(cont)
+        
+        return export_data
+    
+    def PlotContour2D(self, pos=0, a=None, box=True, typ='Graph'):
+        be_sup = self.ExternalBearing(sign = 1)
+        be_inf = self.ExternalBearing(sign = -1)
+        bi_sup = self.InternalBearing(sign = 1)
+        bi_inf = self.InternalBearing(sign = -1)
+        contour = [be_sup, be_inf, bi_sup, bi_inf]
+        linkage_area = vm.Contour2D(contour)
+        linkage_area = linkage_area.Translation(vm.Vector2D((pos, 0)), True)
+        
+        contour = []
+        pos_m = -self.B/2.
+        for bg in self.bearings:
+            cont = bg.Plot()
+            cont = cont.Translation(vm.Vector2D((pos_m + bg.B/2., 0)), True)
+            pos_m += bg.B
+            contour.append(cont)
+        assembly_bg = vm.Contour2D(contour)
+        assembly_bg = assembly_bg.Translation(vm.Vector2D((pos, 0)), True)
+        
+        return linkage_area, assembly_bg
+    
     def Plot(self, pos=0, a=None, box=True, typ='Graph'):
         """
         Generate a Plot
@@ -1617,28 +1709,14 @@ class BearingCombination:
         :param box: draw the box parameter of the bearing assembly
         :param typ: define the aditionnal draw (default is None), 'Graph' draw the graph connection between bearing, 'Load' define the load
         """
+        linkage_area, assembly_bg = self.PlotContour2D(pos, a, box, typ)
         
-        be_sup = self.ExternalBearing(sign = 1)
-        be_inf = self.ExternalBearing(sign = -1)
-        bi_sup = self.InternalBearing(sign = 1)
-        bi_inf = self.InternalBearing(sign = -1)
-        contour = [be_sup, be_inf, bi_sup, bi_inf]
-        linkage_area = vm.Contour2D(contour)
-        linkage_area = linkage_area.Translation((pos, 0), True)
         if a is None:
             f, a = linkage_area.MPLPlot(style = '-g')
         else:
             linkage_area.MPLPlot(a,'-g')
         
-        contour = []
-        pos_m = -self.B/2.
-        for bg in self.bearings:
-            cont = bg.Plot()
-            cont = cont.Translation((pos_m + bg.B/2., 0), True)
-            pos_m += bg.B
-            contour.append(cont)
-        assembly_bg = vm.Contour2D(contour)
-        assembly_bg = assembly_bg.Translation((pos, 0), True)
+        
         assembly_bg.MPLPlot(a,'-k')
 
         if typ == 'Graph':
@@ -1646,11 +1724,11 @@ class BearingCombination:
             pos_m = -self.B/2.
             for bg in self.best_graph:
                 graph = bg.PlotGraph()
-                graph = graph.Translation((pos_m + bg.B/2., 0), True)
+                graph = graph.Translation(vm.Vector2D((pos_m + bg.B/2., 0)), True)
                 pos_m += bg.B
                 list_graph.append(graph)
             list_graph = vm.Contour2D(list_graph)
-            list_graph = list_graph.Translation((pos, 0), True)
+            list_graph = list_graph.Translation(vm.Vector2D((pos, 0)), True)
             list_graph.MPLPlot(a, '--b', True)
             
         elif typ == 'Load':
@@ -1664,7 +1742,7 @@ class BearingCombination:
             box_inf = self.BearingBox(-1)
             cont_box = [box_sup, box_inf]
             contour_box = vm.Contour2D(cont_box)
-            contour_box = contour_box.Translation((pos, 0), True)
+            contour_box = contour_box.Translation(vm.Vector2D((pos, 0)), True)
             contour_box.MPLPlot(a,'-r')
             
     def Graph(self, bearings):
@@ -2004,13 +2082,11 @@ class BearingAssembly:
         for bc in bearing_assemblies:
             self.d = max(bc.d, self.d)
         
-    def Update(self, axial_positions, list_pos_unknown, loads, d_shaft_min, axial_pos, 
+    def Update(self, axial_positions, d_shaft_min, axial_pos, 
                d_ext, length):
 #        if axial_position is not None:
 #            axial_position = list(axial_position)
         self.axial_positions = axial_positions
-        self.list_pos_unknown = list_pos_unknown
-        self.loads = loads
         self.d_shaft_min = d_shaft_min
         self.axial_pos = axial_pos
         self.d_ext = d_ext
@@ -2058,8 +2134,7 @@ class BearingAssembly:
             plt.figure()
             nx.draw_networkx(G, pos = positions)
     
-    def ShaftLoad(self, pos1, pos2, list_pos_unknown, loads, torques):
-        
+    def ShaftLoad(self, pos1, pos2, boundaries):
         ground = genmechanics.Part('ground')
         shaft1 = genmechanics.Part('shaft1')
         p1 = npy.array([pos1, 0, 0])
@@ -2068,15 +2143,14 @@ class BearingAssembly:
         bearing2 = linkages.FrictionlessLinearAnnularLinkage(ground,shaft1,p2,[0,0,0],'bearing2')
         
         load1 = []
-        for pos, ld, tq in zip(list_pos_unknown, loads, torques):
+        for pos, ld, tq in boundaries:
             load1.append(gm_loads.KnownLoad(shaft1, pos, [0,0,0], ld, tq, 'input'))
         load2 = gm_loads.SimpleUnknownLoad(shaft1, [(pos1 + pos2)/2,0,0], [0,0,0], [], [0], 'output torque')
         imposed_speeds = [(bearing1, 0, 100)]
         
         mech = genmechanics.Mechanism([bearing1,bearing2],ground,imposed_speeds,load1,[load2])
-        
         axial_load = 0
-        for load in loads:
+        for (pos_load,load,tq) in boundaries:
             axial_load += load[0]
         
         li_fa = []
@@ -2121,8 +2195,7 @@ class BearingAssembly:
                  
         obj = cls(bearing_assemblies = li_bg, positions = None, pre_load = 0, 
                   axial_positions = d['axial_positions'])
-        obj.Update(axial_positions = d['axial_positions'], list_pos_unknown = d['list_pos_unknown'], 
-                   loads = d['loads'], d_shaft_min = d['d_shaft_min'],
+        obj.Update(axial_positions = d['axial_positions'], d_shaft_min = d['d_shaft_min'],
                    axial_pos = d['axial_pos'], d_ext = d['d_ext'], length = d['length'])
         return obj
 
@@ -2263,15 +2336,13 @@ class DetailedSphericalRollerBearing(DetailedRadialRollerBearing):
         
 class BearingAssemblyResults:
     # TODO: mettre points d'applications et efforts dans meme structure
-    def __init__(self, list_pos_unknown, loads, torques, speeds, list_time,
+    def __init__(self, boundaries, speeds, times,
                  d_shaft_min, axial_pos, d_ext, length,
                  typ_linkage, typ_mounting, number_bearing,
                  sort, sort_arg, path, nb_sol):
-        self.list_pos_unknown = list_pos_unknown
-        self.loads = loads
-        self.torques = torques
+        self.boundaries = boundaries
         self.speeds = speeds
-        self.list_time = list_time
+        self.times = times
         self.d_shaft_min = d_shaft_min
         self.axial_pos = axial_pos
         self.d_ext = d_ext
@@ -2307,11 +2378,9 @@ class BearingAssemblyResults:
         
     @classmethod
     def DictToObject(cls, d):
-        obj = cls(list_pos_unknown = d['list_pos_unknown'], 
-                  loads = d['loads'], 
-                  torques = d['torques'],
+        obj = cls(boundaries = d['boundaries'], 
                   speeds = d['speeds'],
-                  list_time = d['list_time'],
+                  times = d['times'],
                   d_shaft_min = d['d_shaft_min'],
                   axial_pos = d['axial_pos'],
                   d_ext = d['d_ext'],

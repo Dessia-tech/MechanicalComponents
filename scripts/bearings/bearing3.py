@@ -10,9 +10,8 @@ import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
 import numpy as npy
 
-S1 = bearings_opt.BearingAssemblyOptimizer(list_pos_unknown = [[-0.001,0.005,0]], 
-                    list_load = [[2000, -2500, 100]], list_torque = [[0, 100, 0]],
-                    list_speed = [200], list_time = [1e6],
+S1 = bearings_opt.BearingAssemblyOptimizer(boundaries = [[(-0.001, 0.005, 0), (2000, -2500, 100), (0, 100, 0)]], 
+                    speeds = [200], times = [1e6],
                     d_shaft_min = [0.02, 0.025], axial_pos = [0, 0.1], d_ext = [0.05, 0.07], 
                     length = [0.07, 0.04],
                     typ_linkage = [['cylindric_joint'], ['cylindric_joint']],
