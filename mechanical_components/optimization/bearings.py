@@ -7,23 +7,23 @@ Created on Fri Aug 17 02:14:21 2018
 """
 
 from mechanical_components.bearings import oil_iso_vg_1500, material_iso, dico_rlts_iso,dico_rules,dico_roller_iso
-from mechanical_components.bearings import ConceptRadialBallBearing, ConceptAngularBallBearing, \
-        ConceptSphericalBallBearing, ConceptRadialRollerBearing, ConceptTaperedRollerBearing, \
-        BearingAssembly, BearingCombination, RadialRollerBearing
+from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
+        SphericalBallBearing, RadialRollerBearing, TaperedRollerBearing, \
+        BearingAssembly, BearingCombination, DetailedRadialRollerBearing, BearingAssemblyResults
 import numpy as npy
 from scipy.optimize import minimize
 import pandas
-from pandas.plotting import scatter_matrix
+#from pandas.plotting import scatter_matrix
 import pkg_resources
 from itertools import product
 
-import genmechanics
-import genmechanics.linkages as linkages
-import genmechanics.loads as loads
+#import genmechanics
+#import genmechanics.linkages as linkages
+#import genmechanics.loads as loads
 
 import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
+#import volmdlr.primitives3D as primitives3D
+#import volmdlr.primitives2D as primitives2D
 
 # TODO: Cumulative damages
 class RollerBearingContinuousOptimizer:
@@ -346,7 +346,7 @@ class BearingCombinationOptimizer:
                 for li_bearing in li_rlts_pandas:
                     list_bearing = []
                     for index_bearing, code_bearing in zip(li_bearing, li_rlts):
-                        list_bearing.append(self.GenereBearing(index_bearing, code_bearing))
+                        list_bearing.append(self.GenerateBearing(index_bearing, code_bearing))
                     radial_load_linkage = [True]*len(list_bearing)
                     BA = BearingCombination(list_bearing, radial_load_linkage, connection_bi = mount['bi'], 
                                      connection_be = mount['be'], behavior_link = behavior_link)
@@ -361,7 +361,7 @@ class BearingCombinationOptimizer:
         if self.architectures == []:
             self.check = False
             
-    def GenereBearing(self, index, code_bearing):
+    def GenerateBearing(self, index, code_bearing):
         typ_rlt = base_bearing.loc[index,'typ_bearing']
         d = base_bearing.loc[index,'d']
         D = base_bearing.loc[index,'D']
@@ -384,20 +384,20 @@ class BearingCombinationOptimizer:
             elif len(code_bearing.split('_')) == 2:
                 typ = code_bearing.split('_')[1]
                 direction = 1
-            return ConceptRadialRollerBearing(d, D, B, i, Z, Dw, alpha, Cr, C0r, 
+            return RadialRollerBearing(d, D, B, i, Z, Dw, alpha, Cr, C0r, 
                                               mass = mass, typ = typ, direction = direction)
         elif typ_rlt == 'radial_ball_bearing':
-            return ConceptRadialBallBearing(d, D, B, i, Z, Dw, alpha, Cr, C0r, mass = mass)
+            return RadialBallBearing(d, D, B, i, Z, Dw, alpha, Cr, C0r, mass = mass)
         elif typ_rlt == 'angular_ball_bearing':
             direction = (code_bearing.split('_')[1] == 'n' and 1 or -1)
-            return ConceptAngularBallBearing(d, D, B, i, Z, Dw, alpha,
+            return AngularBallBearing(d, D, B, i, Z, Dw, alpha,
                                              Cr, C0r, direction = direction, mass = mass)
         elif typ_rlt == 'spherical_ball_bearing':
-            return ConceptSphericalBallBearing(d, D, B, i, Z, Dw, alpha, 
+            return SphericalBallBearing(d, D, B, i, Z, Dw, alpha, 
                                                Cr, C0r, mass = mass)
         elif typ_rlt == 'tapered_roller_bearing':
             direction = (code_bearing.split('_')[1] == 'n' and 1 or -1)
-            return ConceptTaperedRollerBearing(d, D, B, i, Z, Dw, alpha, 
+            return TaperedRollerBearing(d, D, B, i, Z, Dw, alpha, 
                                                Cr, C0r, mass = mass, direction = direction)
     
     def SearchCatalog(self, d, D, length, list_bearing=None, 
@@ -487,78 +487,7 @@ class BearingCombinationOptimizer:
         list_sort_arg=list(npy.argsort(list_sort))
         return npy.array(architectures)[list_sort_arg]
         
-class ResultsBearingAssembly:
-    def __init__(self, list_pos_unknown, list_load, list_torque, list_speed, list_time,
-                 d_shaft_min, axial_pos, d_ext, length,
-                 typ_linkage, typ_mounting, number_bearing,
-                 sort, sort_arg, path, nb_sol):
-        self.list_pos_unknown = list_pos_unknown
-        self.list_load = list_load
-        self.list_torque = list_torque
-        self.list_speed = list_speed
-        self.list_time = list_time
-        self.d_shaft_min = d_shaft_min
-        self.axial_pos = axial_pos
-        self.d_ext = d_ext
-        self.length = length
-        self.typ_linkage = typ_linkage
-        self.typ_mounting = typ_mounting
-        self.number_bearing = number_bearing
-        self.sort = sort
-        self.sort_arg = sort_arg
-        self.path = path
-        self.nb_sol = nb_sol
-        self.architectures = []
-    
-    def Dict(self):
-        """Export dictionary
-        """
-        d={}
-        for k,v in self.__dict__.items():
-            tv=type(v)
-            if tv==npy.int64:
-                d[k]=int(v)
-            elif tv==npy.float64:
-                d[k]=float(v)
-            else:
-                d[k]=v
-                
-        d['architectures'] = []
-        for architectures in self.architectures:
-            d['architectures'].append(architectures.Dict())
-            
-        return d
-        
-    @classmethod
-    def Dict2Obj(cls, d):
-        obj = cls(list_pos_unknown = d['list_pos_unknown'], 
-                  list_load = d['list_load'], 
-                  list_torque = d['list_torque'],
-                  list_speed = d['list_speed'],
-                  list_time = d['list_time'],
-                  d_shaft_min = d['d_shaft_min'],
-                  axial_pos = d['axial_pos'],
-                  d_ext = d['d_ext'],
-                  length = d['length'],
-                  typ_linkage = d['typ_linkage'],
-                  typ_mounting = d['typ_mounting'],
-                  number_bearing = d['number_bearing'],
-                  sort = d['sort'],
-                  sort_arg = d['sort_arg'],
-                  path = d['path'], nb_sol = d['nb_sol'])
-        for architectures in d['architectures']:
-            obj.architectures.append(BearingAssembly.Dict2Obj(architectures))
-            
-        return obj
-    
-    def DefOptimizer(self):
-        obj = BearingAssemblyOptimizer.DefOptimizer(self.list_pos_unknown, 
-                 self.list_load, 
-                 self.list_torque, self.list_speed, self.list_time,
-                 self.d_shaft_min, self.axial_pos, self.d_ext, self.length,
-                 self.typ_linkage, self.typ_mounting, self.number_bearing,
-                 self.sort, self.sort_arg, self.path, self.nb_sol)
-        return obj
+
     
 class BearingAssemblyOptimizer:
     def __init__(self, list_pos_unknown, list_load, list_torque, list_speed, list_time,
@@ -597,7 +526,7 @@ class BearingAssemblyOptimizer:
             if set(mount) in [set(('pn', 'p')), set(('pn', 'n')), set(('pn', 'pn')), set((0, 0))]:
                 raise KeyError('Modify the typ_mounting data')
                 
-        self.results = ResultsBearingAssembly(self.list_pos_unknown, self.list_load, 
+        self.results = BearingAssemblyResults(self.list_pos_unknown, self.list_load, 
                  self.list_torque, self.list_speed, self.list_time,
                  self.d_shaft_min, self.axial_pos, self.d_ext, self.length,
                  self.typ_linkage, self.typ_mounting, self.number_bearing,
@@ -659,8 +588,8 @@ class BearingAssemblyOptimizer:
             list_sol = self.architectures
         self.architectures = []
         for composite_bg in list_sol:
-            l1 = composite_bg.list_bearing_assembly[0].B
-            l2 = composite_bg.list_bearing_assembly[1].B
+            l1 = composite_bg.bearing_assemblies[0].B
+            l2 = composite_bg.bearing_assemblies[1].B
             pos1_min = self.axial_pos[0] + l1/2
             pos1_max = self.axial_pos[0] + self.length[0] - l1/2
             pos2_min = self.axial_pos[1] + l2/2

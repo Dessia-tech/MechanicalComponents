@@ -7,16 +7,13 @@ import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 import math
 from copy import deepcopy
-import copy
+#import copy
 
-from scipy.optimize import minimize,fsolve
+from scipy.optimize import fsolve
 import networkx as nx
 import matplotlib.pyplot as plt
 from itertools import product
 
-import volmdlr as vm
-import volmdlr.primitives2D as primitives2D
-import volmdlr.primitives3D as primitives3D
 
 from mechanical_components.bearings_snr import RadialRollerBearingSNR
 from mechanical_components.catalogs.ISO_bearings \
@@ -24,7 +21,7 @@ from mechanical_components.catalogs.ISO_bearings \
 
 import genmechanics
 import genmechanics.linkages as linkages
-import genmechanics.loads as loads
+import genmechanics.loads as gm_loads
 
 #oil_kinematic_viscosity
 iso_vg_1500={'data':[[47.21238870380181,922.5481847223729],
@@ -81,9 +78,6 @@ class Oil:
         self.oil_kinematic_viscosity_curve = self.KinematicViscosity(oil_data)
         self.dict_oil_contamination = dict_oil_contamination
     
-    def Dict(self):
-        return self.__dict__
-    
     def FunCoeff(self,x,data,type_x='Linear',type_y='Linear'):
         if type_x == 'Log': 
             x = npy.log10(x)
@@ -111,7 +105,8 @@ class Oil:
                 return list(v.values())[0][grade]
             
     def Dict(self):
-        """Export dictionary
+        """
+        Export dictionary
         """
         d={}
         for k,v in self.__dict__.items():
@@ -126,7 +121,7 @@ class Oil:
         return d
     
     @classmethod
-    def Dict2Obj(cls, d):
+    def DictToObject(cls, d):
         obj = cls(oil_data = d['oil_data'],dict_oil_contamination = d['dict_oil_contamination'])
         return obj
     
@@ -180,7 +175,7 @@ class Material:
         return d
     
     @classmethod
-    def Dict2Obj(cls, d):
+    def DictToObject(cls, d):
         obj = cls(weibull_e = d['weibull_e'], weibull_c = d['weibull_c'], 
                   weibull_h = d['weibull_h'],
                   B1 = d['B1'], mu_delta = d['mu_delta'], c_gamma = d['c_gamma'])
@@ -197,8 +192,10 @@ class LoadNode:
             self.load = None
         if self.ext_load is not None:
             self.load = 0
+            
     def Dict(self):
-        """Export dictionary
+        """
+        Export dictionary
         """
         d={}
         for k,v in self.__dict__.items():
@@ -503,7 +500,7 @@ class RadialBearing(LoadBearing):
         model = self.VolumeModel()
         model.FreeCADExport(fcstd_filepath,python_path,path_lib_freecad,export_types)
         
-    def Graph(self, list_node=None, num=None, pos_x=0):
+    def Graph(self, list_node=None, num=None, axials_positions=0):
         
         self.num = num
         if num is None:
@@ -705,7 +702,7 @@ class RadialBearing(LoadBearing):
 #class ThrustNeedleRollerBearings(ThrustRollerBearings,persistent.Persistent):
 #    #Butée axiale à rouleaux avec cage intégrée
 #    
-class ConceptRadialBallBearing(RadialBearing):
+class RadialBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, typ_contact=None, mass=None):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact, mass)
@@ -858,19 +855,19 @@ class ConceptRadialBallBearing(RadialBearing):
         self.positions = li_pos
         
     @classmethod
-    def Dict2Obj(cls, d):
+    def DictToObject(cls, d):
         if 'Cr' not in d.keys():
             d['Cr'] = None
         if 'C0r' not in d.keys():
             d['C0r'] = None
         obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
-                  oil = Oil.Dict2Obj(d['oil']), 
-                  material = Material.Dict2Obj(d['material']),  
+                  oil = Oil.DictToObject(d['oil']), 
+                  material = Material.DictToObject(d['material']),  
                   typ_contact = d['typ_contact'], mass = d['mass'])
         return obj
         
-class ConceptAngularBallBearing(RadialBearing):
+class AngularBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, typ_contact=None, direction=1, mass=None):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, 
@@ -1061,20 +1058,20 @@ class ConceptAngularBallBearing(RadialBearing):
         self.positions = li_pos
         
     @classmethod
-    def Dict2Obj(cls, d):
+    def DictToObject(cls, d):
         if 'Cr' not in d.keys():
             d['Cr'] = None
         if 'C0r' not in d.keys():
             d['C0r'] = None
         obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
-                  oil = Oil.Dict2Obj(d['oil']), 
-                  material = Material.Dict2Obj(d['material']),  
+                  oil = Oil.DictToObject(d['oil']), 
+                  material = Material.DictToObject(d['material']),  
                   typ_contact = d['typ_contact'], direction = d['direction'],
                   mass = d['mass'])
         return obj
             
-class ConceptSphericalBallBearing(RadialBearing):
+class SphericalBallBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, typ_contact=None, mass=None):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact, mass)
@@ -1128,20 +1125,20 @@ class ConceptSphericalBallBearing(RadialBearing):
         return a_iso
     
     @classmethod
-    def Dict2Obj(cls, d):
+    def DictToObject(cls, d):
         if 'Cr' not in d.keys():
             d['Cr'] = None
         if 'C0r' not in d.keys():
             d['C0r'] = None
         obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
-                  oil = Oil.Dict2Obj(d['oil']), 
-                  material = Material.Dict2Obj(d['material']),  
+                  oil = Oil.DictToObject(d['oil']), 
+                  material = Material.DictToObject(d['material']),  
                   typ_contact = d['typ_contact'], 
                   mass = d['mass'])
         return obj
             
-class ConceptRadialRollerBearing(RadialBearing):
+class RadialRollerBearing(RadialBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, typ_contact='linear_contact', direction=1, typ='N', mass=None):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, typ_contact, mass)
@@ -1161,8 +1158,9 @@ class ConceptRadialRollerBearing(RadialBearing):
             x0 = 0.5*self.i
             y0 = 0.22*1/npy.tan(self.alpha)*self.i
         else:
-            x0,y0 = 1,0
-        P0r = max(fr,X0*fr+Y0*fa)
+            x0 = 1
+            y0 = 0
+        P0r = max(fr,x0*fr+y0*fa)
         return P0r
     
     def EquivalentDynamicLoad(self, fr, fa = 0):
@@ -1202,7 +1200,7 @@ class ConceptRadialRollerBearing(RadialBearing):
                 J20p5 = 0.6295
             else: #analyse if the parameters are true for i>2
                 Jr0p5 = 0.4739
-                Ja0p5 = 0
+#                Ja0p5 = 0
                 J10p5 = 0.7244
                 J20p5 = 0.7543
                 
@@ -1408,23 +1406,23 @@ class ConceptRadialRollerBearing(RadialBearing):
         self.positions = li_pos
     
     @classmethod
-    def Dict2Obj(cls, d):
+    def DictToObject(cls, d):
         if 'Cr' not in d.keys():
             d['Cr'] = None
         if 'C0r' not in d.keys():
             d['C0r'] = None
         obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
-                  oil = Oil.Dict2Obj(d['oil']), 
-                  material = Material.Dict2Obj(d['material']),  
+                  oil = Oil.DictToObject(d['oil']), 
+                  material = Material.DictToObject(d['material']),  
                   typ_contact = d['typ_contact'], direction = d['direction'],
                   typ = d['typ'], mass = d['mass'])
         return obj
     
-class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBallBearing):
+class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, typ_contact='linear_contact', direction=1, mass=None):
-        ConceptRadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, 
+        RadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, 
                                             material, typ_contact, direction, mass=mass)
         self.coeff_baselife = 10/3.
         self.name = 'TaperedRollerBearing'
@@ -1437,7 +1435,7 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBall
     def InternalRingContour(self, sign_V=1):
         
         shift_bi = 5e-4
-        shift_be = 1e-3
+#        shift_be = 1e-3
         def graph(sign_V, sign_H):
             p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
             p1 = p0.Translation(vm.Vector2D((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha))), True)
@@ -1475,7 +1473,7 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBall
         
     def ExternalRingContour(self, sign_V=1):
         
-        shift_bi = 5e-4
+#        shift_bi = 5e-4
         shift_be = 1e-3
         def graph(sign_V, sign_H):
             p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
@@ -1531,28 +1529,28 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBall
     
     def Graph(self, list_node=None, num=None, pos_x=0):
         
-        ConceptAngularBallBearing.Graph(self, list_node, num, pos_x)
+        AngularBallBearing.Graph(self, list_node, num, pos_x)
         
     @classmethod
-    def Dict2Obj(cls, d):
+    def DictToObject(cls, d):
         if 'Cr' not in d.keys():
             d['Cr'] = None
         if 'C0r' not in d.keys():
             d['C0r'] = None
         obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
-                  oil = Oil.Dict2Obj(d['oil']), 
-                  material = Material.Dict2Obj(d['material']),  
+                  oil = Oil.DictToObject(d['oil']), 
+                  material = Material.DictToObject(d['material']),  
                   typ_contact = d['typ_contact'], direction = d['direction'],
                   mass = d['mass'])
         return obj
    
 #class ObjBearingCombination:
-#    def __init__(self, list_bearing, num):
-#        self.list_bearing = list_bearing
+#    def __init__(self, bearings, num):
+#        self.bearings = bearings
 #        self.num = num
 #    def Load(self):
-#        for bg in self.list_bearing + self.list_bearing[::-1]:
+#        for bg in self.bearings + self.bearings[::-1]:
 #            bg.CheckNone()
 #            bg.PropagateNone()
 #            bg.CheckNone()
@@ -1561,37 +1559,37 @@ class ConceptTaperedRollerBearing(ConceptRadialRollerBearing, ConceptAngularBall
 #        while valid:
 #            list_valid_m =list_valid
 #            list_valid = []
-#            for bg in self.list_bearing:
+#            for bg in self.bearings:
 #                bg.Load()
-#            for bg in self.list_bearing:
+#            for bg in self.bearings:
 #                for nd in bg.list_node:
 #                    list_valid.append(nd.load)
 #            if list_valid == list_valid_m:
 #                valid = False
  
 class BearingCombination:
-    def __init__(self, list_bearing, radial_load_linkage, internal_pre_load=0, 
+    def __init__(self, bearings, radial_load_linkage, internal_pre_load=0, 
                  connection_bi=['n', 'p'], connection_be=['n', 'p'], behavior_link='pn'):
-        self.list_bearing = list_bearing
+        self.bearings = bearings
         self.radial_load_linkage = radial_load_linkage
         self.connection_be = connection_be
         self.connection_bi = connection_bi
         self.behavior_link = behavior_link
         self.mass = 0
-        for bg in list_bearing:
+        for bg in bearings:
             if bg.mass is not None:
                 self.mass += bg.mass
         self.B = 0
-        for bg in list_bearing:
+        for bg in bearings:
             self.B += bg.B
         self.D = 0
-        for bg in list_bearing:
+        for bg in bearings:
             self.D = max(self.D, bg.D)
         self.d = npy.inf
-        for bg in list_bearing:
+        for bg in bearings:
             self.d = min(self.d, bg.d)
         
-        self.graph, self.li_case = self.Graph(list_bearing)
+        self.graph, self.li_case = self.Graph(bearings)
         if self.graph == []:
             self.check = False
         else:
@@ -1612,7 +1610,7 @@ class BearingCombination:
             f,a = list_graph.MPLPlot(style='--b',arrow= True)
             
     def Update(self, pos, d_shaft_min, d_ext, length):
-        self.pos_x = pos
+        self.axials_positions = pos
         self.d_shaft_min = d_shaft_min
         self.d_ext = d_ext
         self.length = length
@@ -1652,10 +1650,10 @@ class BearingCombination:
         return bi
     
     def BearingBox(self, sign=1):
-        box = vm.Polygon2D([vm.Point2D((self.pos_x, sign*self.d_shaft_min/2.)),
-                      vm.Point2D((self.pos_x, sign*self.d_ext/2.)),
-                      vm.Point2D((self.pos_x + self.length, sign*self.d_ext/2.)),
-                      vm.Point2D((self.pos_x + self.length, sign*self.d_shaft_min/2.))])
+        box = vm.Polygon2D([vm.Point2D((self.axials_positions, sign*self.d_shaft_min/2.)),
+                      vm.Point2D((self.axials_positions, sign*self.d_ext/2.)),
+                      vm.Point2D((self.axials_positions + self.length, sign*self.d_ext/2.)),
+                      vm.Point2D((self.axials_positions + self.length, sign*self.d_shaft_min/2.))])
         return box
     
     def PlotData(self, pos=0, a=None, box=True, typ='Graph'):
@@ -1692,7 +1690,7 @@ class BearingCombination:
         
         contour = []
         pos_m = -self.B/2.
-        for bg in self.list_bearing:
+        for bg in self.bearings:
             cont = bg.Plot()
             cont = cont.Translation(vm.Vector2D((pos_m + bg.B/2., 0)), True)
             pos_m += bg.B
@@ -1747,11 +1745,11 @@ class BearingCombination:
             contour_box = contour_box.Translation(vm.Vector2D((pos, 0)), True)
             contour_box.MPLPlot(a,'-r')
             
-    def Graph(self, list_bearing):
+    def Graph(self, bearings):
         indice_bearing_x = []
         list_direction = []
         indice = 1
-        for bg in list_bearing:
+        for bg in bearings:
             if (bg.name in ['RadialBallBearing']) or (bg.name in ['RadialRollerBearing'] and bg.typ == 'NUP'):
                 if max(indice_bearing_x + [0]) > 0:
                     if indice == indice_bearing_x[-1]:
@@ -1765,11 +1763,11 @@ class BearingCombination:
             else:
                 indice_bearing_x.append(0)
                 list_direction.append(bg.direction)
-        list_name = [bg.name for bg in list_bearing]
+        list_name = [bg.name for bg in bearings]
                 
         nb_bearing_x = max(indice_bearing_x)
 
-        nb_bearing = len(list_bearing)
+        nb_bearing = len(bearings)
         case_graph = []
         if nb_bearing_x > 0:
             for list_sub_direction in product([-1, 1], repeat = nb_bearing_x):
@@ -1785,7 +1783,7 @@ class BearingCombination:
         li_case = []
         for case in case_graph:
             li = []
-            for bg in list_bearing:
+            for bg in bearings:
                 bg_copy = deepcopy(bg)
                 li.append(bg_copy)
             list_bg_export = self.ConnectionBearing(case, li)
@@ -1795,13 +1793,13 @@ class BearingCombination:
                 li_case.append(case)
         return graph, li_case
             
-    def ConnectionBearing(self, case, list_bearing):
+    def ConnectionBearing(self, case, bearings):
         compt = 0
         list_bg_export = []
-        nb_bearing = len(list_bearing)
-        list_name = [bg.name for bg in list_bearing]
+        nb_bearing = len(bearings)
+        list_name = [bg.name for bg in bearings]
         
-        for i_direction, (direction, bg) in enumerate(zip(case, list_bearing)):
+        for i_direction, (direction, bg) in enumerate(zip(case, bearings)):
             list_nd = []
             if i_direction == 0:
                 if 'n' in self.connection_be:
@@ -1946,9 +1944,9 @@ class BearingCombination:
         nb_radial_bearing = len([i for i in self.radial_load_linkage if i == True])
         fr_per_bearing = fr/(nb_radial_bearing*1.)
         
-        for list_bearing in self.graph:
+        for bearings in self.graph:
             # Load of angular and tapered bearing
-            for ind_bg, bg in enumerate(list_bearing):
+            for ind_bg, bg in enumerate(bearings):
                 if bg.name not in ['RadialRollerBearing', 'RadialBallBearing']:
                     if bg.direction == 1:
                         bg.list_node[3].ext_load = fr_per_bearing
@@ -1960,9 +1958,9 @@ class BearingCombination:
                         continue
             # external axial load
             if fa > 0:
-                list_bearing[0].list_node[3].ext_load = fa
+                bearings[0].list_node[3].ext_load = fa
             elif fa < 0:
-                list_bearing[-1].list_node[6].ext_load = -fa
+                bearings[-1].list_node[6].ext_load = -fa
             # axial load solver
             
             valid = True
@@ -1970,15 +1968,15 @@ class BearingCombination:
             while valid:
                 list_valid_m =list_valid
                 list_valid = []
-                for bg in list_bearing:
+                for bg in bearings:
                     bg.CheckNone()
                     bg.PropagateNone()
                     bg.CheckNone()
                     bg.PropagateNone()
                     bg.CheckNone()
-                for bg in list_bearing:
+                for bg in bearings:
                     bg.Load()
-                for bg in list_bearing:
+                for bg in bearings:
                     bg.ResumeLoad()
                     for nd in bg.list_node:
                         list_valid.append(nd.load)
@@ -1987,12 +1985,12 @@ class BearingCombination:
         # search the best sub graph
         indice_m = 0
         best_graph = 0
-        for best, list_bearing in enumerate(self.graph):
+        for best, bearings in enumerate(self.graph):
             indice = 0
-            n0 = list_bearing[0].list_node[0].load
-            n2 = list_bearing[0].list_node[2].load
-            n5 = list_bearing[-1].list_node[5].load
-            n7 = list_bearing[-1].list_node[7].load
+            n0 = bearings[0].list_node[0].load
+            n2 = bearings[0].list_node[2].load
+            n5 = bearings[-1].list_node[5].load
+            n7 = bearings[-1].list_node[7].load
             for n in [n0, n2, n5, n7]:
                 if (n is not None) and (n != 0):
                     indice += 1
@@ -2026,37 +2024,37 @@ class BearingCombination:
             else:
                 d[k]=v
             
-        del d['list_bearing']
+        del d['bearings']
         li_bg = []
         for bg in self.best_graph:
             li_bg.append(bg.Dict())
-        d['list_bearing'] = li_bg
+        d['bearings'] = li_bg
         del d['best_graph']
             
         del d['graph']
         return d
     
     @classmethod
-    def Dict2Obj(cls, d):
+    def DictToObject(cls, d):
         li_bg = []
-        for li in d['list_bearing']:
+        for li in d['bearings']:
             if li['name'] == 'RadialRollerBearing':
-                BA = ConceptRadialRollerBearing.Dict2Obj(li)
+                BA = RadialRollerBearing.DictToObject(li)
             elif li['name'] == 'TaperedRollerBearing':
-                BA = ConceptTaperedRollerBearing.Dict2Obj(li)
+                BA = TaperedRollerBearing.DictToObject(li)
             elif li['name'] == 'SphericalBallBearing':
-                BA = ConceptSphericalBallBearing.Dict2Obj(li)
+                BA = SphericalBallBearing.DictToObject(li)
             elif li['name'] == 'AngularBallBearing':
-                BA = ConceptAngularBallBearing.Dict2Obj(li)
+                BA = AngularBallBearing.DictToObject(li)
             elif li['name'] == 'RadialBallBearing':
-                BA = ConceptRadialBallBearing.Dict2Obj(li)
+                BA = RadialBallBearing.DictToObject(li)
             li_bg.append(BA)
-        obj = cls(list_bearing = li_bg, radial_load_linkage = d['radial_load_linkage'], 
+        obj = cls(bearings = li_bg, radial_load_linkage = d['radial_load_linkage'], 
                   internal_pre_load = 0, connection_bi = d['connection_bi'], 
                   connection_be = d['connection_be'], behavior_link = d['behavior_link'])
-        obj.best_graph = obj.ConnectionBearing(case = d['case'], list_bearing = li_bg)
+        obj.best_graph = obj.ConnectionBearing(case = d['case'], bearings = li_bg)
         for num_bg, bg in enumerate(obj.best_graph):
-            dict_bg = d['list_bearing'][num_bg]
+            dict_bg = d['bearings'][num_bg]
             for num_nd, nd in enumerate(bg.list_node):
                 nd.load = dict_bg['list_node'][num_nd]['load']
                 nd.ext_load = dict_bg['list_node'][num_nd]['ext_load']
@@ -2067,58 +2065,58 @@ class BearingCombination:
         return obj
             
 class BearingAssembly:
-    def __init__(self, list_bearing_assembly, list_position=None, pre_load=0, pos_x=None):
+    def __init__(self, bearing_assemblies, positions=None, pre_load=0, axial_positions=None):
         
-        self.list_bearing_assembly = list_bearing_assembly
-        self.mass = self.MassCalculate()
-        if pos_x is not None:
-            pos_x = list(pos_x)
-        self.pos_x = pos_x
+        self.bearing_assemblies = bearing_assemblies
+        self.mass = self.Mass()
+#        if axial_position is not None:
+#            axial_position = list(axial_position)
+        self.axial_positions = axial_positions
         self.B = 0
-        for bc in list_bearing_assembly:
+        for bc in bearing_assemblies:
             self.B += bc.B
         self.D = 0
-        for bc in list_bearing_assembly:
+        for bc in bearing_assemblies:
             self.D = max(bc.D, self.D)
         self.d = 0
-        for bc in list_bearing_assembly:
+        for bc in bearing_assemblies:
             self.d = max(bc.d, self.d)
         
-    def Update(self, pos_x, list_pos_unknown, list_load, d_shaft_min, axial_pos, 
+    def Update(self, axial_positions, list_pos_unknown, loads, d_shaft_min, axial_pos, 
                d_ext, length):
-        if pos_x is not None:
-            pos_x = list(pos_x)
-        self.pos_x = pos_x
+#        if axial_position is not None:
+#            axial_position = list(axial_position)
+        self.axial_positions = axial_positions
         self.list_pos_unknown = list_pos_unknown
-        self.list_load = list_load
+        self.loads = loads
         self.d_shaft_min = d_shaft_min
         self.axial_pos = axial_pos
         self.d_ext = d_ext
         self.length = length
-        for num_linkage, assembly_bg in enumerate(self.list_bearing_assembly):
-            pos = self.axial_pos[num_linkage] - self.pos_x[num_linkage]
+        for num_linkage, assembly_bg in enumerate(self.bearing_assemblies):
+            pos = self.axial_pos[num_linkage] - self.axial_positions[num_linkage]
             assembly_bg.Update(pos, self.d_shaft_min[num_linkage], self.d_ext[num_linkage],
                                self.length[num_linkage])
         
-    def MassCalculate(self):
+    def Mass(self):
         mass = 0
-        for li_bg in self.list_bearing_assembly:
+        for li_bg in self.bearing_assemblies:
             mass += li_bg.mass
         return mass
     
     def Shaft(self):
         
-        d1 = self.list_bearing_assembly[0].d
-        d2 = self.list_bearing_assembly[1].d
-        B1 = self.list_bearing_assembly[0].B
-        B2 = self.list_bearing_assembly[1].B
-        pos_mid = (self.pos_x[0] + self.pos_x[1])/2.
-        shaft = vm.Polygon2D([vm.Point2D((self.pos_x[0] - B1/2. - 5e-3, -d1/2.)),
-                      vm.Point2D((self.pos_x[0] - B1/2. - 5e-3, d1/2.)),
+        d1 = self.bearing_assemblies[0].d
+        d2 = self.bearing_assemblies[1].d
+        B1 = self.bearing_assemblies[0].B
+        B2 = self.bearing_assemblies[1].B
+        pos_mid = (self.axial_positions[0] + self.axial_positions[1])/2.
+        shaft = vm.Polygon2D([vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.)),
+                      vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.)),
                       vm.Point2D((pos_mid, d1/2.)),
                       vm.Point2D((pos_mid, d2/2.)),
-                      vm.Point2D((self.pos_x[1] + B2/2. + 5e-3, d2/2.)),
-                      vm.Point2D((self.pos_x[1] + B2/2. + 5e-3, -d2/2.)),
+                      vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, d2/2.)),
+                      vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, -d2/2.)),
                       vm.Point2D((pos_mid, -d2/2.)),
                       vm.Point2D((pos_mid, -d1/2.)),])
         return shaft
@@ -2129,16 +2127,16 @@ class BearingAssembly:
         contour_shaft = vm.Contour2D([shaft])
         f, a = contour_shaft.MPLPlot(style = '-k')
         
-        for assembly_bg, pos in zip(self.list_bearing_assembly, self.pos_x):
+        for assembly_bg, pos in zip(self.bearing_assemblies, self.axial_positions):
             assembly_bg.Plot(pos, a, box, typ)
             
     def Graph(self):
-        for li_bg in self.list_bearing_assembly:
+        for li_bg in self.bearing_assemblies:
             G, positions, li_axial_link, nd_axial_load = li_bg.Graph()
             plt.figure()
             nx.draw_networkx(G, pos = positions)
     
-    def ShaftLoad(self, pos1, pos2, list_pos_unknown, list_load, list_torque):
+    def ShaftLoad(self, pos1, pos2, list_pos_unknown, loads, torques):
         
         ground = genmechanics.Part('ground')
         shaft1 = genmechanics.Part('shaft1')
@@ -2148,20 +2146,20 @@ class BearingAssembly:
         bearing2 = linkages.FrictionlessLinearAnnularLinkage(ground,shaft1,p2,[0,0,0],'bearing2')
         
         load1 = []
-        for pos, ld, tq in zip(list_pos_unknown, list_load, list_torque):
-            load1.append(loads.KnownLoad(shaft1, pos, [0,0,0], ld, tq, 'input'))
-        load2 = loads.SimpleUnknownLoad(shaft1, [(pos1 + pos2)/2,0,0], [0,0,0], [], [0], 'output torque')
+        for pos, ld, tq in zip(list_pos_unknown, loads, torques):
+            load1.append(gm_loads.KnownLoad(shaft1, pos, [0,0,0], ld, tq, 'input'))
+        load2 = gm_loads.SimpleUnknownLoad(shaft1, [(pos1 + pos2)/2,0,0], [0,0,0], [], [0], 'output torque')
         imposed_speeds = [(bearing1, 0, 100)]
         
         mech = genmechanics.Mechanism([bearing1,bearing2],ground,imposed_speeds,load1,[load2])
         
         axial_load = 0
-        for load in list_load:
+        for load in loads:
             axial_load += load[0]
         
         li_fa = []
         li_fr = []
-        for li_bg, bg in zip(self.list_bearing_assembly, [bearing1, bearing2]):
+        for li_bg, bg in zip(self.bearing_assemblies, [bearing1, bearing2]):
             tensor = mech.GlobalLinkageForces(bg,1)
             fr = (tensor[1]**2 + tensor[2]**2)**(0.5)
             fa = li_bg.BearingCombinationLoad(fa = axial_load, fr = fr)
@@ -2185,31 +2183,32 @@ class BearingAssembly:
                 d[k]=v
                 
         li_bg = []
-        for item in self.list_bearing_assembly:
+        for item in self.bearing_assemblies:
             li_bg.append(item.Dict())
-        d['list_bearing_assembly'] = li_bg
+        d['bearing_assemblies'] = li_bg
+        d['axial_positions'] = list(self.axial_positions)
             
         return d
         
     @classmethod
-    def Dict2Obj(cls, d):
+    def DictToObject(cls, d):
         li_bg = []
-        for li in d['list_bearing_assembly']:
-            BA = BearingCombination.Dict2Obj(li)
+        for li in d['bearing_assemblies']:
+            BA = BearingCombination.DictToObject(li)
             li_bg.append(BA)
                  
-        obj = cls(list_bearing_assembly = li_bg, list_position = None, pre_load = 0, 
-                  pos_x = d['pos_x'])
-        obj.Update(pos_x = d['pos_x'], list_pos_unknown = d['list_pos_unknown'], 
-                   list_load = d['list_load'], d_shaft_min = d['d_shaft_min'],
+        obj = cls(bearing_assemblies = li_bg, positions = None, pre_load = 0, 
+                  axial_positions = d['axial_positions'])
+        obj.Update(axial_positions = d['axial_positions'], list_pos_unknown = d['list_pos_unknown'], 
+                   loads = d['loads'], d_shaft_min = d['d_shaft_min'],
                    axial_pos = d['axial_pos'], d_ext = d['d_ext'], length = d['length'])
         return obj
 
-class RadialRollerBearing(ConceptRadialRollerBearing):
+class DetailedRadialRollerBearing(RadialRollerBearing):
     #Roulement à rouleaux
     def __init__(self, d, D, B, i, Z, Dw, d1=None, D1=None, Lw=None, radius=None, E=None, F=None, 
                  alpha=0, bm=1.1, oil=oil_iso_vg_1500, material=material_iso, direction=1, typ='N'):
-        ConceptRadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha ,
+        RadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha ,
                                 oil = oil, material = material, typ_contact = 'linear_contact',
                                 direction = direction, typ = typ)
 
@@ -2307,34 +2306,110 @@ class RadialRollerBearing(ConceptRadialRollerBearing):
         d['material'] = self.material.Dict()
         return d
 
-class DrawnCupNeedleRollerBearing(RadialRollerBearing):
+class DetailedDrawnCupNeedleRollerBearing(DetailedRadialRollerBearing):
     #Douille à aiguilles
 
     def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
                  alpha,bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
                  oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
+        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
                                      F, Z, i, alpha, bm, weibull_e, weibull_c,
                                      weibull_h, B1, mu_delta, c_gamma, oil_name)
         
-class NeedleRollerBearing(RadialRollerBearing):
+class DetailedNeedleRollerBearing(DetailedRadialRollerBearing):
     #Cage à aiguilles
     def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
                  alpha, bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
                  oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
+        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
                                      F, Z, i, alpha, bm, weibull_e, weibull_c,
                                      weibull_h, B1, mu_delta, c_gamma, oil_name)
 
-class SphericalRollerBearing(RadialRollerBearing):
+class DetailedSphericalRollerBearing(DetailedRadialRollerBearing):
     #Roulement à rotule à rouleaux
     def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
                  alpha,bm=1.15, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
                  oil_name='iso_vg_100'):
-        RadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
+        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
                                      F, Z, i, alpha, bm, weibull_e, weibull_c,
                                      weibull_h, B1, mu_delta, c_gamma,
                                      oil_name)
+        
+        
+class BearingAssemblyResults:
+    # TODO: mettre points d'applications et efforts dans meme structure
+    def __init__(self, list_pos_unknown, loads, torques, speeds, list_time,
+                 d_shaft_min, axial_pos, d_ext, length,
+                 typ_linkage, typ_mounting, number_bearing,
+                 sort, sort_arg, path, nb_sol):
+        self.list_pos_unknown = list_pos_unknown
+        self.loads = loads
+        self.torques = torques
+        self.speeds = speeds
+        self.list_time = list_time
+        self.d_shaft_min = d_shaft_min
+        self.axial_pos = axial_pos
+        self.d_ext = d_ext
+        self.length = length
+        self.typ_linkage = typ_linkage
+        self.typ_mounting = typ_mounting
+        self.number_bearing = number_bearing
+        self.sort = sort
+        self.sort_arg = sort_arg
+        self.path = path
+        self.nb_sol = nb_sol
+        self.architectures = []
+    
+    def Dict(self):
+        """
+        Export dictionary
+        """
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=float(v)
+            else:
+                d[k]=v
+                
+        d['architectures'] = []
+        for architectures in self.architectures:
+            d['architectures'].append(architectures.Dict())
+            
+        return d
+        
+    @classmethod
+    def DictToObject(cls, d):
+        obj = cls(list_pos_unknown = d['list_pos_unknown'], 
+                  loads = d['loads'], 
+                  torques = d['torques'],
+                  speeds = d['speeds'],
+                  list_time = d['list_time'],
+                  d_shaft_min = d['d_shaft_min'],
+                  axial_pos = d['axial_pos'],
+                  d_ext = d['d_ext'],
+                  length = d['length'],
+                  typ_linkage = d['typ_linkage'],
+                  typ_mounting = d['typ_mounting'],
+                  number_bearing = d['number_bearing'],
+                  sort = d['sort'],
+                  sort_arg = d['sort_arg'],
+                  path = d['path'], nb_sol = d['nb_sol'])
+        for architectures in d['architectures']:
+            obj.architectures.append(BearingAssembly.DictToObject(architectures))
+            
+        return obj
+    
+#    def DefOptimizer(self):
+#        obj = BearingAssemblyOptimizer.DefOptimizer(self.list_pos_unknown, 
+#                 self.loads, 
+#                 self.torques, self.speeds, self.list_time,
+#                 self.d_shaft_min, self.axial_pos, self.d_ext, self.length,
+#                 self.typ_linkage, self.typ_mounting, self.number_bearing,
+#                 self.sort, self.sort_arg, self.path, self.nb_sol)
+#        return obj
