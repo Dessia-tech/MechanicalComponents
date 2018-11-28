@@ -168,7 +168,7 @@ class RollerBearingContinuousOptimizer:
             [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup]=liste_sol_roller_iso[fonct_sort[i]]
             i+=1
             # Var X: (E,D1,d1)
-            R1 = RadialRollerBearing(d, D, B, i = 1, Z = 0, Lw = Lw, Dw = Dw, radius = rsmin)
+            R1 = DetailedRadialRollerBearing(d, D, B, i = 1, Z = 0, Lw = Lw, Dw = Dw, radius = rsmin)
             def fun(x):
                 obj=0
                 F=x[0]-2*Dw

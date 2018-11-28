@@ -5,7 +5,7 @@ Created on Fri Oct  5 09:53:05 2018
 
 @author: Pierrem
 """
-import sys as sys
+import sys
 import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
 import numpy as npy
