@@ -23,6 +23,8 @@ import genmechanics
 import genmechanics.linkages as linkages
 import genmechanics.loads as gm_loads
 
+from .tools import StringifyDictKeys
+
 #oil_kinematic_viscosity
 iso_vg_1500={'data':[[47.21238870380181,922.5481847223729],
                      [76.41592953982855,191.5471560481642],
@@ -666,7 +668,7 @@ class RadialBearing(LoadBearing):
         load_arrow = vm.Contour2D(list_line)
         return load_arrow
     
-    def Dict(self, subobjects_id={}):
+    def Dict(self, subobjects_id={}, stringify_keys=True):
         """Export dictionary
         """
         d={}
@@ -703,6 +705,9 @@ class RadialBearing(LoadBearing):
                 pos_obj = self.list_node.index(key)
                 di_position[pos_obj] = val
             d['positions'] = di_position
+        
+        if stringify_keys:
+            return StringifyDictKeys(d)
         
         return d
     
@@ -2117,7 +2122,7 @@ class BearingCombination:
         
         return fa
     
-    def Dict(self, subobjects_id={}):
+    def Dict(self, subobjects_id={}, stringify_keys=True):
         """
         Export dictionary
         """
@@ -2131,22 +2136,37 @@ class BearingCombination:
             else:
                 d[k]=v
             
-        del d['bearings']
-        li_bg = []
-        if hasattr(self, 'bearings_solution'):
-            for bg in self.bearings_solution:
-                if bg in subobjects_id:
-                    li_bg.append(subobjects_id[bg])
-                else:
-                    li_bg.append(bg.Dict())
-            del d['bearings_solution']
-        else:
-            for bg in self.graph[0]:
-                li_bg.append(bg.Dict())
-        d['bearings'] = li_bg
+#        li_bg = []
+#        if hasattr(self, 'bearings_solution'):
+#            for bg in self.bearings_solution:
+#                if bg in subobjects_id:
+#                    li_bg.append(subobjects_id[bg])
+#                else:
+#                    li_bg.append(bg.Dict())
+#            del d['bearings_solution']
+#        else:
+#            for bg in self.graph[0]:
+#                if bg in subobjects_id:
+#                    li_bg.append(subobjects_id[bg])
+#                else:
+#                    li_bg.append(bg.Dict())
+#        d['bearings'] = li_bg
+        bearings = []
+        for bearing in self.bearings:
+            if bearing in subobjects_id:
+                bearings.append(subobjects_id[bearing])
+            else:
+                bearings.append(bearing.Dict())
+        d['bearings'] = bearings
         
+        #TODO
+        if 'bearings_solution' in d:
+            del d['bearings_solution']
             
         del d['graph']
+        print(d)
+        if stringify_keys:
+            return StringifyDictKeys(d)
         return d
     
     @classmethod
@@ -2296,7 +2316,7 @@ class BearingAssembly:
         return li_fa, li_fr
         
     
-    def Dict(self, subobjects_id = {}):
+    def Dict(self, subobjects_id = {}, stringify_keys=True):
         """Export dictionary
         """
         d={}
@@ -2317,7 +2337,10 @@ class BearingAssembly:
                 li_bg.append(bearing_combination.Dict())
         d['bearing_combinations'] = li_bg
         d['axial_positions'] = list(self.axial_positions)
-            
+        
+        if stringify_keys:
+            return StringifyDictKeys(d)
+
         return d
         
     @classmethod
@@ -2495,7 +2518,7 @@ class BearingAssemblyOptimizationResults:
         self.nb_sol = nb_sol
         self.bearing_assemblies = []
     
-    def Dict(self, subobjects_id={}):
+    def Dict(self, subobjects_id={}, stringify_keys=True):
         """
         Export dictionary
         """
@@ -2516,7 +2539,8 @@ class BearingAssemblyOptimizationResults:
             else:                
                 d['bearing_assemblies'].append(bearing_assembly.Dict())
             
-            
+        if stringify_keys:
+            return StringifyDictKeys(d)
         return d
         
     @classmethod
