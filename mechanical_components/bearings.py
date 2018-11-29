@@ -659,7 +659,7 @@ class RadialBearing(LoadBearing):
         load_arrow = vm.Contour2D(list_line)
         return load_arrow
     
-    def Dict(self):
+    def Dict(self, subobjects_id={}):
         """Export dictionary
         """
         d={}
@@ -1625,7 +1625,7 @@ class BearingCombination:
     
     dessia_db_attributes = [{'name':'bearings',
                              'class':'mechanical_components.bearings.RadialBearing',
-                             'type':'object'}]
+                             'type':'list'}]
 
     def __init__(self, bearings, radial_load_linkage, internal_pre_load=0, 
                  connection_bi=['n', 'p'], connection_be=['n', 'p'], behavior_link='pn'):
@@ -2076,7 +2076,7 @@ class BearingCombination:
         
         return fa
     
-    def Dict(self):
+    def Dict(self, subobjects_id={}):
         """
         Export dictionary
         """
@@ -2094,7 +2094,10 @@ class BearingCombination:
         li_bg = []
         if hasattr(self, 'best_graph'):
             for bg in self.best_graph:
-                li_bg.append(bg.Dict())
+                if bg in subobjects_id:
+                    li_bg.append(subobjects_id[bg])
+                else:
+                    li_bg.append(bg.Dict())
             del d['best_graph']
         else:
             for bg in self.graph[0]:
@@ -2252,7 +2255,7 @@ class BearingAssembly:
         return li_fa, li_fr
         
     
-    def Dict(self):
+    def Dict(self, subobjects_id = {}):
         """Export dictionary
         """
         d={}
@@ -2266,8 +2269,11 @@ class BearingAssembly:
                 d[k]=v
                 
         li_bg = []
-        for item in self.bearing_combinations:
-            li_bg.append(item.Dict())
+        for bearing_combination in self.bearing_combinations:
+            if bearing_combination in subobjects_id:
+                li_bg.append(subobjects_id[bearing_combination])
+            else:
+                li_bg.append(bearing_combination.Dict())
         d['bearing_combinations'] = li_bg
         d['axial_positions'] = list(self.axial_positions)
             
@@ -2448,7 +2454,7 @@ class BearingAssemblyOptimizationResults:
         self.nb_sol = nb_sol
         self.bearing_assemblies = []
     
-    def Dict(self):
+    def Dict(self, subobjects_id={}):
         """
         Export dictionary
         """
@@ -2463,8 +2469,12 @@ class BearingAssemblyOptimizationResults:
                 d[k]=v
                 
         d['bearing_assemblies'] = []
-        for bearing_assemblies in self.bearing_assemblies:
-            d['bearing_assemblies'].append(bearing_assemblies.Dict())
+        for bearing_assembly in self.bearing_assemblies:
+            if bearing_assembly in subobjects_id:
+                d['bearing_assemblies'].append(subobjects_id[bearing_assembly])
+            else:                
+                d['bearing_assemblies'].append(bearing_assembly.Dict())
+            
             
         return d
         
