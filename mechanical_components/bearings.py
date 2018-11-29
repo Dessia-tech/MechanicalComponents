@@ -576,6 +576,13 @@ class RadialBearing(LoadBearing):
         self.transversale_load = transversale_load
         self.external_ring_load = external_ring_load
         self.internal_ring_load = internal_ring_load
+        
+    def Plot(self, a=None):
+        bg = self.PlotContour()
+        if a is None:
+            f, a = bg.MPLPlot(style = '-k')
+        else:
+            bg.MPLPlot(a,'-k')
 
     def PlotLoad(self, a, pos=0):
         
@@ -665,30 +672,46 @@ class RadialBearing(LoadBearing):
             else:
                 d[k]=v
 
-        li_nd = []
-        for nd in self.list_node:
-            li_nd.append(nd.Dict())
-        d['list_node'] = li_nd
-        
         d['material'] = self.material.Dict()
         d['oil'] = self.oil.Dict()
         
-        di_next = {}
-        for key, val in self.next.items():
-            pos_obj = self.list_node.index(key)
-            di_next[pos_obj] = []
-            for v in val:
-                pos_v = self.list_node.index(v)
-                di_next[pos_obj].append(pos_v)
-        d['next'] = di_next
         
-        di_position = {}
-        for key, val in self.positions.items():
-            pos_obj = self.list_node.index(key)
-            di_position[pos_obj] = val
-        d['positions'] = di_position
+        if hasattr(self, 'list_node'):
+            li_nd = []
+            for nd in self.list_node:
+                li_nd.append(nd.Dict())
+            d['list_node'] = li_nd
+        
+            di_next = {}
+            for key, val in self.next.items():
+                pos_obj = self.list_node.index(key)
+                di_next[pos_obj] = []
+                for v in val:
+                    pos_v = self.list_node.index(v)
+                    di_next[pos_obj].append(pos_v)
+            d['next'] = di_next
+            
+            di_position = {}
+            for key, val in self.positions.items():
+                pos_obj = self.list_node.index(key)
+                di_position[pos_obj] = val
+            d['positions'] = di_position
         
         return d
+    
+    @classmethod
+    def DictToObject(cls, d):
+        if d['class_name'] is 'RadialBallBearing':
+            return RadialBallBearing.DictToObject(d)
+        elif d['class_name'] is 'AngularBallBearing':
+            return AngularBallBearing.DictToObject(d)
+        elif d['class_name'] is 'SphericalBallBearing':
+            return SphericalBallBearing.DictToObject(d)
+        elif d['class_name'] is 'RadialRollerBearing':
+            return RadialRollerBearing.DictToObject(d)
+        elif d['class_name'] is 'TaperedRollerBearing':
+            return TaperedRollerBearing.DictToObject(d)
+        
         
 # =============================================================
 # Object générique roulement cylindrique
@@ -791,7 +814,7 @@ class RadialBallBearing(RadialBearing):
         c1 = vm.Circle2D(p0, self.Dw/2.) 
         return vm.Contour2D([c1])
     
-    def Plot(self):
+    def PlotContour(self):
         
         be_sup = self.ExternalRingContour()
         bi_sup = self.InternalRingContour()
@@ -803,6 +826,8 @@ class RadialBallBearing(RadialBearing):
         
         bg = vm.Contour2D([bearing_sup, bearing_inf])
         return bg
+    
+    
     
     def PlotData(self, pos=0):
         
@@ -998,7 +1023,7 @@ class AngularBallBearing(RadialBearing):
         c1 = vm.Circle2D(p0, self.Dw/2.) 
         return vm.Contour2D([c1])
     
-    def Plot(self):
+    def PlotContour(self):
         
         be_sup = self.ExternalRingContour(1)
         be_inf = self.ExternalRingContour(-1)
@@ -1388,7 +1413,7 @@ class RadialRollerBearing(RadialBearing):
         
         return export_D3
     
-    def Plot(self):
+    def PlotContour(self):
         
         be_sup = self.ExternalRingContour(1)
         be_inf = self.ExternalRingContour(-1)
@@ -1454,7 +1479,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         RadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, 
                                             material, contact_type, direction, mass=mass)
         self.coeff_baselife = 10/3.
-#        self.name = 'TaperedRollerBearing'
+        self.class_name = 'TaperedRollerBearing'
         
         # estimation for the graph 2D description
         self.Dpw = (self.d + self.D)/2.
@@ -1492,7 +1517,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
             bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7], 
                                                      {1: self.radius, 2: self.radius, 3: self.radius,
                                                       4: self.radius, 5: self.radius,
-                                                      6: self.radius}, True)
+                                                      6: self.radius}, True, adapt_radius=True)
             
             bearing = vm.Contour2D([bi1])
             return bearing
@@ -1519,7 +1544,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
             pbe2 = vm.Point2D.LinesIntersection(l0, l3)
             pbe5 = vm.Point2D.LinesIntersection(l0, l4)
             be1 = primitives2D.RoundedLineSegments2D([pbe2, pbe3, pbe4, pbe5], {0: self.radius, 
-                                                 1: self.radius, 2: self.radius, 3: self.radius}, True)
+                                                 1: self.radius, 2: self.radius, 3: self.radius}, True, adapt_radius=True)
             bearing = vm.Contour2D([be1])
             return bearing
         contour = graph(sign_V, sign_H = -self.direction)
@@ -1540,17 +1565,17 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         bg = vm.Contour2D([contour])
         return bg
     
-    def Plot(self):
+    def PlotContour(self):
         
         be_sup = self.ExternalRingContour(1)
         be_inf = self.ExternalRingContour(-1)
         bi_sup = self.InternalRingContour(1)
         bi_inf = self.InternalRingContour(-1)
         roller_sup = self.RollingContour(1)
-        roller_sup = roller_sup.Rotation(vm.Point2D((0, 0)), self.direction*self.alpha, True)
+        roller_sup = roller_sup.Rotation(vm.Point2D((0, 0)), -self.direction*self.alpha, True)
         roller_sup = roller_sup.Translation(vm.Vector2D((0, self.Dpw/2.)), True)
         roller_inf = self.RollingContour(-1)
-        roller_inf = roller_inf.Rotation(vm.Point2D((0, 0)), -self.direction*self.alpha, True)
+        roller_inf = roller_inf.Rotation(vm.Point2D((0, 0)), self.direction*self.alpha, True)
         roller_inf = roller_inf.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
         
         bg = vm.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
@@ -1731,7 +1756,7 @@ class BearingCombination:
         contour = []
         pos_m = -self.B/2.
         for bg in self.bearings:
-            cont = bg.Plot()
+            cont = bg.PlotContour()
             cont = cont.Translation(vm.Vector2D((pos_m + bg.B/2., 0)), True)
             pos_m += bg.B
             contour.append(cont)
@@ -2177,7 +2202,7 @@ class BearingAssembly:
         contour_shaft = vm.Contour2D([shaft])
         export_data = [contour_shaft.PlotData('contour_shaft', fill = 'url(#diagonal-stripe-1)')]
         
-        for assembly_bg, pos in zip(self.bearing_assemblies, self.axial_positions):
+        for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
             export_data.extend(assembly_bg.PlotData(pos, box))
         return export_data
     
