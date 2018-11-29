@@ -1565,6 +1565,38 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         bg = vm.Contour2D([contour])
         return bg
     
+    def PlotData(self, pos=0):
+        
+        be_sup = self.ExternalRingContour(1)
+        be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3 = [be_sup1.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
+                
+        be_inf = self.ExternalRingContour(-1)
+        be_inf1 = be_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(be_inf1.PlotData('be_inf', fill = 'url(#diagonal-stripe-1)'))
+                
+        bi_sup = self.InternalRingContour(1)
+        bi_sup1 = bi_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(bi_sup1.PlotData('bi_sup', fill = 'url(#diagonal-stripe-1)'))
+                
+        bi_inf = self.InternalRingContour(-1)
+        bi_inf1 = bi_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(bi_inf1.PlotData('bi_inf', fill = 'url(#diagonal-stripe-1)'))
+                
+        roller_sup = self.RollingContour(1)
+        roller_sup = roller_sup.Rotation(vm.Point2D((0, 0)), -self.direction*self.alpha, True)
+        roller_sup = roller_sup.Translation(vm.Vector2D((0, self.Dpw/2.)), True)
+        roller_sup1 = roller_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(roller_sup1.PlotData('roller_sup', fill = 'none'))
+        
+        roller_inf = self.RollingContour(-1)
+        roller_inf = roller_inf.Rotation(vm.Point2D((0, 0)), self.direction*self.alpha, True)
+        roller_inf = roller_inf.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
+        roller_inf1 = roller_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(roller_inf1.PlotData('roller_inf', fill = 'none'))
+        
+        return export_D3
+    
     def PlotContour(self):
         
         be_sup = self.ExternalRingContour(1)
