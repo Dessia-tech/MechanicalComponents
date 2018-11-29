@@ -38,3 +38,5 @@ obj = bearings.BearingAssemblyResults.DictToObject(d)
 obj.architectures[0].Plot(typ='Load', box=True)
 
 #optim = obj.DefOptimizer()
+
+print(json.dumps(sol.PlotData()))

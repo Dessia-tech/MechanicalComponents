@@ -1359,6 +1359,35 @@ class RadialRollerBearing(RadialBearing):
         rol = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4], {1: self.radius, 2: self.radius}, True)
         return vm.Contour2D([rol])
     
+    def PlotData(self, pos=0):
+        
+        be_sup = self.ExternalRingContour(1)
+        be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3 = [be_sup1.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
+                
+        be_inf = self.ExternalRingContour(-1)
+        be_inf1 = be_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(be_inf1.PlotData('be_inf', fill = 'url(#diagonal-stripe-1)'))
+                
+        bi_sup = self.InternalRingContour(1)
+        bi_sup1 = bi_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(bi_sup1.PlotData('bi_sup', fill = 'url(#diagonal-stripe-1)'))
+                
+        bi_inf = self.InternalRingContour(-1)
+        bi_inf1 = bi_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(bi_inf1.PlotData('bi_inf', fill = 'url(#diagonal-stripe-1)'))
+                
+        roller = self.RollingContour()
+        roller_sup = roller.Translation(vm.Vector2D((0, self.Dpw/2.)), True)
+        roller_sup1 = roller_sup.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(roller_sup1.PlotData('roller_sup', fill = 'none'))
+                
+        roller_inf = roller.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
+        roller_inf1 = roller_inf.Translation(vm.Vector2D((pos, 0)), True)
+        export_D3.append(roller_inf1.PlotData('roller_inf', fill = 'none'))
+        
+        return export_D3
+    
     def Plot(self):
         
         be_sup = self.ExternalRingContour(1)
@@ -1656,7 +1685,7 @@ class BearingCombination:
                       vm.Point2D((self.axials_positions + self.length, sign*self.d_shaft_min/2.))])
         return box
     
-    def PlotData(self, pos=0, a=None, box=True, typ='Graph'):
+    def PlotData(self, pos=0, box=False):
         
         be_sup = vm.Contour2D([self.ExternalBearing(sign = 1)]).Translation(vm.Vector2D((pos, 0)), True)
         export_data = [be_sup.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
@@ -1676,6 +1705,12 @@ class BearingCombination:
             pos_m += bg.B
 #            export = cont_bg.Plot3D()
             export_data.extend(cont)
+            
+        if box:
+            box_sup = vm.Contour2D([self.BearingBox(1)]).Translation(vm.Vector2D((pos, 0)), True)
+            export_data.append(box_sup.PlotData('box_sup', fill = 'none', color=(1,0,0)))
+            box_inf = vm.Contour2D([self.BearingBox(-1)]).Translation(vm.Vector2D((pos, 0)), True)
+            export_data.append(box_inf.PlotData('box_inf', fill = 'none', color=(1,0,0)))
         
         return export_data
     
@@ -2026,10 +2061,15 @@ class BearingCombination:
             
         del d['bearings']
         li_bg = []
-        for bg in self.best_graph:
-            li_bg.append(bg.Dict())
+        if hasattr(self, 'best_graph'):
+            for bg in self.best_graph:
+                li_bg.append(bg.Dict())
+            del d['best_graph']
+        else:
+            for bg in self.graph[0]:
+                li_bg.append(bg.Dict())
         d['bearings'] = li_bg
-        del d['best_graph']
+        
             
         del d['graph']
         return d
@@ -2052,15 +2092,16 @@ class BearingCombination:
         obj = cls(bearings = li_bg, radial_load_linkage = d['radial_load_linkage'], 
                   internal_pre_load = 0, connection_bi = d['connection_bi'], 
                   connection_be = d['connection_be'], behavior_link = d['behavior_link'])
-        obj.best_graph = obj.ConnectionBearing(case = d['case'], bearings = li_bg)
-        for num_bg, bg in enumerate(obj.best_graph):
-            dict_bg = d['bearings'][num_bg]
-            for num_nd, nd in enumerate(bg.list_node):
-                nd.load = dict_bg['list_node'][num_nd]['load']
-                nd.ext_load = dict_bg['list_node'][num_nd]['ext_load']
-            bg.transversale_load = dict_bg['transversale_load']
-            bg.external_ring_load = dict_bg['external_ring_load']
-            bg.internal_ring_load = dict_bg['internal_ring_load']
+        if 'case' in d.keys():
+            obj.best_graph = obj.ConnectionBearing(case = d['case'], bearings = li_bg)
+            for num_bg, bg in enumerate(obj.best_graph):
+                dict_bg = d['bearings'][num_bg]
+                for num_nd, nd in enumerate(bg.list_node):
+                    nd.load = dict_bg['list_node'][num_nd]['load']
+                    nd.ext_load = dict_bg['list_node'][num_nd]['ext_load']
+                bg.transversale_load = dict_bg['transversale_load']
+                bg.external_ring_load = dict_bg['external_ring_load']
+                bg.internal_ring_load = dict_bg['internal_ring_load']
             
         return obj
             
@@ -2118,6 +2159,16 @@ class BearingAssembly:
                       vm.Point2D((pos_mid, -d2/2.)),
                       vm.Point2D((pos_mid, -d1/2.)),])
         return shaft
+    
+    def PlotData(self, box=True, typ=None):
+        
+        shaft = self.Shaft()
+        contour_shaft = vm.Contour2D([shaft])
+        export_data = [contour_shaft.PlotData('contour_shaft', fill = 'url(#diagonal-stripe-1)')]
+        
+        for assembly_bg, pos in zip(self.bearing_assemblies, self.axial_positions):
+            export_data.extend(assembly_bg.PlotData(pos, box))
+        return export_data
     
     def Plot(self, box=True, typ=None):
         
