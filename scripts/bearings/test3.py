@@ -19,6 +19,7 @@ jd = json.dumps(d)
 b0_bis = bearings.AngularBallBearing.DictToObject(d)
 b0_bis = bearings.RadialBearing.DictToObject(d)
 b0_bis.Plot()
+b0_bis.PlotData()
 
 b1 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0)
@@ -27,6 +28,7 @@ jd = json.dumps(d)
 b1_bis = bearings.AngularBallBearing.DictToObject(d)
 b1_bis = bearings.RadialBearing.DictToObject(d)
 b1_bis.Plot()
+b1_bis.PlotData()
 
 b2 = bearings.RadialRollerBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005)
@@ -35,6 +37,7 @@ jd = json.dumps(d)
 b2_bis = bearings.AngularBallBearing.DictToObject(d)
 b2_bis = bearings.RadialBearing.DictToObject(d)
 b2_bis.Plot()
+b2_bis.PlotData()
 
 b3 = bearings.TaperedRollerBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.004, alpha = 0.2)
@@ -43,3 +46,4 @@ jd = json.dumps(d)
 b3_bis = bearings.AngularBallBearing.DictToObject(d)
 b3_bis = bearings.RadialBearing.DictToObject(d)
 b3_bis.Plot()
+print(json.dumps(b3_bis.PlotData()))
