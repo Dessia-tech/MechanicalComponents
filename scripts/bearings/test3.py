@@ -18,7 +18,9 @@ d = b0.Dict()
 jd = json.dumps(d)
 b0_bis = bearings.AngularBallBearing.DictToObject(d)
 b0_bis = bearings.RadialBearing.DictToObject(d)
-b0_bis.Plot()
+b0_bis.Plot(typ=None)
+b0_bis.Graph()
+b0_bis.Plot(typ='Graph')
 b0_bis.PlotData()
 
 b1 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 

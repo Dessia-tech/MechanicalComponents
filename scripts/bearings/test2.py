@@ -28,7 +28,7 @@ BA = bearings.BearingCombination(list_bearing, radial_load_linkage = [True]*5, i
                  connection_bi = ['p'], connection_be = ['n', 'p'], behavior_link = 'pn')
 
 #BA.PlotGraph()
-#fa = BA.BearingCombinationLoad(fa = 0, fr = 200)
+fa = BA.BearingCombinationLoad(fa = 0, fr = 200)
 #BA.Plot(box = False, typ = 'Load')
 
 #BA.PlotGraph()
@@ -38,9 +38,9 @@ import json
 #print(json.dumps(d))
 
 sol = bearings.BearingCombination.DictToObject(d)
-sol.Plot(typ=None, box=False)
+sol.Plot(typ='Load', box=False)
 
-bg = BA.bearings[2].Plot()
+bg = BA.bearings_solution[0].Plot(typ='Load')
 export = BA.bearings[2].PlotData()
 
 sol = BA.PlotData()

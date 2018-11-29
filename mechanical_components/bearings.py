@@ -72,11 +72,11 @@ iso_vg_10={'data':[[25.088495514790754,17.231530421142708],
 dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},
                         0.1:{npy.inf:{1:1,2:0.85,3:0.7,4:0.5,5:0.3,6:0.05,7:0}}}
 
+
 class Oil:
-    def __init__(self,oil_data,dict_oil_contamination):
+    def __init__(self,oil_data):
         self.oil_data = oil_data
         self.oil_kinematic_viscosity_curve = self.KinematicViscosity(oil_data)
-        self.dict_oil_contamination = dict_oil_contamination
     
     def FunCoeff(self,x,data,type_x='Linear',type_y='Linear'):
         if type_x == 'Log': 
@@ -100,7 +100,7 @@ class Oil:
         return oil_kinematic_viscosity_curve['data']
     
     def OilParameterContamination(self,Dpw,grade):
-        for k,v in self.dict_oil_contamination.items():
+        for k,v in dict_oil_contamination.items():
             if (Dpw>=k) and (Dpw<list(v.keys())[0]):
                 return list(v.values())[0][grade]
             
@@ -122,23 +122,23 @@ class Oil:
     
     @classmethod
     def DictToObject(cls, d):
-        obj = cls(oil_data = d['oil_data'],dict_oil_contamination = d['dict_oil_contamination'])
+        obj = cls(oil_data = d['oil_data'])
         return obj
     
-oil_iso_vg_1500=Oil(iso_vg_1500,dict_oil_contamination)
-oil_iso_vg_1000=Oil(iso_vg_1000,dict_oil_contamination)
-oil_iso_vg_680=Oil(iso_vg_680,dict_oil_contamination)
-oil_iso_vg_460=Oil(iso_vg_460,dict_oil_contamination)
-oil_iso_vg_320=Oil(iso_vg_320,dict_oil_contamination)
-oil_iso_vg_220=Oil(iso_vg_220,dict_oil_contamination)
-oil_iso_vg_150=Oil(iso_vg_150,dict_oil_contamination)
-oil_iso_vg_100=Oil(iso_vg_100,dict_oil_contamination)
-oil_iso_vg_68=Oil(iso_vg_68,dict_oil_contamination)
-oil_iso_vg_46=Oil(iso_vg_46,dict_oil_contamination)
-oil_iso_vg_32=Oil(iso_vg_32,dict_oil_contamination)
-oil_iso_vg_22=Oil(iso_vg_22,dict_oil_contamination)
-oil_iso_vg_15=Oil(iso_vg_15,dict_oil_contamination)
-oil_iso_vg_10=Oil(iso_vg_10,dict_oil_contamination)
+oil_iso_vg_1500=Oil(iso_vg_1500)
+oil_iso_vg_1000=Oil(iso_vg_1000)
+oil_iso_vg_680=Oil(iso_vg_680)
+oil_iso_vg_460=Oil(iso_vg_460)
+oil_iso_vg_320=Oil(iso_vg_320)
+oil_iso_vg_220=Oil(iso_vg_220)
+oil_iso_vg_150=Oil(iso_vg_150)
+oil_iso_vg_100=Oil(iso_vg_100)
+oil_iso_vg_68=Oil(iso_vg_68)
+oil_iso_vg_46=Oil(iso_vg_46)
+oil_iso_vg_32=Oil(iso_vg_32)
+oil_iso_vg_22=Oil(iso_vg_22)
+oil_iso_vg_15=Oil(iso_vg_15)
+oil_iso_vg_10=Oil(iso_vg_10)
         
 class Material:
     def __init__(self, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
@@ -577,12 +577,19 @@ class RadialBearing(LoadBearing):
         self.external_ring_load = external_ring_load
         self.internal_ring_load = internal_ring_load
         
-    def Plot(self, a=None):
+    def Plot(self, a=None, typ=None):
         bg = self.PlotContour()
         if a is None:
             f, a = bg.MPLPlot(style = '-k')
         else:
             bg.MPLPlot(a,'-k')
+            
+        if typ == 'Graph':
+            graph = self.PlotGraph()
+            graph.MPLPlot(a, '--b', True)
+            
+        elif typ == 'Load':
+            self.PlotLoad(a)
 
     def PlotLoad(self, a, pos=0):
         
@@ -1064,6 +1071,8 @@ class AngularBallBearing(RadialBearing):
         RadialBearing.Graph(self, list_node, num, pos_x)
         decal_x = 0.3
         decal_y = 0.1
+        if list_node is None:
+            list_node = self.list_node
     
         li = self.list_node
         if self.direction == 1:
@@ -1819,7 +1828,7 @@ class BearingCombination:
         if typ == 'Graph':
             list_graph = []
             pos_m = -self.B/2.
-            for bg in self.best_graph:
+            for bg in self.bearings_solution:
                 graph = bg.PlotGraph()
                 graph = graph.Translation(vm.Vector2D((pos_m + bg.B/2., 0)), True)
                 pos_m += bg.B
@@ -1830,7 +1839,7 @@ class BearingCombination:
             
         elif typ == 'Load':
             pos_m = -self.B/2.
-            for bg in self.best_graph:
+            for bg in self.bearings_solution:
                 bg.PlotLoad(a, pos = pos + pos_m + bg.B/2.)
                 pos_m += bg.B
         
@@ -2081,7 +2090,7 @@ class BearingCombination:
                     valid = False
         # search the best sub graph
         indice_m = 0
-        best_graph = 0
+        bearings_solution = 0
         for best, bearings in enumerate(self.graph):
             indice = 0
             n0 = bearings[0].list_node[0].load
@@ -2092,15 +2101,15 @@ class BearingCombination:
                 if (n is not None) and (n != 0):
                     indice += 1
             if indice > indice_m:
-                best_graph = best
+                bearings_solution = best
                 indice_m = indice
-        self.best_graph = self.graph[best_graph]
-        self.case = self.li_case[best_graph]
+        self.bearings_solution = self.graph[bearings_solution]
+        self.case = self.li_case[bearings_solution]
         #resume of the axial load
-        n0 = self.best_graph[0].list_node[0].load
-        n2 = self.best_graph[0].list_node[2].load
-        n5 = self.best_graph[-1].list_node[5].load
-        n7 = self.best_graph[-1].list_node[7].load
+        n0 = self.bearings_solution[0].list_node[0].load
+        n2 = self.bearings_solution[0].list_node[2].load
+        n5 = self.bearings_solution[-1].list_node[5].load
+        n7 = self.bearings_solution[-1].list_node[7].load
         fa = 0
         for n in [n0, n2, n5, n7]:
             if n is not None:
@@ -2124,10 +2133,10 @@ class BearingCombination:
             
         del d['bearings']
         li_bg = []
-        if hasattr(self, 'best_graph'):
-            for bg in self.best_graph:
+        if hasattr(self, 'bearings_solution'):
+            for bg in self.bearings_solution:
                 li_bg.append(bg.Dict())
-            del d['best_graph']
+            del d['bearings_solution']
         else:
             for bg in self.graph[0]:
                 li_bg.append(bg.Dict())
@@ -2156,8 +2165,8 @@ class BearingCombination:
                   internal_pre_load = 0, connection_bi = d['connection_bi'], 
                   connection_be = d['connection_be'], behavior_link = d['behavior_link'])
         if 'case' in d.keys():
-            obj.best_graph = obj.ConnectionBearing(case = d['case'], bearings = li_bg)
-            for num_bg, bg in enumerate(obj.best_graph):
+            obj.bearings_solution = obj.ConnectionBearing(case = d['case'], bearings = li_bg)
+            for num_bg, bg in enumerate(obj.bearings_solution):
                 dict_bg = d['bearings'][num_bg]
                 for num_nd, nd in enumerate(bg.list_node):
                     nd.load = dict_bg['list_node'][num_nd]['load']
