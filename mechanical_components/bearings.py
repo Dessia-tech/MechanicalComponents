@@ -916,6 +916,16 @@ class RadialBallBearing(RadialBearing):
         c1 = vm.Circle2D(p0, self.Dw/2.) 
         return vm.Contour2D([c1])
     
+    def RollingContourCAD(self):
+        
+        p0 = vm.Point2D((-self.Dw/2., 0))
+        p1 = vm.Point2D((0, self.Dw/2.))
+        p2 = vm.Point2D((self.Dw/2., 0))
+        a1 = vm.Arc2D(p0, p1, p2)
+        l1 = vm.LineSegment2D(p2,p0)
+        c1 = vm.Circle2D(p0, self.Dw/2.) 
+        return vm.Contour2D([a1, l1])
+    
     def PlotContour(self):
         
         be_sup = self.ExternalRingContour()
@@ -1127,6 +1137,16 @@ class AngularBallBearing(RadialBearing):
         p0 = vm.Point2D((0, 0))
         c1 = vm.Circle2D(p0, self.Dw/2.) 
         return vm.Contour2D([c1])
+    
+    def RollingContourCAD(self):
+        
+        p0 = vm.Point2D((-self.Dw/2., 0))
+        p1 = vm.Point2D((0, self.Dw/2.))
+        p2 = vm.Point2D((self.Dw/2., 0))
+        a1 = vm.Arc2D(p0, p1, p2)
+        l1 = vm.LineSegment2D(p2,p0)
+        c1 = vm.Circle2D(p0, self.Dw/2.) 
+        return vm.Contour2D([a1, l1])
     
     def PlotContour(self):
         

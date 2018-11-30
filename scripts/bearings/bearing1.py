@@ -30,7 +30,7 @@ C1.Optimization(d = {'min':0.02,'max':0.1},
                     verbose = True)
 
 
-for i,b in enumerate(C1.solutions):
+for i,b in enumerate(C1.bearing_assemblies):
 #    v=b.VolumeModel()
     b.FreeCADExport(fcstd_filepath = 'Bearing_{}'.format(i), python_path = '/Applications/FreeCAD.app/Contents/MacOS/FreeCADCmd',
             path_lib_freecad = '/Applications/FreeCAD.app/Contents/lib')
