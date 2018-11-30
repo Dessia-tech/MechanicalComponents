@@ -1625,6 +1625,30 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         bg = vm.Contour2D([contour])
         return bg
     
+    def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
+        center = vm.Point3D(npy.round(center,6))
+        x = vm.Vector3D(axis)
+        x.vector = x.vector/x.Norm()
+        
+        y = x.RandomUnitNormalVector()
+        y.vector = npy.round(y.vector,3)
+        y.vector = y.vector/y.Norm() 
+        
+        z=vm.Vector3D(npy.cross(x.vector,y.vector))
+        
+        #Internal Ring
+        IRC=self.InternalRingContour()        
+        irc=primitives3D.RevolvedProfile(center, x, z, [IRC], center,
+                                         x,angle=2*math.pi, name='Internal Ring')
+        #External Ring
+        ERC=self.ExternalRingContour()
+        erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center,
+                                         x, angle=2*math.pi,name='External Ring')
+        
+        tot=[irc,erc]
+        model=vm.VolumeModel([('', tot)])
+        return model   
+    
     def RollingContour(self, sign_V=1):
         
         def graph(sign_V, sign_H):
