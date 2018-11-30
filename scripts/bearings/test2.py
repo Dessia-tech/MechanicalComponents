@@ -7,7 +7,7 @@ Created on Fri Oct  5 09:53:05 2018
 """
 import sys as sys
 #del sys.modules['mechanical_components.optimization']
-import mechanical_components.optimization.bearings as bearings
+import mechanical_components.bearings as bearings
 import numpy as npy
 import volmdlr as vm
 
@@ -29,29 +29,34 @@ BA = bearings.BearingCombination(list_bearing, radial_load_linkage = [True]*5, i
 
 #BA.PlotGraph()
 fa = BA.BearingCombinationLoad(fa = 0, fr = 200)
+d = BA.Dict()
+obj = bearings.BearingCombination.DictToObject(d)
+obj.Plot(typ=None, box=False)
 #BA.Plot(box = False, typ = 'Load')
 
 #BA.PlotGraph()
 
-d = BA.Dict()
-import json
-#print(json.dumps(d))
-
-sol = bearings.BearingCombination.DictToObject(d)
-sol.Plot(typ='Load', box=False)
-
-bg = BA.bearings_solution[0].Plot(typ='Load')
-export = BA.bearings[2].PlotData()
-
-sol = BA.PlotData()
-#print(BA.PlotD3())
-#print(json.dumps(export))
-print(json.dumps(BA.PlotData()))
-
-#ax = bg.MPLPlot(style='-ob')
-#li = []
-#for item in bg.basis_primitives:
-#    if 'Arc2D' in str(item.__class__):
-#        li.extend(item.Discret())
-#c=vm.Contour2D(li)
-#c.MPLPlot(style='ob')
+#d = BA.bearings[3].Dict()
+#obj = bearings.RadialBearing.DictToObject(d)
+#obj.Plot()
+#import json
+##print(json.dumps(d))
+#
+#sol = bearings.BearingCombination.DictToObject(d)
+#sol.Plot(typ='Load', box=False)
+#
+#bg = BA.bearings_solution[0].Plot(typ=None)
+#export = BA.bearings[2].PlotData()
+#
+#sol = BA.PlotData()
+##print(BA.PlotD3())
+##print(json.dumps(export))
+#print(json.dumps(BA.PlotData()))
+#
+##ax = bg.MPLPlot(style='-ob')
+##li = []
+##for item in bg.basis_primitives:
+##    if 'Arc2D' in str(item.__class__):
+##        li.extend(item.Discret())
+##c=vm.Contour2D(li)
+##c.MPLPlot(style='ob')

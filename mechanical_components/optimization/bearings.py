@@ -591,7 +591,7 @@ class BearingAssemblyOptimizer:
             pos2_min = self.axial_pos[1] + l2/2
             pos2_max = self.axial_pos[1] + self.length[1] - l2/2
             def fun(x):
-                (fa1, fr1), (fa2, fr2) = composite_bg.ShaftLoad(x[0], x[1], self.boundaries)
+                (fa1, fr1), (fa2, fr2) = composite_bg.ShaftLoad([x[0], x[1]], self.boundaries)
 #                Lnm1 = 0
 #                for rlt1 in list_bearing1:
 #                    Lnm1 += rlt1.AdjustedLifeTime(Fr = [fr1], Fa = [fa1], N = [300], t = [1e10], T = [60])
@@ -602,7 +602,7 @@ class BearingAssemblyOptimizer:
                 return obj
             def fineq(x):
                 ineq = [0]
-#                fa1, fr1, fa2, fr2 = composite_bg.ShaftLoad(x[0], x[1], self.list_pos_unknown, 
+#                fa1, fr1, fa2, fr2 = composite_bg.ShaftLoad([x[0], x[1]], self.list_pos_unknown, 
 #                                                    self.list_load, self.list_torque)
 #                Lnm1 = 0
 #                for rlt1 in list_bearing1:
@@ -637,7 +637,7 @@ class BearingAssemblyOptimizer:
                         composite_bg.Update(sol_x, self.d_shaft_min, self.axial_pos, 
                                             self.d_ext, self.length)
                         self.architectures.append(composite_bg)
-                        self.results.bearing_assemblies.append(composite_bg)
+                        self.results.Add(composite_bg)
                 else:
                     break
             else:
@@ -645,7 +645,7 @@ class BearingAssemblyOptimizer:
                     composite_bg.Update(sol_x, self.d_shaft_min, self.axial_pos, 
                                         self.d_ext, self.length)
                     self.architectures.append(composite_bg)
-                    self.results.bearing_assemblies.append(composite_bg)
+                    self.results.Add(composite_bg)
                     
     @classmethod
     def DefOptimizer(cls, boundaries, speeds, times,

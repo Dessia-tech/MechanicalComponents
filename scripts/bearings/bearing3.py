@@ -19,10 +19,13 @@ S1 = bearings_opt.BearingAssemblyOptimizer(boundaries = [[(-0.001, 0.005, 0), (2
                     number_bearing=[[1], [2]],
                     nb_sol = [2, 1, 1])
 
-
 S1.Optimize(number_solutions = 1, verbose = True)
-for sol in S1.architectures:
-    sol.Plot(typ='Load')
+results = S1.results
+
+for ba in results.bearing_assemblies:
+    bc = ba.bearing_combinations[0]
+    bc_analyze = results.results[ba][0]['bearing_combinations'][0]
+    bc.Plot(typ='Load', bearing_combination = bc_analyze)
 #    sol.Graph()
 #    sol.list_bearing_assembly[0].list_bearing[0].FreeCADExport('extrusion2',python_path = '/Applications/FreeCAD.app/Contents/MacOS/FreeCADCmd',
 #            path_lib_freecad = '/Applications/FreeCAD.app/Contents/lib', export_types=['step'])
@@ -30,13 +33,13 @@ for sol in S1.architectures:
 #    S1.Plot(sol)
 #    S1.Export(sol, num_sol)
 
-results = S1.results
-d = results.Dict()
-import json
-print(json.dumps(d))
-obj = bearings.BearingAssemblyOptimizationResults.DictToObject(d)
-obj.bearing_assemblies[0].Plot(typ='Load', box=True)
 
-#optim = obj.DefOptimizer()
-
-print(json.dumps(sol.PlotData()))
+#d = results.Dict()
+#import json
+#print(json.dumps(d))
+#obj = bearings.BearingAssemblyOptimizationResults.DictToObject(d)
+#obj.bearing_assemblies[0].Plot(typ='Load', box=True)
+#
+##optim = obj.DefOptimizer()
+#
+#print(json.dumps(sol.PlotData()))
