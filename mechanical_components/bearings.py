@@ -2191,9 +2191,11 @@ class BearingCombination:
             
         del d['graph']
         del d['li_case']
-        del d['case']
+        if 'case' in d:
+            del d['case']
         del d['bearings_results']
-        del d['num_bearings_solution']
+        if 'num_bearings_solution' in d:
+            del d['num_bearings_solution']
 
         bearings = []
         for bearing in self.bearings:
@@ -2382,10 +2384,14 @@ class BearingAssembly:
                 li_bg.append(bearing_combination.Dict())
         d['bearing_combinations'] = li_bg
         d['axial_positions'] = list(self.axial_positions)
-        del d['boundaries']
-        del d['positions']
-        del d['axial_loads']
-        del d['radial_loads']
+        if 'boundaries' in d:
+            del d['boundaries']
+        if 'positions' in d:
+            del d['positions']
+        if 'axial_loads' in d:
+            del d['axial_loads']
+        if 'radial_loads' in d:
+            del d['radial_loads']
         
         if stringify_keys:
             return StringifyDictKeys(d)
