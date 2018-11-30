@@ -20,7 +20,7 @@ b0_bis = bearings.AngularBallBearing.DictToObject(d)
 b0_bis = bearings.RadialBearing.DictToObject(d)
 b0_bis.Plot(typ=None)
 b0_bis.Graph()
-b0_bis.Plot(typ='Graph')
+b0_bis.Plot(typ=None)
 
 b1 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0)

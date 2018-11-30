@@ -29,6 +29,7 @@ for ba in results.bearing_assemblies:
     
 d = results.Dict()
 obj = bearings.BearingAssemblyOptimizationResults.DictToObject(d)
+obj.Dict()
 
 ba = obj.bearing_assemblies[0]
 bc_result = obj.results[ba][0]['bearing_combinations'][1]

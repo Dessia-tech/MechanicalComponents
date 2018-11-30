@@ -945,8 +945,9 @@ class RadialBallBearing(RadialBearing):
         plot_data['name'] = 'internal diameter'
         plot_data['type'] = 'quote'
         plot_data['label'] = str(round(self.d * 1000, 2)) + ' mm'
-        plot_data['x_label'] = quote_x - delta_quote
+        plot_data['x_label'] = quote_x
         plot_data['y_label'] = 0.
+        plot_data['rot_label'] = 90
         plot_data['orient_label'] = 'v'
         plot_data['plot_data'] = li_data
         
