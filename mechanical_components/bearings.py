@@ -1856,7 +1856,7 @@ class BearingCombination:
                       vm.Point2D((self.axials_positions + self.length, sign*self.internal_diameters/2.))])
         return box
     
-    def PlotData(self, pos=0, box=False):
+    def PlotData(self, pos=0, box=False, typ='Load', bearing_combination_result=None):
         
         be_sup = vm.Contour2D([self.ExternalBearing(sign = 1)]).Translation(vm.Vector2D((pos, 0)), True)
         export_data = [be_sup.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
@@ -1876,6 +1876,13 @@ class BearingCombination:
             pos_m += bg.B
 #            export = cont_bg.Plot3D()
             export_data.extend(cont)
+            
+#        if typ == 'Load':
+#            pos_m = -self.B/2.
+#            for bg_ref, bg_simu in zip(self.bearings, bearing_combination_result):
+#                bg_simu.PlotLoad(a, pos = pos + pos_m + bg_ref.B/2., d = bg_ref.d, D = bg_ref.D, 
+#                            B = bg_ref.B, d1 = bg_ref.d1, D1 = bg_ref.D1)
+#                pos_m += bg_ref.B
             
         if box:
             box_sup = vm.Contour2D([self.BearingBox(1)]).Translation(vm.Vector2D((pos, 0)), True)

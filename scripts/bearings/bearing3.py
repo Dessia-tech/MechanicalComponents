@@ -34,7 +34,7 @@ obj.Dict()
 ba = obj.bearing_assemblies[0]
 bc_result = obj.results[ba][0]['bearing_combinations'][1]
 bc = ba.bearing_combinations[1]
-bc.Plot(typ='Load', bearing_combination_result = bc_result)
+bc.PlotData(typ='Load', bearing_combination_result = bc_result)
 #    sol.Graph()
 #    sol.list_bearing_assembly[0].list_bearing[0].FreeCADExport('extrusion2',python_path = '/Applications/FreeCAD.app/Contents/MacOS/FreeCADCmd',
 #            path_lib_freecad = '/Applications/FreeCAD.app/Contents/lib', export_types=['step'])
