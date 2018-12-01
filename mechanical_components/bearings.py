@@ -757,9 +757,10 @@ class RadialBearing(LoadBearing):
         return model   
     
     def FreeCADExport(self, fcstd_filepath, python_path='python', 
-                      path_lib_freecad='/usr/lib/freecad/lib',export_types=['fcstd']):
+                      freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
         model = self.VolumeModel()
-        model.FreeCADExport(fcstd_filepath,python_path,path_lib_freecad,export_types)
+        model.FreeCADExport(fcstd_filepath, python_path=python_path,
+                            freecad_lib_path=freecad_lib_path, export_types=export_types)
         
         
     
