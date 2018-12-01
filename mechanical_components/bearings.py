@@ -941,6 +941,7 @@ class RadialBallBearing(RadialBearing):
     
     def PlotDataQuote(self):
         delta_quote = 0.05*self.B
+        plot_data = []
         #internal diameter
         quote_x = 1.3*self.B/2.
         line1 = vm.LineSegment2D(vm.Point2D((0, self.d/2.)), vm.Point2D((quote_x + delta_quote, self.d/2.)))
@@ -950,18 +951,58 @@ class RadialBallBearing(RadialBearing):
         line3 = vm.LineSegment2D(vm.Point2D((quote_x, self.d/2.)), vm.Point2D((quote_x, -self.d/2.)))
         li_data.append(line3.PlotData(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
         
-        plot_data = {}
-        plot_data['fill'] = None
-        plot_data['name'] = 'internal diameter'
-        plot_data['type'] = 'quote'
-        plot_data['label'] = str(round(self.d * 1000, 2)) + ' mm'
-        plot_data['x_label'] = quote_x
-        plot_data['y_label'] = 0.
-        plot_data['rot_label'] = 90
-        plot_data['orient_label'] = 'v'
-        plot_data['plot_data'] = li_data
+        pt_data = {}
+        pt_data['fill'] = None
+        pt_data['name'] = 'internal diameter'
+        pt_data['type'] = 'quote'
+        pt_data['label'] = str(round(self.d * 1000, 2)) + ' mm'
+        pt_data['x_label'] = quote_x
+        pt_data['y_label'] = 0.
+        pt_data['rot_label'] = 90
+        pt_data['orient_label'] = 'v'
+        pt_data['plot_data'] = li_data
+        plot_data.append(pt_data)
+        #external diameter
+        quote_x = -1.3*self.B/2.
+        line1 = vm.LineSegment2D(vm.Point2D((0, self.D/2.)), vm.Point2D((quote_x - delta_quote, self.D/2.)))
+        li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True)]
+        line2 = vm.LineSegment2D(vm.Point2D((0, -self.D/2.)), vm.Point2D((quote_x - delta_quote, -self.D/2.)))
+        li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True))
+        line3 = vm.LineSegment2D(vm.Point2D((quote_x, self.D/2.)), vm.Point2D((quote_x, -self.D/2.)))
+        li_data.append(line3.PlotData(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
         
-        return [plot_data]
+        pt_data = {}
+        pt_data['fill'] = None
+        pt_data['name'] = 'external diameter'
+        pt_data['type'] = 'quote'
+        pt_data['label'] = str(round(self.D * 1000, 2)) + ' mm'
+        pt_data['x_label'] = quote_x
+        pt_data['y_label'] = 0.
+        pt_data['rot_label'] = -90
+        pt_data['orient_label'] = 'v'
+        pt_data['plot_data'] = li_data
+        plot_data.append(pt_data)
+        #width
+        quote_x = 1.1*self.B/2.
+        line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., -self.D/2.)), vm.Point2D((-self.B/2., -self.D/2. - quote_x - delta_quote)))
+        li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True)]
+        line2 = vm.LineSegment2D(vm.Point2D((self.B/2., -self.D/2.)), vm.Point2D((self.B/2., -self.D/2. - quote_x - delta_quote)))
+        li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True))
+        line3 = vm.LineSegment2D(vm.Point2D((self.B/2., -self.D/2. - quote_x)), vm.Point2D((-self.B/2., -self.D/2. - quote_x)))
+        li_data.append(line3.PlotData(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
+        
+        pt_data = {}
+        pt_data['fill'] = None
+        pt_data['name'] = 'width'
+        pt_data['type'] = 'quote'
+        pt_data['label'] = str(round(self.B * 1000, 2)) + ' mm'
+        pt_data['x_label'] = 0
+        pt_data['y_label'] = -self.D/2. - quote_x
+        pt_data['rot_label'] = 0
+        pt_data['orient_label'] = 'h'
+        pt_data['plot_data'] = li_data
+        plot_data.append(pt_data)
+        return plot_data
     
     def PlotData(self, pos=0, quote=False):
         
@@ -2263,7 +2304,9 @@ class BearingCombination:
     @classmethod
     def DictToObject(cls, d):
         li_bg = []
+        print(d)
         for li in d['bearings']:
+            print(li.keys())
             if li['class_name'] == 'RadialRollerBearing':
                 BA = RadialRollerBearing.DictToObject(li)
             elif li['class_name'] == 'TaperedRollerBearing':

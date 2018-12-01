@@ -31,6 +31,8 @@ BA = bearings.BearingCombination(list_bearing, radial_load_linkage = [True]*5, i
 fa = BA.BearingCombinationLoad(fa = 0, fr = 200)
 d = BA.Dict()
 obj = bearings.BearingCombination.DictToObject(d)
+d = obj.Dict()
+print(d['bearings'])
 obj.Plot(typ=None, box=False)
 #BA.Plot(box = False, typ = 'Load')
 
