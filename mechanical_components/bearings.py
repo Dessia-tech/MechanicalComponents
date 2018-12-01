@@ -2888,6 +2888,8 @@ class BearingAssemblyOptimizationResults:
             dict_result[key_ba].append(di_result_1)
         d['results'] = dict_result
             
+        del d['sort']['max']    
+        
         if stringify_keys:
             return StringifyDictKeys(d)
         return d
