@@ -916,6 +916,16 @@ class RadialBallBearing(RadialBearing):
         c1 = vm.Circle2D(p0, self.Dw/2.) 
         return vm.Contour2D([c1])
     
+    def RollingContourCAD(self):
+        
+        p0 = vm.Point2D((-self.Dw/2., 0))
+        p1 = vm.Point2D((0, self.Dw/2.))
+        p2 = vm.Point2D((self.Dw/2., 0))
+        a1 = vm.Arc2D(p0, p1, p2)
+        l1 = vm.LineSegment2D(p2,p0)
+        c1 = vm.Circle2D(p0, self.Dw/2.) 
+        return vm.Contour2D([a1, l1])
+    
     def PlotContour(self):
         
         be_sup = self.ExternalRingContour()
@@ -945,8 +955,9 @@ class RadialBallBearing(RadialBearing):
         plot_data['name'] = 'internal diameter'
         plot_data['type'] = 'quote'
         plot_data['label'] = str(round(self.d * 1000, 2)) + ' mm'
-        plot_data['x_label'] = quote_x - delta_quote
+        plot_data['x_label'] = quote_x
         plot_data['y_label'] = 0.
+        plot_data['rot_label'] = 90
         plot_data['orient_label'] = 'v'
         plot_data['plot_data'] = li_data
         
@@ -1126,6 +1137,16 @@ class AngularBallBearing(RadialBearing):
         p0 = vm.Point2D((0, 0))
         c1 = vm.Circle2D(p0, self.Dw/2.) 
         return vm.Contour2D([c1])
+    
+    def RollingContourCAD(self):
+        
+        p0 = vm.Point2D((-self.Dw/2., 0))
+        p1 = vm.Point2D((0, self.Dw/2.))
+        p2 = vm.Point2D((self.Dw/2., 0))
+        a1 = vm.Arc2D(p0, p1, p2)
+        l1 = vm.LineSegment2D(p2,p0)
+        c1 = vm.Circle2D(p0, self.Dw/2.) 
+        return vm.Contour2D([a1, l1])
     
     def PlotContour(self):
         
@@ -1604,6 +1625,30 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         bg = vm.Contour2D([contour])
         return bg
     
+    def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
+        center = vm.Point3D(npy.round(center,6))
+        x = vm.Vector3D(axis)
+        x.vector = x.vector/x.Norm()
+        
+        y = x.RandomUnitNormalVector()
+        y.vector = npy.round(y.vector,3)
+        y.vector = y.vector/y.Norm() 
+        
+        z=vm.Vector3D(npy.cross(x.vector,y.vector))
+        
+        #Internal Ring
+        IRC=self.InternalRingContour()        
+        irc=primitives3D.RevolvedProfile(center, x, z, [IRC], center,
+                                         x,angle=2*math.pi, name='Internal Ring')
+        #External Ring
+        ERC=self.ExternalRingContour()
+        erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center,
+                                         x, angle=2*math.pi,name='External Ring')
+        
+        tot=[irc,erc]
+        model=vm.VolumeModel([('', tot)])
+        return model   
+    
     def RollingContour(self, sign_V=1):
         
         def graph(sign_V, sign_H):
@@ -1811,7 +1856,7 @@ class BearingCombination:
                       vm.Point2D((self.axials_positions + self.length, sign*self.internal_diameters/2.))])
         return box
     
-    def PlotData(self, pos=0, box=False):
+    def PlotData(self, pos=0, box=False, typ='Load', bearing_combination_result=None):
         
         be_sup = vm.Contour2D([self.ExternalBearing(sign = 1)]).Translation(vm.Vector2D((pos, 0)), True)
         export_data = [be_sup.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
@@ -1831,6 +1876,13 @@ class BearingCombination:
             pos_m += bg.B
 #            export = cont_bg.Plot3D()
             export_data.extend(cont)
+            
+#        if typ == 'Load':
+#            pos_m = -self.B/2.
+#            for bg_ref, bg_simu in zip(self.bearings, bearing_combination_result):
+#                bg_simu.PlotLoad(a, pos = pos + pos_m + bg_ref.B/2., d = bg_ref.d, D = bg_ref.D, 
+#                            B = bg_ref.B, d1 = bg_ref.d1, D1 = bg_ref.D1)
+#                pos_m += bg_ref.B
             
         if box:
             box_sup = vm.Contour2D([self.BearingBox(1)]).Translation(vm.Vector2D((pos, 0)), True)
