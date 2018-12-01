@@ -34,6 +34,7 @@ obj = bearings.BearingCombination.DictToObject(d)
 d = obj.Dict()
 print(d['bearings'])
 obj.Plot(typ=None, box=False)
+print(obj.PlotData(typ='Load'))
 #BA.Plot(box = False, typ = 'Load')
 
 #BA.PlotGraph()

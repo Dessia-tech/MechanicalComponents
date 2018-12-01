@@ -205,7 +205,7 @@ class LoadNode:
             if tv==npy.int64:
                 d[k]=int(v)
             elif tv==npy.float64:
-                d[k]=float(v)
+                d[k]=round(float(v), 5)
             else:
                 d[k]=v
         return d
@@ -406,6 +406,89 @@ class LoadBearing:
             load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
             load_arrow.MPLPlot(a,'-b', True, width = B/10./max_load*self.external_ring_load)
             
+    def PlotDataLoad(self, pos, d, D, B, d1, D1):
+        
+        delta_1 = (D - D1)/10.
+        delta_2 = (d1 - d)/10.
+        positions = {}
+        positions[self.list_node[0]] = vm.Point2D((-B/2., D/2. - delta_1))
+        positions[self.list_node[1]] = vm.Point2D((-B/2., D/2. - 3*delta_1))
+        positions[self.list_node[2]] = vm.Point2D((-B/2., d/2. + 3*delta_2))
+        positions[self.list_node[3]] = vm.Point2D((-B/2., d/2. + delta_2))
+        positions[self.list_node[4]] = vm.Point2D((B/2., D/2. - delta_1))
+        positions[self.list_node[5]] = vm.Point2D((B/2., D/2. - 3*delta_1))
+        positions[self.list_node[6]] = vm.Point2D((B/2., d/2. + 3*delta_2))
+        positions[self.list_node[7]] = vm.Point2D((B/2., d/2. + delta_2))
+        
+        max_load = 0
+        for nd in self.list_node:
+            if nd.load is not None:
+                max_load = max(nd.load, max_load)        
+        
+        li_data = []
+        if (self.direction == 1) or (self.sub_direction == 1):
+            if self.transversale_load != 0:
+                line1 = vm.LineSegment2D(positions[self.list_node[3]], positions[self.list_node[5]])
+                line1.Translation(vm.Vector2D((pos, 0)))
+                li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
+                                              dash = False, opacity = 0.3, 
+                                              width = B/10./max_load*self.transversale_load, 
+                                              marker = 'triangle_load'))
+                line2 = vm.LineSegment2D(positions[self.list_node[4]], positions[self.list_node[2]])
+                line2.Translation(vm.Vector2D((pos, 0)))
+                li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
+                                              dash = False, opacity = 0.3, 
+                                              width = B/10./max_load*self.transversale_load, 
+                                              marker = 'triangle_load'))
+        elif (self.direction == -1) or (self.sub_direction == -1):
+            if self.transversale_load != 0:
+                line1 = vm.LineSegment2D(positions[self.list_node[6]], positions[self.list_node[0]])
+                line1.Translation(vm.Vector2D((pos, 0)))
+                li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
+                                              dash = False, opacity = 0.3, 
+                                              width = B/10./max_load*self.transversale_load, 
+                                              marker = 'triangle_load'))
+                line2 = vm.LineSegment2D(positions[self.list_node[1]], positions[self.list_node[7]])
+                line2.Translation(vm.Vector2D((pos, 0)))
+                li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
+                                              dash = False, opacity = 0.3, 
+                                              width = B/10./max_load*self.transversale_load, 
+                                              marker = 'triangle_load'))
+        if self.internal_ring_load != 0:
+            line1 = vm.LineSegment2D(positions[self.list_node[3]], positions[self.list_node[7]])
+            line1.Translation(vm.Vector2D((pos, 0)))
+            li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
+                                          dash = False, opacity = 0.3, 
+                                          width = B/10./max_load*self.transversale_load, 
+                                          marker = 'triangle_load'))
+            line2 = vm.LineSegment2D(positions[self.list_node[6]], positions[self.list_node[2]])
+            line2.Translation(vm.Vector2D((pos, 0)))
+            li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
+                                          dash = False, opacity = 0.3, 
+                                          width = B/10./max_load*self.transversale_load, 
+                                          marker = 'triangle_load'))
+        if self.external_ring_load != 0:
+            line1 = vm.LineSegment2D(positions[self.list_node[1]], positions[self.list_node[5]])
+            line1.Translation(vm.Vector2D((pos, 0)))
+            li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
+                                          dash = False, opacity = 0.3, 
+                                          width = B/10./max_load*self.transversale_load, 
+                                          marker = 'triangle_load'))
+            line2 = vm.LineSegment2D(positions[self.list_node[4]], positions[self.list_node[0]])
+            line2.Translation(vm.Vector2D((pos, 0)))
+            li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
+                                          dash = False, opacity = 0.3, 
+                                          width = B/10./max_load*self.transversale_load, 
+                                          marker = 'triangle_load'))
+        plot_data = []
+        pt_data = {}
+        pt_data['fill'] = None
+        pt_data['name'] = 'internal diameter'
+        pt_data['type'] = 'load'
+        pt_data['plot_data'] = li_data
+        plot_data.append(pt_data)
+        return plot_data
+            
     def Load(self):
         
         valid = False
@@ -550,7 +633,7 @@ class LoadBearing:
             if tv==npy.int64:
                 d[k]=int(v)
             elif tv==npy.float64:
-                d[k]=float(v)
+                d[k]=round(float(v), 5)
             else:
                 d[k]=v
                 
@@ -761,8 +844,79 @@ class RadialBearing(LoadBearing):
         model = self.VolumeModel()
         model.FreeCADExport(fcstd_filepath,python_path,path_lib_freecad,export_types)
         
+    def PlotDataQuote(self, pos=0):
+        delta_quote = 0.05*self.B
+        plot_data = []
+        #internal diameter
+        quote_x = 1.1*self.B/2.
+        line1 = vm.LineSegment2D(vm.Point2D((0, self.d/2.)), vm.Point2D((quote_x + delta_quote, self.d/2.)))
+        line1.Translation(vm.Vector2D((pos, 0)))
+        li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True)]
+        line2 = vm.LineSegment2D(vm.Point2D((0, -self.d/2.)), vm.Point2D((quote_x + delta_quote, -self.d/2.)))
+        line2.Translation(vm.Vector2D((pos, 0)))
+        li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True))
+        line3 = vm.LineSegment2D(vm.Point2D((quote_x, self.d/2.)), vm.Point2D((quote_x, -self.d/2.)))
+        line3.Translation(vm.Vector2D((pos, 0)))
+        li_data.append(line3.PlotData(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
         
-    
+        pt_data = {}
+        pt_data['fill'] = None
+        pt_data['name'] = 'internal diameter'
+        pt_data['type'] = 'quote'
+        pt_data['label'] = str(round(self.d * 1000, 2)) + ' mm'
+        pt_data['x_label'] = quote_x + pos
+        pt_data['y_label'] = 0.
+        pt_data['rot_label'] = 90
+        pt_data['orient_label'] = 'v'
+        pt_data['plot_data'] = li_data
+        plot_data.append(pt_data)
+        #external diameter
+        quote_x = -1.3*self.B/2.
+        line1 = vm.LineSegment2D(vm.Point2D((0, self.D/2.)), vm.Point2D((quote_x - delta_quote, self.D/2.)))
+        line1.Translation(vm.Vector2D((pos, 0)))
+        li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True)]
+        line2 = vm.LineSegment2D(vm.Point2D((0, -self.D/2.)), vm.Point2D((quote_x - delta_quote, -self.D/2.)))
+        line2.Translation(vm.Vector2D((pos, 0)))
+        li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True))
+        line3 = vm.LineSegment2D(vm.Point2D((quote_x, self.D/2.)), vm.Point2D((quote_x, -self.D/2.)))
+        line3.Translation(vm.Vector2D((pos, 0)))
+        li_data.append(line3.PlotData(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
+        
+        pt_data = {}
+        pt_data['fill'] = None
+        pt_data['name'] = 'external diameter'
+        pt_data['type'] = 'quote'
+        pt_data['label'] = str(round(self.D * 1000, 2)) + ' mm'
+        pt_data['x_label'] = quote_x + pos
+        pt_data['y_label'] = 0.
+        pt_data['rot_label'] = -90
+        pt_data['orient_label'] = 'v'
+        pt_data['plot_data'] = li_data
+        plot_data.append(pt_data)
+        #width
+        quote_x = 1.1*self.B/2.
+        line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., -self.D/2.)), vm.Point2D((-self.B/2., -self.D/2. - quote_x - delta_quote)))
+        line1.Translation(vm.Vector2D((pos, 0)))
+        li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True)]
+        line2 = vm.LineSegment2D(vm.Point2D((self.B/2., -self.D/2.)), vm.Point2D((self.B/2., -self.D/2. - quote_x - delta_quote)))
+        line2.Translation(vm.Vector2D((pos, 0)))
+        li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True))
+        line3 = vm.LineSegment2D(vm.Point2D((self.B/2., -self.D/2. - quote_x)), vm.Point2D((-self.B/2., -self.D/2. - quote_x)))
+        line3.Translation(vm.Vector2D((pos, 0)))
+        li_data.append(line3.PlotData(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
+        
+        pt_data = {}
+        pt_data['fill'] = None
+        pt_data['name'] = 'width'
+        pt_data['type'] = 'quote'
+        pt_data['label'] = str(round(self.B * 1000, 2)) + ' mm'
+        pt_data['x_label'] = 0 + pos
+        pt_data['y_label'] = -self.D/2. - quote_x
+        pt_data['rot_label'] = 0
+        pt_data['orient_label'] = 'h'
+        pt_data['plot_data'] = li_data
+        plot_data.append(pt_data)
+        return plot_data
         
     def Plot(self, a=None, typ=None):
         bg = self.PlotContour()
@@ -789,7 +943,7 @@ class RadialBearing(LoadBearing):
             if tv==npy.int64:
                 d[k]=int(v)
             elif tv==npy.float64:
-                d[k]=float(v)
+                d[k]=round(float(v), 5)
             else:
                 d[k]=v
 
@@ -939,72 +1093,7 @@ class RadialBallBearing(RadialBearing):
         bg = vm.Contour2D([bearing_sup, bearing_inf])
         return bg
     
-    def PlotDataQuote(self):
-        delta_quote = 0.05*self.B
-        plot_data = []
-        #internal diameter
-        quote_x = 1.3*self.B/2.
-        line1 = vm.LineSegment2D(vm.Point2D((0, self.d/2.)), vm.Point2D((quote_x + delta_quote, self.d/2.)))
-        li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True)]
-        line2 = vm.LineSegment2D(vm.Point2D((0, -self.d/2.)), vm.Point2D((quote_x + delta_quote, -self.d/2.)))
-        li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True))
-        line3 = vm.LineSegment2D(vm.Point2D((quote_x, self.d/2.)), vm.Point2D((quote_x, -self.d/2.)))
-        li_data.append(line3.PlotData(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
-        
-        pt_data = {}
-        pt_data['fill'] = None
-        pt_data['name'] = 'internal diameter'
-        pt_data['type'] = 'quote'
-        pt_data['label'] = str(round(self.d * 1000, 2)) + ' mm'
-        pt_data['x_label'] = quote_x
-        pt_data['y_label'] = 0.
-        pt_data['rot_label'] = 90
-        pt_data['orient_label'] = 'v'
-        pt_data['plot_data'] = li_data
-        plot_data.append(pt_data)
-        #external diameter
-        quote_x = -1.3*self.B/2.
-        line1 = vm.LineSegment2D(vm.Point2D((0, self.D/2.)), vm.Point2D((quote_x - delta_quote, self.D/2.)))
-        li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True)]
-        line2 = vm.LineSegment2D(vm.Point2D((0, -self.D/2.)), vm.Point2D((quote_x - delta_quote, -self.D/2.)))
-        li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True))
-        line3 = vm.LineSegment2D(vm.Point2D((quote_x, self.D/2.)), vm.Point2D((quote_x, -self.D/2.)))
-        li_data.append(line3.PlotData(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
-        
-        pt_data = {}
-        pt_data['fill'] = None
-        pt_data['name'] = 'external diameter'
-        pt_data['type'] = 'quote'
-        pt_data['label'] = str(round(self.D * 1000, 2)) + ' mm'
-        pt_data['x_label'] = quote_x
-        pt_data['y_label'] = 0.
-        pt_data['rot_label'] = -90
-        pt_data['orient_label'] = 'v'
-        pt_data['plot_data'] = li_data
-        plot_data.append(pt_data)
-        #width
-        quote_x = 1.1*self.B/2.
-        line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., -self.D/2.)), vm.Point2D((-self.B/2., -self.D/2. - quote_x - delta_quote)))
-        li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True)]
-        line2 = vm.LineSegment2D(vm.Point2D((self.B/2., -self.D/2.)), vm.Point2D((self.B/2., -self.D/2. - quote_x - delta_quote)))
-        li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.1, dash = True))
-        line3 = vm.LineSegment2D(vm.Point2D((self.B/2., -self.D/2. - quote_x)), vm.Point2D((-self.B/2., -self.D/2. - quote_x)))
-        li_data.append(line3.PlotData(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
-        
-        pt_data = {}
-        pt_data['fill'] = None
-        pt_data['name'] = 'width'
-        pt_data['type'] = 'quote'
-        pt_data['label'] = str(round(self.B * 1000, 2)) + ' mm'
-        pt_data['x_label'] = 0
-        pt_data['y_label'] = -self.D/2. - quote_x
-        pt_data['rot_label'] = 0
-        pt_data['orient_label'] = 'h'
-        pt_data['plot_data'] = li_data
-        plot_data.append(pt_data)
-        return plot_data
-    
-    def PlotData(self, pos=0, quote=False):
+    def PlotData(self, pos=0, quote=True, constructor=True):
         
         be_sup = self.ExternalRingContour()
         be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
@@ -1027,8 +1116,21 @@ class RadialBallBearing(RadialBearing):
         ball_inf1 = ball_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(ball_inf1.PlotData('ball_inf', fill = None))
         
+        if constructor:
+            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
+            line1.Translation(vm.Vector2D((pos, 0)))
+            li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
+            line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
+            line2.Translation(vm.Vector2D((pos, 0)))
+            li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
+            pt_data = {}
+            pt_data['name'] = 'constructor line'
+            pt_data['type'] = 'line'
+            pt_data['plot_data'] = li_data
+            export_D3.append(pt_data)
+        
         if quote:
-            export_D3.extend(self.PlotDataQuote())
+            export_D3.extend(self.PlotDataQuote(pos))
         
         return export_D3
     
@@ -1201,7 +1303,7 @@ class AngularBallBearing(RadialBearing):
         bg = vm.Contour2D([be_sup, bi_sup, ball_sup, be_inf, bi_inf, ball_inf])
         return bg
     
-    def PlotData(self, pos=0):
+    def PlotData(self, pos=0, quote=True, constructor=True):
         
         be_sup = self.ExternalRingContour(1)
         be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
@@ -1223,6 +1325,23 @@ class AngularBallBearing(RadialBearing):
         ball_inf = ball.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
         ball_inf1 = ball_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(ball_inf1.PlotData('ball_inf', fill = None))
+        
+        if constructor:
+            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
+            line1.Translation(vm.Vector2D((pos, 0)))
+            li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
+            line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
+            line2.Translation(vm.Vector2D((pos, 0)))
+            li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
+            pt_data = {}
+            pt_data['name'] = 'constructor line'
+            pt_data['type'] = 'line'
+            pt_data['plot_data'] = li_data
+            export_D3.append(pt_data)
+        
+        if quote:
+            export_D3.extend(self.PlotDataQuote(pos))
+            
         return export_D3
     
     
@@ -1530,7 +1649,7 @@ class RadialRollerBearing(RadialBearing):
         rol = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4], {1: self.radius, 2: self.radius}, True)
         return vm.Contour2D([rol])
     
-    def PlotData(self, pos=0):
+    def PlotData(self, pos=0, quote=True, constructor=True):
         
         be_sup = self.ExternalRingContour(1)
         be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
@@ -1557,6 +1676,22 @@ class RadialRollerBearing(RadialBearing):
         roller_inf1 = roller_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(roller_inf1.PlotData('roller_inf', fill = 'none'))
         
+        if constructor:
+            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
+            line1.Translation(vm.Vector2D((pos, 0)))
+            li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
+            line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
+            line2.Translation(vm.Vector2D((pos, 0)))
+            li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
+            pt_data = {}
+            pt_data['name'] = 'constructor line'
+            pt_data['type'] = 'line'
+            pt_data['plot_data'] = li_data
+            export_D3.append(pt_data)
+        
+        if quote:
+            export_D3.extend(self.PlotDataQuote(pos))
+            
         return export_D3
     
     def PlotContour(self):
@@ -1704,7 +1839,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         bg = vm.Contour2D([contour])
         return bg
     
-    def PlotData(self, pos=0):
+    def PlotData(self, pos=0, quote=True, constructor=True):
         
         be_sup = self.ExternalRingContour(1)
         be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
@@ -1732,8 +1867,24 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         roller_inf = roller_inf.Rotation(vm.Point2D((0, 0)), self.direction*self.alpha, True)
         roller_inf = roller_inf.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
         roller_inf1 = roller_inf.Translation(vm.Vector2D((pos, 0)), True)
-        export_D3.append(roller_inf1.PlotData('roller_inf', fill = 'none'))
         
+        if constructor:
+            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
+            line1.Translation(vm.Vector2D((pos, 0)))
+            li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
+            line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
+            line2.Translation(vm.Vector2D((pos, 0)))
+            li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
+            pt_data = {}
+            pt_data['name'] = 'constructor line'
+            pt_data['type'] = 'line'
+            pt_data['plot_data'] = li_data
+            export_D3.append(pt_data)
+        
+        export_D3.append(roller_inf1.PlotData('roller_inf', fill = 'none'))
+        if quote:
+            export_D3.extend(self.PlotDataQuote(pos))
+            
         return export_D3
     
     def PlotContour(self):
@@ -1897,7 +2048,7 @@ class BearingCombination:
                       vm.Point2D((self.axials_positions + self.length, sign*self.internal_diameters/2.))])
         return box
     
-    def PlotData(self, pos=0, box=False, typ='Load', bearing_combination_result=None):
+    def PlotData(self, pos=0, box=False, typ=None, bearing_combination_result=None, quote=False, constructor=True):
         
         be_sup = vm.Contour2D([self.ExternalBearing(sign = 1)]).Translation(vm.Vector2D((pos, 0)), True)
         export_data = [be_sup.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
@@ -1911,12 +2062,19 @@ class BearingCombination:
         contour = []
         pos_m = -self.B/2.
         for num_bg, bg in enumerate(self.bearings):
-            cont = bg.PlotData(pos = pos_m + bg.B/2. + pos)
+            cont = bg.PlotData(pos = pos_m + bg.B/2. + pos, constructor = constructor, quote = False)
 #            cont1 = cont.Translation(vm.Vector2D((pos_m + bg.B/2. + pos, 0)), True)
 #            cont_bg = vm.Contour2D([cont1])
             pos_m += bg.B
 #            export = cont_bg.Plot3D()
             export_data.extend(cont)
+            
+        if typ == 'Load':
+            pos_m = -self.B/2.
+            for bg_ref, bg_simu in zip(self.bearings, bearing_combination_result):
+                export_data.extend(bg_simu.PlotDataLoad(pos = pos + pos_m + bg_ref.B/2., d = bg_ref.d, D = bg_ref.D, 
+                            B = bg_ref.B, d1 = bg_ref.d1, D1 = bg_ref.D1))
+                pos_m += bg_ref.B
             
 #        if typ == 'Load':
 #            pos_m = -self.B/2.
@@ -1927,9 +2085,9 @@ class BearingCombination:
             
         if box:
             box_sup = vm.Contour2D([self.BearingBox(1)]).Translation(vm.Vector2D((pos, 0)), True)
-            export_data.append(box_sup.PlotData('box_sup', fill = 'none', color=(1,0,0)))
+            export_data.append(box_sup.PlotData('box_sup', fill = 'none', color='red', stroke_width = 0.3, opacity = 0.3))
             box_inf = vm.Contour2D([self.BearingBox(-1)]).Translation(vm.Vector2D((pos, 0)), True)
-            export_data.append(box_inf.PlotData('box_inf', fill = 'none', color=(1,0,0)))
+            export_data.append(box_inf.PlotData('box_inf', fill = 'none', color = 'red', stroke_width = 0.3, opacity = 0.3))
         
         return export_data
     
@@ -2277,7 +2435,7 @@ class BearingCombination:
             if tv==npy.int64:
                 d[k]=int(v)
             elif tv==npy.float64:
-                d[k]=float(v)
+                d[k]=round(float(v), 5)
             else:
                 d[k]=v
             
@@ -2383,14 +2541,14 @@ class BearingAssembly:
                       vm.Point2D((pos_mid, -d1/2.)),])
         return shaft
     
-    def PlotData(self, box=True, typ=None):
+    def PlotData(self, box=True, typ=None, constructor=False):
         
         shaft = self.Shaft()
         contour_shaft = vm.Contour2D([shaft])
-        export_data = [contour_shaft.PlotData('contour_shaft', fill = 'url(#diagonal-stripe-1)')]
+        export_data = [contour_shaft.PlotData('contour_shaft', fill = 'none')]
         
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
-            export_data.extend(assembly_bg.PlotData(pos, box))
+            export_data.extend(assembly_bg.PlotData(pos, box, quote = False, constructor = constructor))
         return export_data
     
     def Plot(self, box=True, typ=None):
@@ -2464,7 +2622,7 @@ class BearingAssembly:
             if tv==npy.int64:
                 d[k]=int(v)
             elif tv==npy.float64:
-                d[k]=float(v)
+                d[k]=round(float(v), 5)
             else:
                 d[k]=v
                 
@@ -2598,7 +2756,7 @@ class DetailedRadialRollerBearing(RadialRollerBearing):
             if tv == npy.int64:
                 d[k] = int(v)
             elif tv == npy.float64:
-                d[k] = float(v)
+                d[k] = round(float(v), 5)
             else:
                 d[k] = v
 
@@ -2666,6 +2824,26 @@ class BearingAssemblyOptimizationResults:
         self.bearing_assemblies = bearing_assemblies
         self.results = results
 
+    def PlotData(self):
+#        plot_data = []
+#        for ba in self.bearing_assemblies:
+#            data = {}
+#            data['bearing_assemblies'] = {'plot_data': [ba.PlotData()]}
+#            data['bearing_assemblies']['bearing_combinations'] = {'plot_data': []}
+#            for num_bc, bc in enumerate(ba.bearing_combinations):
+#                bc_result = self.results[ba][0]['bearing_combinations'][num_bc]
+#                data['bearing_assemblies']['bearing_combinations']['plot_data'].append(bc.PlotData(typ='Load', bearing_combination_result = bc_result))
+#                data['bearing_assemblies']['bearing_combinations']['bearings'] = {'plot_data': []}
+#                for bg in bc.bearings:
+#                    data['bearing_assemblies']['bearing_combinations']['plot_data'].append(bg.PlotData())
+#            plot_data.append(data)
+            
+        ba = self.bearing_assemblies[0]
+        bc = ba.bearing_combinations[0]
+#        bc_result = self.results[ba][0]['bearing_combinations'][0]
+#        plot_data = bc.PlotData(typ='Load', bearing_combination_result = bc_result)
+        plot_data = ba.PlotData()
+        return plot_data
 
     def Dict(self, subobjects_id={}, stringify_keys=True):
 
@@ -2678,7 +2856,7 @@ class BearingAssemblyOptimizationResults:
             if tv==npy.int64:
                 d[k]=int(v)
             elif tv==npy.float64:
-                d[k]=float(v)
+                d[k]=round(float(v), 5)
             else:
                 d[k]=v
                 
