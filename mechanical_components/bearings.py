@@ -575,10 +575,10 @@ class LoadBearing:
         obj = cls(class_name = d['class_name'], typ = d['typ'], direction = d['direction'])
         li_node = []
         for ln in d['list_node']:
-            print(ln)
+#            print(ln)
             li_node.append(LoadNode.DictToObject(ln))
             nd = li_node[-1]
-            print(nd.load, nd.ext_load)
+#            print(nd.load, nd.ext_load)
         obj.list_node = li_node
         dict_next = {}
         for key, val in d['next'].items():
@@ -803,15 +803,15 @@ class RadialBearing(LoadBearing):
     
     @classmethod
     def DictToObject(cls, d):
-        if d['class_name'] is 'RadialBallBearing':
+        if d['class_name'] == 'RadialBallBearing':
             return RadialBallBearing.DictToObject(d)
-        elif d['class_name'] is 'AngularBallBearing':
+        elif d['class_name'] == 'AngularBallBearing':
             return AngularBallBearing.DictToObject(d)
-        elif d['class_name'] is 'SphericalBallBearing':
+        elif d['class_name'] == 'SphericalBallBearing':
             return SphericalBallBearing.DictToObject(d)
-        elif d['class_name'] is 'RadialRollerBearing':
+        elif d['class_name'] == 'RadialRollerBearing':
             return RadialRollerBearing.DictToObject(d)
-        elif d['class_name'] is 'TaperedRollerBearing':
+        elif d['class_name'] == 'TaperedRollerBearing':
             return TaperedRollerBearing.DictToObject(d)
         
         
@@ -2210,20 +2210,20 @@ class BearingCombination:
     
     @classmethod
     def DictToObject(cls, d):
-        li_bg = []
-        for li in d['bearings']:
-            if li['class_name'] == 'RadialRollerBearing':
-                BA = RadialRollerBearing.DictToObject(li)
-            elif li['class_name'] == 'TaperedRollerBearing':
-                BA = TaperedRollerBearing.DictToObject(li)
-            elif li['class_name'] == 'SphericalBallBearing':
-                BA = SphericalBallBearing.DictToObject(li)
-            elif li['class_name'] == 'AngularBallBearing':
-                BA = AngularBallBearing.DictToObject(li)
-            elif li['class_name'] == 'RadialBallBearing':
-                BA = RadialBallBearing.DictToObject(li)
-            li_bg.append(BA)
-        obj = cls(bearings = li_bg, radial_load_linkage = d['radial_load_linkage'], 
+        bearings = []
+        for bearing in d['bearings']:
+            if bearing['class_name'] == 'RadialRollerBearing':
+                BA = RadialRollerBearing.DictToObject(bearing)
+            elif bearing['class_name'] == 'TaperedRollerBearing':
+                BA = TaperedRollerBearing.DictToObject(bearing)
+            elif bearing['class_name'] == 'SphericalBallBearing':
+                BA = SphericalBallBearing.DictToObject(bearing)
+            elif bearing['class_name'] == 'AngularBallBearing':
+                BA = AngularBallBearing.DictToObject(bearing)
+            elif bearing['class_name'] == 'RadialBallBearing':
+                BA = RadialBallBearing.DictToObject(bearing)
+            bearings.append(BA)
+        obj = cls(bearings = bearings, radial_load_linkage = d['radial_load_linkage'], 
                   internal_pre_load = 0, connection_bi = d['connection_bi'], 
                   connection_be = d['connection_be'], behavior_link = d['behavior_link'])
             
