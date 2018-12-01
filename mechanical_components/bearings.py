@@ -2826,24 +2826,24 @@ class BearingAssemblyOptimizationResults:
         self.results = results
 
     def PlotData(self):
-#        plot_data = []
-#        for ba in self.bearing_assemblies:
-#            data = {}
-#            data['bearing_assemblies'] = {'plot_data': [ba.PlotData()]}
-#            data['bearing_assemblies']['bearing_combinations'] = {'plot_data': []}
-#            for num_bc, bc in enumerate(ba.bearing_combinations):
-#                bc_result = self.results[ba][0]['bearing_combinations'][num_bc]
-#                data['bearing_assemblies']['bearing_combinations']['plot_data'].append(bc.PlotData(typ='Load', bearing_combination_result = bc_result))
-#                data['bearing_assemblies']['bearing_combinations']['bearings'] = {'plot_data': []}
-#                for bg in bc.bearings:
-#                    data['bearing_assemblies']['bearing_combinations']['plot_data'].append(bg.PlotData())
-#            plot_data.append(data)
+        plot_data = []
+        for ba in self.bearing_assemblies:
+            data = {}
+            data['bearing_assemblies'] = {'plot_data': [ba.PlotData()]}
+            data['bearing_assemblies']['bearing_combinations'] = {'plot_data': []}
+            for num_bc, bc in enumerate(ba.bearing_combinations):
+                bc_result = self.results[ba][0]['bearing_combinations'][num_bc]
+                data['bearing_assemblies']['bearing_combinations']['plot_data'].append(bc.PlotData(typ='Load', bearing_combination_result = bc_result))
+                data['bearing_assemblies']['bearing_combinations']['bearings'] = {'plot_data': []}
+                for bg in bc.bearings:
+                    data['bearing_assemblies']['bearing_combinations']['plot_data'].append(bg.PlotData())
+            plot_data.append(data)
             
-        ba = self.bearing_assemblies[0]
-        bc = ba.bearing_combinations[0]
-#        bc_result = self.results[ba][0]['bearing_combinations'][0]
-#        plot_data = bc.PlotData(typ='Load', bearing_combination_result = bc_result)
-        plot_data = ba.PlotData()
+#        ba = self.bearing_assemblies[0]
+#        bc = ba.bearing_combinations[0]
+##        bc_result = self.results[ba][0]['bearing_combinations'][0]
+##        plot_data = bc.PlotData(typ='Load', bearing_combination_result = bc_result)
+#        plot_data = ba.PlotData()
         return plot_data
 
     def Dict(self, subobjects_id={}, stringify_keys=True):
