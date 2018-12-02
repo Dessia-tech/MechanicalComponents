@@ -494,7 +494,7 @@ class BearingAssemblyOptimizer:
                  d_shaft_min=[0.02, 0.02], axial_pos=[0, 0.1], d_ext=[0.05, 0.05], length=[0.04, 0.04],
                  typ_linkage=[['all'], ['all']],
                  typ_mounting=None, number_bearing=[[1, 2], [1, 2]],
-                 sort={'typ':'Lnm', 'min':1e4, 'max':npy.inf},
+                 sort={'typ':'Lnm', 'min':1e4, 'max':1e10},
                  sort_arg = {'min':'mass'},
                  path='Export_Solution.txt', nb_sol=[20, 10, 10]):
         
