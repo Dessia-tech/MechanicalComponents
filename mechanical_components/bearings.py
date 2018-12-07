@@ -2806,8 +2806,8 @@ class BearingAssemblyOptimizationResults:
     
     def __init__(self, boundaries, speeds, times,
                  internal_diameters, axial_positions, external_diameters, length,
-                 linkage_type, mounting_type, bearing_numbers,
-                 sort, sort_arg, path, nb_sol, bearing_assemblies, results):
+                 linkage_types, mounting_types, bearing_numbers,
+                 sort, sort_arg, number_solutions, bearing_assemblies, results):
         self.boundaries = boundaries
         self.speeds = speeds
         self.times = times
@@ -2815,32 +2815,33 @@ class BearingAssemblyOptimizationResults:
         self.axial_positions = axial_positions
         self.external_diameters = external_diameters
         self.length = length
-        self.linkage_type = linkage_type
-        self.mounting_type = mounting_type
+        self.linkage_types = linkage_types
+        self.mounting_types = mounting_types
         self.bearing_numbers = bearing_numbers
         self.sort = sort
         self.sort_arg = sort_arg
-        self.path = path
-        self.nb_sol = nb_sol
+        self.number_solutions = number_solutions
         self.bearing_assemblies = bearing_assemblies
         self.results = results
 
-    def PlotData(self):
-        plot_data = []
-        for ba in self.bearing_assemblies:
-            data = {}
-            data['bearing_assemblies'] = {'plot_data': [ba.PlotData()]}
-            data['bearing_assemblies']['bearing_combinations'] = {'plot_data': []}
-            data['bearing_assemblies']['bearing_combinations']['bearings'] = {'plot_data': []}
-            for num_bc, bc in enumerate(ba.bearing_combinations):
-                bc_result = self.results[ba][0]['bearing_combinations'][num_bc]
-                data['bearing_assemblies']['bearing_combinations']['plot_data'].append(bc.PlotData(typ='Load', bearing_combination_result = bc_result))
-                li_data = []
-                for bg in bc.bearings:
-                    li_data.append(bg.PlotData())
-                data['bearing_assemblies']['bearing_combinations']['bearings']['plot_data'].append(li_data)
-            plot_data.append(data)
-        return plot_data
+#    def PlotData(self):
+#        plot_data = []
+#        for ba in self.bearing_assemblies:
+#            data = {}
+#            data['bearing_assemblies'] = {'plot_data': [ba.PlotData()]}
+#            data['bearing_assemblies']['bearing_combinations'] = {'plot_data': []}
+#            data['bearing_assemblies']['bearing_combinations']['bearings'] = {'plot_data': []}
+#            for num_bc, bc in enumerate(ba.bearing_combinations):
+#                bc_result = self.results[ba][0]['bearing_combinations'][num_bc]
+#                plot_data.append(bc.PlotData(typ='Load', bearing_combination_result = bc_result))
+#                li_data = []
+#                for bg in bc.bearings:
+#                    li_data.append(bg.PlotData())
+#                data['bearing_assemblies']['bearing_combinations']['bearings']['plot_data'].append(li_data)
+#            plot_data.append(data)
+            
+            
+#        return plot_data
 
     def Dict(self, subobjects_id={}, stringify_keys=True):
 
@@ -2920,12 +2921,13 @@ class BearingAssemblyOptimizationResults:
                   axial_positions = d['axial_positions'],
                   external_diameters = d['external_diameters'],
                   length = d['length'],
-                  linkage_type = d['linkage_type'],
-                  mounting_type = d['mounting_type'],
+                  linkage_types = d['linkage_types'],
+                  mounting_types = d['mounting_types'],
                   bearing_numbers = d['bearing_numbers'],
                   sort = d['sort'],
                   sort_arg = d['sort_arg'],
-                  path = d['path'], nb_sol = d['nb_sol'],
+#                  path = d['path'],
+                 number_solutions = d['number_solutions'],
                   bearing_assemblies = li_ba, results = res)
                 
         return obj

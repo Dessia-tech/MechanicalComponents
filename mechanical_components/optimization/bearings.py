@@ -42,7 +42,7 @@ class RollerBearingContinuousOptimizer:
     def Optimization(self, d, D, B, Fr, Fa, N, t, T, L10=None, C0r=None, Cr=None,
                          Lnm=None, grade=['Gr_gn'], S=0.9,
                          oil=oil_iso_vg_1500, material=material_iso,
-                         nb_sol=1, maxi=None, mini=None, rsmin=None, typ='NF',
+                         number_solutions=1, maxi=None, mini=None, rsmin=None, typ='NF',
                          verbose = False):
 
 #        self.d = d
@@ -232,7 +232,7 @@ class RollerBearingContinuousOptimizer:
                         liminf_lifetime=False
                 if liminf_lifetime==True:
                     self.bearing_assemblies.append(R1)
-                    if len(self.bearing_assemblies)<nb_sol:
+                    if len(self.bearing_assemblies)<number_solutions:
                         liminf_lifetime=False
                     if verbose:
 #                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.bearing_assemblies),l10,D,d,B,Dw,Zmax))
@@ -257,7 +257,7 @@ base_bearing = pandas_sort
 
 class BearingCombinationOptimizer:
     
-    def __init__(self, linkage, behavior_link, nb_rlts, d, D, length, nb_sol=[10, 10], 
+    def __init__(self, linkage, behavior_link, nb_rlts, d, D, length, number_solutions=[10, 10], 
                  sort_arg = {'min':'mass'}):
         
         axis_load = ['n', 'p'] # 'p' when the axial load applied on shaft is directed from left to right
@@ -341,7 +341,7 @@ class BearingCombinationOptimizer:
                     mount = {'be':['p','n'], 'bi':['p','n']}
                 elif behavior_assembly is 'pn':
                     mount = {'be':[], 'bi':['p','n']}
-            li_rlts_pandas = self.SearchCatalog(d, D, length, li_rlts, nb_sol = nb_sol[1])
+            li_rlts_pandas = self.SearchCatalog(d, D, length, li_rlts, number_solutions = number_solutions[1])
             if li_rlts_pandas is not None:
                 for li_bearing in li_rlts_pandas:
                     list_bearing = []
@@ -353,8 +353,8 @@ class BearingCombinationOptimizer:
                     if BA.check:
                         architectures.append(BA)
         architectures_sort = self.Sortarchitectures(architectures, sort_arg = {'min':'mass'})
-        if nb_sol[0] is not None:
-            self.architectures = architectures_sort[0:min(len(architectures_sort), nb_sol[0])]
+        if number_solutions[0] is not None:
+            self.architectures = architectures_sort[0:min(len(architectures_sort), number_solutions[0])]
         else:
             self.architectures = architectures_sort[0:]
         self.check = True
@@ -402,7 +402,7 @@ class BearingCombinationOptimizer:
     
     def SearchCatalog(self, d, D, length, list_bearing=None, 
                constraint=[{'typ':'equal','var':'d'}, {'typ':'equal','var':'D'}],
-               nb_sol=5,
+               number_solutions=5,
                verbose=False):
         
         valid = True
@@ -474,8 +474,8 @@ class BearingCombinationOptimizer:
                         length_iter += li
                     if (length_iter <= length[1]) and (len(list_optim) == len(list_bearing)):
                         pd_bearing.append(list_optim)
-            if nb_sol is not None:
-                return pd_bearing[0:min(nb_sol, len(pd_bearing))]
+            if number_solutions is not None:
+                return pd_bearing[0:min(number_solutions, len(pd_bearing))]
             else:
                 return pd_bearing[0:]
         
@@ -490,59 +490,62 @@ class BearingCombinationOptimizer:
 
     
 class BearingAssemblyOptimizer:
-    def __init__(self, boundaries, speeds, times,
-                 d_shaft_min=[0.02, 0.02], axial_pos=[0, 0.1], d_ext=[0.05, 0.05], length=[0.04, 0.04],
-                 typ_linkage=[['all'], ['all']],
-                 typ_mounting=None, number_bearing=[[1, 2], [1, 2]],
+    def __init__(self, boundaries, speeds, operating_times,
+                 inner_diameter=[0.02, 0.02],
+                 axial_positions=[0, 0.1],
+                 outer_diameter=[0.05, 0.05],
+                 length=[0.04, 0.04],
+                 linkage_types=[['all'], ['all']],
+                 mounting_types=None,
+                 number_bearings=[[1, 2], [1, 2]],
                  sort={'typ':'Lnm', 'min':1e4, 'max':1e10},
                  sort_arg = {'min':'mass'},
-                 path='Export_Solution.txt', nb_sol=[20, 10, 10]):
+                 number_solutions=[20, 10, 10]):
         
         self.boundaries = boundaries
         self.speeds = speeds
-        self.times = times
-        self.d_shaft_min = d_shaft_min
-        self.axial_pos = axial_pos
-        self.d_ext = d_ext
+        self.operating_times = operating_times
+        self.inner_diameter = inner_diameter
+        self.axial_positions = axial_positions
+        self.outer_diameter = outer_diameter
         self.length = length
-        self.typ_linkage = typ_linkage
-        self.number_bearing = number_bearing
+        self.linkage_types = linkage_types
+        self.number_bearings = number_bearings
         self.sort = sort
         self.sort_arg = sort_arg
-        self.path = path
-        self.nb_sol = nb_sol
+        self.number_solutions = number_solutions
         
         nb_linkage = len(length)
-        if typ_mounting == None:
-            typ_mounting = []
+        if mounting_types == None:
+            mounting_types = []
             for typ_iter in product(['pn', 0, 'n', 'p'], repeat = nb_linkage):
                 if typ_iter is not (0,)*nb_linkage:
                     if set(typ_iter) not in [set(('pn', 'p')), set(('pn', 'n')), set(('pn', 'pn')), set((0, 0))]:
-                        typ_mounting.append(typ_iter)
-        self.typ_mounting = typ_mounting
-        for mount in self.typ_mounting:
+                        mounting_types.append(typ_iter)
+        self.mounting_types = mounting_types
+        for mount in self.mounting_types:
             if set(mount) in [set(('pn', 'p')), set(('pn', 'n')), set(('pn', 'pn')), set((0, 0))]:
-                raise KeyError('Modify the typ_mounting data')
+                raise KeyError('Modify the mounting_types data')
                 
                 
         
     def CombinationOptimize(self, sort_arg):
-        list_linkage = self.typ_linkage 
-        for num_link,list_link in enumerate(self.typ_linkage):
+        list_linkage = self.linkage_types 
+        for num_link,list_link in enumerate(self.linkage_types):
             if 'all' in list_link:
                 list_linkage[num_link] = ['ball_joint', 'cylindric_joint']
 
         archi = []
-        for li_mounting in self.typ_mounting:
+        for li_mounting in self.mounting_types:
             sol_BA = {}
             for num_linkage, behavior_link in enumerate(li_mounting):
                 sol_BA[num_linkage] = []
                 for linkage, nb_rlts in product(list_linkage[num_linkage], 
-                                                self.number_bearing[num_linkage]):
-                    BA = BearingCombinationOptimizer(linkage, behavior_link, nb_rlts, [self.d_shaft_min[num_linkage], 
-                                                self.d_ext[num_linkage]], [self.d_shaft_min[num_linkage], 
-                                                self.d_ext[num_linkage]], [0, self.length[num_linkage]],
-                                                nb_sol = self.nb_sol[1::])
+                                                self.number_bearings[num_linkage]):
+                    BA = BearingCombinationOptimizer(linkage, behavior_link, nb_rlts, [self.inner_diameter[num_linkage], 
+                                                self.outer_diameter[num_linkage]], [self.inner_diameter[num_linkage], 
+                                                self.outer_diameter[num_linkage]], [0, self.length[num_linkage]],
+                                                number_solutions = self.number_solutions[1::])
                     if BA.check is True:
                         sol_BA[num_linkage].extend(BA.architectures)
             for num_linkage, behavior_link in enumerate(li_mounting):
@@ -554,8 +557,8 @@ class BearingAssemblyOptimizer:
                     archi.append(BearingAssembly(composite_solution))
         
         archi = self.Sortarchitectures(archi, sort_arg)
-        if self.nb_sol[0] is not None:
-            architectures = archi[0: min(len(archi), self.nb_sol[0])]
+        if self.number_solutions[0] is not None:
+            architectures = archi[0: min(len(archi), self.number_solutions[0])]
         else:
             architectures = archi[0:]
         return architectures
@@ -583,10 +586,10 @@ class BearingAssemblyOptimizer:
         for composite_bg in list_sol:
             l1 = composite_bg.bearing_combinations[0].B
             l2 = composite_bg.bearing_combinations[1].B
-            pos1_min = self.axial_pos[0] + l1/2
-            pos1_max = self.axial_pos[0] + self.length[0] - l1/2
-            pos2_min = self.axial_pos[1] + l2/2
-            pos2_max = self.axial_pos[1] + self.length[1] - l2/2
+            pos1_min = self.axial_positions[0] + l1/2
+            pos1_max = self.axial_positions[0] + self.length[0] - l1/2
+            pos2_min = self.axial_positions[1] + l2/2
+            pos2_max = self.axial_positions[1] + self.length[1] - l2/2
             def fun(x):
                 (fa1, fr1), (fa2, fr2) = composite_bg.ShaftLoad([x[0], x[1]], self.boundaries)
 #                Lnm1 = 0
@@ -631,8 +634,8 @@ class BearingAssemblyOptimizer:
             if number_solutions is not None:
                 if len(self.bearing_assemblies) <= number_solutions:       
                     if status >= 0:
-                        composite_bg.Update(sol_x, self.d_shaft_min, self.axial_pos, 
-                                            self.d_ext, self.length)
+                        composite_bg.Update(sol_x, self.inner_diameter, self.axial_positions, 
+                                            self.outer_diameter, self.length)
                         result = composite_bg.ExtractResult()
                         
                         if composite_bg not in self.bearing_assemblies:
@@ -646,8 +649,8 @@ class BearingAssemblyOptimizer:
                     break
             else:
                 if status >= 0:
-                    composite_bg.Update(sol_x, self.d_shaft_min, self.axial_pos, 
-                                        self.d_ext, self.length)
+                    composite_bg.Update(sol_x, self.inner_diameter, self.axial_positions, 
+                                        self.outer_diameter, self.length)
                     result = composite_bg.ExtractResult()
                         
                     if composite_bg not in self.bearing_assemblies:
@@ -656,87 +659,86 @@ class BearingAssemblyOptimizer:
                         self.results[composite_bg] = result
                     else:
                         self.results[composite_bg].append(result)
-        self.results = BearingAssemblyOptimizationResults(self.boundaries, self.speeds, self.times,
-                 self.d_shaft_min, self.axial_pos, self.d_ext, self.length,
-                 self.typ_linkage, self.typ_mounting, self.number_bearing,
-                 self.sort, self.sort_arg, self.path, self.nb_sol, self.bearing_assemblies, self.results)
+        self.results = BearingAssemblyOptimizationResults(self.boundaries, self.speeds, self.operating_times,
+                 self.inner_diameter, self.axial_positions, self.outer_diameter, self.length,
+                 self.linkage_types, self.mounting_types, self.number_bearings,
+                 self.sort, self.sort_arg, self.number_solutions, self.bearing_assemblies, self.results)
                     
     @classmethod
     def DefOptimizer(cls, boundaries, speeds, times,
-                 d_shaft_min, axial_pos, d_ext, length,
-                 typ_linkage, typ_mounting, number_bearing,
-                 sort, sort_arg, path, nb_sol):
+                 inner_diameter, axial_positions, outer_diameter, length,
+                 linkage_types, mounting_types, number_bearing,
+                 sort, sort_arg, path, number_solutions):
         obj = cls(boundaries, speeds, times,
-                 d_shaft_min, axial_pos, d_ext, length,
-                 typ_linkage, typ_mounting, number_bearing,
-                 sort, sort_arg, path, nb_sol)
+                 inner_diameter, axial_positions, outer_diameter, length,
+                 linkage_types, mounting_types, number_bearing,
+                 sort, sort_arg, path, number_solutions)
         return obj
     
         
 class ShaftOptimizer:
     def __init__(self, list_pos_unknown, list_load, list_torque, list_speed, list_time,
-                 d_shaft_min=0.02, axial_pos=[0, 0.1], d_ext=[0.05, 0.05], length=[0.04, 0.04],
-                 typ_linkage=[['all'], ['all']],
-                 typ_mounting=None, sort={'typ':'Lnm', 'min':1e4, 'max':npy.inf},
-                 path='Export_Solution.txt'):
-        file = open(path, 'w')
-        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
-        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
-        file.write(''' _______                                 ______   ______        \n''')
-        file.write('''|       \                               |      \ /      \       \n''')
-        file.write('''| $$$$$$$\  ______    _______   _______  \$$$$$$|  $$$$$$\      \n''')
-        file.write('''| $$  | $$ /      \  /       \ /       \  | $$  | $$__| $$      \n''')
-        file.write('''| $$  | $$|  $$$$$$\|  $$$$$$$|  $$$$$$$  | $$  | $$    $$      \n''')
-        file.write('''| $$  | $$| $$    $$ \$$    \  \$$    \   | $$  | $$$$$$$$      \n''')
-        file.write('''| $$__/ $$| $$$$$$$$ _\$$$$$$\ _\$$$$$$\ _| $$_ | $$  | $$      \n''')
-        file.write('''| $$    $$ \$$     \|       $$|       $$|   $$ \| $$  | $$      \n''')
-        file.write(''' \$$$$$$$   \$$$$$$$ \$$$$$$$  \$$$$$$$  \$$$$$$ \$$   \$$      \n''')
-        file.write(''' \n''')
-        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
-        file.write('''$$$$$$$$$$$$$$$$$$     Bearings Results   $$$$$$$$$$$$$$$$$$$$  \n''')
-        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
-        file.write(''' \n''')
-
-        file.close()
-        self.path = path
+                 inner_diameter=0.02, axial_positions=[0, 0.1], outer_diameter=[0.05, 0.05], length=[0.04, 0.04],
+                 linkage_types=[['all'], ['all']],
+                 mounting_types=None, sort={'typ':'Lnm', 'min':1e4, 'max':npy.inf}):
+#        file = open(path, 'w')
+#        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
+#        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
+#        file.write(''' _______                                 ______   ______        \n''')
+#        file.write('''|       \                               |      \ /      \       \n''')
+#        file.write('''| $$$$$$$\  ______    _______   _______  \$$$$$$|  $$$$$$\      \n''')
+#        file.write('''| $$  | $$ /      \  /       \ /       \  | $$  | $$__| $$      \n''')
+#        file.write('''| $$  | $$|  $$$$$$\|  $$$$$$$|  $$$$$$$  | $$  | $$    $$      \n''')
+#        file.write('''| $$  | $$| $$    $$ \$$    \  \$$    \   | $$  | $$$$$$$$      \n''')
+#        file.write('''| $$__/ $$| $$$$$$$$ _\$$$$$$\ _\$$$$$$\ _| $$_ | $$  | $$      \n''')
+#        file.write('''| $$    $$ \$$     \|       $$|       $$|   $$ \| $$  | $$      \n''')
+#        file.write(''' \$$$$$$$   \$$$$$$$ \$$$$$$$  \$$$$$$$  \$$$$$$ \$$   \$$      \n''')
+#        file.write(''' \n''')
+#        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
+#        file.write('''$$$$$$$$$$$$$$$$$$     Bearings Results   $$$$$$$$$$$$$$$$$$$$  \n''')
+#        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
+#        file.write(''' \n''')
+#
+#        file.close()
+#        self.path = path
         
         self.list_pos_unknown = list_pos_unknown
         self.list_load = list_load
         self.list_torque = list_torque
         self.list_speed = list_speed
         self.list_time = list_time
-        self.d_shaft_min = d_shaft_min
-        self.axial_pos = axial_pos
-        self.d_ext = d_ext
+        self.inner_diameter = inner_diameter
+        self.axial_positions = axial_positions
+        self.outer_diameter = outer_diameter
         self.length = length
-        self.typ_linkage = typ_linkage
-        if typ_mounting == None:
-            typ_mounting = ['X', 'O', 'fix_sliding', 'sliding_fix']
-        self.typ_mounting = typ_mounting
+        self.linkage_types = linkage_types
+        if mounting_types == None:
+            mounting_types = ['X', 'O', 'fix_sliding', 'sliding_fix']
+        self.mounting_types = mounting_types
         self.sort = sort
         
-        list_linkage = self.typ_linkage 
-        for i,list_link in enumerate(self.typ_linkage):
+        list_linkage = self.linkage_types 
+        for i,list_link in enumerate(self.linkage_types):
             if 'all' in list_link:
                 list_linkage[i] = ['linear_annular', 'ball_joint', 'pivot', 'cylindric_joint']
         
         list_mounting = []
         for typ_rlts1, typ_rlts2 in product(list_linkage[0], list_linkage[1]):
             if [typ_rlts1, typ_rlts2] == ['ball_joint', 'ball_joint']:
-                if 'X' in self.typ_mounting:
+                if 'X' in self.mounting_types:
                     list_mounting.append(['ball_joint', 'ball_joint', 'X'])
-                if 'O' in self.typ_mounting:
+                if 'O' in self.mounting_types:
                     list_mounting.append(['ball_joint', 'ball_joint', 'O'])
             if [typ_rlts1, typ_rlts2] == ['pivot', 'pivot']:
-                if 'X' in self.typ_mounting:
+                if 'X' in self.mounting_types:
                     list_mounting.append(['pivot', 'pivot', 'X'])
-                if 'O' in self.typ_mounting:
+                if 'O' in self.mounting_types:
                     list_mounting.append(['pivot', 'pivot', 'O'])
             if (typ_rlts1 in ['ball_joint', 'pivot']) and (typ_rlts2 in ['linear_annular', 'cylindric_joint']):
-                if 'fix_sliding' in self.typ_mounting:
+                if 'fix_sliding' in self.mounting_types:
                     list_mounting.append([typ_rlts1, typ_rlts2, 'fix_sliding'])
             if (typ_rlts2 in ['ball_joint', 'pivot']) and (typ_rlts1 in ['linear_annular', 'cylindric_joint']):
-                if 'sliding_fix' in self.typ_mounting:
+                if 'sliding_fix' in self.mounting_types:
                     list_mounting.append([typ_rlts1, typ_rlts2, 'sliding_fix'])
 
         axis_load = ['n', 'p'] # 'p' when the axial load applied on shaft is directed from left to right
@@ -928,26 +930,26 @@ class ShaftOptimizer:
             pos2 += bg.B
             list_bg.append(bg2)
             
-        poly_shaft = vm.Polygon2D([vm.Point2D((self.axial_pos[0] - 5e-3, -self.d_shaft_min[0]/2.)),
-                      vm.Point2D((self.axial_pos[0] - 5e-3, self.d_shaft_min[0]/2.)),
-                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., self.d_shaft_min[0]/2.)),
-                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., self.d_shaft_min[1]/2.)),
-                      vm.Point2D((self.axial_pos[1] + self.length[1] + 5e-3, self.d_shaft_min[1]/2.)),
-                      vm.Point2D((self.axial_pos[1] + self.length[1] + 5e-3, -self.d_shaft_min[1]/2.)),
-                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., -self.d_shaft_min[1]/2.)),
-                      vm.Point2D(((self.axial_pos[0] + self.length[0] + self.axial_pos[1])/2., -self.d_shaft_min[0]/2.)),])
+        poly_shaft = vm.Polygon2D([vm.Point2D((self.axial_positions[0] - 5e-3, -self.inner_diameter[0]/2.)),
+                      vm.Point2D((self.axial_positions[0] - 5e-3, self.inner_diameter[0]/2.)),
+                      vm.Point2D(((self.axial_positions[0] + self.length[0] + self.axial_positions[1])/2., self.inner_diameter[0]/2.)),
+                      vm.Point2D(((self.axial_positions[0] + self.length[0] + self.axial_positions[1])/2., self.inner_diameter[1]/2.)),
+                      vm.Point2D((self.axial_positions[1] + self.length[1] + 5e-3, self.inner_diameter[1]/2.)),
+                      vm.Point2D((self.axial_positions[1] + self.length[1] + 5e-3, -self.inner_diameter[1]/2.)),
+                      vm.Point2D(((self.axial_positions[0] + self.length[0] + self.axial_positions[1])/2., -self.inner_diameter[1]/2.)),
+                      vm.Point2D(((self.axial_positions[0] + self.length[0] + self.axial_positions[1])/2., -self.inner_diameter[0]/2.)),])
     
-        poly_rlt1 = vm.Polygon2D([vm.Point2D((self.axial_pos[0], self.d_shaft_min[0]/2.)),
-                      vm.Point2D((self.axial_pos[0], self.d_ext[0]/2.)),
-                      vm.Point2D((self.axial_pos[0] + self.length[0], self.d_ext[0]/2.)),
-                      vm.Point2D((self.axial_pos[0] + self.length[0], self.d_shaft_min[0]/2.))])
-        poly_rlt1b = poly_rlt1.Translation((0, -self.d_ext[0]/2. - self.d_shaft_min[0]/2.), True)
+        poly_rlt1 = vm.Polygon2D([vm.Point2D((self.axial_positions[0], self.inner_diameter[0]/2.)),
+                      vm.Point2D((self.axial_positions[0], self.outer_diameter[0]/2.)),
+                      vm.Point2D((self.axial_positions[0] + self.length[0], self.outer_diameter[0]/2.)),
+                      vm.Point2D((self.axial_positions[0] + self.length[0], self.inner_diameter[0]/2.))])
+        poly_rlt1b = poly_rlt1.Translation((0, -self.outer_diameter[0]/2. - self.inner_diameter[0]/2.), True)
     
-        poly_rlt2 = vm.Polygon2D([vm.Point2D((self.axial_pos[1], self.d_shaft_min[1]/2.)),
-                      vm.Point2D((self.axial_pos[1], self.d_ext[1]/2.)),
-                      vm.Point2D((self.axial_pos[1] + self.length[1], self.d_ext[1]/2.)),
-                      vm.Point2D((self.axial_pos[1] + self.length[1], self.d_shaft_min[1]/2.))])
-        poly_rlt2b = poly_rlt2.Translation((0, -self.d_ext[1]/2. - self.d_shaft_min[1]/2.), True)
+        poly_rlt2 = vm.Polygon2D([vm.Point2D((self.axial_positions[1], self.inner_diameter[1]/2.)),
+                      vm.Point2D((self.axial_positions[1], self.outer_diameter[1]/2.)),
+                      vm.Point2D((self.axial_positions[1] + self.length[1], self.outer_diameter[1]/2.)),
+                      vm.Point2D((self.axial_positions[1] + self.length[1], self.inner_diameter[1]/2.))])
+        poly_rlt2b = poly_rlt2.Translation((0, -self.outer_diameter[1]/2. - self.inner_diameter[1]/2.), True)
 
         list_bg.append(poly_shaft)
         contour_bg = vm.Contour2D(list_bg)
