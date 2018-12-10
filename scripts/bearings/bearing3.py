@@ -10,14 +10,17 @@ import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
 #import numpy as npy
 
-S1 = bearings_opt.BearingAssemblyOptimizer(boundaries = [[(-0.001, 0.005, 0), (2000, -2500, 100), (0, 100, 0)]], 
+S1 = bearings_opt.BearingAssemblyOptimizer(loads = [[(-0.001, 0.005, 0), (2000, -2500, 100), (0, 100, 0)]], 
                     speeds = [200], operating_times = [1e6],
                     inner_diameter = [0.02, 0.025], axial_positions = [0, 0.1], outer_diameter = [0.05, 0.07], 
                     length = [0.07, 0.04],
-                    linkage_types = [['cylindric_joint'], ['cylindric_joint']],
-                    mounting_types = [(0, 'pn')],
-                    number_bearings=[[1,2], [2,3]],
+                    linkage_types = [['all'], ['all']],
+                    mounting_types = [['pn', 0]],
+                    number_bearings=[[1,2], [1,2,3]],
                     number_solutions = [3, 3, 2])
+
+
+
 
 S1.Optimize(number_solutions = 50, verbose = True)
 results = S1.results

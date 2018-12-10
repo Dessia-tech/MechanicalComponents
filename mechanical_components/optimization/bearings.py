@@ -329,18 +329,21 @@ class BearingCombinationOptimizer:
                         
 #            if behavior_link in ['pn', 'n']:
 
-                
-            if behavior_link is 'pn':
+            
+            if behavior_link == 'pn':
                 mount = {'be':['p','n'], 'bi':['p','n']}
-            elif behavior_link is 'p':
+            elif behavior_link == 'p':
                 mount = {'be':['p'], 'bi':['n']}
             elif behavior_link is 'n':
                 mount = {'be':['n'], 'bi':['p']}
-            elif behavior_link is 0:
-                if behavior_assembly is 0:
+            elif behavior_link == 0:
+                if behavior_assembly == 0:
                     mount = {'be':['p','n'], 'bi':['p','n']}
-                elif behavior_assembly is 'pn':
+                elif behavior_assembly == 'pn':
                     mount = {'be':[], 'bi':['p','n']}
+            else:
+                print('Unknown behavior_link: ', behavior_link)
+                raise NotImplementedError
             li_rlts_pandas = self.SearchCatalog(d, D, length, li_rlts, number_solutions = number_solutions[1])
             if li_rlts_pandas is not None:
                 for li_bearing in li_rlts_pandas:
@@ -490,7 +493,7 @@ class BearingCombinationOptimizer:
 
     
 class BearingAssemblyOptimizer:
-    def __init__(self, boundaries, speeds, operating_times,
+    def __init__(self, loads, speeds, operating_times,
                  inner_diameter=[0.02, 0.02],
                  axial_positions=[0, 0.1],
                  outer_diameter=[0.05, 0.05],
@@ -502,7 +505,7 @@ class BearingAssemblyOptimizer:
                  sort_arg = {'min':'mass'},
                  number_solutions=[20, 10, 10]):
         
-        self.boundaries = boundaries
+        self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
         self.inner_diameter = inner_diameter
@@ -518,6 +521,7 @@ class BearingAssemblyOptimizer:
         nb_linkage = len(length)
         if mounting_types == None:
             mounting_types = []
+            # TODO: change 0 to '0' or something else
             for typ_iter in product(['pn', 0, 'n', 'p'], repeat = nb_linkage):
                 if typ_iter is not (0,)*nb_linkage:
                     if set(typ_iter) not in [set(('pn', 'p')), set(('pn', 'n')), set(('pn', 'pn')), set((0, 0))]:
@@ -591,7 +595,7 @@ class BearingAssemblyOptimizer:
             pos2_min = self.axial_positions[1] + l2/2
             pos2_max = self.axial_positions[1] + self.length[1] - l2/2
             def fun(x):
-                (fa1, fr1), (fa2, fr2) = composite_bg.ShaftLoad([x[0], x[1]], self.boundaries)
+                (fa1, fr1), (fa2, fr2) = composite_bg.ShaftLoad([x[0], x[1]], self.loads)
 #                Lnm1 = 0
 #                for rlt1 in list_bearing1:
 #                    Lnm1 += rlt1.AdjustedLifeTime(Fr = [fr1], Fa = [fa1], N = [300], t = [1e10], T = [60])
@@ -659,17 +663,17 @@ class BearingAssemblyOptimizer:
                         self.results[composite_bg] = result
                     else:
                         self.results[composite_bg].append(result)
-        self.results = BearingAssemblyOptimizationResults(self.boundaries, self.speeds, self.operating_times,
+        self.results = BearingAssemblyOptimizationResults(self.loads, self.speeds, self.operating_times,
                  self.inner_diameter, self.axial_positions, self.outer_diameter, self.length,
                  self.linkage_types, self.mounting_types, self.number_bearings,
                  self.sort, self.sort_arg, self.number_solutions, self.bearing_assemblies, self.results)
                     
     @classmethod
-    def DefOptimizer(cls, boundaries, speeds, times,
+    def DefOptimizer(cls, loads, speeds, times,
                  inner_diameter, axial_positions, outer_diameter, length,
                  linkage_types, mounting_types, number_bearing,
                  sort, sort_arg, path, number_solutions):
-        obj = cls(boundaries, speeds, times,
+        obj = cls(loads, speeds, times,
                  inner_diameter, axial_positions, outer_diameter, length,
                  linkage_types, mounting_types, number_bearing,
                  sort, sort_arg, path, number_solutions)
