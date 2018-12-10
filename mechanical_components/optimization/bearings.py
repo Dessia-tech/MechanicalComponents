@@ -242,7 +242,7 @@ class RollerBearingContinuousOptimizer:
 
                             print('Lnm: {}, specification: {}'.format(lnm, Lnm))
                             
-with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),'mechanical_components/catalogs/tableau_rlts_SNR.csv') as rlts_FNR:
+with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
     pandas_rlts_FNR = pandas.read_csv(rlts_FNR) 
             
 pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]

@@ -68,6 +68,7 @@ setup(name='mechanical_components',
       setup_requires=['numpy'],
       install_requires=['scipy','volmdlr','numpy', 'pandas', 'dectree',
                         'networkx', 'matplotlib'],
-      data_files=[('mechanical_components/catalogs',['mechanical_components/catalogs/ferroflex.csv'])]
+      data_files=[('mechanical_components/catalogs',['mechanical_components/catalogs/ferroflex.csv',
+                                                     'mechanical_components/catalogs/SNR.csv'])]
       )
 
