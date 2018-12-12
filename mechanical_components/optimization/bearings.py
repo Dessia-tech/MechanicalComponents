@@ -980,37 +980,37 @@ class ShaftOptimizer:
     
         contour_bg.MPLPlot(a)
         
-    def Export(self, solution, num_sol):
-        R1 = BearingCatalogOptimizer()
-        file = open(self.path, 'a')
-        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
-        file.write('''$$$$$$$$$$$$$$$$$     Optimum number {}   $$$$$$$$$$$$$$$$$$$$  \n'''.format(num_sol))
-        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
-        file.write(''' \n''')
-        file.write('''position; name bearing; type bearing, d, D, B, i, Z, Dw, alpha  \n''')
-        for num_ligne in solution['bearing1_catalog']:
-            name_bearing = R1.pd_FNR.loc[num_ligne,'name_bearing']
-            typ_rlt2 = R1.pd_FNR.loc[num_ligne,'typ_bearing']
-            d = R1.pd_FNR.loc[num_ligne,'d']
-            D = R1.pd_FNR.loc[num_ligne,'D']
-            B = R1.pd_FNR.loc[num_ligne,'B']
-            i = R1.pd_FNR.loc[num_ligne,'i']
-            Z = R1.pd_FNR.loc[num_ligne,'Z']
-            Dw = R1.pd_FNR.loc[num_ligne,'Dw']
-            alpha = R1.pd_FNR.loc[num_ligne,'alpha']
-            file.write('''{}; {}; {}; {}; {}; {}; {}; {}; {}; {} \n'''.format('left', name_bearing, typ_rlt2, d, D, B, i, Z, Dw, alpha))
-        for num_ligne in solution['bearing2_catalog']:
-            name_bearing = R1.pd_FNR.loc[num_ligne,'name_bearing']
-            typ_rlt2 = R1.pd_FNR.loc[num_ligne,'typ_bearing']
-            d = R1.pd_FNR.loc[num_ligne,'d']
-            D = R1.pd_FNR.loc[num_ligne,'D']
-            B = R1.pd_FNR.loc[num_ligne,'B']
-            i = R1.pd_FNR.loc[num_ligne,'i']
-            Z = R1.pd_FNR.loc[num_ligne,'Z']
-            Dw = R1.pd_FNR.loc[num_ligne,'Dw']
-            alpha = R1.pd_FNR.loc[num_ligne,'alpha']
-            file.write('''{}; {}; {}; {}; {}; {}; {}; {}; {}; {} \n'''.format('right', name_bearing, typ_rlt2, d, D, B, i, Z, Dw, alpha))
-        file.close()
+#    def Export(self, solution, num_sol):
+#        R1 = BearingCatalogOptimizer()
+#        file = open(self.path, 'a')
+#        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
+#        file.write('''$$$$$$$$$$$$$$$$$     Optimum number {}   $$$$$$$$$$$$$$$$$$$$  \n'''.format(num_sol))
+#        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
+#        file.write(''' \n''')
+#        file.write('''position; name bearing; type bearing, d, D, B, i, Z, Dw, alpha  \n''')
+#        for num_ligne in solution['bearing1_catalog']:
+#            name_bearing = R1.pd_FNR.loc[num_ligne,'name_bearing']
+#            typ_rlt2 = R1.pd_FNR.loc[num_ligne,'typ_bearing']
+#            d = R1.pd_FNR.loc[num_ligne,'d']
+#            D = R1.pd_FNR.loc[num_ligne,'D']
+#            B = R1.pd_FNR.loc[num_ligne,'B']
+#            i = R1.pd_FNR.loc[num_ligne,'i']
+#            Z = R1.pd_FNR.loc[num_ligne,'Z']
+#            Dw = R1.pd_FNR.loc[num_ligne,'Dw']
+#            alpha = R1.pd_FNR.loc[num_ligne,'alpha']
+#            file.write('''{}; {}; {}; {}; {}; {}; {}; {}; {}; {} \n'''.format('left', name_bearing, typ_rlt2, d, D, B, i, Z, Dw, alpha))
+#        for num_ligne in solution['bearing2_catalog']:
+#            name_bearing = R1.pd_FNR.loc[num_ligne,'name_bearing']
+#            typ_rlt2 = R1.pd_FNR.loc[num_ligne,'typ_bearing']
+#            d = R1.pd_FNR.loc[num_ligne,'d']
+#            D = R1.pd_FNR.loc[num_ligne,'D']
+#            B = R1.pd_FNR.loc[num_ligne,'B']
+#            i = R1.pd_FNR.loc[num_ligne,'i']
+#            Z = R1.pd_FNR.loc[num_ligne,'Z']
+#            Dw = R1.pd_FNR.loc[num_ligne,'Dw']
+#            alpha = R1.pd_FNR.loc[num_ligne,'alpha']
+#            file.write('''{}; {}; {}; {}; {}; {}; {}; {}; {}; {} \n'''.format('right', name_bearing, typ_rlt2, d, D, B, i, Z, Dw, alpha))
+#        file.close()
         
 
 #print(S1.list_architectures)
