@@ -15,9 +15,9 @@ print('#####################################')
 print('############ Decision Tree ##########')
 print('#####################################')
 GA = meshes_opt.MeshAssemblyOptimizer(Z={}, connections = list_gear_set,
-                                gear_speed = list_speed,
-                                center_distance = list_cd, verbose = True,
-                                torque = list_torque)
+                                gear_speeds = list_speed,
+                                center_distances = list_cd, verbose = True,
+                                torques = list_torque, cycles={0:1e8})
 
 #Optimization for a short list of architecture generate with the decision tree
 print('#####################################')

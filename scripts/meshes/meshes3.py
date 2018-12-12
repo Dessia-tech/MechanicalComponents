@@ -27,12 +27,13 @@ rack_choices = {0:[0], 1:[0], 2:[0],3:[0], 4:[0], 5:[0], 6:[0]}
 torques = {0: 16.4, 4: 30, 5: 0, 6: 'output'}
 
 GA=meshes_opt.MeshAssemblyOptimizer(connections = connections, 
-                                  gear_speed = speeds,
-                                  center_distance = center_distances,
+                                  gear_speeds = speeds,
+                                  center_distances = center_distances,
                                   rack_list = list_rack,
-                                  torque = torques,
+                                  torques = torques,
                                   rack_choice=rack_choices,
-                                  verbose = True)
+                                  verbose = True,
+                                  cycles={0:1e8})
 
 def pgcd(a,b) :
     while a%b != 0 :

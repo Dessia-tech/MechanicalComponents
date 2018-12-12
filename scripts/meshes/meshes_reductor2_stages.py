@@ -21,7 +21,7 @@ center_distances=[(0.09713462117912072, 0.12713462117912072)]
 
 speeds = {0: [243.620149773094, 253.56382935566927], 1: [92.0103009101568, 95.76582339628565]}
 
-connections = [(0, 1)]
+connections = [[(0, 1)]]
 #list_speed={2:[9000*npy.pi/30*(1-erreur),9000*npy.pi/30],4:[20000*npy.pi/30*(1-erreur),
 #               20000*npy.pi/30],6:[11000*npy.pi/30,11000*npy.pi/30*(1+erreur)],7:[17000*npy.pi/30,
 #               17000*npy.pi/30*(1+erreur)],0:[1000*npy.pi/30,30000*npy.pi/30],
@@ -37,21 +37,22 @@ connections = [(0, 1)]
 torques = {0: -16.380372067375156, 1: 'output'}
 
 GA=meshes_opt.MeshAssemblyOptimizer(connections = connections, 
-                                  gear_speed = speeds,
-                                  center_distance = center_distances,
+                                  gear_speeds = speeds,
+                                  center_distances = center_distances,
 #                                  rack_list = list_rack,
-                                  torque = torques,
+                                  torques = torques,
 #                                  rack_choice=rack_choices)
+                                  cycles={0:1e8}
                                   )
 
 #Recherche triée des nb_sol architecture ayant un entraxe mini (nb_sol=-1 pour analyser l'ensemble des solutions)
-GA.Optimize(nb_sol=10, verbose = True)
+GA.Optimize(nb_sol=3, verbose = True)
 print('Number of solutions:',len(GA.solutions))
-for solution in GA.solutions:
-    for a in solution.meshes.values():
-        Z1 = a[0].Z
-        Z2 = a[1].Z
-        print(243*Z1/Z2, 253*Z1/Z2)
+#for solution in GA.solutions:
+#    for a in solution.meshes.values():
+#        Z1 = a[0].Z
+#        Z2 = a[1].Z
+#        print(243*Z1/Z2, 253*Z1/Z2)
 #solution=GA.solutions[0]
 #solution.SVGExport('name.txt',{5:[0,0]})
 #solution.FreeCADExport('meshes_agb')
