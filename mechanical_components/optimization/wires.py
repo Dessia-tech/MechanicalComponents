@@ -7,35 +7,12 @@ Created on Tue Sep 25 15:21:16 2018
 
 import networkx as nx
 import mechanical_components.wires as wires
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
+from .common import RoutingOptimizer
 
-class WiringOptimizer:
+class WiringOptimizer(RoutingOptimizer):
     def __init__(self, waypoints, routes):
-        self.waypoints = waypoints
-        self.routes = routes
-#        self.wires_specs = wires_specs
-        
-        # Creating graph
-        self.graph = nx.Graph()
-        self.graph.add_nodes_from(waypoints)
-#        self.graph.add_edges_from(routes)
-        for waypoint1, waypoint2 in routes:
-            self.graph.add_edge(waypoint1, waypoint2, distance=(waypoint2-waypoint1).Norm())
-        self.line_graph = nx.line_graph(self.graph)
-        
-    def DrawNetwork(self):
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        
-        for wpt1, wpt2 in self.routes:
-            ax.plot([wpt1[0], wpt2[0]], [wpt1[1], wpt2[1]], 'o-k')
-#        nx.draw_kamada_kawai(self.graph)
-        
-    def PathLength(self, path):
-        length = 0.
-        for waypoint1, waypoint2 in zip(path[:-1], path[1:]):
-            length += self.graph[waypoint1][waypoint2]['distance']
-        return length
+        RoutingOptimizer.__init__(self, waypoints, routes)
     
     def NumberHarnesses(self, paths):
         G = nx.Graph()
@@ -46,7 +23,6 @@ class WiringOptimizer:
                 G.add_edge(route1, route2)
         
         # Removing nodes with degree == 0
-#        nodes = G.nodes().copy()
         for node in self.line_graph.nodes():
             if G.degree(node) == 0:
                 G.remove_node(node)

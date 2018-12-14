@@ -56,7 +56,8 @@ not_before = int(time.time())
 
 protected_files = ['mechanical_components/optimization/bearings.py',
                    'mechanical_components/optimization/meshes.py',
-                   'mechanical_components/optimization/wires.py']
+                   'mechanical_components/optimization/wires.py',
+                   'mechanical_components/optimization/common.py']
 
 error_msg = 'Error, report this error to DessIA support with this traceback token: {}'.format(hashlib.sha256(str(mac).encode()).hexdigest())
 protection_lines = ['valid_license = True\n',
@@ -69,8 +70,7 @@ protection_lines = ['valid_license = True\n',
                     '    valid_license = False\n',
                     'if not valid_license:\n',
                     '    print("{}")\n\n'.format(error_msg),
-                    '    raise RuntimeError\n'
-                    ]
+                    '    raise RuntimeError\n']
 
 
 files_to_compile = []

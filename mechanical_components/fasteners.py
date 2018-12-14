@@ -57,16 +57,14 @@ class FlatWasher:
 class Bolt:
     
     dessia_db_attributes = [{'name':'screw',
-                     'class':'mechanical_components.fasteners.Screw',
-                     'type':'object'}]
-    
-    dessia_db_attributes = [{'name':'nut',
-                 'class':'mechanical_components.fasteners.Nut',
-                 'type':'object'}]
-    
-    dessia_db_attributes = [{'name':'washer',
-                     'class':'mechanical_components.fasteners.Washer',
-                     'type':'object'}]
+                             'class':'mechanical_components.fasteners.Screw',
+                             'type':'object'},
+                            {'name':'nut',
+                             'class':'mechanical_components.fasteners.Nut',
+                             'type':'object'},
+                             {'name':'washer',
+                             'class':'mechanical_components.fasteners.Washer',
+                             'type':'object'}]
     
     def __init__(self, screw, nut, nut_position, washer=None):
         self.screw = screw
