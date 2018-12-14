@@ -20,7 +20,7 @@ from itertools import product
 #import genmechanics
 #import genmechanics.linkages as linkages
 #import genmechanics.loads as loads
-
+import math
 import volmdlr as vm
 #import volmdlr.primitives3D as primitives3D
 #import volmdlr.primitives2D as primitives2D
@@ -127,14 +127,14 @@ class RollerBearingContinuousOptimizer:
             Dw_inf,Dw_sup=analyse_rule('Dw',Dw_inf,Dw_sup,['d','D','B'],[d,D,B])
             
             #Choix des dimensions rouleaux compatible
-            Dw_sup=min(Dw_sup,(D-d)/2)
+            Dw_sup=min(Dw_sup,(D-d)/2.)
             for Dw in dico_roller_iso.keys():
                 if (Dw>=Dw_inf) and (Dw<=Dw_sup):
                     for Lw in dico_roller_iso[Dw].keys():
                         if (Lw>=Lw_inf) and (Lw<=Lw_sup):
                             E_inf,E_sup=analyse_rule('E',-npy.inf,npy.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
                             F_inf,F_sup=analyse_rule('F',-npy.inf,npy.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
-                            if ((E_inf-F_sup)/2<=Dw) and ((E_sup-F_inf)/2>=Dw):
+                            if ((E_inf-F_sup)/2.<=Dw) and ((E_sup-F_inf)/2.>=Dw):
                                 liste_sol_roller_iso.append([d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup])
 
 
@@ -146,12 +146,12 @@ class RollerBearingContinuousOptimizer:
         estim_masse=[]
         #Construction d'une fonctionnelle pour le tri afin d'engager une optimisation continue
         for [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup] in liste_sol_roller_iso:
-            E=(E_inf+E_sup)/2
+            E=(E_inf+E_sup)/2.
             F=E-2*Dw
-            Zmax=int(2*npy.pi/(2*npy.arcsin((Dw/2)/(F/2+Dw/2))))
-            masse_elem=(npy.pi*D**2/4-npy.pi*E**2/4)*B
-            masse_elem+=(npy.pi*F**2/4-npy.pi*d**2/4)*B
-            masse_elem+=npy.pi*Dw**2/4*Lw*Zmax
+            Zmax=int(2*npy.pi/(2.*math.arcsin((Dw/2)/(F/2.+Dw/2.))))
+            masse_elem=(npy.pi*D**2/4.-npy.pi*E**2/4.)*B
+            masse_elem+=(npy.pi*F**2/4.-npy.pi*d**2/4.)*B
+            masse_elem+=npy.pi*Dw**2/4.*Lw*Zmax
             estim_masse.append(masse_elem)
         
         #Optimisation Minimize du détail du roulement (E,D1 et d1)
@@ -172,7 +172,7 @@ class RollerBearingContinuousOptimizer:
             def fun(x):
                 obj=0
                 F=x[0]-2*Dw
-                Zmax=int(2*npy.pi/(2*npy.arcsin((Dw/2)/(F/2+Dw/2))))
+                Zmax=int(2*math.pi/(2*npy.arcsin((Dw/2.)/(F/2.+Dw/2.))))
                 R1.Update(x[2],x[1],x[0],F,Zmax)
                 l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
 
@@ -193,7 +193,7 @@ class RollerBearingContinuousOptimizer:
                 ine.append(d1_sup-x[2])
                 ine.append(x[0]-x[1])
                 ine.append(x[1]-x[2])
-                ine.append((x[0]+F)/2-x[2])  #d1 inférieur au diamètre passant par l'axe des rouleaux
+                ine.append((x[0]+F)/2.-x[2])  #d1 inférieur au diamètre passant par l'axe des rouleaux
                 return ine
             cons = ({'type': 'ineq','fun' : ineg})
             valid_optim=1
@@ -208,7 +208,7 @@ class RollerBearingContinuousOptimizer:
             if valid_optim==0:
                 x_opt=res.x
                 F=x_opt[0]-2*Dw
-                Zmax=int(2*npy.pi/(2*npy.arcsin((Dw/2)/(F/2+Dw/2))))
+                Zmax=int(2*math.pi/(2*npy.arcsin((Dw/2.)/(F/2.+Dw/2.))))
                 R1.Update(x_opt[2],x_opt[1],x_opt[0],F,Zmax)
                 l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
 
@@ -590,10 +590,10 @@ class BearingAssemblyOptimizer:
         for composite_bg in list_sol:
             l1 = composite_bg.bearing_combinations[0].B
             l2 = composite_bg.bearing_combinations[1].B
-            pos1_min = self.axial_positions[0] + l1/2
-            pos1_max = self.axial_positions[0] + self.length[0] - l1/2
-            pos2_min = self.axial_positions[1] + l2/2
-            pos2_max = self.axial_positions[1] + self.length[1] - l2/2
+            pos1_min = self.axial_positions[0] + l1/2.
+            pos1_max = self.axial_positions[0] + self.length[0] - l1/2.
+            pos2_min = self.axial_positions[1] + l2/2.
+            pos2_max = self.axial_positions[1] + self.length[1] - l2/2.
             def fun(x):
                 (fa1, fr1), (fa2, fr2) = composite_bg.ShaftLoad([x[0], x[1]], self.loads)
 #                Lnm1 = 0
@@ -980,37 +980,37 @@ class ShaftOptimizer:
     
         contour_bg.MPLPlot(a)
         
-    def Export(self, solution, num_sol):
-        R1 = BearingCatalogOptimizer()
-        file = open(self.path, 'a')
-        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
-        file.write('''$$$$$$$$$$$$$$$$$     Optimum number {}   $$$$$$$$$$$$$$$$$$$$  \n'''.format(num_sol))
-        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
-        file.write(''' \n''')
-        file.write('''position; name bearing; type bearing, d, D, B, i, Z, Dw, alpha  \n''')
-        for num_ligne in solution['bearing1_catalog']:
-            name_bearing = R1.pd_FNR.loc[num_ligne,'name_bearing']
-            typ_rlt2 = R1.pd_FNR.loc[num_ligne,'typ_bearing']
-            d = R1.pd_FNR.loc[num_ligne,'d']
-            D = R1.pd_FNR.loc[num_ligne,'D']
-            B = R1.pd_FNR.loc[num_ligne,'B']
-            i = R1.pd_FNR.loc[num_ligne,'i']
-            Z = R1.pd_FNR.loc[num_ligne,'Z']
-            Dw = R1.pd_FNR.loc[num_ligne,'Dw']
-            alpha = R1.pd_FNR.loc[num_ligne,'alpha']
-            file.write('''{}; {}; {}; {}; {}; {}; {}; {}; {}; {} \n'''.format('left', name_bearing, typ_rlt2, d, D, B, i, Z, Dw, alpha))
-        for num_ligne in solution['bearing2_catalog']:
-            name_bearing = R1.pd_FNR.loc[num_ligne,'name_bearing']
-            typ_rlt2 = R1.pd_FNR.loc[num_ligne,'typ_bearing']
-            d = R1.pd_FNR.loc[num_ligne,'d']
-            D = R1.pd_FNR.loc[num_ligne,'D']
-            B = R1.pd_FNR.loc[num_ligne,'B']
-            i = R1.pd_FNR.loc[num_ligne,'i']
-            Z = R1.pd_FNR.loc[num_ligne,'Z']
-            Dw = R1.pd_FNR.loc[num_ligne,'Dw']
-            alpha = R1.pd_FNR.loc[num_ligne,'alpha']
-            file.write('''{}; {}; {}; {}; {}; {}; {}; {}; {}; {} \n'''.format('right', name_bearing, typ_rlt2, d, D, B, i, Z, Dw, alpha))
-        file.close()
+#    def Export(self, solution, num_sol):
+#        R1 = BearingCatalogOptimizer()
+#        file = open(self.path, 'a')
+#        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
+#        file.write('''$$$$$$$$$$$$$$$$$     Optimum number {}   $$$$$$$$$$$$$$$$$$$$  \n'''.format(num_sol))
+#        file.write('''$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  \n''')
+#        file.write(''' \n''')
+#        file.write('''position; name bearing; type bearing, d, D, B, i, Z, Dw, alpha  \n''')
+#        for num_ligne in solution['bearing1_catalog']:
+#            name_bearing = R1.pd_FNR.loc[num_ligne,'name_bearing']
+#            typ_rlt2 = R1.pd_FNR.loc[num_ligne,'typ_bearing']
+#            d = R1.pd_FNR.loc[num_ligne,'d']
+#            D = R1.pd_FNR.loc[num_ligne,'D']
+#            B = R1.pd_FNR.loc[num_ligne,'B']
+#            i = R1.pd_FNR.loc[num_ligne,'i']
+#            Z = R1.pd_FNR.loc[num_ligne,'Z']
+#            Dw = R1.pd_FNR.loc[num_ligne,'Dw']
+#            alpha = R1.pd_FNR.loc[num_ligne,'alpha']
+#            file.write('''{}; {}; {}; {}; {}; {}; {}; {}; {}; {} \n'''.format('left', name_bearing, typ_rlt2, d, D, B, i, Z, Dw, alpha))
+#        for num_ligne in solution['bearing2_catalog']:
+#            name_bearing = R1.pd_FNR.loc[num_ligne,'name_bearing']
+#            typ_rlt2 = R1.pd_FNR.loc[num_ligne,'typ_bearing']
+#            d = R1.pd_FNR.loc[num_ligne,'d']
+#            D = R1.pd_FNR.loc[num_ligne,'D']
+#            B = R1.pd_FNR.loc[num_ligne,'B']
+#            i = R1.pd_FNR.loc[num_ligne,'i']
+#            Z = R1.pd_FNR.loc[num_ligne,'Z']
+#            Dw = R1.pd_FNR.loc[num_ligne,'Dw']
+#            alpha = R1.pd_FNR.loc[num_ligne,'alpha']
+#            file.write('''{}; {}; {}; {}; {}; {}; {}; {}; {}; {} \n'''.format('right', name_bearing, typ_rlt2, d, D, B, i, Z, Dw, alpha))
+#        file.close()
         
 
 #print(S1.list_architectures)
