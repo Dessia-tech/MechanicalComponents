@@ -34,6 +34,7 @@ class WiringOptimizer(RoutingOptimizer):
         shortest_paths = []
         shortest_paths_lengths = []
         for wire_spec in wires_specs:
+            
 #            print(wire_spec['source'] in self.waypoints)
 #            print(wire_spec['destination'] in self.waypoints)
             shortest_path = nx.shortest_path(self.graph,
@@ -47,7 +48,7 @@ class WiringOptimizer(RoutingOptimizer):
         if self.NumberHarnesses(shortest_paths) == 1:
             harness_wires = []
             for ipath, path in enumerate(shortest_paths):
-                if 'name' in wires_specs:
+                if 'name' in wires_specs[ipath]:
                     name = wires_specs[ipath]['name']
                 else:
                     name = ''
@@ -56,7 +57,8 @@ class WiringOptimizer(RoutingOptimizer):
         else:
             wires2 = []
             for ipath, path in enumerate(shortest_paths):
-                if 'name' in wires_specs:
+                if 'name' in wires_specs[ipath]:
+#                    print()
                     name = wires_specs[ipath]['name']
                 else:
                     name = ''
