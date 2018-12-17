@@ -47,12 +47,20 @@ class WiringOptimizer(RoutingOptimizer):
         if self.NumberHarnesses(shortest_paths) == 1:
             harness_wires = []
             for ipath, path in enumerate(shortest_paths):
-                harness_wires.append(wires.Wire(path, wires_specs[ipath]['diameter']))
+                if 'name' in wires_specs:
+                    name = wires_specs[ipath]['name']
+                else:
+                    name = ''
+                harness_wires.append(wires.Wire(path, wires_specs[ipath]['diameter'], name=name))
             return wires.Wiring([], [wires.WireHarness(harness_wires)])
         else:
             wires2 = []
             for ipath, path in enumerate(shortest_paths):
-                wires2.append(wires.Wire(path, wires_specs[ipath]['diameter']))
+                if 'name' in wires_specs:
+                    name = wires_specs[ipath]['name']
+                else:
+                    name = ''
+                wires2.append(wires.Wire(path, wires_specs[ipath]['diameter'], name=name))
             return wires.Wiring(wires2, [])
             
             
