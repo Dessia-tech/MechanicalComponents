@@ -20,15 +20,34 @@ class Wire:
         self.diameter = diameter
         self.name = name
         
+
+                
+        self._utd_path = False
+        
+    def _Path(self):
         radii = {}
         for i in range(len(self.waypoints)-2):
             # if lines are not colinear
-            if vm.Line2D(waypoints[i],waypoints[i+1]).DirectionVector(unit=True).Dot(vm.Line2D(waypoints[i+1], waypoints[i+2]).DirectionVector(unit=True))!=1:                
+            if vm.Line2D(self.waypoints[i],self.waypoints[i+1]).DirectionVector(unit=True).Dot(vm.Line2D(self.waypoints[i+1], self.waypoints[i+2]).DirectionVector(unit=True))!=1:                
                 radii[i+1] = 4*self.diameter
-        self.path = primitives3D.RoundedLineSegments3D(self.waypoints, radii, adapt_radius = True)        
-        
-    def Length(self):
-        return self.path.Length()
+        return  primitives3D.RoundedLineSegments3D(self.waypoints, radii, adapt_radius = True)        
+    
+    def _get_path(self):
+        if not self._utd_path:
+            self._path = self._Path()
+            self._utd_path = True
+        return self._path
+    
+    path = property(_get_path)    
+    
+    def Length(self, estimate = False):
+        if estimate:
+            length_estimate = 0.
+            for wpt1, wpt2 in zip(self.waypoints[:-1], self.waypoints[1:]):
+                length_estimate += wpt2.PointDistance(wpt1)
+            return length_estimate
+        else:
+            return self.path.Length()
     
     def Draw(self, ax):
         x = []
@@ -111,25 +130,11 @@ class Wiring:
         else:
             return []
         
-    def Length(self):
+    def Length(self, estimate=False):
         length = 0.
         for wire in self.wires:
-            length += wire.Length()
+            length += wire.Length(estimate)
         return length
-        
-#    def Draw(self, ax=None):
-#        if ax is None:
-#            fig = plt.figure()
-#            ax = fig.add_subplot(111)
-#        else:
-#            fig = None
-#        for wire in self.wires:
-#            wire.Draw(ax)
-#        for harness in self.wire_harnesses:
-#            harness.Draw(ax)
-#        return fig, ax
-        
-    
     
     def Draw(self, x3D=vm.x3D, y3D=vm.y3D, ax=None):
         wire_sep = 0.015
