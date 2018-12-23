@@ -14,8 +14,12 @@ class Nut:
         self.h = h
         self.name = name
         
-    def Dict(self):
-        d = self.__dict__.copy()
+    def Dict(self,subobjects_id={}):
+        if self in subobjects_id:
+             d['nut'] = subobjects_id[self]
+        else:
+            #d['screw'] = self.screw.Dict()
+            d = self.__dict__.copy()
         return d
     
     @classmethod
@@ -30,8 +34,12 @@ class Screw:
         self.s = s
         self.name = name
         
-    def Dict(self):
-        d = self.__dict__.copy()
+    def Dict(self,subobjects_id={}):
+        if self in subobjects_id:
+             d['screw'] = subobjects_id[self]
+        else:
+            #d['screw'] = self.screw.Dict()
+            d = self.__dict__.copy()
         return d
     
     @classmethod
@@ -46,8 +54,12 @@ class FlatWasher:
         self.name = name
         
         
-    def Dict(self):
-        d = self.__dict__.copy()
+    def Dict(self,subobjects_id={}):
+        if self in subobjects_id:
+             d['FlatWasher'] = subobjects_id[self]
+        else:
+            #d['screw'] = self.screw.Dict()
+            d = self.__dict__.copy()
         return d
     
     @classmethod
@@ -57,14 +69,15 @@ class FlatWasher:
 class Bolt:
     
     dessia_db_attributes = [{'name':'screw',
-                             'class':'mechanical_components.fasteners.Screw',
-                             'type':'object'},
+                     'class':'mechanical_components.fasteners.Screw',
+                     'type':'object'},
                             {'name':'nut',
-                             'class':'mechanical_components.fasteners.Nut',
-                             'type':'object'},
-                             {'name':'washer',
-                             'class':'mechanical_components.fasteners.Washer',
-                             'type':'object'}]
+                 'class':'mechanical_components.fasteners.Nut',
+                 'type':'object'},
+                            {'name':'washer',
+                     'class':'mechanical_components.fasteners.Washer',
+                     'type':'object'}]
+    
     
     def __init__(self, screw, nut, nut_position, washer=None):
         self.screw = screw
@@ -72,23 +85,35 @@ class Bolt:
         self.nut_position = nut_position
         self.washer = washer
         
-    def Dict(self):
+    def Dict(self,subobjects_id={}):
         d = {}
-        d['screw'] = self.screw.Dict()
-        d['nut'] = self.nut.Dict()
+        if self.screw in subobjects_id:
+             d['screw'] = subobjects_id[self.screw]
+        else:
+            d['screw'] = self.screw.Dict()
+        if self.nut in subobjects_id:
+             d['nut'] = subobjects_id[self.nut]
+        else:
+            d['nut'] = self.nut.Dict()
         d['nut_position'] = self.nut_position
         if self.washer is not None:
-            d['washer'] = self.washer.Dict()
+            if self.washer in subobjects_id:
+                d['washer'] = subobjects_id[self.washer]
+            else:
+                d['washer'] = self.washer.Dict()
         return d
     
     @classmethod
     def DictToObject(cls, d):
+        print(d)
         screw = Screw.DictToObject(d['screw'])
-        nut = Nut.DictToObject(d['screw'])
+        nut = Nut.DictToObject(d['nut'])
         nut_position = d['nut_position']
-        if d['washer'] is not None:
-            washer = FlatWasher.DictToObject(d['washer'])
-        return cls(screw, nut, nut_position, washer)
+        if "washer" in d:
+            if d['washer'] is not None:
+                washer = FlatWasher.DictToObject(d['washer'])
+                return cls(screw, nut, nut_position, washer)
+        return cls(screw, nut, nut_position)
         
     
 class ScrewAssembly:
@@ -132,9 +157,13 @@ class BoltAssembly:
         self.name = name
         
         
-    def Dict(self):
+    def Dict(self,subobjects_id={}):
         d = {}
-        d['bolts'] = [s.Dict() for s in self.bolts]
+        #print(subobjects_id.values())
+        if all(tag in subobjects_id for tag in self.bolts):
+                 d['bolts']=list(subobjects_id.values())
+        else:
+            d['bolts'] = [s.Dict() for s in self.bolts]
         d['positions'] = self.positions
         d['axis'] = self.axis
         d['name'] = self.name
@@ -142,7 +171,7 @@ class BoltAssembly:
     
     @classmethod
     def DictToObject(cls, d):
-        bolts = [Screw.DictToObject(s) for s in d['bolts']]
+        bolts = [Bolt.DictToObject(s) for s in d['bolts']]
         positions = d['positions']
         axis = d['axis']
         name = d['name']
