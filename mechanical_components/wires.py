@@ -109,7 +109,8 @@ class WireHarness:
 
 class Wiring:
     """
-    Defines a combination of single wires and wire harnesses
+    Defines a combination of single wires and wire harnesses.
+    
     """
     def __init__(self, single_wires, wire_harnesses):
         self.single_wires = single_wires
@@ -131,6 +132,13 @@ class Wiring:
             return []
         
     def Length(self, estimate=False):
+        """
+        Gives the cumulative length of wires
+        
+        :param estimate: If set to True, compute the length without the raddi of wires
+        
+        """
+        
         length = 0.
         for wire in self.wires:
             length += wire.Length(estimate)
