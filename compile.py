@@ -55,9 +55,10 @@ print('Expiration date: {}/{}: {}'.format(month, year, expiration))
 not_before = int(time.time())
 
 protected_files = ['mechanical_components/optimization/bearings.py',
+                   'mechanical_components/optimization/common.py',
                    'mechanical_components/optimization/meshes.py',
                    'mechanical_components/optimization/wires.py',
-                   'mechanical_components/optimization/common.py']
+                   ]
 
 error_msg = 'Error, report this error to DessIA support with this traceback token: {}'.format(hashlib.sha256(str(mac).encode()).hexdigest())
 protection_lines = ['valid_license = True\n',
