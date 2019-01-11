@@ -18,23 +18,25 @@ b1 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1,
 b2 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0)
 b3 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
-                                       Z = 20, Dw = 0.005, alpha = 0, direction = 1)
-b4 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0, direction = -1)
+b4 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
+                                       Z = 20, Dw = 0.005, alpha = 0, direction = 1)
 b5 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0)
 list_bearing = [b1, b2, b3, b4, b5]
 BA = bearings.BearingCombination(list_bearing, radial_load_linkage = [True]*5, internal_pre_load = 0, 
-                 connection_bi = ['p'], connection_be = ['n', 'p'], behavior_link = 'pn')
+                 connection_bi = ['n', 'p'], connection_be = ['n', 'p'], behavior_link = 'pn')
 
 #BA.PlotGraph()
-fa = BA.BearingCombinationLoad(fa = 0, fr = 200)
-d = BA.Dict()
-obj = bearings.BearingCombination.DictToObject(d)
-d = obj.Dict()
-print(d['bearings'])
-obj.Plot(typ=None, box=False)
-print(obj.PlotData(typ='Load'))
+fa = BA.SearchBestGraph()
+BA.BearingCombinationLoad(fr=1, fa=0)
+#axial_load, axial_pre_load = BA.CheckViabilityAxialPath(list_bearing, 0)
+#d = BA.Dict()
+#obj = bearings.BearingCombination.DictToObject(d)
+#d = obj.Dict()
+#print(d['bearings'])
+#obj.Plot(typ=None, box=False)
+#print(obj.PlotData(typ='Load'))
 #BA.Plot(box = False, typ = 'Load')
 
 #BA.PlotGraph()
