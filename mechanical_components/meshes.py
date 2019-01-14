@@ -16,13 +16,16 @@ import volmdlr.primitives2D as primitives2D
 
 import math
 from scipy.linalg import norm
-from scipy.optimize import minimize,fsolve
+from scipy.optimize import fsolve
 #import itertools
 import networkx as nx
 
 #import powertransmission.tools as tools
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+#import matplotlib.pyplot as plt
+#import matplotlib.patches as patches
+
+import mechanical_components.tools as tools
+import json
 
 #data_coeff_YB_Iso
 evol_coeff_yb_iso={'data':[[0.0,1.0029325508401201],
@@ -428,6 +431,8 @@ class Mesh:
                  coeff_circular_tooth_thickness:1}
     >>> mesh1=Mesh(**input) # generation of one gear mesh
     """
+    # TODO: rename variables in init accordingly to their attribute name
+    # Ex: cp -> coefficient_profile_shift
     def __init__(self, z, db, cp, transverse_pressure_angle_rack,
                  coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
                  coeff_circular_tooth_thickness,material=None,gear_width=1):
@@ -718,19 +723,12 @@ class Mesh:
         
         >>> print(mesh1.Dict())
         """
-        d={}
-        for k,v in self.__dict__.items():
-            tv=type(v)
-            if tv==npy.int64:
-                d[k]=int(v)
-            elif tv==npy.float64:
-                d[k]=float(v)
-            else:
-                d[k]=v
+        # TODO: enhance dict and write DictToObject Method
+        d = {k:self.__dict__[k] for k in ['z', 'db', 'coefficient_profile_shift']}
+        d = tools.EnforceBuiltinTypes(d)
         
-        d['rack']=self.rack.Dict()
-        d['material']=self.material.Dict()
-        del d['rac']
+        d['rack'] = self.rack.Dict()
+        d['material'] = self.material.Dict()
         return d
     
     def PlotData(self, x, heights, y, z, labels = True):
@@ -1479,20 +1477,20 @@ class MeshAssembly:
         
         :returns:  dictionary with all gear mesh assembly parameters
         """
-        d={}
-        for k,v in self.__dict__.items():
-            tv=type(v)
-            if tv==npy.int64:
-                d[k]=int(v)
-            elif tv==npy.float64:
-                d[k]=float(v)
-            else:
-                d[k]=v
-        d['meshes']={}
+        d = {'center_distance': self.center_distance,
+             'connections': self.connections,
+             'helix_angle': self.helix_angle,
+             'linear_backlash': self.linear_backlash,
+             'radial_contact_ratio': self.radial_contact_ratio,
+             'transverse_pressure_angle': self.transverse_pressure_angle}
+
+        d = tools.EnforceBuiltinTypes(d)
+        
+        d['meshes'] = {}
         for k,v in self.meshes.items():
-            d['meshes'][k]=v.Dict()
-        del d['gear_graph']
-        del d['material']
-        del d['list_gear']
+            d['meshes'][k] = v.Dict()
         return d
 
+    def JSON(self, filepath, indent = 2):
+        with open(filepath+'.json', 'w') as j:
+            json.dump(tools.StringifyDictKeys(self.Dict()), j, indent = indent)
