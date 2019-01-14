@@ -15,6 +15,9 @@ class RoutingOptimizer:
         self.waypoints = waypoints
         self.routes = routes
         
+        # Setting Cache
+        self._shortest_paths_cache = {}
+        
         # Creating graph
         self.graph = nx.Graph()
         self.graph.add_nodes_from(waypoints)

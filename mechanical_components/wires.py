@@ -31,6 +31,7 @@ class Wire:
             if vm.Line2D(self.waypoints[i],self.waypoints[i+1]).DirectionVector(unit=True).Dot(vm.Line2D(self.waypoints[i+1], self.waypoints[i+2]).DirectionVector(unit=True))!=1:                
                 radii[i+1] = 4*self.diameter
         return  primitives3D.RoundedLineSegments3D(self.waypoints, radii, adapt_radius = True)        
+#        return  primitives3D.RoundedLineSegments3D(self.waypoints, {}, adapt_radius = True)        
     
     def _get_path(self):
         if not self._utd_path:
@@ -145,7 +146,7 @@ class Wiring:
         return length
     
     def Draw(self, x3D=vm.x3D, y3D=vm.y3D, ax=None):
-        wire_sep = 0.015
+        wire_sep = 0.005
 #        lines = []
         if ax is None:
             fig = plt.figure()
