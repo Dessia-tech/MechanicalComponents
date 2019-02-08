@@ -618,7 +618,7 @@ class ContinuousBearingAssemblyOptimizer:
                 bearing_results.append(bearing_results_iter)
                 
             results = {'ba': load_bearing_assembly_results, 'bc':load_bearing_combination_results,
-                           'bg': bearing_results}
+                       'bg': bearing_results}
                 
             l1 = bearing_assembly.bearing_combinations[0].B
             l2 = bearing_assembly.bearing_combinations[1].B
@@ -634,7 +634,7 @@ class ContinuousBearingAssemblyOptimizer:
                 if self.sort_optim['typ'] == 'L10':
                     L10 = results['ba'].L10
                     L10min = self.sort_optim['min']
-                    obj += (L10 - L10min)**2
+                    obj += 1/(L10)**2
                 return obj
             
             def fineq(x):
@@ -643,6 +643,7 @@ class ContinuousBearingAssemblyOptimizer:
                 L10 = results['ba'].L10
                 if self.sort_optim['typ'] == 'L10':
                     ineq = [L10 - self.sort_optim['min']]
+                    ineq = [0]
 #                fa1, fr1, fa2, fr2 = bearing_assembly.ShaftLoad([x[0], x[1]], self.list_pos_unknown, 
 #                                                    self.list_load, self.list_torque)
 #                Lnm1 = 0

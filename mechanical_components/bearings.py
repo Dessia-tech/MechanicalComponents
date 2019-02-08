@@ -519,7 +519,7 @@ class RadialBearing(LoadBearing):
                 total_cycles += cycles
 
         if total_cycles == 0.:
-            return math.inf
+            return [math.inf]
         else:
             Pr = (Pr / total_cycles) ** (1/self.coeff_baselife)
             L10 = (Cr/Pr)**(self.coeff_baselife)
@@ -2339,6 +2339,14 @@ class BearingAssembly:
             nx.draw_networkx(G, pos = positions)
     
     def ShaftLoad(self, positions, results):
+        
+        for load_bearing_results, load_bearing_combination_result in zip(results['bg'], results['bc']):
+            load_bearing_combination_result.radial_loads = []
+            load_bearing_combination_result.axial_loads = []
+            for load_bearing_result in load_bearing_results:
+                load_bearing_result.radial_load = []
+                load_bearing_result.axial_load = []
+        
         loads = results['ba'].loads
         (pos1, pos2) = positions
         ground = genmechanics.Part('ground')
@@ -2376,7 +2384,10 @@ class BearingAssembly:
                 speed = results['ba'].speeds
                 L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
                                 N = speed, t = time, Cr = [bg.Cr*1e3])
-                bg_result.L10 = L10[0]
+                if str(L10[0]) not in ['nan']:
+                    bg_result.L10 = L10[0]
+                else:
+                    bg_result.L10 = 1e-10
                 
         sum_L10_inv = 0
         for bearing_result in results['bg']:
@@ -2820,6 +2831,7 @@ class BearingAssemblyResults:
                 d[k]=round(float(v), 5)
             else:
                 d[k] = v
+        del d['axial_load_model']
                 
         if stringify_keys:
             return StringifyDictKeys(d)

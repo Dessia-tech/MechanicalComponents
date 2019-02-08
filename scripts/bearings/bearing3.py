@@ -18,8 +18,8 @@ S1 = bearings_opt.BearingAssemblyOptimizer(loads = [[[(-0.001, 0.005, 0), (2000,
                     linkage_types = [['all'], ['cylindric_joint']],
                     mounting_types = [['p', 'p']],
                     number_bearings=[[2], [1]],
-                    number_solutions = [1, 5, 4, 1],
-                    sort_optim = {'typ': 'L10', 'min':10, 'max':1e10})
+                    number_solutions = [50, 50, 10, 3],
+                    sort_optim = {'typ': 'L10', 'min':100, 'max':1e10})
 
 results = S1.bearing_assembly_results
 
