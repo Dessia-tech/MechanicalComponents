@@ -10,8 +10,8 @@ from mechanical_components.bearings import oil_iso_vg_1500, material_iso, dico_r
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
         SphericalBallBearing, RadialRollerBearing, TaperedRollerBearing, \
         BearingAssembly, BearingCombination, DetailedRadialRollerBearing, \
-        BearingAssemblyOptimizationResults, BearingAssemblyResults, \
-        BearingCombinationResults, BearingAssemblySimulation, BearingResult
+        BearingAssemblySimulationResult, \
+        BearingCombinationSimulationResult, BearingSimulationResult, BearingAssemblySimulation
 import numpy as npy
 from scipy.optimize import minimize
 import pandas
@@ -606,22 +606,15 @@ class ContinuousBearingAssemblyOptimizer:
         bearing_assembly_results = []
         for num_ba, bearing_assembly in enumerate(list_sol):
             print('number ba continuous optimization {}'.format(num_ba))
-            load_bearing_assembly_results = BearingAssemblyResults(loads, speeds,
-                                                             operating_times)
             
-            load_bearing_combination_results = []
+            bc_results = []
             for bearing_combination in bearing_assembly.bearing_combinations:
-                load_bearing_combination_results.append(BearingCombinationResults())
-            
-            bearing_results = []
-            for bearing_combination in bearing_assembly.bearing_combinations:
-                bearing_results_iter = []
+                li_bg_results = []
                 for bearing in bearing_combination.bearings:
-                    bearing_results_iter.append(BearingResult())
-                bearing_results.append(bearing_results_iter)
-                
-            results = {'ba': load_bearing_assembly_results, 'bc':load_bearing_combination_results,
-                       'bg': bearing_results}
+                    li_bg_results.append(BearingSimulationResult())
+                bc_results.append(BearingCombinationSimulationResult(li_bg_results))
+            bearing_assembly_simulation_result = BearingAssemblySimulationResult(bc_results, 
+                                                            loads, speeds, operating_times)
                 
             l1 = bearing_assembly.bearing_combinations[0].B
             l2 = bearing_assembly.bearing_combinations[1].B
@@ -635,15 +628,15 @@ class ContinuousBearingAssemblyOptimizer:
 #                bearing_assembly.ShaftLoad([x[0], x[1]], results)
                 obj = 0
                 if self.sort_optim['typ'] == 'L10':
-                    L10 = results['ba'].L10
+                    L10 = bearing_assembly_simulation_result.L10
                     L10min = self.sort_optim['min']
                     obj += 1/(L10)**2
                 return obj
             
             def fineq(x):
                 
-                bearing_assembly.ShaftLoad([x[0], x[1]], results)
-                L10 = results['ba'].L10
+                bearing_assembly.ShaftLoad([x[0], x[1]], bearing_assembly_simulation_result)
+                L10 = bearing_assembly_simulation_result.L10
                 if self.sort_optim['typ'] == 'L10':
                     ineq = [L10 - self.sort_optim['min']]
                     ineq = [0]
@@ -682,7 +675,7 @@ class ContinuousBearingAssemblyOptimizer:
                         bearing_assembly.Update(sol_x, self.inner_diameter, self.axial_positions, 
                                             self.outer_diameter, self.length)
                         
-                        bearing_assembly_result = BearingAssemblySimulation(bearing_assembly, results)
+                        bearing_assembly_result = BearingAssemblySimulation(bearing_assembly, bearing_assembly_simulation_result)
                         bearing_assembly_results.append(bearing_assembly_result)
                         print(len(bearing_assembly_results))
                 else:
@@ -692,7 +685,7 @@ class ContinuousBearingAssemblyOptimizer:
                     bearing_assembly.Update(sol_x, self.inner_diameter, self.axial_positions, 
                                         self.outer_diameter, self.length)
                     
-                    bearing_assembly_result = BearingAssemblySimulation(bearing_assembly, results)
+                    bearing_assembly_result = BearingAssemblySimulation(bearing_assembly, bearing_assembly_simulation_result)
                     bearing_assembly_results.append(bearing_assembly_result)
                     print(len(bearing_assembly_results))
                     

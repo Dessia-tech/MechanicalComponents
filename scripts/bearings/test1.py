@@ -16,10 +16,19 @@ from mechanical_components.load import *
 b0 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.01, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0, direction = -1,
                                        Cr = 1e3)
+d = b0.Dict()
+obj = bearings.AngularBallBearing.DictToObject(d)
+d = obj.Dict()
+
 b1 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0, Cr = 1e3)
+d = b1.Dict()
+obj = bearings.RadialBallBearing.DictToObject(d)
+d = obj.Dict()
+
 b2 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0, Cr = 1e3)
+
 b3 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0.15, direction = -1, Cr = 1e3)
 b4 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
@@ -29,46 +38,49 @@ b5 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1,
 list_bearing = [b1, b2, b3, b4]
 BC1 = bearings.BearingCombination(list_bearing, radial_load_linkage = [True]*4, internal_pre_load = 0, 
                  connection_bi = ['n'], connection_be = ['p'], behavior_link = 'pn')
+d = BC1.Dict()
+obj = bearings.BearingCombination.DictToObject(d)
+d = obj.Dict()
 
 list_bearing = [b1, b2]
 BC2 = bearings.BearingCombination(list_bearing, radial_load_linkage = [True]*2, internal_pre_load = 0, 
                  connection_bi = ['n'], connection_be = ['p'], behavior_link = 'pn')
 
 BA = bearings.BearingAssembly([BC1, BC2], axial_positions = [0, 0.5])
-
-bearing_results = []
-for bearing_combination in BA.bearing_combinations:
-    bearing_results_iter = []
-    for bearing in bearing_combination.bearings:
-        bearing_results_iter.append(bearings.BearingResult())
-    bearing_results.append(bearing_results_iter)
-        
-load_bearing_combination_results = []
-for bearing_combination in BA.bearing_combinations:
-    load_bearing_combination_results.append(bearings.BearingCombinationResults())
+d = BA.Dict()
+obj = bearings.BearingAssembly.DictToObject(d)
+d = obj.Dict()
                 
 loads = [[[(-0.001, 0.005, 0), (2000, -2500, 100), (0, 100, 0)], 
           [(0, 0.002, 0), (2000, -50, 1000), (0, 100, 0)]]]
 speeds = [100]
 operating_times = [1e6]
-load_bearing_assembly_results = bearings.BearingAssemblyResults(loads, speeds,
-                                                           operating_times)
 
-results = {'ba': load_bearing_assembly_results, 'bc':load_bearing_combination_results,
-                           'bg': bearing_results}
+bc_results = []
+for bearing_combination in BA.bearing_combinations:
+    li_bg_results = []
+    for bearing in bearing_combination.bearings:
+        li_bg_results.append(bearings.BearingSimulationResult())
+    bc_results.append(bearings.BearingCombinationSimulationResult(li_bg_results))
+BASR = bearings.BearingAssemblySimulationResult(bc_results, loads, speeds, operating_times)
+            
+BAS = bearings.BearingAssemblySimulation(BA, BASR)
+d = BAS.Dict()
+obj = bearings.BearingAssemblySimulation.DictToObject(d)
+d = obj.Dict()
 
 BA.Update([0, 0.1], [0.02, 0.025], [0, 0.1], 
           [0.05, 0.07], [0.07, 0.04])
-BA.ShaftLoad([0, 0.1], results)
-load_bearing_assembly_results.axial_load_model.Plot(intensity_factor=1e-5)
+BA.ShaftLoad([0, 0.1], BAS.bearing_assembly_simulation_result)
+BAS.bearing_assembly_simulation_result.axial_load_model.Plot(intensity_factor=1e-5)
 
-import json
-d = BA.Dict()
-print(json.dumps(d))
-obj = bearings.BearingAssembly.DictToObject(d)
-obj.Plot()
-obj = bearings.BearingAssembly.DictToObject(d)
-d = obj.Dict()
+#import json
+#d = BA.Dict()
+#print(json.dumps(d))
+#obj = bearings.BearingAssembly.DictToObject(d)
+#obj.Plot()
+#obj = bearings.BearingAssembly.DictToObject(d)
+#d = obj.Dict()
 
 #print(d['bearings'])
 #obj.Plot(typ=None, box=False)

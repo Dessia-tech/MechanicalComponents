@@ -2342,16 +2342,18 @@ class BearingAssembly:
             plt.figure()
             nx.draw_networkx(G, pos = positions)
     
-    def ShaftLoad(self, positions, results):
+    def ShaftLoad(self, positions, bearing_assembly_simulation_result):
         
-        for load_bearing_results, load_bearing_combination_result in zip(results['bg'], results['bc']):
-            load_bearing_combination_result.radial_loads = []
-            load_bearing_combination_result.axial_loads = []
-            for load_bearing_result in load_bearing_results:
-                load_bearing_result.radial_load = []
-                load_bearing_result.axial_load = []
+        result_bcs = bearing_assembly_simulation_result.bearing_combination_simulation_results
+        result_bgs = [bg.bearing_simulation_results for bg in result_bcs]
+        for bearing_results, bearing_combination_result in zip(result_bgs, result_bcs):
+            bearing_combination_result.radial_loads = []
+            bearing_combination_result.axial_loads = []
+            for bearing_result in bearing_results:
+                bearing_result.radial_load = []
+                bearing_result.axial_load = []
         
-        loads = results['ba'].loads
+        loads = bearing_assembly_simulation_result.loads
         (pos1, pos2) = positions
         ground = genmechanics.Part('ground')
         shaft1 = genmechanics.Part('shaft1')
@@ -2372,20 +2374,23 @@ class BearingAssembly:
             axial_load = 0
             for pos, ld, tq in load_cases:    
                 axial_load += ld[0]
-            for li_bg, bg, load_bearing_combination_result in zip(self.bearing_combinations, 
+            for li_bg, bg, bearing_combination_result in zip(self.bearing_combinations, 
                                                                   [bearing1, bearing2], 
-                                                                  results['bc']):
+                                                                  result_bcs):
                 tensor = mech.GlobalLinkageForces(bg,1)
                 fr = (tensor[1]**2 + tensor[2]**2)**(0.5)
-                load_bearing_combination_result.radial_loads.append(fr)
-            self.AxialLoad(positions, axial_load, results)
-        self.BaseLifeTime(results)
+                bearing_combination_result.radial_loads.append(fr)
+            self.AxialLoad(positions, axial_load, bearing_assembly_simulation_result)
+        self.BaseLifeTime(bearing_assembly_simulation_result)
         
-    def BaseLifeTime(self, results):
-        for bearing_combination, bearing_result in zip(self.bearing_combinations, results['bg']):
+    def BaseLifeTime(self, bearing_assembly_simulation_result):
+        
+        result_bcs = bearing_assembly_simulation_result.bearing_combination_simulation_results
+        result_bgs = [bg.bearing_simulation_results for bg in result_bcs]
+        for bearing_combination, bearing_result in zip(self.bearing_combinations, result_bgs):
             for bg, bg_result in zip(bearing_combination.bearings, bearing_result):
-                time = results['ba'].operating_times
-                speed = results['ba'].speeds
+                time = bearing_assembly_simulation_result.operating_times
+                speed = bearing_assembly_simulation_result.speeds
                 L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
                                 N = speed, t = time, Cr = [bg.Cr*1e3])
                 if str(L10[0]) not in ['nan']:
@@ -2394,12 +2399,16 @@ class BearingAssembly:
                     bg_result.L10 = 1e-10
                 
         sum_L10_inv = 0
-        for bearing_result in results['bg']:
+        for bearing_result in result_bgs:
             for bg_result in bearing_result:
                 sum_L10_inv += (1/bg_result.L10)**1.5
-        results['ba'].L10 = sum_L10_inv**(-1/1.5)
+        bearing_assembly_simulation_result.L10 = sum_L10_inv**(-1/1.5)
         
-    def AxialLoad(self, positions, F, results):
+    def AxialLoad(self, positions, F, bearing_assembly_simulation_result):
+        
+        result_bcs = bearing_assembly_simulation_result.bearing_combination_simulation_results
+        result_bgs = [bg.bearing_simulation_results for bg in result_bcs]
+        
         shaft = unidimensional.Body(0, 0, name='Shaft')
         ground = unidimensional.Body(0, 0.05, name='Ground')
         
@@ -2413,10 +2422,10 @@ class BearingAssembly:
         nonlinear_linkages = []
         components = []
         for num_linkage, (bearing_combination, load_bearing_combination_result) in enumerate(zip(self.bearing_combinations, 
-                                                      results['bc'])):
+                                                      result_bcs)):
             pos = positions[num_linkage]
             radial_load = load_bearing_combination_result.radial_loads[-1]
-            bearing_result = results['bg'][num_linkage]
+            bearing_result = result_bgs[num_linkage]
             component, nonlinear_linkages_iter, loads_iter, axial_bearings = bearing_combination.ElementaryAxialLoad(ground, shaft, pos, radial_load, bearing_result)
             bc_axial_bearings.append(axial_bearings)
             loads = loads + loads_iter
@@ -2429,16 +2438,16 @@ class BearingAssembly:
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
                          imposed_displacements)
         result_sm = sm.Solve(500)
-        results['ba'].axial_load_model = result_sm
+        bearing_assembly_simulation_result.axial_load_model = result_sm
                 
         for num_bc, (axial_linkages, component) in enumerate(zip(bc_axial_bearings, components)):
             for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_linkages, component)):
                 for link in axial_linkage:
                     if link in result_sm.activated_nonlinear_linkages:
                         positions = (result_sm.positions[bir], result_sm.positions[bor])
-                        results['bg'][num_bc][num_bg].axial_load.append(link.Strains(positions))
+                        result_bgs[num_bc][num_bg].axial_load.append(link.Strains(positions))
                     else:
-                        results['bg'][num_bc][num_bg].axial_load.append(0)
+                        result_bgs[num_bc][num_bg].axial_load.append(0)
     
     def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
         groups = []
@@ -2780,15 +2789,10 @@ class DetailedSphericalRollerBearing(DetailedRadialRollerBearing):
 
     
 class BearingAssemblySimulation:
-    def __init__(self, bearing_assembly, bearing_assembly_simulation_result):
+    def __init__(self, bearing_assembly,
+                 bearing_assembly_simulation_result=None):
         self.bearing_assembly = bearing_assembly
         self.bearing_assembly_simulation_result = bearing_assembly_simulation_result
-#        self.results = results
-        
-    # TODO: move here method that build model?
-        
-    def PlotAxialModel(self):
-        self.results['ba'].axial_load_model.Plot(intensity_factor=1e-5)
         
     def Dict(self, subobjects_id = {}, stringify_keys=True):
         """Export dictionary
@@ -2804,24 +2808,7 @@ class BearingAssemblySimulation:
                 d[k] = v
                 
         d['bearing_assembly'] = self.bearing_assembly.Dict()
-        dict_result = {}
-        for key, val in self.results.items():
-            if key == 'ba':
-                dict_result[key] = val.Dict()
-            if key == 'bc':
-                li = []
-                for v in val:
-                    li.append(v.Dict())
-                dict_result[key] = li
-            if key == 'bg':
-                li = []
-                for v1 in val:
-                    li_i = []
-                    for v2 in v1:
-                        li_i.append(v2.Dict())
-                    li.append(li_i)
-                dict_result[key] = li
-        d['results'] = dict_result
+        d['bearing_assembly_simulation_result'] = self.bearing_assembly_simulation_result.Dict()
                 
         if stringify_keys:
             return StringifyDictKeys(d)
@@ -2831,67 +2818,14 @@ class BearingAssemblySimulation:
     @classmethod
     def DictToObject(cls, d):
         BA = BearingAssembly.DictToObject(d['bearing_assembly'])
-        results = {}
-        for key, val in d['results'].items():
-            if key == 'ba':
-                results[key] = BearingAssemblyResults.DictToObject(val)
-            if key == 'bc':
-                li_bc = []
-                for bc in val:
-                    li_bc.append(BearingCombinationResults.DictToObject(bc))
-                results[key] = li_bc
-            if key == 'bg':
-                li_bgs = []
-                for bgs in val:
-                    li_bg = []
-                    for bg in bgs:
-                        li_bg.append(BearingResult.DictToObject(bg))
-                    li_bgs.append(li_bg)
-                results[key] = li_bgs
+        BAS = BearingAssemblySimulationResult.DictToObject(d['bearing_assembly_simulation_result'])
             
         obj = cls(bearing_assembly = BA, 
-                  results = results)
-        return obj
-    
-class BearingCombinationResults:
-    def __init__(self, axial_loads=None, radial_loads=None):
-        if axial_loads is None:
-            self.axial_loads = []
-        else:
-            self.axial_loads = axial_loads
-        if radial_loads is None:
-            self.radial_loads = []
-        else:
-            self.radial_loads = radial_loads
-            
-    def Dict(self, subobjects_id = {}, stringify_keys=True):
-        """Export dictionary
-        """
-        d={}
-        for k,v in self.__dict__.items():
-            tv=type(v)
-            if tv==npy.int64:
-                d[k]=int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k]=v
-                
-        if stringify_keys:
-            return StringifyDictKeys(d)
-
-        return d
-    
-    @classmethod
-    def DictToObject(cls, d):                 
-        obj = cls(axial_loads = d['axial_loads'], 
-                  radial_loads = d['radial_loads'])    
-        return obj
+                  bearing_assembly_simulation_result = BAS)
         
-
+        return obj
     
 class BearingSimulationResult:
-    # TODO: Why None?
     def __init__(self, axial_load=None, radial_load=None, L10=None):
         if axial_load is None:
             self.axial_load = []
@@ -2928,14 +2862,64 @@ class BearingSimulationResult:
                   L10 = d['L10'])
         return obj
     
+    
+class BearingCombinationSimulationResult:
+    def __init__(self, bearing_simulation_results, axial_loads=None, radial_loads=None):
+        if axial_loads is None:
+            self.axial_loads = []
+        else:
+            self.axial_loads = axial_loads
+        if radial_loads is None:
+            self.radial_loads = []
+        else:
+            self.radial_loads = radial_loads
+        self.bearing_simulation_results = bearing_simulation_results
+            
+    def Dict(self, subobjects_id = {}, stringify_keys=True):
+        """Export dictionary
+        """
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=round(float(v), 5)
+            else:
+                d[k]=v
+        bgs = []
+        for bg in self.bearing_simulation_results:
+            bgs.append(bg.Dict())
+        d['bearing_simulation_results'] = bgs
+        if stringify_keys:
+            return StringifyDictKeys(d)
+
+        return d
+    
+    @classmethod
+    def DictToObject(cls, d):     
+        bc_result = []
+        for bg in d['bearing_simulation_results']:
+            bc_result.append(BearingSimulationResult.DictToObject(bg))
+        obj = cls(bearing_simulation_results = bc_result,
+                  axial_loads = d['axial_loads'], 
+                  radial_loads = d['radial_loads'])    
+        return obj
+    
+    
 class BearingAssemblySimulationResult:
-    def __init__(self, loads, speeds, operating_times, axial_load_model=None,
-                 L10=None):
+    def __init__(self, bearing_combination_simulation_results, 
+                 loads, speeds, operating_times, 
+                 axial_load_model=None, L10=None):
         self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
         self.axial_load_model = axial_load_model
         self.L10 = L10
+        self.bearing_combination_simulation_results = bearing_combination_simulation_results
+        
+    def PlotAxialModel(self):
+        self.results['ba'].axial_load_model.Plot(intensity_factor=1e-5)
         
     def Dict(self, subobjects_id = {}, stringify_keys=True):
         """Export dictionary
@@ -2950,6 +2934,10 @@ class BearingAssemblySimulationResult:
             else:
                 d[k] = v
         del d['axial_load_model']
+        bcs = []
+        for bc in self.bearing_combination_simulation_results:
+            bcs.append(bc.Dict())
+        d['bearing_combination_simulation_results'] = bcs
                 
         if stringify_keys:
             return StringifyDictKeys(d)
@@ -2957,9 +2945,13 @@ class BearingAssemblySimulationResult:
         return d
     
     @classmethod
-    def DictToObject(cls, d):                 
-        obj = cls(loads = d['loads'], 
-                  speeds = d['speeds'], 
+    def DictToObject(cls, d):  
+        li_bc = []
+        for bc in d['bearing_combination_simulation_results']:
+            li_bc.append(BearingCombinationSimulationResult.DictToObject(bc))
+        obj = cls(bearing_combination_simulation_results = li_bc,
+                  loads = d['loads'],
+                  speeds = d['speeds'],
                   operating_times = d['operating_times'],
                   L10 = d['L10'])
         return obj

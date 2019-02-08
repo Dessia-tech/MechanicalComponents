@@ -18,22 +18,23 @@ S1 = bearings_opt.BearingAssemblyOptimizer(loads = [[[(-0.001, 0.005, 0), (2000,
                     linkage_types = [['all'], ['cylindric_joint']],
                     mounting_types = [['p', 'p']],
                     number_bearings=[[2], [1]],
-                    number_solutions = [50, 50, 10, 3],
+                    number_solutions = [10, 50, 10, 3],
                     sort_optim = {'typ': 'L10', 'min':100, 'max':1e10})
 
 results = S1.bearing_assembly_results
 
 d = results[0].Dict()
 obj = bearings.BearingAssemblySimulation.DictToObject(d)
+d = obj.Dict()
 
 for num_sol, result in enumerate(results):
-    bgs = result.results['bg']
-    for bg_i in bgs:
-        for bg in bg_i:
+    bcs = result.bearing_assembly_simulation_result.bearing_combination_simulation_results
+    for bc in bcs:
+        for bg in bc.bearing_simulation_results:
             print(num_sol, bg.L10)
             
 for num_sol, result in enumerate(results):
-    print(num_sol, result.results['ba'].L10)
+    print(num_sol, result.bearing_assembly_simulation_result.L10)
     
 #d = results[0].Dict()
 #obj = bearings.BearingAssembly.DictToObject(d)
