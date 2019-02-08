@@ -186,6 +186,7 @@ class Material:
 
 material_iso=Material()
 
+# TODO: remove this object?
 class LoadNode:
     def __init__(self, num):
         self.num = num
@@ -213,6 +214,7 @@ class LoadNode:
         obj.load = d['load']
         return obj
         
+# TODO: remove this object or clarify
 class LoadBearing:
     def __init__(self, class_name, typ=None, direction=None):
         self.class_name = class_name
@@ -248,6 +250,8 @@ class LoadBearing:
         graph.add_edges_from([(list_node[6], list_node[2])], weight=0., loc='inf')
         graph.add_edges_from([(list_node[3], list_node[7])], weight=0., loc='inf')
         
+        
+        # TODO: move this as method of objects
         if self.class_name == 'RadialBallBearing':
             if sub_direction == 1:
                 next_nd[list_node[4]].append(list_node[2])
@@ -2631,262 +2635,157 @@ class DetailedSphericalRollerBearing(DetailedRadialRollerBearing):
                                      oil_name)
         
         
-class BearingAssemblyOptimizationResults:
-    
-    dessia_db_attributes = [{'name':'bearing_assemblies',
-                             'class':'mechanical_components.bearings.BearingAssembly',
-                             'type':'list'}]
-    
-    def __init__(self, loads, speeds, times,
-                 internal_diameters, axial_positions, external_diameters, length,
-                 linkage_types, mounting_types, bearing_numbers,
-                 sort, sort_arg, number_solutions, bearing_assemblies, results):
-        self.loads = loads
-        self.speeds = speeds
-        self.times = times
-        self.internal_diameters = internal_diameters
-        self.axial_positions = axial_positions
-        self.external_diameters = external_diameters
-        self.length = length
-        self.linkage_types = linkage_types
-        self.mounting_types = mounting_types
-        self.bearing_numbers = bearing_numbers
-        self.sort = sort
-        self.sort_arg = sort_arg
-        self.number_solutions = number_solutions
-        self.bearing_assemblies = bearing_assemblies
-        self.results = results
-
-#    def PlotData(self):
-#        plot_data = []
-#        for ba in self.bearing_assemblies:
-#            data = {}
-#            data['bearing_assemblies'] = {'plot_data': [ba.PlotData()]}
-#            data['bearing_assemblies']['bearing_combinations'] = {'plot_data': []}
-#            data['bearing_assemblies']['bearing_combinations']['bearings'] = {'plot_data': []}
-#            for num_bc, bc in enumerate(ba.bearing_combinations):
-#                bc_result = self.results[ba][0]['bearing_combinations'][num_bc]
-#                plot_data.append(bc.PlotData(typ='Load', bearing_combination_result = bc_result))
-#                li_data = []
-#                for bg in bc.bearings:
-#                    li_data.append(bg.PlotData())
-#                data['bearing_assemblies']['bearing_combinations']['bearings']['plot_data'].append(li_data)
-#            plot_data.append(data)
-            
-            
-#        return plot_data
-
-    def Dict(self, subobjects_id={}, stringify_keys=True):
-
-        """
-        Export dictionary
-        """
-        d={}
-        for k,v in self.__dict__.items():
-            tv=type(v)
-            if tv==npy.int64:
-                d[k]=int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k]=v
-                
-        d['bearing_assemblies'] = []
-        for bearing_assembly in self.bearing_assemblies:
-            if bearing_assembly in subobjects_id:
-                d['bearing_assemblies'].append(subobjects_id[bearing_assembly])
-            else:                
-                d['bearing_assemblies'].append(bearing_assembly.Dict())
-                
-        dict_result = {}
-        for ba, results in self.results.items():
-            key_ba = self.bearing_assemblies.index(ba)
-            dict_result[int(key_ba)] = []
-            for result in results:
-                di_result_1 = {}
-                di_result_1['loads'] = result['loads']
-                di_result_1['axial_loads'] = result['axial_loads']
-                di_result_1['radial_loads'] = result['radial_loads']
-                di_result_1['positions'] = result['positions']
-                li_bcs = []
-                for num_bc, bc in enumerate(result['bearing_combinations']):
-                    li_bgs = []
-                    for bg in bc:
-                        li_bgs.append(bg.Dict())
-                    li_bcs.append(li_bgs)
-                di_result_1['bearing_combinations'] = li_bcs
-            dict_result[key_ba].append(di_result_1)
-        d['results'] = dict_result
-            
-        if 'max' in d['sort']:
-            del d['sort']['max']    
-        
-        if stringify_keys:
-            return StringifyDictKeys(d)
-        return d
-        
-    @classmethod
-    def DictToObject(cls, d):
-        
-        li_ba = []
-        for bearing_assembly in d['bearing_assemblies']:
-            li_ba.append(BearingAssembly.DictToObject(bearing_assembly))
-        res = {}
-        for key_ba, results in d['results'].items():
-            res[li_ba[int(key_ba)]] = []
-            for result in results:
-                dict_temp = {}
-                dict_temp['loads'] = result['loads']
-                dict_temp['axial_loads'] = result['axial_loads']
-                dict_temp['radial_loads'] = result['radial_loads']
-                dict_temp['positions'] = result['positions']
-                dict_temp['bearing_combinations'] = []
-                for num_bc, bc in enumerate(result['bearing_combinations']):
-                    bgs = []
-                    for bg in bc:
-                        bgs.append(LoadBearing.DictToObject(bg))
-                    dict_temp['bearing_combinations'].append(bgs)
-                res[li_ba[int(key_ba)]].append(dict_temp)
-        obj = cls(loads = d['loads'], 
-                  speeds = d['speeds'],
-                  times = d['times'],
-                  internal_diameters = d['internal_diameters'],
-                  axial_positions = d['axial_positions'],
-                  external_diameters = d['external_diameters'],
-                  length = d['length'],
-                  linkage_types = d['linkage_types'],
-                  mounting_types = d['mounting_types'],
-                  bearing_numbers = d['bearing_numbers'],
-                  sort = d['sort'],
-                  sort_arg = d['sort_arg'],
-#                  path = d['path'],
-                 number_solutions = d['number_solutions'],
-                  bearing_assemblies = li_ba, results = res)
-                
-        return obj
-    
-#    def DefOptimizer(self):
-#        obj = BearingAssemblyOptimizer.DefOptimizer(self.list_pos_unknown, 
-#                 self.loads, 
-#                 self.torques, self.speeds, self.list_time,
-#                 self.internal_diameters, self.axial_positions, self.external_diameters, self.length,
-#                 self.linkage_type, self.mounting_type, self.bearing_numbers,
-#                 self.sort, self.sort_arg, self.path, self.nb_sol)
+#class BearingAssemblyOptimizationResults:
+#    
+#    dessia_db_attributes = [{'name':'bearing_assemblies',
+#                             'class':'mechanical_components.bearings.BearingAssembly',
+#                             'type':'list'}]
+#    
+#    def __init__(self, loads, speeds, times,
+#                 internal_diameters, axial_positions, external_diameters, length,
+#                 linkage_types, mounting_types, bearing_numbers,
+#                 sort, sort_arg, number_solutions, bearing_assemblies, results):
+#        self.loads = loads
+#        self.speeds = speeds
+#        self.times = times
+#        self.internal_diameters = internal_diameters
+#        self.axial_positions = axial_positions
+#        self.external_diameters = external_diameters
+#        self.length = length
+#        self.linkage_types = linkage_types
+#        self.mounting_types = mounting_types
+#        self.bearing_numbers = bearing_numbers
+#        self.sort = sort
+#        self.sort_arg = sort_arg
+#        self.number_solutions = number_solutions
+#        self.bearing_assemblies = bearing_assemblies
+#        self.results = results
+#
+##    def PlotData(self):
+##        plot_data = []
+##        for ba in self.bearing_assemblies:
+##            data = {}
+##            data['bearing_assemblies'] = {'plot_data': [ba.PlotData()]}
+##            data['bearing_assemblies']['bearing_combinations'] = {'plot_data': []}
+##            data['bearing_assemblies']['bearing_combinations']['bearings'] = {'plot_data': []}
+##            for num_bc, bc in enumerate(ba.bearing_combinations):
+##                bc_result = self.results[ba][0]['bearing_combinations'][num_bc]
+##                plot_data.append(bc.PlotData(typ='Load', bearing_combination_result = bc_result))
+##                li_data = []
+##                for bg in bc.bearings:
+##                    li_data.append(bg.PlotData())
+##                data['bearing_assemblies']['bearing_combinations']['bearings']['plot_data'].append(li_data)
+##            plot_data.append(data)
+#            
+#            
+##        return plot_data
+#
+#    def Dict(self, subobjects_id={}, stringify_keys=True):
+#
+#        """
+#        Export dictionary
+#        """
+#        d={}
+#        for k,v in self.__dict__.items():
+#            tv=type(v)
+#            if tv==npy.int64:
+#                d[k]=int(v)
+#            elif tv==npy.float64:
+#                d[k]=round(float(v), 5)
+#            else:
+#                d[k]=v
+#                
+#        d['bearing_assemblies'] = []
+#        for bearing_assembly in self.bearing_assemblies:
+#            if bearing_assembly in subobjects_id:
+#                d['bearing_assemblies'].append(subobjects_id[bearing_assembly])
+#            else:                
+#                d['bearing_assemblies'].append(bearing_assembly.Dict())
+#                
+#        dict_result = {}
+#        for ba, results in self.results.items():
+#            key_ba = self.bearing_assemblies.index(ba)
+#            dict_result[int(key_ba)] = []
+#            for result in results:
+#                di_result_1 = {}
+#                di_result_1['loads'] = result['loads']
+#                di_result_1['axial_loads'] = result['axial_loads']
+#                di_result_1['radial_loads'] = result['radial_loads']
+#                di_result_1['positions'] = result['positions']
+#                li_bcs = []
+#                for num_bc, bc in enumerate(result['bearing_combinations']):
+#                    li_bgs = []
+#                    for bg in bc:
+#                        li_bgs.append(bg.Dict())
+#                    li_bcs.append(li_bgs)
+#                di_result_1['bearing_combinations'] = li_bcs
+#            dict_result[key_ba].append(di_result_1)
+#        d['results'] = dict_result
+#            
+#        if 'max' in d['sort']:
+#            del d['sort']['max']    
+#        
+#        if stringify_keys:
+#            return StringifyDictKeys(d)
+#        return d
+#        
+#    @classmethod
+#    def DictToObject(cls, d):
+#        
+#        li_ba = []
+#        for bearing_assembly in d['bearing_assemblies']:
+#            li_ba.append(BearingAssembly.DictToObject(bearing_assembly))
+#        res = {}
+#        for key_ba, results in d['results'].items():
+#            res[li_ba[int(key_ba)]] = []
+#            for result in results:
+#                dict_temp = {}
+#                dict_temp['loads'] = result['loads']
+#                dict_temp['axial_loads'] = result['axial_loads']
+#                dict_temp['radial_loads'] = result['radial_loads']
+#                dict_temp['positions'] = result['positions']
+#                dict_temp['bearing_combinations'] = []
+#                for num_bc, bc in enumerate(result['bearing_combinations']):
+#                    bgs = []
+#                    for bg in bc:
+#                        bgs.append(LoadBearing.DictToObject(bg))
+#                    dict_temp['bearing_combinations'].append(bgs)
+#                res[li_ba[int(key_ba)]].append(dict_temp)
+#        obj = cls(loads = d['loads'], 
+#                  speeds = d['speeds'],
+#                  times = d['times'],
+#                  internal_diameters = d['internal_diameters'],
+#                  axial_positions = d['axial_positions'],
+#                  external_diameters = d['external_diameters'],
+#                  length = d['length'],
+#                  linkage_types = d['linkage_types'],
+#                  mounting_types = d['mounting_types'],
+#                  bearing_numbers = d['bearing_numbers'],
+#                  sort = d['sort'],
+#                  sort_arg = d['sort_arg'],
+##                  path = d['path'],
+#                 number_solutions = d['number_solutions'],
+#                  bearing_assemblies = li_ba, results = res)
+#                
 #        return obj
-        
-            
-class BearingCombinationResults:
-    def __init__(self, axial_loads=None, radial_loads=None):
-        if axial_loads is None:
-            self.axial_loads = []
-        else:
-            self.axial_loads = axial_loads
-        if radial_loads is None:
-            self.radial_loads = []
-        else:
-            self.radial_loads = radial_loads
-            
-    def Dict(self, subobjects_id = {}, stringify_keys=True):
-        """Export dictionary
-        """
-        d={}
-        for k,v in self.__dict__.items():
-            tv=type(v)
-            if tv==npy.int64:
-                d[k]=int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k]=v
-                
-        if stringify_keys:
-            return StringifyDictKeys(d)
+#    
+##    def DefOptimizer(self):
+##        obj = BearingAssemblyOptimizer.DefOptimizer(self.list_pos_unknown, 
+##                 self.loads, 
+##                 self.torques, self.speeds, self.list_time,
+##                 self.internal_diameters, self.axial_positions, self.external_diameters, self.length,
+##                 self.linkage_type, self.mounting_type, self.bearing_numbers,
+##                 self.sort, self.sort_arg, self.path, self.nb_sol)
+##        return obj
 
-        return d
-    
-    @classmethod
-    def DictToObject(cls, d):                 
-        obj = cls(axial_loads = d['axial_loads'], 
-                  radial_loads = d['radial_loads'])    
-        return obj
-        
-class BearingAssemblyResults:
-    def __init__(self, loads, speeds, operating_times, axial_load_model=None,
-                 L10=None):
-        self.loads = loads
-        self.speeds = speeds
-        self.operating_times = operating_times
-        self.axial_load_model = axial_load_model
-        self.L10 = L10
-        
-    def Dict(self, subobjects_id = {}, stringify_keys=True):
-        """Export dictionary
-        """
-        d = {}
-        for k,v in self.__dict__.items():
-            tv = type(v)
-            if tv == npy.int64:
-                d[k] = int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k] = v
-        del d['axial_load_model']
-                
-        if stringify_keys:
-            return StringifyDictKeys(d)
-
-        return d
-    
-    @classmethod
-    def DictToObject(cls, d):                 
-        obj = cls(loads = d['loads'], 
-                  speeds = d['speeds'], 
-                  operating_times = d['operating_times'],
-                  L10 = d['L10'])
-        return obj
-    
-class BearingResult:
-    def __init__(self, axial_load=None, radial_load=None, L10=None):
-        if axial_load is None:
-            self.axial_load = []
-        else:
-            self.axial_load = axial_load
-        if radial_load is None:
-            self.radial_load = []
-        else:
-            self.radial_load = radial_load
-        self.L10 = L10
-        
-    def Dict(self, subobjects_id = {}, stringify_keys=True):
-        """Export dictionary
-        """
-        d = {}
-        for k,v in self.__dict__.items():
-            tv = type(v)
-            if tv == npy.int64:
-                d[k] = int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k] = v
-                
-        if stringify_keys:
-            return StringifyDictKeys(d)
-
-        return d
-    
-    @classmethod
-    def DictToObject(cls, d):                 
-        obj = cls(axial_load = d['axial_load'], 
-                  radial_load = d['radial_load'], 
-                  L10 = d['L10'])
-        return obj
     
 class BearingAssemblySimulation:
-    def __init__(self, bearing_assembly, results):
+    def __init__(self, bearing_assembly, bearing_assembly_simulation_result):
         self.bearing_assembly = bearing_assembly
-        self.results = results
+        self.bearing_assembly_simulation_result = bearing_assembly_simulation_result
+#        self.results = results
+        
+    # TODO: move here method that build model?
         
     def PlotAxialModel(self):
         self.results['ba'].axial_load_model.Plot(intensity_factor=1e-5)
@@ -2954,4 +2853,113 @@ class BearingAssemblySimulation:
                   results = results)
         return obj
     
+class BearingCombinationResults:
+    def __init__(self, axial_loads=None, radial_loads=None):
+        if axial_loads is None:
+            self.axial_loads = []
+        else:
+            self.axial_loads = axial_loads
+        if radial_loads is None:
+            self.radial_loads = []
+        else:
+            self.radial_loads = radial_loads
+            
+    def Dict(self, subobjects_id = {}, stringify_keys=True):
+        """Export dictionary
+        """
+        d={}
+        for k,v in self.__dict__.items():
+            tv=type(v)
+            if tv==npy.int64:
+                d[k]=int(v)
+            elif tv==npy.float64:
+                d[k]=round(float(v), 5)
+            else:
+                d[k]=v
+                
+        if stringify_keys:
+            return StringifyDictKeys(d)
+
+        return d
+    
+    @classmethod
+    def DictToObject(cls, d):                 
+        obj = cls(axial_loads = d['axial_loads'], 
+                  radial_loads = d['radial_loads'])    
+        return obj
         
+
+    
+class BearingSimulationResult:
+    # TODO: Why None?
+    def __init__(self, axial_load=None, radial_load=None, L10=None):
+        if axial_load is None:
+            self.axial_load = []
+        else:
+            self.axial_load = axial_load
+        if radial_load is None:
+            self.radial_load = []
+        else:
+            self.radial_load = radial_load
+        self.L10 = L10
+        
+    def Dict(self, subobjects_id = {}, stringify_keys=True):
+        """Export dictionary
+        """
+        d = {}
+        for k,v in self.__dict__.items():
+            tv = type(v)
+            if tv == npy.int64:
+                d[k] = int(v)
+            elif tv==npy.float64:
+                d[k]=round(float(v), 5)
+            else:
+                d[k] = v
+                
+        if stringify_keys:
+            return StringifyDictKeys(d)
+
+        return d
+    
+    @classmethod
+    def DictToObject(cls, d):                 
+        obj = cls(axial_load = d['axial_load'], 
+                  radial_load = d['radial_load'], 
+                  L10 = d['L10'])
+        return obj
+    
+class BearingAssemblySimulationResult:
+    def __init__(self, loads, speeds, operating_times, axial_load_model=None,
+                 L10=None):
+        self.loads = loads
+        self.speeds = speeds
+        self.operating_times = operating_times
+        self.axial_load_model = axial_load_model
+        self.L10 = L10
+        
+    def Dict(self, subobjects_id = {}, stringify_keys=True):
+        """Export dictionary
+        """
+        d = {}
+        for k,v in self.__dict__.items():
+            tv = type(v)
+            if tv == npy.int64:
+                d[k] = int(v)
+            elif tv==npy.float64:
+                d[k]=round(float(v), 5)
+            else:
+                d[k] = v
+        del d['axial_load_model']
+                
+        if stringify_keys:
+            return StringifyDictKeys(d)
+
+        return d
+    
+    @classmethod
+    def DictToObject(cls, d):                 
+        obj = cls(loads = d['loads'], 
+                  speeds = d['speeds'], 
+                  operating_times = d['operating_times'],
+                  L10 = d['L10'])
+        return obj

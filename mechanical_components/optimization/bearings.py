@@ -261,13 +261,13 @@ class DiscreteBearingCombinationOptimizer:
     def __init__(self, linkage, behavior_link, nb_rlts, d, D, length, number_solutions=10, 
                  number_load_case=1):
         
-        axis_load = ['n', 'p'] # 'p' when the axial load applied on shaft is directed from left to right
+#        axis_load = ['n', 'p'] # 'p' when the axial load applied on shaft is directed from left to right
         typ_rlts = {'rol_NU':0, 'rol_N':0, 
                     'rol_NJ_p':'p', 'rol_NJ_n':'n',
                     'rol_NF_p':'p', 'rol_NF_n':'n', 
                     'rol_NUP':'pn', 'ball':'pn', 
                     'ang_p':'p', 'ang_n':'n', 'tap_p':'p', 'tap_n':'n'}
-        ring_mounting = ['n', 'p']
+#        ring_mounting = ['n', 'p']
         
         self.bearing_combinations = []
         for li_rlts in product(typ_rlts.keys(), repeat = nb_rlts):
@@ -513,6 +513,7 @@ class DiscreteBearingAssemblyOptimizer:
         self.linkage_types = linkage_types
         self.number_bearings = number_bearings
         
+        # TODO: Do not do so much computation on __init__
         nb_linkage = len(length)
         if mounting_types == None:
             mounting_types = []
@@ -552,6 +553,7 @@ class DiscreteBearingAssemblyOptimizer:
                  sort, sort_arg, path, number_solutions)
         return obj
         
+
 class SortBearingAssemblyOptimizer:
     def __init__(self, bearing_assemblies, sort_arg = {'min':'mass'},
                  number_solutions=20):
@@ -584,6 +586,7 @@ class ContinuousBearingAssemblyOptimizer:
         self.length = length
         self.sort_optim = sort_optim
         
+        # TODO: Do not call optimization on __init__
         self.bearing_assembly_results = self.Optimize(bearing_assemblies,
                                                 loads, speeds,
                                                 operating_times,
