@@ -2265,6 +2265,7 @@ class BearingAssembly:
         
         self.bearing_combinations = bearing_combinations
         self.mass = self.Mass()
+        self.Cr_equ = self.Cr_equ()
         self.pre_load = pre_load
         self.number_load_case = number_load_case
         self.load_bearing_assembly_results = None
@@ -2294,6 +2295,13 @@ class BearingAssembly:
             pos = self.axial_pos[num_linkage] - self.axial_positions[num_linkage]
             assembly_bg.Update(pos, self.internal_diameters[num_linkage], self.external_diameters[num_linkage],
                                self.length[num_linkage])
+            
+    def Cr_equ(self):
+        Cr_equ = 0
+        for li_bg in self.bearing_combinations:
+            for bg in li_bg.bearings:
+                Cr_equ += (bg.Cr)
+        return (Cr_equ)
         
     def Mass(self):
         mass = 0

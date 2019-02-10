@@ -553,23 +553,6 @@ class DiscreteBearingAssemblyOptimizer:
                  sort, sort_arg, path, number_solutions)
         return obj
         
-
-class SortBearingAssemblyOptimizer:
-    def __init__(self, bearing_assemblies, sort_arg = {'min':'mass'},
-                 number_solutions=20):
-        sort_bearing_assemblies = self.Sortarchitectures(bearing_assemblies, sort_arg)
-        if number_solutions is not None:
-            self.bearing_assemblies = sort_bearing_assemblies[0: min(len(sort_bearing_assemblies), number_solutions)]
-        else:
-            self.bearing_assemblies = sort_bearing_assemblies[0:]
-        
-    def Sortarchitectures(self, bearing_assemblies, sort_arg):
-        list_sort = []
-        for bearing_assembly in bearing_assemblies:
-            val = getattr(bearing_assembly,sort_arg['min'])
-            list_sort.append(val)
-        list_sort_arg=list(npy.argsort(list_sort))
-        return npy.array(bearing_assemblies)[list_sort_arg]
     
 class ContinuousBearingAssemblyOptimizer:
     def __init__(self, bearing_assemblies, loads, speeds, operating_times,
@@ -585,28 +568,19 @@ class ContinuousBearingAssemblyOptimizer:
         self.outer_diameter = outer_diameter
         self.length = length
         self.sort_optim = sort_optim
-        
-        # TODO: Do not call optimization on __init__
-        self.bearing_assembly_results = self.Optimize(bearing_assemblies,
-                                                loads, speeds,
-                                                operating_times,
-                                                number_solutions)
-        
-    def Optimize(self, bearing_assemblies, loads, speeds, operating_times,
-                 number_solutions=5, Lnm_min=1e4, 
-                 index_sol=None, verbose=False):
-        
-        if index_sol is not None:
-            list_sol = []
-            for num_sol, sol in enumerate(bearing_assemblies):
-                if num_sol in index_sol:
-                    list_sol.append(sol)
+        self.loads = loads
+        self.speeds = speeds
+        self.operating_times = operating_times
+        if number_solutions is None:
+            self.number_solutions = len(bearing_assemblies) - 1
         else:
-            list_sol = bearing_assemblies
-        bearing_assembly_results = []
-        for num_ba, bearing_assembly in enumerate(list_sol):
-            print('number ba continuous optimization {}'.format(num_ba))
-            
+            self.number_solutions = number_solutions
+        self.bearing_assemblies = self.Sortarchitectures(bearing_assemblies)
+
+    def Sortarchitectures(self, bearing_assemblies):
+        
+        list_sort = []
+        for bearing_assembly in bearing_assemblies:
             bc_results = []
             for bearing_combination in bearing_assembly.bearing_combinations:
                 li_bg_results = []
@@ -614,82 +588,145 @@ class ContinuousBearingAssemblyOptimizer:
                     li_bg_results.append(BearingSimulationResult())
                 bc_results.append(BearingCombinationSimulationResult(li_bg_results))
             bearing_assembly_simulation_result = BearingAssemblySimulationResult(bc_results, 
-                                                            loads, speeds, operating_times)
-                
+                                                            self.loads, self.speeds, self.operating_times)
+            
             l1 = bearing_assembly.bearing_combinations[0].B
             l2 = bearing_assembly.bearing_combinations[1].B
             pos1_min = self.axial_positions[0] + l1/2.
             pos1_max = self.axial_positions[0] + self.length[0] - l1/2.
             pos2_min = self.axial_positions[1] + l2/2.
             pos2_max = self.axial_positions[1] + self.length[1] - l2/2.
-            
-            def fun(x):
-                
-#                bearing_assembly.ShaftLoad([x[0], x[1]], results)
-                obj = 0
-                if self.sort_optim['typ'] == 'L10':
-                    L10 = bearing_assembly_simulation_result.L10
-                    L10min = self.sort_optim['min']
-                    obj += 1/(L10)**2
-                return obj
-            
-            def fineq(x):
-                
-                bearing_assembly.ShaftLoad([x[0], x[1]], bearing_assembly_simulation_result)
-                L10 = bearing_assembly_simulation_result.L10
-                if self.sort_optim['typ'] == 'L10':
-                    ineq = [L10 - self.sort_optim['min']]
-                    ineq = [0]
-#                fa1, fr1, fa2, fr2 = bearing_assembly.ShaftLoad([x[0], x[1]], self.list_pos_unknown, 
-#                                                    self.list_load, self.list_torque)
-#                Lnm1 = 0
-#                for rlt1 in list_bearing1:
-#                    Lnm1 += rlt1.AdjustedLifeTime(Fr = [fr1], Fa = [fa1], N = [300], t = [1e10], T = [60])
-#                Lnm2 = 0
-#                for rlt2 in list_bearing2:
-#                    Lnm2 += rlt2.AdjustedLifeTime(Fr = [fr2], Fa = [fa2], N = [300], t = [1e10], T = [60])
-#                ineq.append(Lnm1 - Lnm_min)
-#                ineq.append(Lnm2 - Lnm_min)
-                return ineq
+            pos1_moy, pos2_moy = (pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.
             Bound = [[pos1_min, pos1_max], [pos2_min, pos2_max]]
             sol_fun = npy.inf
+            L10max = 0
             for p1, p2 in product(Bound[0],Bound[1]):
-                cons = {'type': 'ineq','fun' : fineq}
-                res = minimize(fun, [p1, p2], method='SLSQP', bounds=Bound, constraints = cons)
-                if fun(res.x) < sol_fun:
-                    sol_fun = fun(res.x)
-                    sol_x = res.x
-                    status = res.status
-            for itera in range(0,5):
-                x0 = (npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(2)+npy.array(Bound)[:,0]
-                cons = {'type': 'ineq','fun' : fineq}
-                res = minimize(fun, x0, method='SLSQP', bounds=Bound, constraints = cons)
-                if fun(res.x) < sol_fun:
-                    sol_fun = fun(res.x)
-                    sol_x = res.x
-                    status = res.status
-            
-            if number_solutions is not None:
-                if len(bearing_assembly_results) <= number_solutions:       
-                    if status >= 0:
-                        bearing_assembly.Update(sol_x, self.inner_diameter, self.axial_positions, 
-                                            self.outer_diameter, self.length)
-                        
-                        bearing_assembly_result = BearingAssemblySimulation(bearing_assembly, bearing_assembly_simulation_result)
-                        bearing_assembly_results.append(bearing_assembly_result)
-                        print(len(bearing_assembly_results))
-                else:
-                    break
+                bearing_assembly.ShaftLoad([p1, p2], bearing_assembly_simulation_result)
+                L10max = max(L10max, bearing_assembly_simulation_result.L10)
+            list_sort.append(L10max)
+        
+        list_sort_arg=list(npy.argsort(list_sort))
+        return npy.array(bearing_assemblies)[list_sort_arg]
+
+    def Search(self):
+        val_mini = self.sort_optim['min']
+        val_maxi = self.sort_optim['max']
+        
+        pos_inf = 0
+        ba_inf = self.bearing_assemblies[pos_inf]
+        pos_sup = len(self.bearing_assemblies) - 1
+        ba_sup = self.bearing_assemblies[pos_sup]
+        bar_inf = self.Optimize(ba_inf)
+        bar_sup = self.Optimize(ba_sup)
+        val_inf = getattr(bar_inf.bearing_assembly_simulation_result,self.sort_optim['typ'])
+        val_sup = getattr(bar_sup.bearing_assembly_simulation_result,self.sort_optim['typ'])
+        if val_inf < val_mini and val_sup > val_mini:
+            valid = True
+        elif val_inf < val_mini and val_sup < val_mini:
+            print('Min/Max bearing available {}, {}'.format(val_inf, val_sup))
+            raise KeyError('Sort parameter of the optimizer too high')
+        else:
+            valid = False
+        pos_optim = pos_inf
+        val_optim = val_inf
+        while valid:
+            val_optim_m = val_optim
+            pos_optim = int((pos_inf + pos_sup)/2.)
+            ba_optim = self.bearing_assemblies[pos_optim]
+            bar_optim = self.Optimize(ba_optim)
+            val_optim = getattr(bar_optim.bearing_assembly_simulation_result,self.sort_optim['typ'])
+            if val_optim < val_mini:
+                pos_inf = pos_optim
+                val_inf = val_optim
             else:
-                if status >= 0:
-                    bearing_assembly.Update(sol_x, self.inner_diameter, self.axial_positions, 
-                                        self.outer_diameter, self.length)
-                    
-                    bearing_assembly_result = BearingAssemblySimulation(bearing_assembly, bearing_assembly_simulation_result)
-                    bearing_assembly_results.append(bearing_assembly_result)
-                    print(len(bearing_assembly_results))
-                    
-        return bearing_assembly_results
+                pos_sup = pos_optim
+                val_sup = val_optim
+            print('Search convergence {}'.format(val_optim_m - val_optim))
+            if abs(val_optim_m - val_optim) < 0.01*val_optim:
+                valid = False
+        
+        valid = True
+        while valid:
+            if val_optim < val_mini:
+                pos_optim += 1
+                if pos_optim < len(self.bearing_assemblies):
+                    ba_optim = self.bearing_assemblies[pos_optim]
+                    bar_optim = self.Optimize(ba_optim)
+                    val_optim = getattr(bar_optim.bearing_assembly_simulation_result,self.sort_optim['typ'])
+                else:
+                    valid = False
+            else:
+                valid = False
+        
+        results = []
+        for ba in self.bearing_assemblies[pos_optim:]:
+            if len(results) < self.number_solutions:
+                results.append(self.Optimize(ba))
+            else:
+                break
+        return results
+        
+    def Optimize(self, bearing_assembly):
+        
+        bc_results = []
+        for bearing_combination in bearing_assembly.bearing_combinations:
+            li_bg_results = []
+            for bearing in bearing_combination.bearings:
+                li_bg_results.append(BearingSimulationResult())
+            bc_results.append(BearingCombinationSimulationResult(li_bg_results))
+        bearing_assembly_simulation_result = BearingAssemblySimulationResult(bc_results, 
+                                                        self.loads, self.speeds, self.operating_times)
+            
+        l1 = bearing_assembly.bearing_combinations[0].B
+        l2 = bearing_assembly.bearing_combinations[1].B
+        pos1_min = self.axial_positions[0] + l1/2.
+        pos1_max = self.axial_positions[0] + self.length[0] - l1/2.
+        pos2_min = self.axial_positions[1] + l2/2.
+        pos2_max = self.axial_positions[1] + self.length[1] - l2/2.
+        pos1_moy = (pos1_min + pos1_max)/2.
+        pos2_moy = (pos2_min + pos2_max)/2.
+        def fun(x):
+            
+            obj = 0
+            if self.sort_optim['typ'] == 'L10':
+                L10 = bearing_assembly_simulation_result.L10
+                obj += 1/(L10)**2
+            return obj
+        
+        def fineq(x):
+            
+            bearing_assembly.ShaftLoad([x[0], x[1]], bearing_assembly_simulation_result)
+            ineq = [0]
+
+            return ineq
+        Bound = [[pos1_min, pos1_max], [pos2_min, pos2_max]]
+        sol_fun = npy.inf
+        for p1, p2 in product(Bound[0] + [pos1_moy],Bound[1] + [pos2_moy]):
+            cons = {'type': 'ineq','fun' : fineq}
+            res = minimize(fun, [p1, p2], method='SLSQP', bounds=Bound, constraints = cons)
+            if fun(res.x) < sol_fun:
+                sol_fun = fun(res.x)
+                sol_x = res.x
+                status = res.status
+        for itera in range(0,5):
+            x0 = (npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(2)+npy.array(Bound)[:,0]
+            cons = {'type': 'ineq','fun' : fineq}
+            res = minimize(fun, x0, method='SLSQP', bounds=Bound, constraints = cons)
+            if fun(res.x) < sol_fun:
+                sol_fun = fun(res.x)
+                sol_x = res.x
+                status = res.status
+           
+        if status >= 0:
+            bearing_assembly.Update(sol_x, self.inner_diameter, self.axial_positions, 
+                                self.outer_diameter, self.length)
+            bearing_assembly.ShaftLoad(sol_x, bearing_assembly_simulation_result)
+            
+            bearing_assembly_result = BearingAssemblySimulation(bearing_assembly, bearing_assembly_simulation_result)
+            return bearing_assembly_result
+        else:
+            return False
+
     
 class BearingAssemblyOptimizer:
     def __init__(self, loads, speeds, operating_times,
@@ -702,7 +739,7 @@ class BearingAssemblyOptimizer:
                  number_bearings=[[1, 2], [1, 2]],
                  sort_optim={'typ': 'L10', 'min':10, 'max':1e10},
                  sort_arg = {'min': 'mass'},
-                 number_solutions=[5, 20, 10, 10]):
+                 number_solutions=[5, 10, 10]):
         self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
@@ -736,12 +773,12 @@ class BearingAssemblyOptimizer:
                                                       [self.inner_diameter[num_linkage], self.outer_diameter[num_linkage]], 
                                                       [self.inner_diameter[num_linkage], self.outer_diameter[num_linkage]], 
                                                       [0, self.length[num_linkage]], 
-                                                      number_solutions=self.number_solutions[3], 
+                                                      number_solutions=self.number_solutions[2], 
                                                       number_load_case=len(self.loads))
             
             SBC = SortBearingCombinationOptimizer(DBC.bearing_combinations, 
                                                   sort_arg={'min':'mass'}, 
-                                                  number_solutions=self.number_solutions[2])
+                                                  number_solutions=self.number_solutions[1])
             
             if SBC.check is True:
                 sol_BC[num_linkage].extend(SBC.bearing_combinations)
@@ -753,11 +790,8 @@ class BearingAssemblyOptimizer:
         if analyze_architectures:
             for composite_solution in product(*sol_BC.values()):
                 bearing_assemblies.append(BearingAssembly(composite_solution))
-                    
-        SBA = SortBearingAssemblyOptimizer(bearing_assemblies, sort_arg,
-                                           number_solutions[1])
         
-        CBA = ContinuousBearingAssemblyOptimizer(SBA.bearing_assemblies, loads, speeds, 
+        CBA = ContinuousBearingAssemblyOptimizer(bearing_assemblies, loads, speeds, 
                                                  operating_times,
                                                  inner_diameter=inner_diameter,
                                                  axial_positions=axial_positions,
@@ -765,5 +799,6 @@ class BearingAssemblyOptimizer:
                                                  length=length,
                                                  number_solutions=number_solutions[0],
                                                  sort_optim = sort_optim)
+        bearing_assembly_results = CBA.Search()
         
-        self.bearing_assembly_results = CBA.bearing_assembly_results
+        self.bearing_assembly_results = bearing_assembly_results
