@@ -11,30 +11,32 @@ import mechanical_components.optimization.bearings as bearings_opt
 #import numpy as npy
 
 S1 = bearings_opt.BearingAssemblyOptimizer(loads = [[[(-0.001, 0.005, 0), (2000, -2500, 100), (0, 100, 0)], 
-                                                      [(0, 0.002, 0), (2000, -50, 1000), (0, 100, 0)]]], 
+                                                      [(0, 0.002, 0), (2000, -5000, 1000), (0, 100, 0)]]], 
                     speeds = [100], operating_times = [1e6],
-                    inner_diameter = [0.02, 0.025], axial_positions = [0, 0.1], outer_diameter = [0.05, 0.07], 
-                    length = [0.07, 0.04],
+                    inner_diameter = [0.02, 0.025], axial_positions = [0, 0.1], outer_diameter = [0.1, 0.1], 
+                    length = [0.09, 0.08],
                     linkage_types = [['all'], ['cylindric_joint']],
-                    mounting_types = [['p', 'p']],
-                    number_bearings=[[2], [1]],
-                    number_solutions = [10, 50, 10, 3],
-                    sort_optim = {'typ': 'L10', 'min':100, 'max':1e10})
+                    mounting_types = [['pn', 0]],
+                    number_bearings=[[1, 2, 3], [2]],
+                    number_solutions = [-1, 3, 3],
+                    sort_optim = {'typ': 'L10', 'min':300, 'max':1e10})
+S1.Optimize()
 
 results = S1.bearing_assembly_results
 
-d = results[0].Dict()
-obj = bearings.BearingAssemblySimulation.DictToObject(d)
+d = S1.Dict()
+obj = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
 d = obj.Dict()
 
-for num_sol, result in enumerate(results):
-    bcs = result.bearing_assembly_simulation_result.bearing_combination_simulation_results
-    for bc in bcs:
-        for bg in bc.bearing_simulation_results:
-            print(num_sol, bg.L10)
-            
-for num_sol, result in enumerate(results):
+#for num_sol, result in enumerate(results):
+#    bcs = result.bearing_assembly_simulation_result.bearing_combination_simulation_results
+#    for bc in bcs:
+#        for bg in bc.bearing_simulation_results:
+#            print(num_sol, bg.L10)
+#            
+for num_sol, result in enumerate(obj.bearing_assembly_results):
     print(num_sol, result.bearing_assembly_simulation_result.L10)
+    result.bearing_assembly.Plot()
     
 #d = results[0].Dict()
 #obj = bearings.BearingAssembly.DictToObject(d)
