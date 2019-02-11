@@ -815,7 +815,7 @@ class BearingAssemblyOptimizer:
                                                       number_load_case=len(self.loads))
             
             SBC = SortBearingCombinationOptimizer(DBC.bearing_combinations, 
-                                                  sort_arg=self.sort_arg, 
+#                                                  sort_arg=self.sort_arg,  # TODO: reconnect this?
                                                   number_solutions=self.number_solutions[1])
             
             if SBC.check is True:
@@ -853,13 +853,16 @@ class BearingAssemblyOptimizer:
                 d[k]=round(float(v), 5)
             else:
                 d[k] = v
-        bar_dict = []
-        for bar in self.bearing_assembly_simulation_results:
-            if bar in subobjects_id:
-                bar_dict.append(subobjects_id[bar])
-            else:                
-                bar_dict.append(bar.Dict())
-        d['bearing_assembly_results'] = bar_dict
+        if self.bearing_assembly_simulation_results is not None:
+            bar_dict = []
+            for bar in self.bearing_assembly_simulation_results:
+                if bar in subobjects_id:
+                    bar_dict.append(subobjects_id[bar])
+                else:                
+                    bar_dict.append(bar.Dict())
+        else:
+            bar_dict = None
+        d['bearing_assembly_simulation_results'] = bar_dict
                 
         if stringify_keys:
             return StringifyDictKeys(d)
@@ -868,9 +871,18 @@ class BearingAssemblyOptimizer:
     
     @classmethod
     def DictToObject(cls, d):  
-        li_bar = []
-        for bar in d['bearing_assembly_results']:
-            li_bar.append(BearingAssemblySimulation.DictToObject(bar))
+        print(d)
+        
+        if 'bearing_assembly_simulation_results' in d:
+            if d['bearing_assembly_simulation_results'] is None:
+                li_bar = None
+            else:
+                li_bar = []
+                for bar in d['bearing_assembly_simulation_results']:
+                    li_bar.append(BearingAssemblySimulation.DictToObject(bar))
+        else:
+            li_bar = None
+            
         obj = cls(loads = d['loads'], 
                   speeds = d['speeds'], 
                   operating_times = d['operating_times'],
