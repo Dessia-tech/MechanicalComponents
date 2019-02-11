@@ -485,7 +485,6 @@ class RadialBearing(LoadBearing):
         self.oil = oil
         self.material = material
         self.contact_type = contact_type
-        self.mass = mass
         self.direction = 0
         self.sub_direction = 0
         if Cr is not None:
@@ -502,6 +501,7 @@ class RadialBearing(LoadBearing):
         self.slack = (self.E-self.F-2*self.Dw)/4.
         self.name = name
         self.typ = typ
+#        self.mass = mass
     
     def BaseLifeTime(self,Fr, Fa, N, t, Cr):
         """
@@ -599,6 +599,13 @@ class RadialBearing(LoadBearing):
                 if check_rules_iter == False:
                     check_rules = False
         return check_rules, val_rules
+    
+    def Mass(self):
+        volumes = self.CADVolumes()
+        vol = 0
+        for v in volumes:
+            vol += v.Volume()
+        return vol*7800
 
     def CADVolumes(self, center = (0,0,0), axis = (1,0,0)):
         center = vm.Point3D(npy.round(center,6))
@@ -732,6 +739,8 @@ class RadialBearing(LoadBearing):
     def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
         model=vm.VolumeModel([(self.name, self.CADVolumes(center, axis))])
         return model   
+    
+    mass = property(Mass)
     
     def Dict(self, subobjects_id={}, stringify_keys=True):
         """Export dictionary
@@ -952,7 +961,7 @@ class RadialBallBearing(RadialBearing):
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
-                  contact_type = d['contact_type'], mass = d['mass'])
+                  contact_type = d['contact_type'])
         return obj
         
 class AngularBallBearing(RadialBearing):
@@ -1159,8 +1168,7 @@ class AngularBallBearing(RadialBearing):
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
-                  contact_type = d['contact_type'], direction = d['direction'],
-                  mass = d['mass'])
+                  contact_type = d['contact_type'], direction = d['direction'])
         return obj
             
 class SphericalBallBearing(RadialBearing):
@@ -1227,8 +1235,7 @@ class SphericalBallBearing(RadialBearing):
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
-                  contact_type = d['contact_type'], 
-                  mass = d['mass'])
+                  contact_type = d['contact_type'])
         return obj
             
 class RadialRollerBearing(RadialBearing):
@@ -1525,7 +1532,7 @@ class RadialRollerBearing(RadialBearing):
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'], direction = d['direction'],
-                  typ = d['typ'], mass = d['mass'])
+                  typ = d['typ'])
         return obj
     
 class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
@@ -1541,7 +1548,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         self.Dpw = (self.d + self.D)/2.
         self.Lw = 0.7*self.B
         self.beta = npy.arctan(self.Dw/self.Dpw*npy.sin(self.alpha))
-    
+        
     def InternalRingContour(self, sign_V=1):
         
         shift_bi = 5e-4
@@ -1722,8 +1729,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
-                  contact_type = d['contact_type'], direction = d['direction'],
-                  mass = d['mass'])
+                  contact_type = d['contact_type'], direction = d['direction'])
         return obj
  
 class BearingCombination:
@@ -2926,7 +2932,7 @@ class BearingAssemblySimulationResult:
         self.bearing_combination_simulation_results = bearing_combination_simulation_results
         
     def PlotAxialModel(self):
-        self.results['ba'].axial_load_model.Plot(intensity_factor=1e-5)
+        self.axial_load_model.Plot(intensity_factor=1e-5)
         
     def Dict(self, subobjects_id = {}, stringify_keys=True):
         """Export dictionary

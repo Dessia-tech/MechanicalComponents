@@ -365,7 +365,8 @@ class DiscreteBearingCombinationOptimizer:
         i = base_bearing.loc[index,'i']
         Z = base_bearing.loc[index,'Z']
         Dw = base_bearing.loc[index,'Dw']
-        mass = base_bearing.loc[index,'mass']
+#        mass = base_bearing.loc[index,'mass']
+        mass = None
         alp = base_bearing.loc[index,'alpha']
         if str(alp) == 'nan':
             alpha = 0

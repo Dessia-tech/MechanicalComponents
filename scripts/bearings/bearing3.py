@@ -16,10 +16,10 @@ S1 = bearings_opt.BearingAssemblyOptimizer(loads = [[[(-0.001, 0.005, 0), (2000,
                     inner_diameter = [0.02, 0.025], axial_positions = [0, 0.1], 
                     outer_diameter = [0.1, 0.1], 
                     length = [0.09, 0.08],
-                    linkage_types = [['all'], ['cylindric_joint']],
-                    mounting_types = [['pn', 0]],
-                    number_bearings=[[1, 2, 3], [1]],
-                    number_solutions = [-1, -1, 3])
+                    linkage_types = [['all'], ['all']],
+                    mounting_types = [['p', 'p']],
+                    number_bearings=[[1, 2, 3], [1, 2]],
+                    number_solutions = [-1, 5, 3])
 S1.Optimize()
 
 results = S1.bearing_assembly_results
@@ -35,7 +35,7 @@ d = obj.Dict()
 #            print(num_sol, bg.L10)
 #            
 for num_sol, result in enumerate(obj.bearing_assembly_results):
-    print(num_sol, result.bearing_assembly_simulation_result.L10)
+    print(num_sol, result.bearing_assembly_simulation_result.L10, result.bearing_assembly.mass)
     result.bearing_assembly.Plot()
     
 #d = results[0].Dict()
