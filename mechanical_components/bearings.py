@@ -1345,6 +1345,7 @@ class RadialRollerBearing(RadialBearing):
     
     def InternalRingContour(self, sign_V=1):
         
+        # TODO: pourquoi cette fonction?
         def graph(sign_V, sign_H):
             if self.typ in ['NUP', 'N', 'NF']:
                 d1 = self.d1
@@ -1359,6 +1360,7 @@ class RadialRollerBearing(RadialBearing):
                 bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                                    {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
                                     5: self.radius, 6: self.radius}, True, adapt_radius = True)
+
             elif self.typ == 'NJ':
                 d1 = self.d1
                 d2 = self.F - 0.1*(self.F - self.d)
@@ -2871,6 +2873,10 @@ class BearingSimulationResult:
     
     
 class BearingCombinationSimulationResult:
+    dessia_db_attributes = [{'name':'bearing_combination_simulation_results',
+                     'class':'mechanical_components.bearings.BearingSimulationResult',
+                     'type':'list'}]
+    
     def __init__(self, bearing_simulation_results, axial_loads=None, radial_loads=None):
         if axial_loads is None:
             self.axial_loads = []
@@ -2915,6 +2921,10 @@ class BearingCombinationSimulationResult:
     
     
 class BearingAssemblySimulationResult:
+    dessia_db_attributes = [{'name':'bearing_combination_simulation_results',
+                         'class':'mechanical_components.bearings.BearingCombinationSimulationResult',
+                         'type':'list'}]
+
     def __init__(self, bearing_combination_simulation_results, 
                  loads, speeds, operating_times, 
                  axial_load_model=None, L10=None):

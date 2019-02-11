@@ -31,7 +31,6 @@ from mechanical_components.tools import StringifyDictKeys
 
 # TODO: Cumulative damages
 class RollerBearingContinuousOptimizer:
-
     """
     Objet avec 3 fonctions de selection des roulements cylindriques
      * Combinatoire sur les dimensions externe ISO
