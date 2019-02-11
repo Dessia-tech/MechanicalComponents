@@ -798,7 +798,6 @@ class RadialBallBearing(RadialBearing):
         h1 = self.Dw/2. - (self.E - self.D1)/2.
         self.h = self.B/2. - self.Dw/2.*npy.sin(npy.arccos(h1/(self.Dw/2.))) - 1e-4
         
-        
     def EquivalentStaticLoad(self, fr, fa=None):
         #Charge radiale statique équivalente
         X0 = 0.6
@@ -808,8 +807,8 @@ class RadialBallBearing(RadialBearing):
     
     def EquivalentDynamicLoad(self, fr, fa = 0):
         alphap = fsolve((lambda alphap:npy.cos(5/180*npy.pi)/npy.cos(alphap) \
-                    -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2) \
-                    *npy.sin(alphap)))**(2/3.))),self.alpha+1)[0]
+                        -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2) \
+                        *npy.sin(alphap)))**(2/3.))),self.alpha + 1)[0]
 #        alphap = 0.001
         ksi = 1.05
         nu = 1-npy.sin(5/180.*npy.pi)/2.5
@@ -992,7 +991,7 @@ class AngularBallBearing(RadialBearing):
     
     def EquivalentDynamicLoad(self, fr, fa = 0):
         alphap = fsolve((lambda alphap:npy.cos(self.alpha)/npy.cos(alphap) \
-                    -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2)*npy.sin(alphap)))**(2/3.))),self.alpha)[0]
+                    -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2)*npy.sin(alphap)))**(2/3.))),self.alpha + 1)[0]
         if self.alpha <= 5/180.*npy.pi:
             if self.i == 1:
                 ksi = 1.05
@@ -2445,7 +2444,7 @@ class BearingAssembly:
         
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
                          imposed_displacements)
-        result_sm = sm.Solve(500)
+        result_sm = sm.Solve(50)
         bearing_assembly_simulation_result.axial_load_model = result_sm
                 
         for num_bc, (axial_linkages, component) in enumerate(zip(bc_axial_bearings, components)):
