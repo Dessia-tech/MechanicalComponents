@@ -18,12 +18,12 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(loads = [[[(-0.001,
                     length = [0.09, 0.08],
                     linkage_types = [['both'], ['cylindric_joint']],
                     mounting_types = [('left', 'right')],
-                    number_bearings=[[1, 2], [1, 2]],
+                    number_bearings=[[1, 2, 3], [1]],
                     number_solutions = [-1, 5, 3])
 
-#d = bearing_assembly_opt.Dict()
-#del bearing_assembly_opt
-#bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
+d = bearing_assembly_opt.Dict()
+del bearing_assembly_opt
+bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
 #
 bearing_assembly_opt.Optimize()
 #

@@ -610,7 +610,6 @@ class ContinuousBearingAssemblyOptimizer:
             bearing_assembly_simulation_result = BearingAssemblySimulationResult(bc_results, 
                                                             self.loads, self.speeds, self.operating_times)
             check_axial_load = bearing_assembly.CheckLoad(bearing_assembly_simulation_result)
-            print(check_axial_load)
             if check_axial_load:
                 list_bearing_assembly.append(bearing_assembly)
             
