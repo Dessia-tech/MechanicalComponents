@@ -24,9 +24,8 @@ from scipy.optimize import minimize
 
 import pkg_resources
 
-import persistent
 
-class Material(persistent.Persistent):
+class Material:
     def __init__(self, volumic_mass, young_modulus, poisson_ratio, Rm, d_min = 0.12*10**-3, d_max = 12*10**-3, cost_index = 10, name = ''):
         self.volumic_mass = volumic_mass
         self.young_modulus = young_modulus
@@ -81,7 +80,7 @@ diameters_mm = [0.12, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
 
 diameters_m = [d*10**-3 for d in diameters_mm]
 
-class Spring(persistent.Persistent):
+class Spring:
     def __init__(self, D = 0.0050, d = 0.0010, n = 5, l0 = 0.010, material = steel1):
         self.D = D
         self.d = d
@@ -253,7 +252,7 @@ class Spring(persistent.Persistent):
         
         return d
     
-class SpringAssembly(persistent.Persistent):
+class SpringAssembly:
     def __init__(self, springs, geometry):
         self.springs = springs
         self.n_springs = len(springs)
@@ -542,7 +541,7 @@ class SpringAssemblyOptimizer:
          
         return k
     
-class SpringAssemblyOptimizationResults(persistent.Persistent):
+class SpringAssemblyOptimizationResults:
     def __init__(self, assemblies, input_data):
         self.type='mc_spring_assembly'
         self.assemblies = assemblies
@@ -636,7 +635,7 @@ class SpringAssemblyOptimizationResults(persistent.Persistent):
         return d
     
     
-class Catalog(persistent.Persistent):
+class Catalog:
     def __init__(self, csv_file, name = ''):
         self.csv_file = csv_file
         self.products = pd.read_csv(csv_file)
@@ -707,7 +706,7 @@ ferroflex_catalog = Catalog(ferroflex_file, 'Ferroflex')
 
 catalogs = {ferroflex_catalog.name : ferroflex_catalog}
 
-class Product(persistent.Persistent):
+class Product:
     def __init__(self, catalog_name, product_index):
         self.catalog_name = catalog_name
         if isinstance(product_index, npy.generic):
@@ -744,7 +743,7 @@ class Product(persistent.Persistent):
         
         return d
 
-class ProductAssembly(persistent.Persistent):
+class ProductAssembly:
     def __init__(self, products, geometry):
         self.products = products
         self.n_products = len(products)
@@ -868,7 +867,7 @@ class CatalogOptimizer:
             
         return indices_dict
     
-class CatalogOptimizationResults(persistent.Persistent):
+class CatalogOptimizationResults:
     def __init__(self, indices_dicts, catalogs_names, input_data, prod_volume = 50):
         self.indices_dicts = indices_dicts
         self.catalogs_names = catalogs_names
