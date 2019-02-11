@@ -625,17 +625,20 @@ class ContinuousBearingAssemblyOptimizer:
         return npy.array(bearing_assemblies)[list_sort_arg]
 
     def Search(self):
-        val_mini = self.sort_optim['min']
-        val_maxi = self.sort_optim['max']
-        
+        val_mini = 0
+        for speed, time in zip(self.speeds, self.operating_times):
+            val_mini += speed/(2*npy.pi)*time
+        val_mini = val_mini/1e6
+        print('Objective number of laps {}'.format(val_mini))
+            
         pos_inf = 0
         ba_inf = self.bearing_assemblies[pos_inf]
         pos_sup = len(self.bearing_assemblies) - 1
         ba_sup = self.bearing_assemblies[pos_sup]
         bar_inf = self.Optimize(ba_inf)
         bar_sup = self.Optimize(ba_sup)
-        val_inf = getattr(bar_inf.bearing_assembly_simulation_result,self.sort_optim['typ'])
-        val_sup = getattr(bar_sup.bearing_assembly_simulation_result,self.sort_optim['typ'])
+        val_inf = bar_inf.bearing_assembly_simulation_result.L10
+        val_sup = bar_sup.bearing_assembly_simulation_result.L10
         if val_inf < val_mini and val_sup > val_mini:
             valid = True
         elif val_inf < val_mini and val_sup < val_mini:
@@ -650,7 +653,7 @@ class ContinuousBearingAssemblyOptimizer:
             pos_optim = int((pos_inf + pos_sup)/2.)
             ba_optim = self.bearing_assemblies[pos_optim]
             bar_optim = self.Optimize(ba_optim)
-            val_optim = getattr(bar_optim.bearing_assembly_simulation_result,self.sort_optim['typ'])
+            val_optim = bar_optim.bearing_assembly_simulation_result.L10
             if val_optim < val_mini:
                 pos_inf = pos_optim
                 val_inf = val_optim
@@ -668,7 +671,7 @@ class ContinuousBearingAssemblyOptimizer:
                 if pos_optim < len(self.bearing_assemblies):
                     ba_optim = self.bearing_assemblies[pos_optim]
                     bar_optim = self.Optimize(ba_optim)
-                    val_optim = getattr(bar_optim.bearing_assembly_simulation_result,self.sort_optim['typ'])
+                    val_optim = bar_optim.bearing_assembly_simulation_result.L10
                 else:
                     valid = False
             else:
@@ -764,9 +767,8 @@ class BearingAssemblyOptimizer:
                  linkage_types=[['all'], ['all']],
                  mounting_types=None,
                  number_bearings=[[1, 2], [1, 2]],
-                 sort_optim={'typ': 'L10', 'min':10, 'max':1e10},
                  sort_arg = {'min': 'mass'},
-                 number_solutions=[5, 10, 10],
+                 number_solutions=[-1, -1, 10],
                  bearing_assembly_results=None):
         self.loads = loads
         self.speeds = speeds
@@ -778,7 +780,6 @@ class BearingAssemblyOptimizer:
         self.linkage_types = linkage_types
         self.mounting_types = mounting_types
         self.number_bearings = number_bearings
-        self.sort_optim = sort_optim
         self.sort_arg = sort_arg
         self.number_solutions = number_solutions
         self.bearing_assembly_results = bearing_assembly_results
@@ -829,8 +830,7 @@ class BearingAssemblyOptimizer:
                                                  axial_positions=self.axial_positions,
                                                  outer_diameter=self.outer_diameter,
                                                  length=self.length,
-                                                 number_solutions=self.number_solutions[0],
-                                                 sort_optim = self.sort_optim)
+                                                 number_solutions=self.number_solutions[0])
         bearing_assembly_results = CBA.Search()
         
         self.bearing_assembly_results = bearing_assembly_results
@@ -872,7 +872,6 @@ class BearingAssemblyOptimizer:
                  linkage_types = d['linkage_types'],
                  mounting_types = d['mounting_types'],
                  number_bearings = d['number_bearings'],
-                 sort_optim = d['sort_optim'],
                  sort_arg = d['sort_arg'],
                  number_solutions = d['number_solutions'],
                  bearing_assembly_results = li_bar)
