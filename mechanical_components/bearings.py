@@ -6,7 +6,7 @@ import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 import math
-from copy import deepcopy, copy
+from copy import deepcopy
 #import copy
 
 from scipy.optimize import fsolve
@@ -386,89 +386,91 @@ class LoadBearing:
             load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
             load_arrow.MPLPlot(a,'-b', True, width = B/10./max_load*external_ring_load)
             
-    def PlotDataLoad(self, pos, d, D, B, d1, D1, ind_load_case=0):
-        
-        list_node = self.load_bearing_results[ind_load_case].list_node
-        delta_1 = (D - D1)/10.
-        delta_2 = (d1 - d)/10.
-        positions = {}
-        positions[list_node[0]] = vm.Point2D((-B/2., D/2. - delta_1))
-        positions[list_node[1]] = vm.Point2D((-B/2., D/2. - 3*delta_1))
-        positions[list_node[2]] = vm.Point2D((-B/2., d/2. + 3*delta_2))
-        positions[list_node[3]] = vm.Point2D((-B/2., d/2. + delta_2))
-        positions[list_node[4]] = vm.Point2D((B/2., D/2. - delta_1))
-        positions[list_node[5]] = vm.Point2D((B/2., D/2. - 3*delta_1))
-        positions[list_node[6]] = vm.Point2D((B/2., d/2. + 3*delta_2))
-        positions[list_node[7]] = vm.Point2D((B/2., d/2. + delta_2))
-        
-        max_load = 0
-        for nd in list_node:
-            if nd.load is not None:
-                max_load = max(nd.load, max_load)        
-        
-        li_data = []
-        if (self.direction == 1) or (self.load_bearing_results[ind_load_case].sub_direction == 1):
-            if transversale_load != 0:
-                line1 = vm.LineSegment2D(positions[list_node[3]], positions[list_node[5]])
-                line1.Translation(vm.Vector2D((pos, 0)))
-                li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
-                                              dash = False, opacity = 0.3, 
-                                              width = B/10./max_load*transversale_load, 
-                                              marker = 'triangle_load'))
-                line2 = vm.LineSegment2D(positions[list_node[4]], positions[list_node[2]])
-                line2.Translation(vm.Vector2D((pos, 0)))
-                li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
-                                              dash = False, opacity = 0.3, 
-                                              width = B/10./max_load*transversale_load, 
-                                              marker = 'triangle_load'))
-        elif (self.direction == -1) or (self.load_bearing_results[ind_load_case].sub_direction == -1):
-            if transversale_load != 0:
-                line1 = vm.LineSegment2D(positions[list_node[6]], positions[list_node[0]])
-                line1.Translation(vm.Vector2D((pos, 0)))
-                li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
-                                              dash = False, opacity = 0.3, 
-                                              width = B/10./max_load*transversale_load, 
-                                              marker = 'triangle_load'))
-                line2 = vm.LineSegment2D(positions[list_node[1]], positions[list_node[7]])
-                line2.Translation(vm.Vector2D((pos, 0)))
-                li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
-                                              dash = False, opacity = 0.3, 
-                                              width = B/10./max_load*transversale_load, 
-                                              marker = 'triangle_load'))
-        if internal_ring_load != 0:
-            line1 = vm.LineSegment2D(positions[list_node[3]], positions[list_node[7]])
-            line1.Translation(vm.Vector2D((pos, 0)))
-            li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
-                                          dash = False, opacity = 0.3, 
-                                          width = B/10./max_load*transversale_load, 
-                                          marker = 'triangle_load'))
-            line2 = vm.LineSegment2D(positions[list_node[6]], positions[list_node[2]])
-            line2.Translation(vm.Vector2D((pos, 0)))
-            li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
-                                          dash = False, opacity = 0.3, 
-                                          width = B/10./max_load*transversale_load, 
-                                          marker = 'triangle_load'))
-        if external_ring_load != 0:
-            line1 = vm.LineSegment2D(positions[list_node[1]], positions[list_node[5]])
-            line1.Translation(vm.Vector2D((pos, 0)))
-            li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
-                                          dash = False, opacity = 0.3, 
-                                          width = B/10./max_load*transversale_load, 
-                                          marker = 'triangle_load'))
-            line2 = vm.LineSegment2D(positions[list_node[4]], positions[list_node[0]])
-            line2.Translation(vm.Vector2D((pos, 0)))
-            li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
-                                          dash = False, opacity = 0.3, 
-                                          width = B/10./max_load*transversale_load, 
-                                          marker = 'triangle_load'))
-        plot_data = []
-        pt_data = {}
-        pt_data['fill'] = None
-        pt_data['name'] = 'internal diameter'
-        pt_data['type'] = 'load'
-        pt_data['plot_data'] = li_data
-        plot_data.append(pt_data)
-        return plot_data
+# TODO: check if following is unused
+            
+#    def PlotDataLoad(self, pos, d, D, B, d1, D1, ind_load_case=0):
+#        
+#        list_node = self.load_bearing_results[ind_load_case].list_node
+#        delta_1 = (D - D1)/10.
+#        delta_2 = (d1 - d)/10.
+#        positions = {}
+#        positions[list_node[0]] = vm.Point2D((-B/2., D/2. - delta_1))
+#        positions[list_node[1]] = vm.Point2D((-B/2., D/2. - 3*delta_1))
+#        positions[list_node[2]] = vm.Point2D((-B/2., d/2. + 3*delta_2))
+#        positions[list_node[3]] = vm.Point2D((-B/2., d/2. + delta_2))
+#        positions[list_node[4]] = vm.Point2D((B/2., D/2. - delta_1))
+#        positions[list_node[5]] = vm.Point2D((B/2., D/2. - 3*delta_1))
+#        positions[list_node[6]] = vm.Point2D((B/2., d/2. + 3*delta_2))
+#        positions[list_node[7]] = vm.Point2D((B/2., d/2. + delta_2))
+#        
+#        max_load = 0
+#        for nd in list_node:
+#            if nd.load is not None:
+#                max_load = max(nd.load, max_load)        
+#        
+#        li_data = []
+#        if (self.direction == 1) or (self.load_bearing_results[ind_load_case].sub_direction == 1):
+#            if transversale_load != 0:
+#                line1 = vm.LineSegment2D(positions[list_node[3]], positions[list_node[5]])
+#                line1.Translation(vm.Vector2D((pos, 0)))
+#                li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
+#                                              dash = False, opacity = 0.3, 
+#                                              width = B/10./max_load*transversale_load, 
+#                                              marker = 'triangle_load'))
+#                line2 = vm.LineSegment2D(positions[list_node[4]], positions[list_node[2]])
+#                line2.Translation(vm.Vector2D((pos, 0)))
+#                li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
+#                                              dash = False, opacity = 0.3, 
+#                                              width = B/10./max_load*transversale_load, 
+#                                              marker = 'triangle_load'))
+#        elif (self.direction == -1) or (self.load_bearing_results[ind_load_case].sub_direction == -1):
+#            if transversale_load != 0:
+#                line1 = vm.LineSegment2D(positions[list_node[6]], positions[list_node[0]])
+#                line1.Translation(vm.Vector2D((pos, 0)))
+#                li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
+#                                              dash = False, opacity = 0.3, 
+#                                              width = B/10./max_load*transversale_load, 
+#                                              marker = 'triangle_load'))
+#                line2 = vm.LineSegment2D(positions[list_node[1]], positions[list_node[7]])
+#                line2.Translation(vm.Vector2D((pos, 0)))
+#                li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
+#                                              dash = False, opacity = 0.3, 
+#                                              width = B/10./max_load*transversale_load, 
+#                                              marker = 'triangle_load'))
+#        if internal_ring_load != 0:
+#            line1 = vm.LineSegment2D(positions[list_node[3]], positions[list_node[7]])
+#            line1.Translation(vm.Vector2D((pos, 0)))
+#            li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
+#                                          dash = False, opacity = 0.3, 
+#                                          width = B/10./max_load*transversale_load, 
+#                                          marker = 'triangle_load'))
+#            line2 = vm.LineSegment2D(positions[list_node[6]], positions[list_node[2]])
+#            line2.Translation(vm.Vector2D((pos, 0)))
+#            li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
+#                                          dash = False, opacity = 0.3, 
+#                                          width = B/10./max_load*transversale_load, 
+#                                          marker = 'triangle_load'))
+#        if external_ring_load != 0:
+#            line1 = vm.LineSegment2D(positions[list_node[1]], positions[list_node[5]])
+#            line1.Translation(vm.Vector2D((pos, 0)))
+#            li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
+#                                          dash = False, opacity = 0.3, 
+#                                          width = B/10./max_load*transversale_load, 
+#                                          marker = 'triangle_load'))
+#            line2 = vm.LineSegment2D(positions[list_node[4]], positions[list_node[0]])
+#            line2.Translation(vm.Vector2D((pos, 0)))
+#            li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
+#                                          dash = False, opacity = 0.3, 
+#                                          width = B/10./max_load*transversale_load, 
+#                                          marker = 'triangle_load'))
+#        plot_data = []
+#        pt_data = {}
+#        pt_data['fill'] = None
+#        pt_data['name'] = 'internal diameter'
+#        pt_data['type'] = 'load'
+#        pt_data['plot_data'] = li_data
+#        plot_data.append(pt_data)
+#        return plot_data
             
 class RadialBearing(LoadBearing):
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -891,7 +893,7 @@ class RadialBallBearing(RadialBearing):
         p2 = vm.Point2D((self.Dw/2., 0))
         a1 = vm.Arc2D(p0, p1, p2)
         l1 = vm.LineSegment2D(p2,p0)
-        c1 = vm.Circle2D(p0, self.Dw/2.) 
+#        c1 = vm.Circle2D(p0, self.Dw/2.) 
         return vm.Contour2D([a1, l1])
     
     def PlotContour(self):
@@ -1102,7 +1104,7 @@ class AngularBallBearing(RadialBearing):
         p2 = vm.Point2D((self.Dw/2., 0))
         a1 = vm.Arc2D(p0, p1, p2)
         l1 = vm.LineSegment2D(p2,p0)
-        c1 = vm.Circle2D(p0, self.Dw/2.) 
+#        c1 = vm.Circle2D(p0, self.Dw/2.) 
         return vm.Contour2D([a1, l1])
     
     def PlotContour(self):
@@ -1275,29 +1277,30 @@ class RadialRollerBearing(RadialBearing):
         if self.contact_type == 'point_contact':
             if self.i == 1:
                 Jr0p5 = 0.2288
-                Ja0p5 = 0.2782
+#                Ja0p5 = 0.2782
                 J10p5 = 0.5625
                 J20p5 = 0.5875
             else: #analyse if the parameters are true for i>2
                 Jr0p5 = 0.4577
-                Ja0p5 = 0.
+#                Ja0p5 = 0.
                 J10p5 = 0.6925
                 J20p5 = 0.7233
         elif self.contact_type == 'linear_contact':
             if self.i == 1:
                 Jr0p5 = 0.2453
-                Ja0p5 = 0.3090
+#                Ja0p5 = 0.3090
                 J10p5 = 0.6495
                 J20p5 = 0.6744
             else: #analyse if the parameters are true for i>2
                 Jr0p5 = 0.4906
-                Ja0p5 = 0
+#                Ja0p5 = 0
                 J10p5 = 0.7577
                 J20p5 = 0.7867
         elif self.contact_type == 'mixed_contact':
             if self.i == 1:
                 Jr0p5 = 0.2369
-                Ja0p5 = 0.2932
+                # TODO: check why next variable is unused
+#                Ja0p5 = 0.2932
                 J10p5 = 0.6044
                 J20p5 = 0.6295
             else: #analyse if the parameters are true for i>2
@@ -1352,6 +1355,7 @@ class RadialRollerBearing(RadialBearing):
     
     def InternalRingContour(self, sign_V=1):
         
+        # TODO: pourquoi cette fonction?
         def graph(sign_V, sign_H):
             if self.typ in ['NUP', 'N', 'NF']:
                 d1 = self.d1
@@ -1366,6 +1370,7 @@ class RadialRollerBearing(RadialBearing):
                 bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                                    {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
                                     5: self.radius, 6: self.radius}, True, adapt_radius = True)
+
             elif self.typ == 'NJ':
                 d1 = self.d1
                 d2 = self.F - 0.1*(self.F - self.d)
@@ -1739,7 +1744,7 @@ class BearingCombination:
                              'type':'list'}]
 
     def __init__(self, bearings, radial_load_linkage, internal_pre_load=0, 
-                 connection_bi=['n', 'p'], connection_be=['n', 'p'], behavior_link='pn',
+                 connection_bi=['left', 'right'], connection_be=['left', 'right'], behavior_link='both',
                  number_load_case=1):
         self.bearings = bearings
         self.radial_load_linkage = radial_load_linkage
@@ -1763,7 +1768,7 @@ class BearingCombination:
         for bg in bearings:
             self.d = min(self.d, bg.d)
             
-        self.check = self.Graph(self.bearings)
+        self.check, self.transfert_load = self.Graph(self.bearings)
         
     def PlotGraph(self):
                 
@@ -1793,9 +1798,9 @@ class BearingCombination:
         ep = min(0.1*D, 0.1*d)
         De = D + ep
         Dg, Dd = D, D
-        if 'n' in self.connection_be:
+        if 'left' in self.connection_be:
             Dg = Dg - ep
-        if 'p' in self.connection_be:
+        if 'right' in self.connection_be:
             Dd = Dd -ep
         be = vm.Polygon2D([vm.Point2D((-B/2., sign*D/2.)), vm.Point2D((-B/2., sign*Dg/2.)),
                            vm.Point2D((-B/2. - ep, sign*Dg/2.)), vm.Point2D((-B/2. - ep, sign*De/2.)),
@@ -1810,9 +1815,9 @@ class BearingCombination:
         ep = min(0.1*D, 0.1*d)
         di = d - ep
         dg, dd = d, d
-        if 'n' in self.connection_bi:
+        if 'left' in self.connection_bi:
             dg = dg + ep
-        if 'p' in self.connection_bi:
+        if 'right' in self.connection_bi:
             dd = dd + ep
         bi = vm.Polygon2D([vm.Point2D((-B/2., sign*d/2.)), vm.Point2D((-B/2., sign*dg/2.)),
                            vm.Point2D((-B/2. - ep, sign*dg/2.)), vm.Point2D((-B/2. - ep, sign*di/2.)),
@@ -1838,7 +1843,7 @@ class BearingCombination:
         bi_inf = vm.Contour2D([self.InternalBearing(sign = -1)]).Translation(vm.Vector2D((pos, 0)), True)
         export_data.append(bi_inf.PlotData('bi_inf', fill = 'url(#diagonal-stripe-1)'))
         
-        contour = []
+#        contour = []
         pos_m = -self.B/2.
         for num_bg, bg in enumerate(self.bearings):
             cont = bg.PlotData(pos = pos_m + bg.B/2. + pos, constructor = constructor, quote = False)
@@ -1967,16 +1972,16 @@ class BearingCombination:
                 pos2 = bg2[0].initial_position
                 nonlinear_linkages.append(unidimensional.UnilateralContact(bg1[0], bg2[0], pos2 - pos1, name='Inner rings'))
                 nonlinear_linkages.append(unidimensional.UnilateralContact(bg1[1], bg2[1], pos2 - pos1, name='Outer rings'))
-        if 'n' in self.connection_be:
+        if 'left' in self.connection_be:
             bor = component[0][1]
             nonlinear_linkages.append(unidimensional.UnilateralContact(ground, bor, bor.initial_position - ground.initial_position, name='Outer rings'))
-        if 'p' in self.connection_be:
+        if 'right' in self.connection_be:
             bor = component[-1][1]
             nonlinear_linkages.append(unidimensional.UnilateralContact(bor, ground, ground.initial_position - bor.initial_position, name='Outer rings'))
-        if 'n' in self.connection_bi:
+        if 'left' in self.connection_bi:
             bir = component[0][0]
             nonlinear_linkages.append(unidimensional.UnilateralContact(shaft, bir, bir.initial_position - shaft.initial_position, name='Inner rings'))
-        if 'p' in self.connection_bi:
+        if 'right' in self.connection_bi:
             bir = component[-1][0]
             nonlinear_linkages.append(unidimensional.UnilateralContact(bir, shaft, shaft.initial_position - bir.initial_position, name='Inner rings'))
         return component, nonlinear_linkages, loads, axial_bearings
@@ -2055,7 +2060,7 @@ class BearingCombination:
             else:
                 indice_bearing_x.append(0)
                 list_direction.append(bg.direction)
-        list_name = [bg.class_name for bg in bearings]
+#        list_name = [bg.class_name for bg in bearings]
                 
         nb_bearing_x = max(indice_bearing_x)
 
@@ -2069,12 +2074,9 @@ class BearingCombination:
                 case_graph.append([*list_direction])
         else:
             case_graph.append(list_direction)
-        
-        graph = []
-        li_case = []
-        li_nx_graph = []
-        node_outputs = []
+            
         check = False
+        transfert_load = []
         for case in case_graph:
             li = []
             for bg in bearings:
@@ -2083,28 +2085,29 @@ class BearingCombination:
             list_bg_export, list_node_output = self.GenereNode(case, li)
             nx_graph = self.GenereConnection(case, list_bg_export, list_node_output)
             
-            check_iter = self.CheckViabilityAngularBearing(list_bg_export, 
+            check_iter, transfert_load_iter = self.CheckViabilityAngularBearing(list_bg_export, 
                                                            nx_graph,
                                                            list_node_output)
+            transfert_load = list(set(transfert_load + transfert_load_iter))
             if check_iter:
                 check = True          
-        return check
+        return check, transfert_load
     
     def GenereConnection(self, case, bearings, list_node_output):
 
         list_bg_export = []
-        list_nx_graph = []
+#        list_nx_graph = []
         nx_graph = bearings[0].nx_graph
         for g in nx_graph.edges(data=True):
             g[2]['num'] = 0
         
         li_node_bg0 = bearings[0].list_node
-        if 'n' in self.connection_be:
+        if 'left' in self.connection_be:
             if ((bearings[0].class_name not in ['RadialRollerBearing', 'RadialBallBearing']) \
                 and (bearings[0].direction == -1)) or (bearings[0].class_name in ['RadialRollerBearing', 'RadialBallBearing']):
                 nx_graph.add_edges_from([(list_node_output[1], li_node_bg0[1])], weight=0.1, loc='clearance')
                 nx_graph.add_edges_from([(li_node_bg0[0], list_node_output[0])], weight=0.1, loc='clearance')
-        if 'n' in self.connection_bi:
+        if 'left' in self.connection_bi:
             if ((bearings[0].class_name not in ['RadialRollerBearing', 'RadialBallBearing']) \
                 and (bearings[0].direction == 1)) or (bearings[0].class_name in ['RadialRollerBearing', 'RadialBallBearing']):
                 nx_graph.add_edges_from([(list_node_output[3], li_node_bg0[3])], weight=0.1, loc='clearance')
@@ -2129,12 +2132,12 @@ class BearingCombination:
                 nx_graph.add_edges_from([(list_nd1[7], list_nd2[3])], weight=0.1, loc='clearance')
                 
         li_node_bg_end = bearings[-1].list_node
-        if 'p' in self.connection_be:
+        if 'right' in self.connection_be:
             if ((bearings[-1].class_name not in ['RadialRollerBearing', 'RadialBallBearing']) \
                 and (bearings[-1].direction == 1)) or (bearings[-1].class_name in ['RadialRollerBearing', 'RadialBallBearing']):
                 nx_graph.add_edges_from([(list_node_output[4], li_node_bg_end[4])], weight=0.1, loc='clearance')
                 nx_graph.add_edges_from([(li_node_bg_end[5], list_node_output[5])], weight=0.1, loc='clearance')
-        if 'p' in self.connection_bi:
+        if 'right' in self.connection_bi:
             if ((bearings[-1].class_name not in ['RadialRollerBearing', 'RadialBallBearing']) \
                 and (bearings[-1].direction == -1)) or (bearings[-1].class_name in ['RadialRollerBearing', 'RadialBallBearing']):
                 nx_graph.add_edges_from([(list_node_output[6], li_node_bg_end[6])], weight=0.1, loc='clearance')
@@ -2158,13 +2161,13 @@ class BearingCombination:
     def CheckViabilityAngularBearing(self, graph, nx_graph, li_node_output):
         # axial load generate by angular_bearing
         node_axial_ring = []
-        if 'n' in self.connection_be:
+        if 'left' in self.connection_be:
             node_axial_ring.append(li_node_output[0])
-        if 'p' in self.connection_be:
+        if 'right' in self.connection_be:
             node_axial_ring.append(li_node_output[5])
-        if 'n' in self.connection_bi:
+        if 'left' in self.connection_bi:
             node_axial_ring.append(li_node_output[2])
-        if 'p' in self.connection_bi:
+        if 'right' in self.connection_bi:
             node_axial_ring.append(li_node_output[7])
             
         node_axial_input = []
@@ -2175,6 +2178,7 @@ class BearingCombination:
                 elif bg.direction == -1:
                     node_axial_input.extend([bg.list_node[i] for i in [1, 6]])
         
+        #check angular and tapered bearing
         valid = True
         dict_sum = {}
         for nd_axial_input in node_axial_input:
@@ -2198,8 +2202,28 @@ class BearingCombination:
             if valid_input == True:
                 clearance_opti = sorted(dict_opti.keys())[0]
                 dict_sum[nd_axial_input] = dict_opti[clearance_opti]
+                
+        transfert_load = []
+        if ('right' in self.connection_be) and ('left' in self.connection_bi):
+            node_input = li_node_output[3]
+            node_output = li_node_output[5]
+            try:
+                sol = list(nx.all_shortest_paths(nx_graph, source=node_input, 
+                                            target=node_output)) 
+                transfert_load.append('right')
+            except:
+                pass
+        if ('left' in self.connection_be) and ('right' in self.connection_bi):
+            node_input = li_node_output[6]
+            node_output = li_node_output[0]
+            try:
+                sol = list(nx.all_shortest_paths(nx_graph, source=node_input, 
+                                            target=node_output)) 
+                transfert_load.append('left')
+            except:
+                pass
         
-        return valid
+        return valid, transfert_load
         
                 
     def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
@@ -2354,6 +2378,25 @@ class BearingAssembly:
             G, positions, li_axial_link, nd_axial_load = li_bg.Graph()
             plt.figure()
             nx.draw_networkx(G, pos = positions)
+            
+    def CheckLoad(self, bearing_assembly_simulation_result):
+        loads = bearing_assembly_simulation_result.loads
+        valid_axial_load = True
+        for ind_load_case, load_cases in enumerate(loads):
+            axial_load = 0
+            for pos, ld, tq in load_cases:    
+                axial_load += ld[0]
+            valid = False
+            for bc in self.bearing_combinations:
+                if axial_load > 0:
+                    if 'right' in bc.transfert_load:
+                        valid = True
+                elif axial_load < 0:
+                    if 'left' in bc.transfert_load:
+                        valid = True
+            if not valid:
+                valid_axial_load = False
+        return valid_axial_load                 
     
     def ShaftLoad(self, positions, bearing_assembly_simulation_result):
         
@@ -2802,13 +2845,20 @@ class DetailedSphericalRollerBearing(DetailedRadialRollerBearing):
 
     
 class BearingAssemblySimulation:
+    dessia_db_attributes = [{'name':'bearing_assembly',
+                             'class':'mechanical_components.bearings.BearingAssembly',
+                             'type':'object'},
+                            {'name':'bearing_assembly_simulation_result',
+                             'class':'mechanical_components.bearings.BearingAssemblySimulationResult',
+                             'type':'object'}]
     def __init__(self, bearing_assembly,
                  bearing_assembly_simulation_result=None):
         self.bearing_assembly = bearing_assembly
         self.bearing_assembly_simulation_result = bearing_assembly_simulation_result
         
     def Dict(self, subobjects_id = {}, stringify_keys=True):
-        """Export dictionary
+        """
+        Export dictionary
         """
         d = {}
         for k,v in self.__dict__.items():
@@ -2820,8 +2870,8 @@ class BearingAssemblySimulation:
             else:
                 d[k] = v
                 
-        d['bearing_assembly'] = self.bearing_assembly.Dict()
-        d['bearing_assembly_simulation_result'] = self.bearing_assembly_simulation_result.Dict()
+        d['bearing_assembly'] = self.bearing_assembly.Dict(subobjects_id)
+        d['bearing_assembly_simulation_result'] = self.bearing_assembly_simulation_result.Dict(subobjects_id)
                 
         if stringify_keys:
             return StringifyDictKeys(d)
@@ -2877,6 +2927,10 @@ class BearingSimulationResult:
     
     
 class BearingCombinationSimulationResult:
+    dessia_db_attributes = [{'name':'bearing_combination_simulation_results',
+                             'class':'mechanical_components.bearings.BearingSimulationResult',
+                             'type':'list'}]
+
     def __init__(self, bearing_simulation_results, axial_loads=None, radial_loads=None):
         if axial_loads is None:
             self.axial_loads = []
@@ -2889,7 +2943,8 @@ class BearingCombinationSimulationResult:
         self.bearing_simulation_results = bearing_simulation_results
             
     def Dict(self, subobjects_id = {}, stringify_keys=True):
-        """Export dictionary
+        """
+        Export dictionary
         """
         d={}
         for k,v in self.__dict__.items():
@@ -2902,7 +2957,10 @@ class BearingCombinationSimulationResult:
                 d[k]=v
         bgs = []
         for bg in self.bearing_simulation_results:
-            bgs.append(bg.Dict())
+            if bg in subobjects_id:
+                bgs.append(subobjects_id[bg])
+            else:
+                bgs.append(bg.Dict())
         d['bearing_simulation_results'] = bgs
         if stringify_keys:
             return StringifyDictKeys(d)
@@ -2921,6 +2979,10 @@ class BearingCombinationSimulationResult:
     
     
 class BearingAssemblySimulationResult:
+    dessia_db_attributes = [{'name':'bearing_combination_simulation_results',
+                         'class':'mechanical_components.bearings.BearingCombinationSimulationResult',
+                         'type':'list'}]
+
     def __init__(self, bearing_combination_simulation_results, 
                  loads, speeds, operating_times, 
                  axial_load_model=None, L10=None):
@@ -2935,7 +2997,8 @@ class BearingAssemblySimulationResult:
         self.axial_load_model.Plot(intensity_factor=1e-5)
         
     def Dict(self, subobjects_id = {}, stringify_keys=True):
-        """Export dictionary
+        """
+        Export dictionary
         """
         d = {}
         for k,v in self.__dict__.items():
@@ -2949,7 +3012,10 @@ class BearingAssemblySimulationResult:
         del d['axial_load_model']
         bcs = []
         for bc in self.bearing_combination_simulation_results:
-            bcs.append(bc.Dict())
+            if bc in subobjects_id:
+                bcs.append(subobjects_id[bc])
+            else:
+                bcs.append(bc.Dict())
         d['bearing_combination_simulation_results'] = bcs
                 
         if stringify_keys:

@@ -29,7 +29,7 @@ list_bearing = [b1, b2, b2, b2]
 BA = bearings.BearingCombination(list_bearing, radial_load_linkage = [True]*1, internal_pre_load = 0, 
                  connection_bi = ['n'], connection_be = ['p'], behavior_link = 'pn')
 
-BA.SolveAxialLoad()
+#BA.SolveAxialLoad()
 #BA.PlotGraph()
 #fa = BA.SearchBestGraph()
 #BA.BearingCombinationLoad(fr=1, fa=0)

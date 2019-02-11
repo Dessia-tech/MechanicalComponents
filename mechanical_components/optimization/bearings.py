@@ -23,7 +23,7 @@ from itertools import product
 #import genmechanics.linkages as linkages
 #import genmechanics.loads as loads
 import math
-import volmdlr as vm
+#import volmdlr as vm
 #import volmdlr.primitives3D as primitives3D
 #import volmdlr.primitives2D as primitives2D
 
@@ -31,7 +31,6 @@ from mechanical_components.tools import StringifyDictKeys
 
 # TODO: Cumulative damages
 class RollerBearingContinuousOptimizer:
-
     """
     Objet avec 3 fonctions de selection des roulements cylindriques
      * Combinatoire sur les dimensions externe ISO
@@ -263,62 +262,62 @@ class DiscreteBearingCombinationOptimizer:
     def __init__(self, linkage, behavior_link, nb_rlts, d, D, length, number_solutions=10, 
                  number_load_case=1):
         
-#        axis_load = ['n', 'p'] # 'p' when the axial load applied on shaft is directed from left to right
-        typ_rlts = {'rol_NU':0, 'rol_N':0, 
-                    'rol_NJ_p':'p', 'rol_NJ_n':'n',
-                    'rol_NF_p':'p', 'rol_NF_n':'n', 
-                    'rol_NUP':'pn', 'ball':'pn', 
-                    'ang_p':'p', 'ang_n':'n', 'tap_p':'p', 'tap_n':'n'}
-#        ring_mounting = ['n', 'p']
+#        axis_load = ['left', 'right'] # 'right' when the axial load applied on shaft is directed from left to right
+        typ_rlts = {'rol_NU':'free', 'rol_N':'free', 
+                    'rol_NJ_right':'right', 'rol_NJ_left':'left',
+                    'rol_NF_right':'right', 'rol_NF_left':'left', 
+                    'rol_NUP':'both', 'ball':'both', 
+                    'ang_right':'right', 'ang_left':'left', 'tap_right':'right', 'tap_left':'left'}
+#        ring_mounting = ['left', 'right']
         
         self.bearing_combinations = []
         for li_rlts in product(typ_rlts.keys(), repeat = nb_rlts):
             if (linkage is 'ball_joint'):
                 if (nb_rlts > 1):
                     continue
-                elif li_rlts[0] not in ['ball', 'ang_p', 'ang_n']:
+                elif li_rlts[0] not in ['ball', 'ang_right', 'ang_left']:
                     continue
             else:
-                if (nb_rlts is 1) and (li_rlts[0] in ['ball', 'ang_p', 'ang_n']):
+                if (nb_rlts is 1) and (li_rlts[0] in ['ball', 'ang_right', 'ang_left']):
                     continue
             li_rlts_temp = []
             for bg in li_rlts:
                 li_rlts_temp.append(typ_rlts[bg])
-            if (('n' in li_rlts_temp) and ('p' in li_rlts_temp)) or ('pn' in li_rlts_temp):
-                behavior_assembly = 'pn'
-            elif 'p' in li_rlts_temp:
-                behavior_assembly = 'p'
-            elif 'n' in li_rlts_temp:
-                behavior_assembly = 'n'
+            if (('left' in li_rlts_temp) and ('right' in li_rlts_temp)) or ('both' in li_rlts_temp):
+                behavior_assembly = 'both'
+            elif 'right' in li_rlts_temp:
+                behavior_assembly = 'right'
+            elif 'left' in li_rlts_temp:
+                behavior_assembly = 'left'
             else:
-                behavior_assembly = 0
+                behavior_assembly = 'free'
                 
-            if (behavior_link is 'pn') and (behavior_assembly is not 'pn'):
+            if (behavior_link is 'both') and (behavior_assembly is not 'both'):
                 continue
-            elif (behavior_link is 'p') and (behavior_assembly in [0, 'n']):
+            elif (behavior_link is 'right') and (behavior_assembly in ['free', 'left']):
                 continue
-            elif (behavior_link is 'n') and (behavior_assembly in [0, 'p']):
+            elif (behavior_link is 'left') and (behavior_assembly in ['free', 'right']):
                 continue
-            elif (behavior_link is 0) and (behavior_assembly in ['p', 'n']):
+            elif (behavior_link is 0) and (behavior_assembly in ['right', 'left']):
                 continue
             
             # selection combinatory
             # if one angular we don't want a tapered and so on
-            if (('ang_p' in li_rlts) or ('ang_n' in li_rlts)) and (('tap_p' in li_rlts) or ('tap_n' in li_rlts)):
+            if (('ang_right' in li_rlts) or ('ang_left' in li_rlts)) and (('tap_right' in li_rlts) or ('tap_left' in li_rlts)):
                 continue
-            #if 'n' and 'p' so we want two tappered or two angular
-            if ('p' in li_rlts_temp) and ('n' in li_rlts_temp): 
-                if (('tap_p' in li_rlts) and ('tap_n' in li_rlts)):
+            #if 'left' and 'right' so we want two tappered or two angular
+            if ('right' in li_rlts_temp) and ('left' in li_rlts_temp): 
+                if (('tap_right' in li_rlts) and ('tap_left' in li_rlts)):
                     pass
-                elif (('ang_p' in li_rlts) and ('ang_n' in li_rlts)):
+                elif (('ang_right' in li_rlts) and ('ang_left' in li_rlts)):
                     pass
                 else:
                     continue
                 
-            if behavior_link in ['pn', 'p']:
-                if typ_rlts[li_rlts[0]] in ['n', 0]:
+            if behavior_link in ['both', 'right']:
+                if typ_rlts[li_rlts[0]] in ['left', 'free']:
                     continue
-                if typ_rlts[li_rlts[-1]] in ['n', 0]:
+                if typ_rlts[li_rlts[-1]] in ['left', 'free']:
                     continue
                 loc_axial_load = []
                 ind_bg_axial = 0
@@ -329,17 +328,17 @@ class DiscreteBearingCombinationOptimizer:
                         loc_axial_load.append(ind_bg_axial)
                         ind_bg_axial = 0
             
-            if behavior_link == 'pn':
-                mount = {'be':['p','n'], 'bi':['p','n']}
-            elif behavior_link == 'p':
-                mount = {'be':['p'], 'bi':['n']}
-            elif behavior_link is 'n':
-                mount = {'be':['n'], 'bi':['p']}
-            elif behavior_link == 0:
-                if behavior_assembly == 0:
-                    mount = {'be':['p','n'], 'bi':['p','n']}
-                elif behavior_assembly == 'pn':
-                    mount = {'be':[], 'bi':['p','n']}
+            if behavior_link == 'both':
+                mount = {'be':['right','left'], 'bi':['right','left']}
+            elif behavior_link == 'right':
+                mount = {'be':['right'], 'bi':['left']}
+            elif behavior_link is 'left':
+                mount = {'be':['left'], 'bi':['right']}
+            elif behavior_link == 'free':
+                if behavior_assembly == 'free':
+                    mount = {'be':['right','left'], 'bi':['right','left']}
+                elif behavior_assembly == 'both':
+                    mount = {'be':[], 'bi':['right','left']}
             else:
                 print('Unknown behavior_link: ', behavior_link)
                 raise NotImplementedError
@@ -377,7 +376,7 @@ class DiscreteBearingCombinationOptimizer:
         if typ_rlt == 'radial_roller_bearing':
             if len(code_bearing.split('_')) == 3:
                 typ = code_bearing.split('_')[1]
-                direction = (code_bearing.split('_')[2] == 'n' and -1 or 1)
+                direction = (code_bearing.split('_')[2] == 'left' and -1 or 1)
             elif len(code_bearing.split('_')) == 2:
                 typ = code_bearing.split('_')[1]
                 direction = 1
@@ -386,14 +385,14 @@ class DiscreteBearingCombinationOptimizer:
         elif typ_rlt == 'radial_ball_bearing':
             return RadialBallBearing(d, D, B, i, Z, Dw, alpha, Cr, C0r, mass = mass)
         elif typ_rlt == 'angular_ball_bearing':
-            direction = (code_bearing.split('_')[1] == 'n' and 1 or -1)
+            direction = (code_bearing.split('_')[1] == 'left' and 1 or -1)
             return AngularBallBearing(d, D, B, i, Z, Dw, alpha,
                                              Cr, C0r, direction = direction, mass = mass)
         elif typ_rlt == 'spherical_ball_bearing':
             return SphericalBallBearing(d, D, B, i, Z, Dw, alpha, 
                                                Cr, C0r, mass = mass)
         elif typ_rlt == 'tapered_roller_bearing':
-            direction = (code_bearing.split('_')[1] == 'n' and 1 or -1)
+            direction = (code_bearing.split('_')[1] == 'left' and 1 or -1)
             return TaperedRollerBearing(d, D, B, i, Z, Dw, alpha, 
                                                Cr, C0r, mass = mass, direction = direction)
     
@@ -484,7 +483,7 @@ class DiscreteBearingCombinationOptimizer:
 class SortBearingCombinationOptimizer:
     def __init__(self, bearing_combinations, sort_arg={'min':'mass'}, number_solutions=10):
         
-        bearing_combinations_sort = self.Sortarchitectures(bearing_combinations, sort_arg = {'min':'mass'})
+        bearing_combinations_sort = self.Sortarchitectures(bearing_combinations, sort_arg)
         self.check = False
         if len(bearing_combinations_sort) > 0:
             if number_solutions == -1:
@@ -505,9 +504,9 @@ class SortBearingCombinationOptimizer:
     def Sortarchitectures(self, architectures, sort_arg):
         list_sort = []
         for sol in architectures:
-            val = getattr(sol,sort_arg['min'])
+            val = getattr(sol, sort_arg['min'])
             list_sort.append(val)
-        list_sort_arg=list(npy.argsort(list_sort))
+        list_sort_arg = list(npy.argsort(list_sort))
         return npy.array(architectures)[list_sort_arg]
     
 class DiscreteBearingAssemblyOptimizer:
@@ -516,7 +515,7 @@ class DiscreteBearingAssemblyOptimizer:
                  axial_positions=[0, 0.1],
                  outer_diameter=[0.05, 0.05],
                  length=[0.04, 0.04],
-                 linkage_types=[['all'], ['all']],
+                 linkage_types=[['both'], ['both']],
                  mounting_types=None,
                  number_bearings=[[1, 2], [1, 2]]):
         
@@ -534,13 +533,15 @@ class DiscreteBearingAssemblyOptimizer:
         nb_linkage = len(length)
         if mounting_types == None:
             mounting_types = []
-            for typ_iter in product(['pn', 0, 'n', 'p'], repeat = nb_linkage):
-                if typ_iter is not (0,)*nb_linkage:
-                    if set(typ_iter) not in [set(('pn', 'p')), set(('pn', 'n')), set(('pn', 'pn')), set((0, 0))]:
+            for typ_iter in product(['both', 'free', 'left', 'right'], repeat = nb_linkage):
+                if typ_iter is not ('free',)*nb_linkage:
+                    if set(typ_iter) not in [set(('both', 'right')), set(('both', 'left')), 
+                          set(('both', 'both')), set(('free', 'free'))]:
                         mounting_types.append(typ_iter)
         self.mounting_types = mounting_types
         for mount in self.mounting_types:
-            if set(mount) in [set(('pn', 'p')), set(('pn', 'n')), set(('pn', 'pn')), set((0, 0))]:
+            if set(mount) in [set(('both', 'right')), set(('both', 'left')), 
+                          set(('both', 'both')), set(('free', 'free'))]:
                 raise KeyError('Modify the mounting_types data')
                 
         self.bearing_combination_configurations = self.CombinationOptimize()
@@ -548,7 +549,7 @@ class DiscreteBearingAssemblyOptimizer:
     def CombinationOptimize(self):
         list_linkage = self.linkage_types 
         for num_link,list_link in enumerate(self.linkage_types):
-            if 'all' in list_link:
+            if 'both' in list_link:
                 list_linkage[num_link] = ['ball_joint', 'cylindric_joint']
 
         bearing_combination_configurations = []
@@ -564,10 +565,12 @@ class DiscreteBearingAssemblyOptimizer:
                  inner_diameter, axial_positions, outer_diameter, length,
                  linkage_types, mounting_types, number_bearing,
                  sort, sort_arg, path, number_solutions):
+        
         obj = cls(loads, speeds, times,
                  inner_diameter, axial_positions, outer_diameter, length,
                  linkage_types, mounting_types, number_bearing,
                  sort, sort_arg, path, number_solutions)
+        
         return obj
         
     
@@ -577,14 +580,12 @@ class ContinuousBearingAssemblyOptimizer:
                  axial_positions=[0, 0.1],
                  outer_diameter=[0.05, 0.05],
                  length=[0.04, 0.04],
-                 number_solutions=5,
-                 sort_optim = {'typ': 'L10', 'min':10, 'max':1e10}):
+                 number_solutions=5):
         
         self.inner_diameter = inner_diameter
         self.axial_positions = axial_positions
         self.outer_diameter = outer_diameter
         self.length = length
-        self.sort_optim = sort_optim
         self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
@@ -593,11 +594,28 @@ class ContinuousBearingAssemblyOptimizer:
         else:
             self.number_solutions = number_solutions
         self.bearing_assemblies = self.Sortarchitectures(bearing_assemblies)
+        if len(self.bearing_assemblies) == 0:
+            raise KeyError('No solution available, modify mounting_types')
 
     def Sortarchitectures(self, bearing_assemblies):
         
-        list_sort = []
+        list_bearing_assembly = []
         for bearing_assembly in bearing_assemblies:
+            bc_results = []
+            for bearing_combination in bearing_assembly.bearing_combinations:
+                li_bg_results = []
+                for bearing in bearing_combination.bearings:
+                    li_bg_results.append(BearingSimulationResult())
+                bc_results.append(BearingCombinationSimulationResult(li_bg_results))
+            bearing_assembly_simulation_result = BearingAssemblySimulationResult(bc_results, 
+                                                            self.loads, self.speeds, self.operating_times)
+            check_axial_load = bearing_assembly.CheckLoad(bearing_assembly_simulation_result)
+            print(check_axial_load)
+            if check_axial_load:
+                list_bearing_assembly.append(bearing_assembly)
+            
+        list_sort = []
+        for bearing_assembly in list_bearing_assembly:
             bc_results = []
             for bearing_combination in bearing_assembly.bearing_combinations:
                 li_bg_results = []
@@ -613,9 +631,9 @@ class ContinuousBearingAssemblyOptimizer:
             pos1_max = self.axial_positions[0] + self.length[0] - l1/2.
             pos2_min = self.axial_positions[1] + l2/2.
             pos2_max = self.axial_positions[1] + self.length[1] - l2/2.
-            pos1_moy, pos2_moy = (pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.
+#            pos1_moy, pos2_moy = (pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.
             Bound = [[pos1_min, pos1_max], [pos2_min, pos2_max]]
-            sol_fun = npy.inf
+#            sol_fun = npy.inf
             L10max = 0
             for p1, p2 in product(Bound[0],Bound[1]):
                 bearing_assembly.ShaftLoad([p1, p2], bearing_assembly_simulation_result)
@@ -623,14 +641,14 @@ class ContinuousBearingAssemblyOptimizer:
             list_sort.append(L10max)
         
         list_sort_arg=list(npy.argsort(list_sort))
-        return npy.array(bearing_assemblies)[list_sort_arg]
+        return npy.array(list_bearing_assembly)[list_sort_arg]
 
     def Search(self):
         val_mini = 0
         for speed, time in zip(self.speeds, self.operating_times):
             val_mini += speed/(2*npy.pi)*time
         val_mini = val_mini/1e6
-        print('Objective number of laps {}'.format(val_mini))
+        print('Objective number of million revolutions {}'.format(val_mini))
             
         pos_inf = 0
         ba_inf = self.bearing_assemblies[pos_inf]
@@ -661,7 +679,7 @@ class ContinuousBearingAssemblyOptimizer:
             else:
                 pos_sup = pos_optim
                 val_sup = val_optim
-            print('Search convergence {}'.format(val_optim_m - val_optim))
+#            print('Search convergence {}'.format(val_optim_m - val_optim))
             if abs(val_optim_m - val_optim) < 0.01*val_optim:
                 valid = False
         
@@ -719,9 +737,8 @@ class ContinuousBearingAssemblyOptimizer:
         def fun(x):
             
             obj = 0
-            if self.sort_optim['typ'] == 'L10':
-                L10 = bearing_assembly_simulation_result.L10
-                obj += 1/(L10)**2
+            L10 = bearing_assembly_simulation_result.L10
+            obj += 1/(L10)**2
             return obj
         
         def fineq(x):
@@ -760,17 +777,21 @@ class ContinuousBearingAssemblyOptimizer:
 
     
 class BearingAssemblyOptimizer:
+    dessia_db_attributes = [{'name':'bearing_assembly_simulation_results',
+                             'class':'mechanical_components.bearings.BearingAssemblySimulationResult',
+                             'type':'list'}]
+    
     def __init__(self, loads, speeds, operating_times,
                  inner_diameter=[0.02, 0.02],
                  axial_positions=[0, 0.1],
                  outer_diameter=[0.05, 0.05],
                  length=[0.04, 0.04],
-                 linkage_types=[['all'], ['all']],
+                 linkage_types=[['both'], ['both']],
                  mounting_types=None,
                  number_bearings=[[1, 2], [1, 2]],
                  sort_arg = {'min': 'mass'},
                  number_solutions=[-1, -1, 10],
-                 bearing_assembly_results=None):
+                 bearing_assembly_simulation_results=None):
         self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
@@ -783,7 +804,7 @@ class BearingAssemblyOptimizer:
         self.number_bearings = number_bearings
         self.sort_arg = sort_arg
         self.number_solutions = number_solutions
-        self.bearing_assembly_results = bearing_assembly_results
+        self.bearing_assembly_simulation_results = bearing_assembly_simulation_results
         
     def Optimize(self):
         
@@ -795,7 +816,7 @@ class BearingAssemblyOptimizer:
                                          linkage_types=self.linkage_types,
                                          mounting_types=self.mounting_types,
                                          number_bearings=self.number_bearings)
-        
+
         sol_BC = {}
         for num_linkage, linkage, behavior_link, nb_rlts in DBA.bearing_combination_configurations:
             if num_linkage not in sol_BC.keys():
@@ -811,11 +832,12 @@ class BearingAssemblyOptimizer:
                                                       number_load_case=len(self.loads))
             
             SBC = SortBearingCombinationOptimizer(DBC.bearing_combinations, 
-                                                  sort_arg={'min':'mass'}, 
+#                                                  sort_arg=self.sort_arg,  # TODO: reconnect this?
                                                   number_solutions=self.number_solutions[1])
             
             if SBC.check is True:
                 sol_BC[num_linkage].extend(SBC.bearing_combinations)
+
         analyze_architectures = True
         for num_linkage, bearing_combinations in sol_BC.items():
             if sol_BC[num_linkage] == []:
@@ -832,12 +854,13 @@ class BearingAssemblyOptimizer:
                                                  outer_diameter=self.outer_diameter,
                                                  length=self.length,
                                                  number_solutions=self.number_solutions[0])
-        bearing_assembly_results = CBA.Search()
+        bearing_assembly_simulation_results = CBA.Search()
         
-        self.bearing_assembly_results = bearing_assembly_results
+        self.bearing_assembly_simulation_results = bearing_assembly_simulation_results
         
     def Dict(self, subobjects_id = {}, stringify_keys=True):
-        """Export dictionary
+        """
+        Export dictionary
         """
         d = {}
         for k,v in self.__dict__.items():
@@ -848,10 +871,16 @@ class BearingAssemblyOptimizer:
                 d[k]=round(float(v), 5)
             else:
                 d[k] = v
-        bar_dict = []
-        for bar in self.bearing_assembly_results:
-            bar_dict.append(bar.Dict())
-        d['bearing_assembly_results'] = bar_dict
+        if self.bearing_assembly_simulation_results is not None:
+            bar_dict = []
+            for bar in self.bearing_assembly_simulation_results:
+                if bar in subobjects_id:
+                    bar_dict.append(subobjects_id[bar])
+                else:                
+                    bar_dict.append(bar.Dict())
+        else:
+            bar_dict = None
+        d['bearing_assembly_simulation_results'] = bar_dict
                 
         if stringify_keys:
             return StringifyDictKeys(d)
@@ -860,9 +889,18 @@ class BearingAssemblyOptimizer:
     
     @classmethod
     def DictToObject(cls, d):  
-        li_bar = []
-        for bar in d['bearing_assembly_results']:
-            li_bar.append(BearingAssemblySimulation.DictToObject(bar))
+        print(d)
+        
+        if 'bearing_assembly_simulation_results' in d:
+            if d['bearing_assembly_simulation_results'] is None:
+                li_bar = None
+            else:
+                li_bar = []
+                for bar in d['bearing_assembly_simulation_results']:
+                    li_bar.append(BearingAssemblySimulation.DictToObject(bar))
+        else:
+            li_bar = None
+            
         obj = cls(loads = d['loads'], 
                   speeds = d['speeds'], 
                   operating_times = d['operating_times'],
@@ -875,5 +913,5 @@ class BearingAssemblyOptimizer:
                  number_bearings = d['number_bearings'],
                  sort_arg = d['sort_arg'],
                  number_solutions = d['number_solutions'],
-                 bearing_assembly_results = li_bar)
+                 bearing_assembly_simulation_results = li_bar)
         return obj
