@@ -2202,18 +2202,20 @@ class BearingCombination:
             node_input = li_node_output[3]
             node_output = li_node_output[5]
             try:
-                sol = list(nx.all_shortest_paths(nx_graph, source=node_input, 
-                                            target=node_output)) 
-                transfert_load.append('right')
+                if (node_input in nx_graph) and (node_output in nx_graph):
+                    sol = list(nx.all_shortest_paths(nx_graph, source=node_input, 
+                                                target=node_output)) 
+                    transfert_load.append('right')
             except nx.NetworkXNoPath:
                 pass
         if ('left' in self.connection_be) and ('right' in self.connection_bi):
             node_input = li_node_output[6]
             node_output = li_node_output[0]
             try:
-                sol = list(nx.all_shortest_paths(nx_graph, source=node_input, 
-                                            target=node_output)) 
-                transfert_load.append('left')
+                if (node_input in nx_graph) and (node_output in nx_graph):
+                    sol = list(nx.all_shortest_paths(nx_graph, source=node_input, 
+                                                target=node_output)) 
+                    transfert_load.append('left')
             except nx.NetworkXNoPath:
                 pass
         

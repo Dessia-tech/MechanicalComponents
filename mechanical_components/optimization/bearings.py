@@ -301,7 +301,7 @@ class DiscreteBearingCombinationOptimizer:
                 continue
             elif (behavior_link == 'left') and (behavior_assembly in ['free', 'right']):
                 continue
-            elif (behavior_link == 0) and (behavior_assembly in ['right', 'left']):
+            elif (behavior_link == 'free') and (behavior_assembly in ['right', 'left']):
                 continue
             
             # selection combinatory
@@ -556,11 +556,11 @@ class DiscreteBearingAssemblyOptimizer:
                 list_linkage[num_link] = ['ball_joint', 'cylindric_joint']
 
         bearing_combination_configurations = []
-        for li_mounting in self.mounting_types:
+        for num_mounting, li_mounting in enumerate(self.mounting_types):
             for num_linkage, behavior_link in enumerate(li_mounting):
                 for linkage, nb_rlts in product(list_linkage[num_linkage], 
                                                 self.number_bearings[num_linkage]):
-                    bearing_combination_configurations.append([num_linkage, linkage, behavior_link, nb_rlts])
+                    bearing_combination_configurations.append([num_mounting, num_linkage, linkage, behavior_link, nb_rlts])
         return bearing_combination_configurations
                     
     @classmethod
@@ -706,6 +706,8 @@ class ContinuousBearingAssemblyOptimizer:
             for bc in ba.bearing_combinations:
                 for bg in bc.bearings:
                     li_bc.append(bg.class_name)
+                li_bc.append(bc.connection_be)
+                li_bc.append(bc.connection_bi)
             if li_bc not in list_bc:
                 list_ba.append(ba)
                 list_bc.append(li_bc)
@@ -821,10 +823,13 @@ class BearingAssemblyOptimizer:
                                          mounting_types=self.mounting_types,
                                          number_bearings=self.number_bearings)
 
+        print(DBA.bearing_combination_configurations)
         sol_BC = {}
-        for num_linkage, linkage, behavior_link, nb_rlts in DBA.bearing_combination_configurations:
-            if num_linkage not in sol_BC.keys():
-                sol_BC[num_linkage] = []
+        for num_mounting, num_linkage, linkage, behavior_link, nb_rlts in DBA.bearing_combination_configurations:
+            if num_mounting not in sol_BC.keys():
+                sol_BC[num_mounting] = {}
+            if num_linkage not in sol_BC[num_mounting].keys():
+                sol_BC[num_mounting][num_linkage] = []
                 
             DBC = DiscreteBearingCombinationOptimizer(linkage, 
                                                       behavior_link, 
@@ -840,16 +845,18 @@ class BearingAssemblyOptimizer:
                                                   number_solutions=self.number_solutions[1])
             
             if SBC.check:
-                sol_BC[num_linkage].extend(SBC.bearing_combinations)
-
-        analyze_architectures = True
-        for num_linkage, bearing_combinations in sol_BC.items():
-            if sol_BC[num_linkage] == []:
-                analyze_architectures = False
+                sol_BC[num_mounting][num_linkage].extend(SBC.bearing_combinations)
+                
         bearing_assemblies = []
-        if analyze_architectures:
-            for composite_solution in product(*sol_BC.values()):
-                bearing_assemblies.append(BearingAssembly(composite_solution))
+        for num_mounting, sol_BC_mounting in sol_BC.items():
+            analyze_architectures = True
+            for num_linkage, bearing_combinations in sol_BC_mounting.items():
+                if bearing_combinations == []:
+                    analyze_architectures = False
+            
+            if analyze_architectures:
+                for composite_solution in product(*sol_BC_mounting.values()):
+                    bearing_assemblies.append(BearingAssembly(composite_solution))
         
         CBA = ContinuousBearingAssemblyOptimizer(bearing_assemblies, self.loads, self.speeds, 
                                                  self.operating_times,
