@@ -13,6 +13,9 @@ from mechanical_components.bearings import RadialBallBearing, AngularBallBearing
         BearingAssemblySimulationResult, \
         BearingCombinationSimulationResult, BearingSimulationResult, BearingAssemblySimulation
 import numpy as npy
+
+npy.seterr(divide='raise')
+
 from scipy.optimize import minimize
 import pandas
 #from pandas.plotting import scatter_matrix
@@ -59,7 +62,7 @@ class RollerBearingContinuousOptimizer:
         def def_inter(data):
             if data==None:
                 # TODO utiliser math.inf plutot
-                sol=[-npy.inf,npy.inf]
+                sol=[-math.inf,math.inf]
             else:
                 if 'nom' in data.keys():
                     if 'err' in data.keys():
@@ -118,13 +121,13 @@ class RollerBearingContinuousOptimizer:
         for [d,D,B,rsmin,serial] in liste_sol_iso:
             
             #Estimation des plages admissibles de E et F
-            E_inf,E_sup=-npy.inf,npy.inf
-            F_inf,F_sup=-npy.inf,npy.inf
+            E_inf,E_sup=-math.inf,math.inf
+            F_inf,F_sup=-math.inf,math.inf
             E_inf,E_sup=analyse_rule('E',E_inf,E_sup,['d','D','B'],[d,D,B])
             F_inf,F_sup=analyse_rule('F',F_inf,F_sup,['d','D','B'],[d,D,B])
                             
             #Analyse borne sup/inf de Lw et Dw
-            Lw_inf,Lw_sup=-npy.inf,npy.inf
+            Lw_inf,Lw_sup=-math.inf,math.inf
             Dw_inf,Dw_sup=E_inf-F_sup,E_sup-F_inf
             Lw_inf,Lw_sup=analyse_rule('Lw',Lw_inf,Lw_sup,['d','D','B'],[d,D,B])
             Dw_inf,Dw_sup=analyse_rule('Dw',Dw_inf,Dw_sup,['d','D','B'],[d,D,B])
@@ -135,8 +138,8 @@ class RollerBearingContinuousOptimizer:
                 if (Dw>=Dw_inf) and (Dw<=Dw_sup):
                     for Lw in dico_roller_iso[Dw].keys():
                         if (Lw>=Lw_inf) and (Lw<=Lw_sup):
-                            E_inf,E_sup=analyse_rule('E',-npy.inf,npy.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
-                            F_inf,F_sup=analyse_rule('F',-npy.inf,npy.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
+                            E_inf,E_sup=analyse_rule('E',-math.inf,math.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
+                            F_inf,F_sup=analyse_rule('F',-math.inf,math.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
                             if ((E_inf-F_sup)/2.<=Dw) and ((E_sup-F_inf)/2.>=Dw):
                                 liste_sol_roller_iso.append([d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup])
 
@@ -151,10 +154,10 @@ class RollerBearingContinuousOptimizer:
         for [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup] in liste_sol_roller_iso:
             E=(E_inf+E_sup)/2.
             F=E-2*Dw
-            Zmax=int(2*npy.pi/(2.*math.arcsin((Dw/2)/(F/2.+Dw/2.))))
-            masse_elem=(npy.pi*D**2/4.-npy.pi*E**2/4.)*B
-            masse_elem+=(npy.pi*F**2/4.-npy.pi*d**2/4.)*B
-            masse_elem+=npy.pi*Dw**2/4.*Lw*Zmax
+            Zmax=int(2*math.pi/(2.*math.arcsin((Dw/2)/(F/2.+Dw/2.))))
+            masse_elem=(math.pi*D**2/4.-math.pi*E**2/4.)*B
+            masse_elem+=(math.pi*F**2/4.-math.pi*d**2/4.)*B
+            masse_elem+=math.pi*Dw**2/4.*Lw*Zmax
             estim_masse.append(masse_elem)
         
         #Optimisation Minimize du détail du roulement (E,D1 et d1)
@@ -292,13 +295,13 @@ class DiscreteBearingCombinationOptimizer:
             else:
                 behavior_assembly = 'free'
                 
-            if (behavior_link is 'both') and (behavior_assembly is not 'both'):
+            if (behavior_link == 'both') and (behavior_assembly != 'both'):
                 continue
-            elif (behavior_link is 'right') and (behavior_assembly in ['free', 'left']):
+            elif (behavior_link == 'right') and (behavior_assembly in ['free', 'left']):
                 continue
-            elif (behavior_link is 'left') and (behavior_assembly in ['free', 'right']):
+            elif (behavior_link == 'left') and (behavior_assembly in ['free', 'right']):
                 continue
-            elif (behavior_link is 0) and (behavior_assembly in ['right', 'left']):
+            elif (behavior_link == 0) and (behavior_assembly in ['right', 'left']):
                 continue
             
             # selection combinatory
@@ -332,7 +335,7 @@ class DiscreteBearingCombinationOptimizer:
                 mount = {'be':['right','left'], 'bi':['right','left']}
             elif behavior_link == 'right':
                 mount = {'be':['right'], 'bi':['left']}
-            elif behavior_link is 'left':
+            elif behavior_link == 'left':
                 mount = {'be':['left'], 'bi':['right']}
             elif behavior_link == 'free':
                 if behavior_assembly == 'free':
@@ -340,7 +343,7 @@ class DiscreteBearingCombinationOptimizer:
                 elif behavior_assembly == 'both':
                     mount = {'be':[], 'bi':['right','left']}
             else:
-                print('Unknown behavior_link: ', behavior_link)
+                print('Unknown behavior_link: {}'.format(behavior_link))
                 raise NotImplementedError
             li_rlts_pandas = self.SearchCatalog(d, D, length, li_rlts, number_solutions = number_solutions)
             if li_rlts_pandas is not None:
@@ -534,7 +537,7 @@ class DiscreteBearingAssemblyOptimizer:
         if mounting_types == None:
             mounting_types = []
             for typ_iter in product(['both', 'free', 'left', 'right'], repeat = nb_linkage):
-                if typ_iter is not ('free',)*nb_linkage:
+                if typ_iter != ('free',)*nb_linkage:
                     if set(typ_iter) not in [set(('both', 'right')), set(('both', 'left')), 
                           set(('both', 'both')), set(('free', 'free'))]:
                         mounting_types.append(typ_iter)
@@ -632,7 +635,7 @@ class ContinuousBearingAssemblyOptimizer:
             pos2_max = self.axial_positions[1] + self.length[1] - l2/2.
 #            pos1_moy, pos2_moy = (pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.
             Bound = [[pos1_min, pos1_max], [pos2_min, pos2_max]]
-#            sol_fun = npy.inf
+#            sol_fun = math.inf
             L10max = 0
             for p1, p2 in product(Bound[0],Bound[1]):
                 bearing_assembly.ShaftLoad([p1, p2], bearing_assembly_simulation_result)
@@ -640,12 +643,13 @@ class ContinuousBearingAssemblyOptimizer:
             list_sort.append(L10max)
         
         list_sort_arg=list(npy.argsort(list_sort))
+        # TODO: why numpy array?
         return npy.array(list_bearing_assembly)[list_sort_arg]
 
     def Search(self):
         val_mini = 0
         for speed, time in zip(self.speeds, self.operating_times):
-            val_mini += speed/(2*npy.pi)*time
+            val_mini += speed/(2*math.pi)*time
         val_mini = val_mini/1e6
         print('Objective number of million revolutions {}'.format(val_mini))
             
@@ -747,7 +751,7 @@ class ContinuousBearingAssemblyOptimizer:
 
             return ineq
         Bound = [[pos1_min, pos1_max], [pos2_min, pos2_max]]
-        sol_fun = npy.inf
+        sol_fun = math.inf
         for p1, p2 in product(Bound[0] + [pos1_moy],Bound[1] + [pos2_moy]):
             cons = {'type': 'ineq','fun' : fineq}
             res = minimize(fun, [p1, p2], method='SLSQP', bounds=Bound, constraints = cons)
@@ -756,6 +760,7 @@ class ContinuousBearingAssemblyOptimizer:
                 sol_x = res.x
                 status = res.status
         for itera in range(0,5):
+            # TODO: optimize this!
             x0 = (npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(2)+npy.array(Bound)[:,0]
             cons = {'type': 'ineq','fun' : fineq}
             res = minimize(fun, x0, method='SLSQP', bounds=Bound, constraints = cons)
@@ -834,7 +839,7 @@ class BearingAssemblyOptimizer:
 #                                                  sort_arg=self.sort_arg,  # TODO: reconnect this?
                                                   number_solutions=self.number_solutions[1])
             
-            if SBC.check is True:
+            if SBC.check:
                 sol_BC[num_linkage].extend(SBC.bearing_combinations)
 
         analyze_architectures = True
@@ -887,8 +892,7 @@ class BearingAssemblyOptimizer:
         return d
     
     @classmethod
-    def DictToObject(cls, d):  
-        print(d)
+    def DictToObject(cls, d):
         
         if 'bearing_assembly_simulation_results' in d:
             if d['bearing_assembly_simulation_results'] is None:

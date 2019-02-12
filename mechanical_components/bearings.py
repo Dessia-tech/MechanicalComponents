@@ -1,4 +1,5 @@
 import numpy as npy
+npy.seterr(divide='raise')
 #import math as mt
 from scipy import interpolate
 #import os
@@ -73,7 +74,7 @@ iso_vg_10={'data':[[25.088495514790754,17.231530421142708],
 
 #Ordre de rangement du coefficient de contamination de l'huile: Dpw mini/ Dpw maxi/ grade/ coeff de contamination
 dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},
-                        0.1:{npy.inf:{1:1,2:0.85,3:0.7,4:0.5,5:0.3,6:0.05,7:0}}}
+                        0.1:{math.inf:{1:1,2:0.85,3:0.7,4:0.5,5:0.3,6:0.05,7:0}}}
 
 
 class Oil:
@@ -83,7 +84,7 @@ class Oil:
     
     def FunCoeff(self,x,data,type_x='Linear',type_y='Linear'):
         if type_x == 'Log': 
-            x = npy.log10(x)
+            x = math.log10(x)
         f = interpolate.interp1d(list(data[:,0]),list(data[:,1]), fill_value='extrapolate')
         sol = float(f(x))
         if type_y == 'Log':
@@ -96,8 +97,8 @@ class Oil:
             val_np = npy.array(val)
             if key not in ['x','y']:
                 oil_kinematic_viscosity_curve[key] = {}
-                A = (npy.log10(npy.log10(0.6+val_np[0,1]))-npy.log10(npy.log10(0.6+val_np[-1,1])))/(npy.log10(val_np[0,0])-npy.log10(val_np[-1,0]))
-                B = npy.log10(npy.log10(0.6+val_np[0,1]))-A*npy.log10(val_np[0,0])
+                A = (math.log10(math.log10(0.6+val_np[0,1]))-math.log10(math.log10(0.6+val_np[-1,1])))/(math.log10(val_np[0,0])-math.log10(val_np[-1,0]))
+                B = math.log10(math.log10(0.6+val_np[0,1]))-A*math.log10(val_np[0,0])
                 oil_kinematic_viscosity_curve[key]['A'] = A
                 oil_kinematic_viscosity_curve[key]['B'] = B
         return oil_kinematic_viscosity_curve['data']
@@ -114,7 +115,7 @@ class Oil:
         d={}
         for k,v in self.__dict__.items():
             tv=type(v)
-            if tv==npy.int64:
+            if tv == npy.int64:
                 d[k]=int(v)
             elif tv==npy.float64:
                 d[k]=float(v)
@@ -558,18 +559,18 @@ class RadialBearing(LoadBearing):
                 total_cycles += cycles
                 
                 a1 = ((1-self.material.c_gamma)
-                     * (npy.log(1/S)/npy.log(100/90.))**(1/self.material.weibull_e)
+                     * (math.log(1/S)/math.log(100/90.))**(1/self.material.weibull_e)
                      + self.material.c_gamma)
                 L10 = self.BaseLifeTime([fr], [fa], [n], [ti], self.Cr)
                 Pr = self.EquivalentDynamicLoad(fr, fa)
                 # viscosité cinématique de référence
-                if n < (1000*2*npy.pi/60.):
-                    nu1 = 45000*(n*60/(2*npy.pi))**(-0.83)*(self.Dpw*1e3)**(-0.5)
+                if n < (1000*2*math.pi/60.):
+                    nu1 = 45000*(n*60/(2*math.pi))**(-0.83)*(self.Dpw*1e3)**(-0.5)
                 else:
-                    nu1 = 4500*(n*60/(2*npy.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
+                    nu1 = 4500*(n*60/(2*math.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
                 
                 coeff_oil = self.oil.oil_kinematic_viscosity_curve
-                nu = 10**(10**(coeff_oil['A']*npy.log10(Ti)+coeff_oil['B']))-0.6
+                nu = 10**(10**(coeff_oil['A']*math.log10(Ti)+coeff_oil['B']))-0.6
                 kappa = nu/nu1
                 # Oil Contamination
                 ec = self.oil.OilParameterContamination(self.Dpw,3)
@@ -592,7 +593,7 @@ class RadialBearing(LoadBearing):
     
     def CheckFNRRules(self, Fr, Fa, N):
         check_rules = True
-        val_rules = npy.inf
+        val_rules = math.inf
         for fr, fa, n  in zip(Fr, Fa, N):
             if self.typ_bearing == 'radial_roller_bearing':
                 rules_snr = RadialRollerBearingSNR(self.d, self.D, self.B, self.Z, self.alpha, self.Dpw)
@@ -603,42 +604,35 @@ class RadialBearing(LoadBearing):
         return check_rules, val_rules
     
     def Mass(self):
-        volumes = self.CADVolumes()
-        vol = 0
-        for v in volumes:
-            vol += v.Volume()
-        return vol*7800
+        # TODO: enhance this but without querying CAD volumes!
+        return 7800 * math.pi*self.B*(self.D-self.d) * (self.d+self.D)
 
-    def CADVolumes(self, center = (0,0,0), axis = (1,0,0)):
-        center = vm.Point3D(npy.round(center,6))
-        x = vm.Vector3D(axis)
-        x.vector = x.vector/x.Norm()
+    def CADVolumes(self, center = vm.o3D, axis = vm.x3D):
+        # TODO: mutualization of this in parent class?
+        axis.Normalize()
         
-        y = x.RandomUnitNormalVector()
-        y.vector = npy.round(y.vector,3)
-        y.vector = y.vector/y.Norm() 
-        
-        z=vm.Vector3D(npy.cross(x.vector,y.vector))
+        y = axis.RandomUnitNormalVector()
+        z = axis.Cross(y)
         
         #Internal Ring
-        IRC=self.InternalRingContour()        
-        irc=primitives3D.RevolvedProfile(center, x, z, [IRC], center,
-                                         x,angle=2*math.pi, name='Internal Ring')
+        IRC = self.InternalRingContour()        
+        irc = primitives3D.RevolvedProfile(center, axis, z, [IRC], center,
+                                         axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
         ERC=self.ExternalRingContour()
-        erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center,
-                                         x, angle=2*math.pi,name='External Ring')
+        erc=primitives3D.RevolvedProfile(center,axis, z, [ERC], center,
+                                         axis, angle=2*math.pi,name='External Ring')
         #roller
         ROL=self.RollingContourCAD()
         
         radius=self.F/2.+self.slack+self.Dw/2.
         rollers=[]
-        theta=2*npy.pi/self.Z
+        theta=2*math.pi/self.Z
         
         for zi in range(int(self.Z)):
             center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
-            rollers.append(primitives3D.RevolvedProfile(center_roller, x, z, [ROL],
-                                                    center_roller, x,
+            rollers.append(primitives3D.RevolvedProfile(center_roller, axis, z, [ROL],
+                                                    center_roller, axis,
                                                     angle=2*math.pi,name='Roller {}'.format(zi+1)))
         
         volumes = [irc, erc] + rollers
@@ -807,7 +801,7 @@ class RadialBallBearing(RadialBearing):
         
         # estimation for the graph 2D description
         h1 = self.Dw/2. - (self.E - self.D1)/2.
-        self.h = self.B/2. - self.Dw/2.*npy.sin(npy.arccos(h1/(self.Dw/2.))) - 1e-4
+        self.h = self.B/2. - self.Dw/2.*math.sin(math.acos(h1/(self.Dw/2.))) - 1e-4
         
     def EquivalentStaticLoad(self, fr, fa=None):
         #Charge radiale statique équivalente
@@ -817,16 +811,16 @@ class RadialBallBearing(RadialBearing):
         return P0r
     
     def EquivalentDynamicLoad(self, fr, fa = 0):
-        alphap = fsolve((lambda alphap:npy.cos(5/180*npy.pi)/npy.cos(alphap) \
+        alphap = fsolve((lambda alphap:math.cos(5/180*math.pi)/math.cos(alphap) \
                         -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2) \
-                        *npy.sin(alphap)))**(2/3.))),self.alpha + 1)[0]
+                        *math.sin(alphap)))**(2/3.))),self.alpha + 1)[0]
 #        alphap = 0.001
         ksi = 1.05
-        nu = 1-npy.sin(5/180.*npy.pi)/2.5
-        e = ksi*npy.tan(alphap)
+        nu = 1-math.sin(5/180.*math.pi)/2.5
+        e = ksi*math.tan(alphap)
         X1 = 1-0.4*ksi/nu
         X3 = 1
-        Y1 = 0.4/nu*1/npy.tan(alphap)
+        Y1 = 0.4/nu*1/math.tan(alphap)
         Y3 = 0
         X2 = 1-0.4*ksi/nu
         Y2 = Y1
@@ -887,7 +881,6 @@ class RadialBallBearing(RadialBearing):
         return vm.Contour2D([c1])
     
     def RollingContourCAD(self):
-        
         p0 = vm.Point2D((-self.Dw/2., 0))
         p1 = vm.Point2D((0, self.Dw/2.))
         p2 = vm.Point2D((self.Dw/2., 0))
@@ -904,7 +897,7 @@ class RadialBallBearing(RadialBearing):
         ball_sup.Translation(vm.Vector2D((0, self.Dpw/2.)))
         
         bearing_sup = vm.Contour2D([be_sup, bi_sup, ball_sup])
-        bearing_inf = bearing_sup.Rotation(vm.Point2D((0, 0)), npy.pi, True)
+        bearing_inf = bearing_sup.Rotation(vm.Point2D((0, 0)), math.pi, True)
         
         bg = vm.Contour2D([bearing_sup, bearing_inf])
         return bg
@@ -922,13 +915,13 @@ class RadialBallBearing(RadialBearing):
         ball_sup1 = ball_sup.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(ball_sup1.PlotData('ball_sup', fill = None))
         
-        be_inf = be_sup.Rotation(vm.Point2D((0, 0)), npy.pi, True)
+        be_inf = be_sup.Rotation(vm.Point2D((0, 0)), math.pi, True)
         be_inf1 = be_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(be_inf1.PlotData('be_inf', fill = 'url(#diagonal-stripe-1)'))
-        bi_inf = bi_sup.Rotation(vm.Point2D((0, 0)), npy.pi, True)
+        bi_inf = bi_sup.Rotation(vm.Point2D((0, 0)), math.pi, True)
         bi_inf1 = bi_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(bi_inf1.PlotData('bi_inf', fill = 'url(#diagonal-stripe-1)'))
-        ball_inf = ball_sup.Rotation(vm.Point2D((0, 0)), npy.pi, True)
+        ball_inf = ball_sup.Rotation(vm.Point2D((0, 0)), math.pi, True)
         ball_inf1 = ball_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(ball_inf1.PlotData('ball_inf', fill = None))
         
@@ -977,9 +970,9 @@ class AngularBallBearing(RadialBearing):
         
         # estimation for the graph 2D description
         h1 = self.Dw/2. - (self.E - self.D1)/2.
-        self.h1 = self.B/2. - self.Dw/2.*npy.sin(npy.arccos(h1/(self.Dw/2.))) - 1e-4
+        self.h1 = self.B/2. - self.Dw/2.*math.sin(math.acos(h1/(self.Dw/2.))) - 1e-4
         h2 = 0.95*self.Dw/2.
-        self.h2 = self.B/2. - self.Dw/2.*npy.sin(npy.arccos(h2/(self.Dw/2.))) - 1e-4
+        self.h2 = self.B/2. - self.Dw/2.*math.sin(math.acos(h2/(self.Dw/2.))) - 1e-4
         self.D2 = 0.6*(self.D - self.E) + self.E
         self.d2 = 0.6*(self.F - self.d) + self.d
         
@@ -988,48 +981,48 @@ class AngularBallBearing(RadialBearing):
         if self.i == 1:
             X0 = 0.5
             evol_Y0 = [0.52, 0.5, 0.46, 0.42, 0.38, 0.33, 0.29, 0.26, 0.22]
-            evol_alpha = npy.array([5, 10, 15, 20, 25, 30, 35, 40, 45])/180*npy.pi
+            evol_alpha = npy.array([5, 10, 15, 20, 25, 30, 35, 40, 45])/180*math.pi
             f = interpolate.interp1d(list(evol_alpha),evol_Y0, fill_value='extrapolate')
             Y0 = float(f(self.alpha))
         elif self.i == 2:
             X0 = 1
             evol_Y0 = [1.04, 1, 0.92, 0.84, 0.76, 0.66, 0.58, 0.52, 0.44]
-            evol_alpha = npy.array([5, 10, 15, 20, 25, 30, 35, 40, 45])/180*npy.pi
+            evol_alpha = npy.array([5, 10, 15, 20, 25, 30, 35, 40, 45])/180*math.pi
             f = interpolate.interp1d(list(evol_alpha),evol_Y0, fill_value='extrapolate')
             Y0 = float(f(self.alpha))
         P0r = max(fr,X0*fr+Y0*fa)
         return P0r
     
     def EquivalentDynamicLoad(self, fr, fa = 0):
-        alphap = fsolve((lambda alphap:npy.cos(self.alpha)/npy.cos(alphap) \
-                    -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2)*npy.sin(alphap)))**(2/3.))),self.alpha + 1)[0]
-        if self.alpha <= 5/180.*npy.pi:
+        alphap = fsolve((lambda alphap:math.cos(self.alpha)/math.cos(alphap) \
+                    -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2)*math.sin(alphap)))**(2/3.))),self.alpha + 1)[0]
+        if self.alpha <= 5/180.*math.pi:
             if self.i == 1:
                 ksi = 1.05
             elif self.i == 2:
                 ksi = 1.25
         else:
             ksi = 1.25
-        if self.alpha <= 5/180.*npy.pi:
-            nu = 1-npy.sin(5/180.*npy.pi)/2.5
-        elif self.alpha <= 15/180.*npy.pi:
-            nu = 1-npy.sin(self.alpha)/2.5
+        if self.alpha <= 5/180.*math.pi:
+            nu = 1-math.sin(5/180.*math.pi)/2.5
+        elif self.alpha <= 15/180.*math.pi:
+            nu = 1-math.sin(self.alpha)/2.5
         else:
-            nu = 1-npy.sin(self.alpha)/2.75
-        if self.alpha <= 15/180.*npy.pi:
-            e = ksi*npy.tan(alphap)
+            nu = 1-math.sin(self.alpha)/2.75
+        if self.alpha <= 15/180.*math.pi:
+            e = ksi*math.tan(alphap)
         X1 = 1-0.4*ksi/nu
         X3 = 1
-        if self.alpha <= 15/180.*npy.pi:
-            Y1 = 0.4/nu*1/npy.tan(alphap)
+        if self.alpha <= 15/180.*math.pi:
+            Y1 = 0.4/nu*1/math.tan(alphap)
         else:
-            alpha1 = npy.arccos(npy.cos(self.alpha)*0.9724)
-            Y1 = fsolve((lambda Y1:Y1-(0.4/npy.tan(alpha1))/(1-(1/3.)*npy.sin(alpha1))),1)[0]
-        if self.alpha > 15/180.*npy.pi:
+            alpha1 = math.acos(math.cos(self.alpha)*0.9724)
+            Y1 = fsolve((lambda Y1:Y1-(0.4/math.tan(alpha1))/(1-(1/3.)*math.sin(alpha1))),1)[0]
+        if self.alpha > 15/180.*math.pi:
             e = (1-X1)/Y1
             Y3 = 0.625/e
-        elif self.alpha <= 15/180.*npy.pi:
-            Y3 = 0.625/ksi*(1/npy.tan(alphap))
+        elif self.alpha <= 15/180.*math.pi:
+            Y3 = 0.625/ksi*(1/math.tan(alphap))
         X2 = 1.625*X1
         Y2 = 1.625*Y1
         if self.i == 1:
@@ -1185,10 +1178,10 @@ class SphericalBallBearing(RadialBearing):
         #Charge radiale statique équivalente
         if self.i == 1:
             X0 = 0.5
-            Y0 = 0.22/npy.tan(self.alpha)
+            Y0 = 0.22/math.tan(self.alpha)
         elif self.i == 2:
             X0 = 1
-            Y0 = 0.44/npy.tan(self.alpha)
+            Y0 = 0.44/math.tan(self.alpha)
         P0r = max(fr,X0*fr+Y0*fa)
         return P0r
     
@@ -1196,11 +1189,11 @@ class SphericalBallBearing(RadialBearing):
         alphap = self.alpha
         ksi = 1.5
         nu = 1
-        e = ksi*npy.tan(alphap)
+        e = ksi*math.tan(alphap)
         X1 = 1-0.4*ksi/nu
         X3 = 1
-        Y1 = 0.4/nu*(1/npy.tan(alphap))
-        Y3 = 0.625/ksi*(1/npy.tan(alphap))
+        Y1 = 0.4/nu*(1/math.tan(alphap))
+        Y3 = 0.625/ksi*(1/math.tan(alphap))
         X2 = 1.625*X1
         Y2 = 1.625*Y1
         if self.i == 1:
@@ -1260,7 +1253,7 @@ class RadialRollerBearing(RadialBearing):
         #Charge radiale statique équivalente
         if self.alpha != 0:
             x0 = 0.5*self.i
-            y0 = 0.22*1/npy.tan(self.alpha)*self.i
+            y0 = 0.22*1/math.tan(self.alpha)*self.i
         else:
             x0 = 1
             y0 = 0
@@ -1270,8 +1263,8 @@ class RadialRollerBearing(RadialBearing):
     def EquivalentDynamicLoad(self, fr, fa = 0):
         
         ksi = 1.5 #param of the ISO 1281
-        e = ksi*npy.tan(self.alpha)
-        nu = 1-0.15*npy.sin(self.alpha)
+        e = ksi*math.tan(self.alpha)
+        nu = 1-0.15*math.sin(self.alpha)
         w = self.material.weibull_e*self.coeff_baselife
   
         if self.contact_type == 'point_contact':
@@ -1313,9 +1306,9 @@ class RadialRollerBearing(RadialBearing):
         X2 = 2**(1-(1/w))*X1
         X3 = 1
         if self.alpha > 0:
-            Y1 = Jr0p5*(1/npy.tan(self.alpha))/(J10p5*J20p5)**0.5*1/nu
+            Y1 = Jr0p5*(1/math.tan(self.alpha))/(J10p5*J20p5)**0.5*1/nu
             Y2 = 2**(1-(1/w))*Y1
-            Y3 = 1/ksi*(2**(1-(1/w))-1)*(1/npy.tan(self.alpha))
+            Y3 = 1/ksi*(2**(1-(1/w))-1)*(1/math.tan(self.alpha))
             
         if self.alpha > 0:
             if self.i == 1:
@@ -1458,7 +1451,6 @@ class RadialRollerBearing(RadialBearing):
         return vm.Contour2D([rol])
     
     def RollingContourCAD(self):
-        
         p1 = vm.Point2D((-self.Lw/2., 0))
         p2 = vm.Point2D((-self.Lw/2., self.Dw/2.))
         p3 = vm.Point2D((self.Lw/2., self.Dw/2.))
@@ -1552,7 +1544,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         # estimation for the graph 2D description
         self.Dpw = (self.d + self.D)/2.
         self.Lw = 0.7*self.B
-        self.beta = npy.arctan(self.Dw/self.Dpw*npy.sin(self.alpha))
+        self.beta = math.atan(self.Dw/self.Dpw*math.sin(self.alpha))
         
     def InternalRingContour(self, sign_V=1):
         
@@ -1560,11 +1552,11 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 #        shift_be = 1e-3
         def graph(sign_V, sign_H):
             p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
-            p1 = p0.Translation(vm.Vector2D((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha))), True)
+            p1 = p0.Translation(vm.Vector2D((math.cos(self.alpha), sign_H*sign_V*math.sin(self.alpha))), True)
             l1 = vm.Line2D(p0, p1)
             l1.Rotation(p0, -sign_H*sign_V*self.beta)
-            l1.Translation(vm.Vector2D((0.8*sign_H*self.Dw/2.*npy.sin(self.alpha), -sign_V*0.8*self.Dw/2.*npy.cos(self.alpha))))
-            l2 = l1.Translation(vm.Vector2D((0.2*sign_H*self.Dw/2.*npy.sin(self.alpha), -sign_V*0.2*self.Dw/2.*npy.cos(self.alpha))), True)
+            l1.Translation(vm.Vector2D((0.8*sign_H*self.Dw/2.*math.sin(self.alpha), -sign_V*0.8*self.Dw/2.*math.cos(self.alpha))))
+            l2 = l1.Translation(vm.Vector2D((0.2*sign_H*self.Dw/2.*math.sin(self.alpha), -sign_V*0.2*self.Dw/2.*math.cos(self.alpha))), True)
             pbi3 = vm.Point2D((-sign_H*(self.B/2. - shift_bi), sign_V*self.d/2.))
             pbi3T = pbi3.Translation(vm.Vector2D((0, 1)))
             pbi4 = vm.Point2D((sign_H*(self.B/2.), sign_V*self.d/2.))
@@ -1599,10 +1591,10 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         shift_be = 1e-3
         def graph(sign_V, sign_H):
             p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
-            p1 = p0.Translation(vm.Vector2D((npy.cos(self.alpha), sign_H*sign_V*npy.sin(self.alpha))), True)
+            p1 = p0.Translation(vm.Vector2D((math.cos(self.alpha), sign_H*sign_V*math.sin(self.alpha))), True)
             l0 = vm.Line2D(p0, p1)
             l0.Rotation(p0, sign_H*sign_V*self.beta)
-            l0.Translation(vm.Vector2D((-sign_H*self.Dw/2.*npy.sin(self.alpha), sign_V*self.Dw/2.*npy.cos(self.alpha))))
+            l0.Translation(vm.Vector2D((-sign_H*self.Dw/2.*math.sin(self.alpha), sign_V*self.Dw/2.*math.cos(self.alpha))))
             pbe3 = vm.Point2D((-sign_H*self.B/2., sign_V*self.D/2.))
             pbe3T = pbe3.Translation(vm.Vector2D((0, 1)))
             pbe4 = vm.Point2D((sign_H*(self.B/2. - shift_be), sign_V*self.D/2.))
@@ -1619,25 +1611,27 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         bg = vm.Contour2D([contour])
         return bg
     
-    def CADVolumes(self, center = (0,0,0), axis = (1,0,0)):
-        center = vm.Point3D(npy.round(center,6))
-        x = vm.Vector3D(axis)
-        x.vector = x.vector/x.Norm()
+    def CADVolumes(self, center = vm.o3D, axis = vm.x3D):
+#        center = vm.Point3D(npy.round(center,6))
+#        x = vm.Vector3D(axis)
+#        x.vector = x.vector/x.Norm()
+        axis.Normalize()
         
-        y = x.RandomUnitNormalVector()
-        y.vector = npy.round(y.vector,3)
-        y.vector = y.vector/y.Norm() 
+        y = axis.RandomUnitNormalVector()
+#        y.vector = npy.round(y.vector,3)
+#        y.vector = y.vector/y.Norm() 
         
-        z=vm.Vector3D(npy.cross(x.vector,y.vector))
+#        z=vm.Vector3D(npy.cross(x.vector,y.vector))
+#        z = axis.Cross(y)
         
         #Internal Ring
         IRC=self.InternalRingContour()        
-        irc=primitives3D.RevolvedProfile(center, x, z, [IRC], center,
-                                         x,angle=2*math.pi, name='Internal Ring')
+        irc=primitives3D.RevolvedProfile(center, axis, y, [IRC], center,
+                                         axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
         ERC=self.ExternalRingContour()
-        erc=primitives3D.RevolvedProfile(center,x, z, [ERC], center,
-                                         x, angle=2*math.pi,name='External Ring')
+        erc=primitives3D.RevolvedProfile(center, axis, y, [ERC], center,
+                                         axis, angle=2*math.pi,name='External Ring')
         
         volumes = [irc, erc]
         return volumes
@@ -1647,10 +1641,10 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     def RollingContour(self, sign_V=1):
         
         def graph(sign_V, sign_H):
-            r1 = vm.Point2D((-sign_H*self.Lw/2., self.Dw/2. - self.Lw/2.*npy.tan(self.beta)))
-            r2 = vm.Point2D((sign_H*self.Lw/2., self.Dw/2. + self.Lw/2.*npy.tan(self.beta)))
-            r3 = vm.Point2D((sign_H*self.Lw/2., -self.Dw/2. - self.Lw/2.*npy.tan(self.beta)))
-            r4 = vm.Point2D((-sign_H*self.Lw/2., -self.Dw/2. + self.Lw/2.*npy.tan(self.beta)))
+            r1 = vm.Point2D((-sign_H*self.Lw/2., self.Dw/2. - self.Lw/2.*math.tan(self.beta)))
+            r2 = vm.Point2D((sign_H*self.Lw/2., self.Dw/2. + self.Lw/2.*math.tan(self.beta)))
+            r3 = vm.Point2D((sign_H*self.Lw/2., -self.Dw/2. - self.Lw/2.*math.tan(self.beta)))
+            r4 = vm.Point2D((-sign_H*self.Lw/2., -self.Dw/2. + self.Lw/2.*math.tan(self.beta)))
             rol = primitives2D.RoundedLineSegments2D([r1, r2, r3, r4], {0: self.radius, 
                                                  1: self.radius, 2: self.radius, 3: self.radius}, True)
             return rol
@@ -1764,7 +1758,7 @@ class BearingCombination:
         self.D = 0
         for bg in bearings:
             self.D = max(self.D, bg.D)
-        self.d = npy.inf
+        self.d = math.inf
         for bg in bearings:
             self.d = min(self.d, bg.d)
             
@@ -1939,7 +1933,7 @@ class BearingCombination:
                 nonlinear_linkages.append(link2)
                 axial_bearings.append([link1, link2])
             elif (bg.class_name == 'AngularBallBearing') or (bg.class_name == 'TaperedRollerBearing'):
-                Fp = radial_load/nb_bg_radial*npy.tan(bg.alpha)
+                Fp = radial_load/nb_bg_radial*math.tan(bg.alpha)
                 if bg.direction == -1:
                     link = unidimensional.CompressionSpring(bor, bir, k1, -j1, 'bearing {}'.format(num_bg))
                     nonlinear_linkages.append(link)
@@ -2095,7 +2089,7 @@ class BearingCombination:
     
     def GenereConnection(self, case, bearings, list_node_output):
 
-        list_bg_export = []
+#        list_bg_export = []
 #        list_nx_graph = []
         nx_graph = bearings[0].nx_graph
         for g in nx_graph.edges(data=True):
@@ -2190,9 +2184,9 @@ class BearingCombination:
                                                 target=nd_axial_ring))                        
                     for s in sol:
                         clearance = round(sum([nx_graph.edges[p1, p2]['weight'] for p1, p2 in zip(s[0:-1], s[1:])]), 3)
-                        try:
+                        if clearance in dict_opti:
                             dict_opti[clearance].append(s)
-                        except:
+                        else:
                             dict_opti[clearance] = [[*s]]
                     valid_input = True
                 except nx.NetworkXNoPath:
@@ -2211,7 +2205,7 @@ class BearingCombination:
                 sol = list(nx.all_shortest_paths(nx_graph, source=node_input, 
                                             target=node_output)) 
                 transfert_load.append('right')
-            except:
+            except nx.NetworkXNoPath:
                 pass
         if ('left' in self.connection_be) and ('right' in self.connection_bi):
             node_input = li_node_output[6]
@@ -2220,7 +2214,7 @@ class BearingCombination:
                 sol = list(nx.all_shortest_paths(nx_graph, source=node_input, 
                                             target=node_output)) 
                 transfert_load.append('left')
-            except:
+            except nx.NetworkXNoPath:
                 pass
         
         return valid, transfert_load
@@ -2243,7 +2237,7 @@ class BearingCombination:
         d={}
         for k,v in self.__dict__.items():
             tv=type(v)
-            if tv==npy.int64:
+            if tv == npy.int64:
                 d[k]=int(v)
             elif tv==npy.float64:
                 d[k]=round(float(v), 5)
@@ -2524,14 +2518,15 @@ class BearingAssembly:
                             freecad_lib_path=freecad_lib_path, export_types=export_types)
     
     def Dict(self, subobjects_id = {}, stringify_keys=True):
-        """Export dictionary
+        """
+        Export dictionary
         """
         d={}
         for k,v in self.__dict__.items():
             tv=type(v)
-            if tv==npy.int64:
+            if tv == npy.int64:
                 d[k]=int(v)
-            elif tv==npy.float64:
+            elif tv == npy.float64:
                 d[k]=round(float(v), 5)
             else:
                 d[k]=v
@@ -2617,21 +2612,21 @@ class DetailedRadialRollerBearing(RadialRollerBearing):
         
     def Mass(self):
         rho = 7800
-        m = self.Z*npy.pi*(self.Dw)**2/4.*self.Lw*rho
-        m += (npy.pi*(self.D)**2/4.-npy.pi*(self.E)**2/4.)*self.B*rho
-        m += (npy.pi*(self.F)**2/4.-npy.pi*(self.d)**2/4.)*self.B*rho
+        m = self.Z*math.pi*(self.Dw)**2/4.*self.Lw*rho
+        m += (math.pi*(self.D)**2/4.-math.pi*(self.E)**2/4.)*self.B*rho
+        m += (math.pi*(self.F)**2/4.-math.pi*(self.d)**2/4.)*self.B*rho
         return m
     
     def BaseStaticLoad(self):
         #Charge radiale statique de base
         #besoin de convertir les dimensions en mm pour les formules ISO
-        C0r = 44*(1-(self.Dw*1e3*npy.cos(self.alpha))/(self.Dpw*1e3))*self.i*self.Z \
-                *self.Lwe*1e3*self.Dw*1e3*npy.cos(self.alpha)
+        C0r = 44*(1-(self.Dw*1e3*math.cos(self.alpha))/(self.Dpw*1e3))*self.i*self.Z \
+                *self.Lwe*1e3*self.Dw*1e3*math.cos(self.alpha)
         return C0r
     
     def BaseDynamicLoad(self):
         #Charge radiale dynamique de base
-        mu = float((self.Dwe*1e3)*npy.cos(self.alpha)/(self.Dpw*1e3))
+        mu = float((self.Dwe*1e3)*math.cos(self.alpha)/(self.Dpw*1e3))
         fc = 0.377*self.material.mu_delta*1/((2**((self.material.weibull_c\
                 +self.material.weibull_h-1)/(self.material.weibull_c-self.material.weibull_h+1)))\
                 *(0.5**(2*self.material.weibull_e/(self.material.weibull_c-self.material.weibull_h+1))))\
@@ -2643,7 +2638,7 @@ class DetailedRadialRollerBearing(RadialRollerBearing):
                 +2*self.material.weibull_e-3)/(self.material.weibull_c-self.material.weibull_h+1)))\
                 **((self.material.weibull_c-self.material.weibull_h+1)/2.))\
                 **(-2/(self.material.weibull_c-self.material.weibull_h+1))
-        Cr = fc*self.bm*self.i*((self.Lwe*1e3)*npy.cos(self.alpha))\
+        Cr = fc*self.bm*self.i*((self.Lwe*1e3)*math.cos(self.alpha))\
                 **((self.material.weibull_c-self.material.weibull_h-1)/(self.material.weibull_c\
                 -self.material.weibull_h+1))*self.Z**((self.material.weibull_c\
                 -self.material.weibull_h-2*self.material.weibull_e+1)/(self.material.weibull_c\
