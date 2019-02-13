@@ -14,7 +14,7 @@ from mechanical_components.bearings import RadialBallBearing, AngularBallBearing
         BearingCombinationSimulationResult, BearingSimulationResult, BearingAssemblySimulation
 import numpy as npy
 
-npy.seterr(divide='raise')
+npy.seterr(divide='raise', over='ignore', under='ignore', invalid='ignore')
 
 from scipy.optimize import minimize
 import pandas
@@ -786,8 +786,8 @@ class ContinuousBearingAssemblyOptimizer:
 
     
 class BearingAssemblyOptimizer:
-    dessia_db_attributes = [{'name':'bearing_assembly_simulation_results',
-                             'class':'mechanical_components.bearings.BearingAssemblySimulationResult',
+    dessia_db_attributes = [{'name':'bearing_assembly_simulations',
+                             'class':'mechanical_components.bearings.BearingAssemblySimulation',
                              'type':'list'}]
     
     def __init__(self, loads, speeds, operating_times,
@@ -800,7 +800,7 @@ class BearingAssemblyOptimizer:
                  number_bearings=[[1, 2], [1, 2]],
                  sort_arg = {'min': 'mass'},
                  number_solutions=[-1, -1, 10],
-                 bearing_assembly_simulation_results=None):
+                 bearing_assembly_simulations=None):
         self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
@@ -813,7 +813,7 @@ class BearingAssemblyOptimizer:
         self.number_bearings = number_bearings
         self.sort_arg = sort_arg
         self.number_solutions = number_solutions
-        self.bearing_assembly_simulation_results = bearing_assembly_simulation_results
+        self.bearing_assembly_simulations = bearing_assembly_simulations
         
     def Optimize(self):
         
@@ -826,7 +826,7 @@ class BearingAssemblyOptimizer:
                                          mounting_types=self.mounting_types,
                                          number_bearings=self.number_bearings)
 
-        print(DBA.bearing_combination_configurations)
+#        print(DBA.bearing_combination_configurations)
         sol_BC = {}
         for num_mounting, num_linkage, linkage, behavior_link, nb_rlts in DBA.bearing_combination_configurations:
             if num_mounting not in sol_BC.keys():
@@ -868,9 +868,9 @@ class BearingAssemblyOptimizer:
                                                  outer_diameter=self.outer_diameter,
                                                  length=self.length,
                                                  number_solutions=self.number_solutions[0])
-        bearing_assembly_simulation_results = CBA.Search()
+        bearing_assembly_simulations = CBA.Search()
         
-        self.bearing_assembly_simulation_results = bearing_assembly_simulation_results
+        self.bearing_assembly_simulations = bearing_assembly_simulations
         
     def Dict(self, subobjects_id = {}, stringify_keys=True):
         """
@@ -885,16 +885,16 @@ class BearingAssemblyOptimizer:
                 d[k]=round(float(v), 5)
             else:
                 d[k] = v
-        if self.bearing_assembly_simulation_results is not None:
+        if self.bearing_assembly_simulations is not None:
             bar_dict = []
-            for bar in self.bearing_assembly_simulation_results:
+            for bar in self.bearing_assembly_simulations:
                 if bar in subobjects_id:
                     bar_dict.append(subobjects_id[bar])
                 else:                
                     bar_dict.append(bar.Dict())
         else:
             bar_dict = None
-        d['bearing_assembly_simulation_results'] = bar_dict
+        d['bearing_assembly_simulations'] = bar_dict
                 
         if stringify_keys:
             return StringifyDictKeys(d)
@@ -904,12 +904,12 @@ class BearingAssemblyOptimizer:
     @classmethod
     def DictToObject(cls, d):
         
-        if 'bearing_assembly_simulation_results' in d:
-            if d['bearing_assembly_simulation_results'] is None:
+        if 'bearing_assembly_simulations' in d:
+            if d['bearing_assembly_simulations'] is None:
                 li_bar = None
             else:
                 li_bar = []
-                for bar in d['bearing_assembly_simulation_results']:
+                for bar in d['bearing_assembly_simulations']:
                     li_bar.append(BearingAssemblySimulation.DictToObject(bar))
         else:
             li_bar = None
@@ -926,5 +926,5 @@ class BearingAssemblyOptimizer:
                  number_bearings = d['number_bearings'],
                  sort_arg = d['sort_arg'],
                  number_solutions = d['number_solutions'],
-                 bearing_assembly_simulation_results = li_bar)
+                 bearing_assembly_simulations = li_bar)
         return obj

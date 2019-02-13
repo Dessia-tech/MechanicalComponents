@@ -1,5 +1,5 @@
 import numpy as npy
-npy.seterr(divide='raise')
+npy.seterr(divide='raise', over='ignore', under='ignore')
 #import math as mt
 from scipy import interpolate
 #import os
@@ -732,7 +732,7 @@ class RadialBearing(LoadBearing):
         elif typ == 'Load':
             self.PlotLoad(a)
 
-    def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
+    def VolumeModel(self, center = vm.o3D, axis = vm.x3D):
         model=vm.VolumeModel([(self.name, self.CADVolumes(center, axis))])
         return model   
     
@@ -811,9 +811,9 @@ class RadialBallBearing(RadialBearing):
         return P0r
     
     def EquivalentDynamicLoad(self, fr, fa = 0):
-        alphap = fsolve((lambda alphap:math.cos(5/180*math.pi)/math.cos(alphap) \
-                        -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2) \
-                        *math.sin(alphap)))**(2/3.))),self.alpha + 1)[0]
+        alphap = fsolve((lambda alphap:math.cos(5/180.*math.pi)/math.cos(alphap) \
+                        -(1.+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2) \
+                        *math.sin(alphap)))**(2/3.))),self.alpha + 1.)[0]
 #        alphap = 0.001
         ksi = 1.05
         nu = 1-math.sin(5/180.*math.pi)/2.5
@@ -1612,9 +1612,6 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         return bg
     
     def CADVolumes(self, center = vm.o3D, axis = vm.x3D):
-#        center = vm.Point3D(npy.round(center,6))
-#        x = vm.Vector3D(axis)
-#        x.vector = x.vector/x.Norm()
         axis.Normalize()
         
         y = axis.RandomUnitNormalVector()
@@ -2227,7 +2224,7 @@ class BearingCombination:
         position = self.axial_positions
         
         for bearing in self.bearings:
-            groups.append((bearing.name, bearing.CADVolumes(center=(position, 0, 0))))
+            groups.append((bearing.name, bearing.CADVolumes(center=vm.Point3D((position, 0, 0)))))
             position += bearing.B
         model=vm.VolumeModel(groups)        
         return model   
@@ -2379,8 +2376,9 @@ class BearingAssembly:
         loads = bearing_assembly_simulation_result.loads
         valid_axial_load = True
         for ind_load_case, load_cases in enumerate(loads):
+            
             axial_load = 0
-            for pos, ld, tq in load_cases:    
+            for (pos, ld, tq) in load_cases:    
                 axial_load += ld[0]
             valid = False
             for bc in self.bearing_combinations:
@@ -2508,7 +2506,7 @@ class BearingAssembly:
             position = combination_position
             
             for bearing in combination.bearings:
-                groups.append((bearing.name, bearing.CADVolumes(center=(position, 0, 0))))
+                groups.append((bearing.name, bearing.CADVolumes(center=vm.Point3D((position, 0, 0)))))
                 position += bearing.B
         model=vm.VolumeModel(groups)        
         return model   
@@ -2840,51 +2838,6 @@ class DetailedSphericalRollerBearing(DetailedRadialRollerBearing):
 ##                 self.sort, self.sort_arg, self.path, self.nb_sol)
 ##        return obj
 
-    
-class BearingAssemblySimulation:
-    dessia_db_attributes = [{'name':'bearing_assembly',
-                             'class':'mechanical_components.bearings.BearingAssembly',
-                             'type':'object'},
-                            {'name':'bearing_assembly_simulation_result',
-                             'class':'mechanical_components.bearings.BearingAssemblySimulationResult',
-                             'type':'object'}]
-    def __init__(self, bearing_assembly,
-                 bearing_assembly_simulation_result=None):
-        self.bearing_assembly = bearing_assembly
-        self.bearing_assembly_simulation_result = bearing_assembly_simulation_result
-        
-    def Dict(self, subobjects_id = {}, stringify_keys=True):
-        """
-        Export dictionary
-        """
-        d = {}
-        for k,v in self.__dict__.items():
-            tv = type(v)
-            if tv == npy.int64:
-                d[k] = int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k] = v
-                
-        d['bearing_assembly'] = self.bearing_assembly.Dict(subobjects_id)
-        d['bearing_assembly_simulation_result'] = self.bearing_assembly_simulation_result.Dict(subobjects_id)
-                
-        if stringify_keys:
-            return StringifyDictKeys(d)
-
-        return d
-    
-    @classmethod
-    def DictToObject(cls, d):
-        BA = BearingAssembly.DictToObject(d['bearing_assembly'])
-        BAS = BearingAssemblySimulationResult.DictToObject(d['bearing_assembly_simulation_result'])
-            
-        obj = cls(bearing_assembly = BA, 
-                  bearing_assembly_simulation_result = BAS)
-        
-        return obj
-    
 class BearingSimulationResult:
     def __init__(self, axial_load=None, radial_load=None, L10=None):
         if axial_load is None:
@@ -2921,10 +2874,9 @@ class BearingSimulationResult:
                   radial_load = d['radial_load'], 
                   L10 = d['L10'])
         return obj
-    
-    
+
 class BearingCombinationSimulationResult:
-    dessia_db_attributes = [{'name':'bearing_combination_simulation_results',
+    dessia_db_attributes = [{'name':'bearing_simulation_results',
                              'class':'mechanical_components.bearings.BearingSimulationResult',
                              'type':'list'}]
 
@@ -2977,8 +2929,8 @@ class BearingCombinationSimulationResult:
     
 class BearingAssemblySimulationResult:
     dessia_db_attributes = [{'name':'bearing_combination_simulation_results',
-                         'class':'mechanical_components.bearings.BearingCombinationSimulationResult',
-                         'type':'list'}]
+                             'class':'mechanical_components.bearings.BearingCombinationSimulationResult',
+                             'type':'list'}]
 
     def __init__(self, bearing_combination_simulation_results, 
                  loads, speeds, operating_times, 
@@ -3022,6 +2974,7 @@ class BearingAssemblySimulationResult:
     
     @classmethod
     def DictToObject(cls, d):  
+#        print(d)
         li_bc = []
         for bc in d['bearing_combination_simulation_results']:
             li_bc.append(BearingCombinationSimulationResult.DictToObject(bc))
@@ -3031,3 +2984,59 @@ class BearingAssemblySimulationResult:
                   operating_times = d['operating_times'],
                   L10 = d['L10'])
         return obj
+
+    
+class BearingAssemblySimulation:
+    dessia_db_attributes = [{'name':'bearing_assembly',
+                             'class':'mechanical_components.bearings.BearingAssembly',
+                             'type':'object'},
+                            {'name':'bearing_assembly_simulation_result',
+                             'class':'mechanical_components.bearings.BearingAssemblySimulationResult',
+                             'type':'object'}]
+    def __init__(self, bearing_assembly,
+                 bearing_assembly_simulation_result=None):
+        self.bearing_assembly = bearing_assembly
+        self.bearing_assembly_simulation_result = bearing_assembly_simulation_result
+        
+    def Dict(self, subobjects_id = {}, stringify_keys=True):
+        """
+        Export dictionary
+        """
+        d = {}
+        for k,v in self.__dict__.items():
+            tv = type(v)
+            if tv == npy.int64:
+                d[k] = int(v)
+            elif tv==npy.float64:
+                d[k]=round(float(v), 5)
+            else:
+                d[k] = v
+                
+        if self.bearing_assembly in subobjects_id:
+            d['bearing_assembly'] = subobjects_id[self.bearing_assembly]
+        else:
+            d['bearing_assembly'] = self.bearing_assembly.Dict(subobjects_id)
+        
+        if self.bearing_assembly_simulation_result in subobjects_id:
+            d['bearing_assembly_simulation_result'] = subobjects_id[self.bearing_assembly_simulation_result]
+        else:
+            d['bearing_assembly_simulation_result'] = self.bearing_assembly_simulation_result.Dict(subobjects_id)
+                
+        if stringify_keys:
+            return StringifyDictKeys(d)
+
+        return d
+    
+    @classmethod
+    def DictToObject(cls, d):
+        BA = BearingAssembly.DictToObject(d['bearing_assembly'])
+        BAS = BearingAssemblySimulationResult.DictToObject(d['bearing_assembly_simulation_result'])
+            
+        obj = cls(bearing_assembly = BA, 
+                  bearing_assembly_simulation_result = BAS)
+        
+        return obj
+    
+
+    
+    
