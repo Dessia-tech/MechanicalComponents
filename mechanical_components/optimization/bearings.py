@@ -248,7 +248,8 @@ class RollerBearingContinuousOptimizer:
 
                             print('Lnm: {}, specification: {}'.format(lnm, Lnm))
                             
-with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
+with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                                   'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
     pandas_rlts_FNR = pandas.read_csv(rlts_FNR) 
             
 pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]
@@ -259,6 +260,7 @@ pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
 pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
 pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
 base_bearing = pandas_sort
+
 
 class DiscreteBearingCombinationOptimizer:
     
@@ -398,6 +400,7 @@ class DiscreteBearingCombinationOptimizer:
             direction = (code_bearing.split('_')[1] == 'left' and 1 or -1)
             return TaperedRollerBearing(d, D, B, i, Z, Dw, alpha, 
                                                Cr, C0r, mass = mass, direction = direction)
+  
     
     def SearchCatalog(self, d, D, length, list_bearing=None, 
                constraint=[{'typ':'equal','var':'d'}, {'typ':'equal','var':'D'}],
@@ -484,8 +487,8 @@ class DiscreteBearingCombinationOptimizer:
             return list_bearing
         
 class SortBearingCombinationOptimizer:
+    
     def __init__(self, bearing_combinations, sort_arg={'min':'mass'}, number_solutions=10):
-        
         bearing_combinations_sort = self.Sortarchitectures(bearing_combinations, sort_arg)
         self.check = False
         if len(bearing_combinations_sort) > 0:
@@ -514,10 +517,10 @@ class SortBearingCombinationOptimizer:
     
 class DiscreteBearingAssemblyOptimizer:
     def __init__(self, loads, speeds, operating_times,
-                 inner_diameter=[0.02, 0.02],
-                 axial_positions=[0, 0.1],
-                 outer_diameter=[0.05, 0.05],
-                 length=[0.04, 0.04],
+                 inner_diameter,
+                 axial_positions,
+                 outer_diameter,
+                 length,
                  linkage_types=[['both'], ['both']],
                  mounting_types=None,
                  number_bearings=[[1, 2], [1, 2]]):
@@ -579,10 +582,10 @@ class DiscreteBearingAssemblyOptimizer:
     
 class ContinuousBearingAssemblyOptimizer:
     def __init__(self, bearing_assemblies, loads, speeds, operating_times,
-                 inner_diameter=[0.02, 0.02],
-                 axial_positions=[0, 0.1],
-                 outer_diameter=[0.05, 0.05],
-                 length=[0.04, 0.04],
+                 inner_diameter,
+                 axial_positions,
+                 outer_diameter,
+                 length,
                  number_solutions=5):
         
         self.inner_diameter = inner_diameter
@@ -788,12 +791,12 @@ class BearingAssemblyOptimizer:
                              'type':'list'}]
     
     def __init__(self, loads, speeds, operating_times,
-                 inner_diameter=[0.02, 0.02],
-                 axial_positions=[0, 0.1],
-                 outer_diameter=[0.05, 0.05],
-                 length=[0.04, 0.04],
-                 linkage_types=[['both'], ['both']],
-                 mounting_types=None,
+                 inner_diameter,
+                 axial_positions,
+                 outer_diameter,
+                 length,
+                 linkage_types = [['both'], ['both']],
+                 mounting_types = None,
                  number_bearings=[[1, 2], [1, 2]],
                  sort_arg = {'min': 'mass'},
                  number_solutions=[-1, -1, 10],
