@@ -521,7 +521,7 @@ class DiscreteBearingAssemblyOptimizer:
                  axial_positions,
                  outer_diameter,
                  length,
-                 linkage_types=[['both'], ['both']],
+                 linkage_types=[['all'], ['all']],
                  mounting_types=None,
                  number_bearings=[[1, 2], [1, 2]]):
         
@@ -555,7 +555,7 @@ class DiscreteBearingAssemblyOptimizer:
     def CombinationOptimize(self):
         list_linkage = self.linkage_types 
         for num_link,list_link in enumerate(self.linkage_types):
-            if 'both' in list_link:
+            if 'all' in list_link:
                 list_linkage[num_link] = ['ball_joint', 'cylindric_joint']
 
         bearing_combination_configurations = []
@@ -795,7 +795,7 @@ class BearingAssemblyOptimizer:
                  axial_positions,
                  outer_diameter,
                  length,
-                 linkage_types = [['both'], ['both']],
+                 linkage_types = [['all'], ['all']],
                  mounting_types = None,
                  number_bearings=[[1, 2], [1, 2]],
                  sort_arg = {'min': 'mass'},
@@ -826,7 +826,6 @@ class BearingAssemblyOptimizer:
                                          mounting_types=self.mounting_types,
                                          number_bearings=self.number_bearings)
 
-        print(DBA.bearing_combination_configurations)
         sol_BC = {}
         for num_mounting, num_linkage, linkage, behavior_link, nb_rlts in DBA.bearing_combination_configurations:
             if num_mounting not in sol_BC.keys():
