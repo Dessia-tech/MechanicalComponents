@@ -753,6 +753,7 @@ class RadialBearing(LoadBearing):
 
         d['material'] = self.material.Dict()
         d['oil'] = self.oil.Dict()
+        d['mass'] = self.mass
         
         if 'load_bearing_results' in d:
             load_bearing_results = []

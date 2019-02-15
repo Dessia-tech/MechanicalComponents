@@ -826,10 +826,7 @@ class BearingAssemblyOptimizer:
                                          mounting_types=self.mounting_types,
                                          number_bearings=self.number_bearings)
 
-<<<<<<< HEAD
-#        print(DBA.bearing_combination_configurations)
-=======
->>>>>>> 32fdc680401492431c050829551ad06f5abf44ad
+
         sol_BC = {}
         for num_mounting, num_linkage, linkage, behavior_link, nb_rlts in DBA.bearing_combination_configurations:
             if num_mounting not in sol_BC.keys():
