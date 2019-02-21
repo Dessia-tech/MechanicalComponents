@@ -19,7 +19,7 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
                     axial_positions = [0, 0.1], 
                     outer_diameters = [0.1, 0.1], 
                     lengths = [0.09, 0.08],
-                    linkage_types = [['all'], ['cylindric_joint']],
+                    linkage_types = [['cylindric_joint', 'ball_joint'], ['cylindric_joint']],
                     mounting_types = [['left', 'right'], ['free', 'both']],
                     number_bearings = [[1, 2], [1, 2]])
 
@@ -29,7 +29,7 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
 
 
 # Test
-dba_opt = bearings_opt.DiscreteBearingAssemblyOptimizer()
+#dba_opt = bearings_opt.DiscreteBearingAssemblyOptimizer()
 
 
 bearing_assembly_opt.Optimize()

@@ -474,7 +474,7 @@ class LoadBearing:
 #        return plot_data
             
 class RadialBearing(LoadBearing):
-    symetrical = None
+    symmetric = None
     taking_left_loads = None
     taking_right_loads = None
     linkage = None
@@ -796,7 +796,7 @@ class RadialBearing(LoadBearing):
 #    #Butée axiale à rouleaux avec cage intégrée
 #    
 class RadialBallBearing(RadialBearing):
-    symetrical = True
+    symmetric = True
     taking_left_loads = True
     taking_right_loads = True
     linkage = 'ball'
@@ -969,7 +969,7 @@ class RadialBallBearing(RadialBearing):
         return obj
         
 class AngularBallBearing(RadialBearing):
-    symetrical = False
+    symmetric = False
     taking_left_loads = True# TODO check this
     taking_right_loads = False
     linkage = 'ball_joint'
@@ -1174,7 +1174,7 @@ class AngularBallBearing(RadialBearing):
         return obj
             
 class SphericalBallBearing(RadialBearing):
-    symetrical = True
+    symmetric = True
     taking_left_loads = True
     taking_right_loads = True
     linkage = 'ball_joint'
@@ -1246,7 +1246,7 @@ class SphericalBallBearing(RadialBearing):
         return obj
             
 class RadialRollerBearing(RadialBearing):
-    symetrical = True
+    symmetric = True
     linkage = 'cylindric'
     
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -1542,7 +1542,7 @@ class RadialRollerBearing(RadialBearing):
     
     
 class NUPRadialRollerBearing(RadialRollerBearing):
-    symetrical = True
+    symmetric = True
     taking_left_loads = True
     taking_right_loads = True
     
@@ -1593,7 +1593,7 @@ class NUPRadialRollerBearing(RadialRollerBearing):
         return erc
         
 class NRadialRollerBearing(RadialRollerBearing):
-    symetrical = True
+    symmetric = True
     taking_left_loads = False
     taking_right_loads = False
     
@@ -1641,7 +1641,7 @@ class NRadialRollerBearing(RadialRollerBearing):
         
         
 class NFRadialRollerBearing(RadialRollerBearing):
-    symetrical = True
+    symmetric = True
     taking_left_loads = False
     taking_right_loads = True
     
@@ -1692,7 +1692,7 @@ class NFRadialRollerBearing(RadialRollerBearing):
         return erc
         
 class NURadialRollerBearing(RadialRollerBearing):
-    symetrical = True
+    symmetric = True
     taking_left_loads = False
     taking_right_loads = False
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -1736,7 +1736,7 @@ class NURadialRollerBearing(RadialRollerBearing):
         return erc
     
 class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
-    symetrical = False
+    symmetric = False
     taking_left_loads = True
     taking_right_loads = False
     linkage = 'cylindric_joint'
@@ -1934,7 +1934,15 @@ bearing_classes = [RadialBallBearing, AngularBallBearing, SphericalBallBearing,
                    NUPRadialRollerBearing, NRadialRollerBearing, 
                    NFRadialRollerBearing, NURadialRollerBearing,
                    TaperedRollerBearing]
- 
+
+class ConceptualBearingCombination:
+    def __init__(self, bearing_classes, directions):
+        self.bearing_classes = bearing_classes
+        self.directions = directions
+
+    def HasFreeParts(self):
+        return False
+
 class BearingCombination:
     
     dessia_db_attributes = [{'name':'bearings',
