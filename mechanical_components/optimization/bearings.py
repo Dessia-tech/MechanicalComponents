@@ -461,17 +461,22 @@ class BearingAssemblyOptimizer:
             nb_bearings_right = len(conceptual_bearing_combination_right.bearing_classes)
             nb_bearings = nb_bearings_left + nb_bearings_right
             
+            if len(first_bearing_left_possibilies) == 0 or len(first_bearing_right_possibilies) == 0:
+                continue
+            
             # selection of the best first_bearing_left_possibilies
             bearing_left_possibilies, bearings_left_max = self.SelectBestBearingCombinations(first_bearing_left_possibilies,
                                                conceptual_bearing_combination_left,
                                                [r/(1.*nb_bearings_left) for r in radial_load_left],
-                                               L10_objective/2.)
+                                               L10_objective)
+#            bearing_left_possibilies = first_bearing_left_possibilies
                     
             # selection of the best first_bearing_right_possibilies
             bearing_right_possibilies, bearings_right_max = self.SelectBestBearingCombinations(first_bearing_right_possibilies,
                                                conceptual_bearing_combination_right,
                                                [r/(1.*nb_bearings_right) for r in radial_load_right],
-                                               L10_objective/2.)
+                                               L10_objective)
+#            bearing_right_possibilies = first_bearing_right_possibilies
             
             bc_left = conceptual_bearing_combination_left.BearingCombination(bearings_left_max)
             bc_right = conceptual_bearing_combination_right.BearingCombination(bearings_right_max)
@@ -492,9 +497,9 @@ class BearingAssemblyOptimizer:
                                         bearing_assembly_simulation_result)
             L10 = bearing_assembly_simulation_result.L10
             if L10 < L10_objective:
-                compt_continue += 1
-                if compt_continue > 10:
-                    break
+#                compt_continue += 1
+#                if compt_continue > 10:
+#                    break
                 continue
                         
             list_bearing_possibilities = [0]*nb_bearings
@@ -518,6 +523,11 @@ class BearingAssemblyOptimizer:
                         D = bearing.D
                         B_left += bearing.B
                         
+                        # a supprimer suite MAJ de la base rlts
+                        if d > D:
+                            valid = False
+                            break
+                        
                     elif depth < nb_bearings_left:
                         bearing_classe = conceptual_bearing_combination_left.bearing_classes[depth]
                         bearing_possibilities = list_bearing_possibilities[depth]
@@ -531,9 +541,9 @@ class BearingAssemblyOptimizer:
                         d_right = d
                         D = bearing.D
                         B_right += bearing.B
-                        if d_right < d_left:
-                            valid = False
-                            break
+#                        if d_right < d_left:
+#                            valid = False
+#                            break
                         
                     elif depth < nb_bearings:
                         bearing_classe = conceptual_bearing_combination_right.bearing_classes[depth - nb_bearings_left]
@@ -542,6 +552,11 @@ class BearingAssemblyOptimizer:
                         B_right += bearing.B
                     
                     Cr_current_node.append(bearings[-1].Cr)
+                    
+                    # a supprimer suite MAJ base rlts
+                    if Cr_current_node[-1] < 1e-3:
+                        valid = False
+                        break
                     
                     if len(list_Cr) > 0:
                         if Cr_current_node[-1] < min([cr[depth] for cr in list_Cr]):
