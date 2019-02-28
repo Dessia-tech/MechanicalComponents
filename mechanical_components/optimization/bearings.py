@@ -496,16 +496,20 @@ class BearingAssemblyOptimizer:
             bearing_assembly.ShaftLoad([(pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.], 
                                         bearing_assembly_simulation_result)
             L10 = bearing_assembly_simulation_result.L10
+
             if L10 < L10_objective:
-#                compt_continue += 1
-#                if compt_continue > 10:
-#                    break
+                compt_continue += 1
+#                print('number of test {} with L10 {}'.format(compt_continue, L10))
+                if compt_continue > 30:
+                    break
                 continue
                         
             list_bearing_possibilities = [0]*nb_bearings
             list_Cr = []
 
             compt_same_configuration = 0
+            compt_nb_eval_L10 = 0
+            Cr_current_node_m = []
             while not dt.finished:
                 # Constructing BearingCombination
                 valid = True
@@ -513,6 +517,7 @@ class BearingAssemblyOptimizer:
                 B_left = 0
                 B_right = 0
                 Cr_current_node = []
+                
                 
                 for depth, node in enumerate(dt.current_node):
                     if depth == 0:
@@ -541,9 +546,9 @@ class BearingAssemblyOptimizer:
                         d_right = d
                         D = bearing.D
                         B_right += bearing.B
-#                        if d_right < d_left:
-#                            valid = False
-#                            break
+                        if d_right < d_left:
+                            valid = False
+                            break
                         
                     elif depth < nb_bearings:
                         bearing_classe = conceptual_bearing_combination_right.bearing_classes[depth - nb_bearings_left]
@@ -552,9 +557,13 @@ class BearingAssemblyOptimizer:
                         B_right += bearing.B
                     
                     Cr_current_node.append(bearings[-1].Cr)
+                    if len(Cr_current_node_m) > 0:
+                        if Cr_current_node[-1] == Cr_current_node_m[depth]:
+                            valid = False
+                            break
                     
                     # a supprimer suite MAJ base rlts
-                    if Cr_current_node[-1] < 1e-3:
+                    if Cr_current_node[-1] < 20:
                         valid = False
                         break
                     
@@ -567,9 +576,14 @@ class BearingAssemblyOptimizer:
                         
                     if (B_left > self.lengths[0]) or (B_right > self.lengths[1]):
                         valid = False
+                        
+                    if Cr_current_node_m == Cr_current_node:
+                        valid = False
+                    Cr_current_node_m = Cr_current_node
     
                 if (dt.current_depth == nb_bearings) and valid:
                     
+                    print(1)
                     bc_left = conceptual_bearing_combination_left.BearingCombination(bearings[0: nb_bearings_left])
                     bc_right = conceptual_bearing_combination_right.BearingCombination(bearings[nb_bearings_left:])
                     bearing_assembly = BearingAssembly([bc_left, bc_right])
@@ -588,10 +602,13 @@ class BearingAssemblyOptimizer:
                     bearing_assembly.ShaftLoad([(pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.], 
                                                 bearing_assembly_simulation_result)
                     L10 = bearing_assembly_simulation_result.L10
-                    
+                    print(L10)
                     if L10 < L10_objective:
-#                        print(L10, L10_objective, Cr_current_node, dt.current_node)
+                        print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
                         valid = False
+                        compt_nb_eval_L10 += 1
+                        if compt_nb_eval_L10 > 100:
+                            break
                         
                         def funct(alpha):
                             bgs = [deepcopy(bg) for bg in bearings]
@@ -619,7 +636,7 @@ class BearingAssemblyOptimizer:
                             return (L10 - L10_objective)**2
                         
                         valid_fsolve = False
-                        for i in range(5):
+                        for i in range(2):
                             cond_init = npy.random.random(1)*1e4
                             sol = fsolve(funct, cond_init[0])[0]
                             if funct([sol]) < 1e-4:
@@ -641,6 +658,7 @@ class BearingAssemblyOptimizer:
                                 valid_Cr = False
                         if valid_Cr:
                             list_Cr.append(Cr_current_node_max)
+#                        print(list_Cr)
                             
                 # Testing
                 if valid:
