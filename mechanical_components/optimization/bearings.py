@@ -16,7 +16,7 @@ from mechanical_components.bearings import RadialBallBearing, AngularBallBearing
         BearingAssemblySimulationResult, \
         BearingCombinationSimulationResult, BearingSimulationResult,\
         BearingAssemblySimulation, bearing_classes, dict_bearing_classes, \
-        ConceptualBearingCombination, BearingCatalogue
+        ConceptualBearingCombination, BearingCatalog, generic_catalog
         
 import numpy as npy
 
@@ -345,7 +345,8 @@ class BearingAssemblyOptimizer:
                                              ['both', 'right', 'left', 'free'])),
                  number_bearings=[[1, 2], [1, 2]],
                  bearing_classes=bearing_classes,
-                 bearing_assembly_simulations=None):
+                 bearing_assembly_simulations=None,
+                 catalog=generic_catalog):
         self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
@@ -358,7 +359,7 @@ class BearingAssemblyOptimizer:
         self.number_bearings = number_bearings
         self.bearing_classes = bearing_classes
         self.bearing_assembly_simulations = bearing_assembly_simulations
-        self.bearing_catalogue = BearingCatalogue()
+        self.bearing_catalogue = catalog
         
     def Configurations(self):
         configurations = []
@@ -447,16 +448,18 @@ class BearingAssemblyOptimizer:
         radial_load_left, radial_load_right = radial_load
         left, right = mounting
         
-        compt_continue = 0
+#        compt_continue = 0
         for conceptual_bearing_combination_left, conceptual_bearing_combination_right in \
                 product(*bearing_combinations_possibility):
                     
             dt = DecisionTree()
             
             first_bearing_left_possibilies = self.bearing_catalogue\
-                .SearchBearingCatalogue(conceptual_bearing_combination_left.bearing_classes[0], self.inner_diameters[0], self.outer_diameters[0])
+                .SearchBearingCatalog(conceptual_bearing_combination_left.bearing_classes[0],
+                                        self.inner_diameters[0], self.outer_diameters[0])
             first_bearing_right_possibilies = self.bearing_catalogue\
-                .SearchBearingCatalogue(conceptual_bearing_combination_right.bearing_classes[0], self.inner_diameters[1], self.outer_diameters[1])
+                .SearchBearingCatalog(conceptual_bearing_combination_right.bearing_classes[0],
+                                        self.inner_diameters[1], self.outer_diameters[1])
             nb_bearings_left = len(conceptual_bearing_combination_left.bearing_classes)
             nb_bearings_right = len(conceptual_bearing_combination_right.bearing_classes)
             nb_bearings = nb_bearings_left + nb_bearings_right

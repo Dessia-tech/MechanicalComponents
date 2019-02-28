@@ -276,91 +276,7 @@ class LoadBearing:
             load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
             load_arrow.MPLPlot(a,'-b', True, width = B/10./max_load*external_ring_load)
             
-# TODO: check if following is unused
-            
-#    def PlotDataLoad(self, pos, d, D, B, d1, D1, ind_load_case=0):
-#        
-#        list_node = self.load_bearing_results[ind_load_case].list_node
-#        delta_1 = (D - D1)/10.
-#        delta_2 = (d1 - d)/10.
-#        positions = {}
-#        positions[list_node[0]] = vm.Point2D((-B/2., D/2. - delta_1))
-#        positions[list_node[1]] = vm.Point2D((-B/2., D/2. - 3*delta_1))
-#        positions[list_node[2]] = vm.Point2D((-B/2., d/2. + 3*delta_2))
-#        positions[list_node[3]] = vm.Point2D((-B/2., d/2. + delta_2))
-#        positions[list_node[4]] = vm.Point2D((B/2., D/2. - delta_1))
-#        positions[list_node[5]] = vm.Point2D((B/2., D/2. - 3*delta_1))
-#        positions[list_node[6]] = vm.Point2D((B/2., d/2. + 3*delta_2))
-#        positions[list_node[7]] = vm.Point2D((B/2., d/2. + delta_2))
-#        
-#        max_load = 0
-#        for nd in list_node:
-#            if nd.load is not None:
-#                max_load = max(nd.load, max_load)        
-#        
-#        li_data = []
-#        if (self.direction == 1) or (self.load_bearing_results[ind_load_case].sub_direction == 1):
-#            if transversale_load != 0:
-#                line1 = vm.LineSegment2D(positions[list_node[3]], positions[list_node[5]])
-#                line1.Translation(vm.Vector2D((pos, 0)))
-#                li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
-#                                              dash = False, opacity = 0.3, 
-#                                              width = B/10./max_load*transversale_load, 
-#                                              marker = 'triangle_load'))
-#                line2 = vm.LineSegment2D(positions[list_node[4]], positions[list_node[2]])
-#                line2.Translation(vm.Vector2D((pos, 0)))
-#                li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
-#                                              dash = False, opacity = 0.3, 
-#                                              width = B/10./max_load*transversale_load, 
-#                                              marker = 'triangle_load'))
-#        elif (self.direction == -1) or (self.load_bearing_results[ind_load_case].sub_direction == -1):
-#            if transversale_load != 0:
-#                line1 = vm.LineSegment2D(positions[list_node[6]], positions[list_node[0]])
-#                line1.Translation(vm.Vector2D((pos, 0)))
-#                li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
-#                                              dash = False, opacity = 0.3, 
-#                                              width = B/10./max_load*transversale_load, 
-#                                              marker = 'triangle_load'))
-#                line2 = vm.LineSegment2D(positions[list_node[1]], positions[list_node[7]])
-#                line2.Translation(vm.Vector2D((pos, 0)))
-#                li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
-#                                              dash = False, opacity = 0.3, 
-#                                              width = B/10./max_load*transversale_load, 
-#                                              marker = 'triangle_load'))
-#        if internal_ring_load != 0:
-#            line1 = vm.LineSegment2D(positions[list_node[3]], positions[list_node[7]])
-#            line1.Translation(vm.Vector2D((pos, 0)))
-#            li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
-#                                          dash = False, opacity = 0.3, 
-#                                          width = B/10./max_load*transversale_load, 
-#                                          marker = 'triangle_load'))
-#            line2 = vm.LineSegment2D(positions[list_node[6]], positions[list_node[2]])
-#            line2.Translation(vm.Vector2D((pos, 0)))
-#            li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
-#                                          dash = False, opacity = 0.3, 
-#                                          width = B/10./max_load*transversale_load, 
-#                                          marker = 'triangle_load'))
-#        if external_ring_load != 0:
-#            line1 = vm.LineSegment2D(positions[list_node[1]], positions[list_node[5]])
-#            line1.Translation(vm.Vector2D((pos, 0)))
-#            li_data.append(line1.PlotData(color = 'blue', stroke_width = 0.1, 
-#                                          dash = False, opacity = 0.3, 
-#                                          width = B/10./max_load*transversale_load, 
-#                                          marker = 'triangle_load'))
-#            line2 = vm.LineSegment2D(positions[list_node[4]], positions[list_node[0]])
-#            line2.Translation(vm.Vector2D((pos, 0)))
-#            li_data.append(line2.PlotData(color = 'blue', stroke_width = 0.1, 
-#                                          dash = False, opacity = 0.3, 
-#                                          width = B/10./max_load*transversale_load, 
-#                                          marker = 'triangle_load'))
-#        plot_data = []
-#        pt_data = {}
-#        pt_data['fill'] = None
-#        pt_data['name'] = 'internal diameter'
-#        pt_data['type'] = 'load'
-#        pt_data['plot_data'] = li_data
-#        plot_data.append(pt_data)
-#        return plot_data
+
             
 class RadialBearing(LoadBearing):
     symmetric = None
@@ -396,6 +312,13 @@ class RadialBearing(LoadBearing):
         self.slack = (self.E-self.F-2*self.Dw)/4.
         self.name = name
 #        self.mass = mass
+        
+    def Check(self):
+        if self.d <= 0.:
+            return False
+        if self.d >= self.D:
+            return False
+        return True
     
     @classmethod
     def EstimateBaseLifeTime(cls, Fr, N, t, Cr):
@@ -1969,129 +1892,107 @@ pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
 pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
 pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
 base_bearing = pandas_sort
+
     
-class BearingCatalogue:
-    
-    def __init__(self):
-        nupradial_roller_bearings = []
-        nradial_roller_bearings = []
-        nfradial_roller_bearings = []
-        nuradial_roller_bearings = []
-        radial_ball_bearings = []
-        angular_ball_bearings = []
-        spherical_ball_bearings = []
-        tapered_roller_bearings = []
-        
-        for index in base_bearing.index:
-            typ_rlt = base_bearing.loc[index,'typ_bearing']
-            d = round(base_bearing.loc[index,'d'], 3)
-            D = round(base_bearing.loc[index,'D'], 3)
-            B = round(base_bearing.loc[index,'B'],3)
-            i = base_bearing.loc[index,'i']
-            Z = base_bearing.loc[index,'Z']
-            Dw = base_bearing.loc[index,'Dw']
+class BearingCatalog:
+#    dessia_db_attributes = [{'name':'bearings',
+#                         'class':'mechanical_components.bearings.BearingAssemblySimulation',
+#                         'type':'list'}]
+    def __init__(self, bearings, name=''):
+        self.bearings = {}
+        for bearing in bearings:
+            if bearing.__class__ in self.bearings:
+                self.bearings[bearing.__class__].append(bearing)
+            else:
+                self.bearings[bearing.__class__] = [bearing]
+                
+        self.name = name
+            
+    @classmethod
+    def LoadFromDataframe(cls, dataframe, catalog_name):
+        bearings = []
+        for index in dataframe.index:
+            typ_rlt = dataframe.loc[index,'typ_bearing']
+            d = round(dataframe.loc[index,'d'], 3)
+            D = round(dataframe.loc[index,'D'], 3)
+            B = round(dataframe.loc[index,'B'],3)
+            i = dataframe.loc[index,'i']
+            Z = dataframe.loc[index,'Z']
+            Dw = dataframe.loc[index,'Dw']
             mass = None
-            alp = base_bearing.loc[index,'alpha']
+            alp = dataframe.loc[index,'alpha']
             if str(alp) == 'nan':
                 alpha = 0
             else:
                 alpha = alp
-            Cr = base_bearing.loc[index,'Cr']*1e3
-            C0r = base_bearing.loc[index,'C0r']
-            
+            Cr = dataframe.loc[index,'Cr']*1e3
+            C0r = dataframe.loc[index,'C0r']
+
             if typ_rlt == 'radial_roller_bearing':
-                typ = base_bearing.loc[index,'mounting']
+                typ = dataframe.loc[index,'mounting']
                 if typ == 'NUP':
-                    nupradial_roller_bearings.append(NUPRadialRollerBearing(d, D, B, i, 
+                    bearings.append(NUPRadialRollerBearing(d, D, B, i, 
                                                       Z, Dw, alpha, Cr, C0r, 
                                                       mass = mass))
                 elif typ == 'N':
-                    nradial_roller_bearings.append(NRadialRollerBearing(d, D, B, i, 
+                    bearings.append(NRadialRollerBearing(d, D, B, i, 
                                                       Z, Dw, alpha, Cr, C0r, 
                                                       mass = mass))
                 elif typ == 'NF':
-                    nfradial_roller_bearings.append(NFRadialRollerBearing(d, D, B, i, 
+                    bearings.append(NFRadialRollerBearing(d, D, B, i, 
                                                       Z, Dw, alpha, Cr, C0r, 
                                                       mass = mass,))
                 elif typ == 'NU':
-                    nuradial_roller_bearings.append(NURadialRollerBearing(d, D, B, i, 
+                    bearings.append(NURadialRollerBearing(d, D, B, i, 
                                                       Z, Dw, alpha, Cr, C0r, 
                                                       mass = mass,))
                     
             elif typ_rlt == 'radial_ball_bearing':
-                radial_ball_bearings.append(RadialBallBearing(d, D, B, i, Z, 
+                bearings.append(RadialBallBearing(d, D, B, i, Z, 
                                                     Dw, alpha, Cr, C0r, mass = mass))
                 
             elif typ_rlt == 'angular_ball_bearing':
-                angular_ball_bearings.append(AngularBallBearing(d, D, B, i, Z, Dw, alpha,
+                bearings.append(AngularBallBearing(d, D, B, i, Z, Dw, alpha,
                                                  Cr, C0r, mass = mass))
                 
             elif typ_rlt == 'spherical_ball_bearing':
-                spherical_ball_bearings.append(SphericalBallBearing(d, D, B, i, Z, Dw, alpha, 
+                bearings.append(SphericalBallBearing(d, D, B, i, Z, Dw, alpha, 
                                                    Cr, C0r, mass = mass))
                 
             elif typ_rlt == 'tapered_roller_bearing':
-                tapered_roller_bearings.append(TaperedRollerBearing(d, D, B, i, Z, Dw, alpha, 
+                bearings.append(TaperedRollerBearing(d, D, B, i, Z, Dw, alpha, 
                                                    Cr, C0r, mass = mass))
+        return cls(bearings, catalog_name)
                 
-        def DictBearingCatalogue(bearings):
-            dict_bearings = {}
-            for bearing in bearings:
-                d = str(round(bearing.d, 3))
-                D = str(round(bearing.D, 3))
-                if d not in dict_bearings.keys():
-                    dict_bearings[d] = {}
-                try:
-                    dict_bearings[d][D].append(bearing)
-                except:
-                    dict_bearings[d][D] = [bearing]
-                    
-            # sort by Cr
-            output_dict_bearings = {}
-            for d, dict_bearings_d in dict_bearings.items():
-                if d not in output_dict_bearings.keys():
-                    output_dict_bearings[d] = {}
-                for D, dict_bearings_D in dict_bearings_d.items():
-                    list_sort_Cr = []
-                    for bg in dict_bearings_D:
-                        list_sort_Cr.append(bg.Cr)
-                    arg_list_sort_Cr = npy.argsort(list_sort_Cr)
-                    output_dict_bearings[d][D] = [dict_bearings_D[i] for i in arg_list_sort_Cr]
-            return output_dict_bearings
+#    def DictBearingCatalog(bearings):
+#        dict_bearings = {}
+#        for bearing in bearings:
+#            d = str(round(bearing.d, 3))
+#            D = str(round(bearing.D, 3))
+#            if d not in dict_bearings.keys():
+#                dict_bearings[d] = {}
+#            try:
+#                dict_bearings[d][D].append(bearing)
+#            except:
+#                dict_bearings[d][D] = [bearing]
+#                
+#        # sort by Cr
+#        output_dict_bearings = {}
+#        for d, dict_bearings_d in dict_bearings.items():
+#            if d not in output_dict_bearings.keys():
+#                output_dict_bearings[d] = {}
+#            for D, dict_bearings_D in dict_bearings_d.items():
+#                list_sort_Cr = []
+#                for bg in dict_bearings_D:
+#                    list_sort_Cr.append(bg.Cr)
+#                arg_list_sort_Cr = npy.argsort(list_sort_Cr)
+#                output_dict_bearings[d][D] = [dict_bearings_D[i] for i in arg_list_sort_Cr]
+#        return output_dict_bearings
         
-        dict_nupradial_roller_bearings = DictBearingCatalogue(nupradial_roller_bearings)
-        dict_nradial_roller_bearings = DictBearingCatalogue(nradial_roller_bearings)
-        dict_nfradial_roller_bearings = DictBearingCatalogue(nfradial_roller_bearings)
-        dict_nuradial_roller_bearings = DictBearingCatalogue(nuradial_roller_bearings)
-        dict_radial_ball_bearings = DictBearingCatalogue(radial_ball_bearings)
-        dict_angular_ball_bearings = DictBearingCatalogue(angular_ball_bearings)
-        dict_spherical_ball_bearings = DictBearingCatalogue(spherical_ball_bearings)
-        dict_tapered_roller_bearings = DictBearingCatalogue(tapered_roller_bearings)
-        self.dict_bearing_catalogue = {RadialBallBearing: dict_radial_ball_bearings, 
-                                  AngularBallBearing: dict_angular_ball_bearings,
-                                  SphericalBallBearing: dict_spherical_ball_bearings,
-                                  NUPRadialRollerBearing: dict_nupradial_roller_bearings,
-                                  NRadialRollerBearing: dict_nradial_roller_bearings, 
-                                  NFRadialRollerBearing: dict_nfradial_roller_bearings,
-                                  NURadialRollerBearing: dict_nuradial_roller_bearings,
-                                  TaperedRollerBearing: dict_tapered_roller_bearings}
-        self.bearing_catalogue = {RadialBallBearing: radial_ball_bearings, 
-                                  AngularBallBearing: angular_ball_bearings,
-                                  SphericalBallBearing: spherical_ball_bearings,
-                                  NUPRadialRollerBearing: nupradial_roller_bearings,
-                                  NRadialRollerBearing: nradial_roller_bearings, 
-                                  NFRadialRollerBearing: nfradial_roller_bearings,
-                                  NURadialRollerBearing: nuradial_roller_bearings,
-                                  TaperedRollerBearing: tapered_roller_bearings}
-        
-    def SearchDictBearingCatalogue(self, bearing_classe, d, D):
-        
-        dict_bearing = self.dict_bearing_catalogue[bearing_classe]
-        return dict_bearing[str(d)][str(D)]
     
-    def SearchBearingCatalogue(self, bearing_classe, d, D):
+    def SearchBearingCatalog(self, bearing_class, d, D):
         
-        bearings = self.bearing_catalogue[bearing_classe]
+        bearings = self.bearings[bearing_class]
         list_bearings = []
         list_sort = []
         for bearing in bearings:
@@ -2100,6 +2001,24 @@ class BearingCatalogue:
                 list_sort.append(bearing.Cr)
         arg_list_sort = npy.argsort(list_sort)
         return [list_bearings[i] for i in arg_list_sort]
+    
+    def Check(self):
+        for bearing_class, bearings in self.bearings.items():
+            for bearing in bearings:
+                if not bearing.Check():
+                        return False
+        return True
+    
+    def InvalidBearings(self):
+        invalid_bearings = []
+        for bearing_class, bearings in self.bearings.items():
+            for bearing in bearings:
+                if not bearing.Check():
+                    
+                    invalid_bearings.append(bearing)
+        return invalid_bearings
+    
+generic_catalog = BearingCatalog.LoadFromDataframe(pandas_sort, 'Generic DessIA catalog')
     
 bearing_classes = [RadialBallBearing, AngularBallBearing,
                    NUPRadialRollerBearing, NRadialRollerBearing, 
@@ -2271,6 +2190,8 @@ class ConceptualBearingCombination:
             node_output = li_node_output[0]
             try:
                 if (node_input in nx_graph) and (node_output in nx_graph):
+                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    # Pourquoi cette variable n'est pas utilisée?????
                     sol = list(nx.all_shortest_paths(nx_graph, source=node_input, 
                                                 target=node_output))
                 else:
@@ -3440,12 +3361,6 @@ class BearingAssemblySimulation:
                   bearing_assembly_simulation_result = BAS)
         
         return obj
-    
 
-    
-class BearingCatalog:
-    def __init__(self, bearings):
-        self.bearings = {}
-        
     
 
