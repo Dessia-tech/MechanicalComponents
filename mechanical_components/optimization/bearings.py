@@ -10,8 +10,8 @@ from mechanical_components.bearings import oil_iso_vg_1500, material_iso, iso_be
 
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
         SphericalBallBearing, RadialRollerBearing, TaperedRollerBearing, \
-        NUPRadialRollerBearing, NRadialRollerBearing, \
-        NFRadialRollerBearing, NURadialRollerBearing, \
+        NUP, N, \
+        NF, NU, \
         BearingAssembly, BearingCombination, DetailedRadialRollerBearing, \
         BearingAssemblySimulationResult, \
         BearingCombinationSimulationResult, BearingSimulationResult,\
@@ -448,7 +448,7 @@ class BearingAssemblyOptimizer:
         radial_load_left, radial_load_right = radial_load
         left, right = mounting
         
-#        compt_continue = 0
+        compt_continue = 0
         for conceptual_bearing_combination_left, conceptual_bearing_combination_right in \
                 product(*bearing_combinations_possibility):
                     

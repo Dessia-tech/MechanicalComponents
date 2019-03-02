@@ -7,13 +7,13 @@ import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 import math
-from copy import deepcopy
+
 #import copy
+import json
 
 from scipy.optimize import fsolve
 import networkx as nx
 import matplotlib.pyplot as plt
-from itertools import product
 
 import pandas
 import pkg_resources
@@ -569,7 +569,7 @@ class RadialBearing(LoadBearing):
     
     mass = property(Mass)
     
-    def Dict(self, subobjects_id={}, stringify_keys=True):
+    def Dict(self, stringify_keys=True):
         """Export dictionary
         """
         d={}
@@ -582,9 +582,11 @@ class RadialBearing(LoadBearing):
             else:
                 d[k]=v
 
+        d['class_name'] = self.class_name
         d['material'] = self.material.Dict()
         d['oil'] = self.oil.Dict()
         d['mass'] = self.mass
+        
         
         if 'load_bearing_results' in d:
             load_bearing_results = []
@@ -605,10 +607,19 @@ class RadialBearing(LoadBearing):
             return AngularBallBearing.DictToObject(d)
         elif d['class_name'] == 'SphericalBallBearing':
             return SphericalBallBearing.DictToObject(d)
-        elif d['class_name'] == 'RadialRollerBearing':
-            return RadialRollerBearing.DictToObject(d)
+        elif d['class_name'] == 'N':
+            return N.DictToObject(d)
+        elif d['class_name'] == 'NU':
+            return NU.DictToObject(d)
+        elif d['class_name'] == 'NUP':
+            return NUP.DictToObject(d)
+        elif d['class_name'] == 'NF':
+            return NF.DictToObject(d)
         elif d['class_name'] == 'TaperedRollerBearing':
             return TaperedRollerBearing.DictToObject(d)
+        else:
+            print(d['class_name'])
+            raise ValueError
         
         
 # =============================================================
@@ -629,12 +640,13 @@ class RadialBallBearing(RadialBearing):
     generate_axial_load = False
     linkage = 'ball'
     coeff_baselife = 3.
+    class_name = 'RadialBallBearing'
     
+    # TODO: remove alpha?
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name=''):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil,
                                material, contact_type, mass, name)
-        self.class_name = 'RadialBallBearing'
         
         # estimation for the graph 2D description
         h1 = self.Dw/2. - (self.E - self.D1)/2.
@@ -811,7 +823,8 @@ class RadialBallBearing(RadialBearing):
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
-                  contact_type = d['contact_type'])
+                  contact_type = d['contact_type'],
+                  name=d['name'])
         return obj
         
 class AngularBallBearing(RadialBearing):
@@ -820,12 +833,13 @@ class AngularBallBearing(RadialBearing):
     generate_axial_load = True
     linkage = 'ball_joint'
     coeff_baselife = 3.
+    class_name = 'AngularBallBearing'
     
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name=''):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, 
                                contact_type, mass, name)
-        self.class_name = 'AngularBallBearing'
+
         
         # estimation for the graph 2D description
         h1 = self.Dw/2. - (self.E - self.D1)/2.
@@ -1039,7 +1053,8 @@ class AngularBallBearing(RadialBearing):
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
-                  contact_type = d['contact_type'])
+                  contact_type = d['contact_type'],
+                  name=d['name'])
         return obj
             
 class SphericalBallBearing(RadialBearing):
@@ -1048,13 +1063,13 @@ class SphericalBallBearing(RadialBearing):
     generate_axial_load = False
     linkage = 'ball_joint'
     coeff_baselife = 3.
+    class_name = 'SphericalBallBearing'
     
     def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name=''):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil,
                                material, contact_type, mass, name)
         
-        self.class_name = 'SphericalBallBearing'
         
     def EquivalentStaticLoad(self, fr, fa=None):
         #Charge radiale statique équivalente
@@ -1133,10 +1148,15 @@ class SphericalBallBearing(RadialBearing):
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
-                  contact_type = d['contact_type'])
+                  contact_type = d['contact_type'],
+                  name=d['name'])
         return obj
             
+# TODO remove alpha?
 class RadialRollerBearing(RadialBearing):
+    """
+    Abstract Class
+    """
     symmetric = True
     linkage = 'cylindric'
     coeff_baselife = 10/3.
@@ -1147,7 +1167,6 @@ class RadialRollerBearing(RadialBearing):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil,
                                material, contact_type, mass, name=name)
 #        self.typ = typ
-        self.class_name = 'RadialRollerBearing'
         
         # estimation for the graph 2D description
         self.Dpw = (self.d + self.D)/2.
@@ -1256,93 +1275,6 @@ class RadialRollerBearing(RadialBearing):
             return 100.
         return a_iso
     
-#    def InternalRingContour(self, direction=1, sign_V=1):
-#
-#        if self.typ in ['NUP', 'N', 'NF']:
-#            d1 = self.d1
-#            pbi2 = vm.Point2D((-direction*self.B/2., sign_V*d1/2.))
-#            pbi1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*d1/2.))
-#            pbi0 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-#            pbi3 = vm.Point2D((-direction*self.B/2., sign_V*self.d/2.))
-#            pbi4 = vm.Point2D((direction*self.B/2., sign_V*self.d/2.))
-#            pbi5 = vm.Point2D((direction*self.B/2., sign_V*d1/2.))
-#            pbi6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*d1/2.))
-#            pbi7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-#            irc = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
-#                               {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
-#                                5: self.radius, 6: self.radius}, True, adapt_radius = True)
-#
-#        elif self.typ == 'NJ':
-#            d1 = self.d1
-#            d2 = self.F - 0.1*(self.F - self.d)
-#            pbi2 = vm.Point2D((-direction*self.B/2., sign_V*d1/2.))
-#            pbi1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*d1/2.))
-#            pbi0 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-#            pbi3 = vm.Point2D((-direction*self.B/2., sign_V*self.d/2.))
-#            pbi4 = vm.Point2D((direction*self.B/2., sign_V*self.d/2.))
-#            pbi5 = vm.Point2D((direction*self.B/2., sign_V*d2/2.))
-#            pbi6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-#            irc = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6],
-#                               {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
-#                                5: self.radius}, True, adapt_radius = True)
-#        elif self.typ == 'NU':
-#            d1 = self.F - 0.1*(self.F - self.d)
-#            pbi2 = vm.Point2D((-direction*self.B/2., sign_V*d1/2.))
-#            pbi1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-#            pbi3 = vm.Point2D((-direction*self.B/2., sign_V*self.d/2.))
-#            pbi4 = vm.Point2D((direction*self.B/2., sign_V*self.d/2.))
-#            pbi5 = vm.Point2D((direction*self.B/2., sign_V*d1/2.))
-#            pbi6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-#            irc = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius, 
-#                               2: self.radius, 3: self.radius, 4: self.radius}, 
-#                               True, adapt_radius = True)
-#        
-#        return vm.Contour2D([irc])
-#
-#
-#        
-#    def ExternalRingContour(self, direction=1, sign_V=1):
-#        
-#        
-#        if self.typ in ['NU', 'NJ', 'NUP']:
-#            D1 = self.D1
-#            pbe2 = vm.Point2D((-direction*self.B/2., sign_V*D1/2.))
-#            pbe1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*D1/2.))
-#            pbe0 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-#            pbe3 = vm.Point2D((-direction*self.B/2., sign_V*self.D/2.))
-#            pbe4 = vm.Point2D((direction*self.B/2., sign_V*self.D/2.))
-#            pbe5 = vm.Point2D((direction*self.B/2., sign_V*D1/2.))
-#            pbe6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*D1/2.))
-#            pbe7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-#            be1 = primitives2D.RoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
-#                               {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
-#                                5: self.radius, 6: self.radius}, True)
-#        elif self.typ == 'NF':
-#            D1 = self.D1
-#            D2 = self.E + 0.1*(self.D - self.E)
-#            pbe2 = vm.Point2D((-direction*self.B/2., sign_V*D1/2.))
-#            pbe1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*D1/2.))
-#            pbe0 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-#            pbe3 = vm.Point2D((-direction*self.B/2., sign_V*self.D/2.))
-#            pbe4 = vm.Point2D((direction*self.B/2., sign_V*self.D/2.))
-#            pbe5 = vm.Point2D((direction*self.B/2., sign_V*D2/2.))
-#            pbe6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-#            be1 = primitives2D.RoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
-#                               {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius, 
-#                                5: self.radius}, True)
-#        elif self.typ == 'N':
-#            D1 = self.E + 0.1*(self.D - self.E)
-#            pbe2 = vm.Point2D((-direction*self.B/2., sign_V*D1/2.))
-#            pbe1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-#            pbe3 = vm.Point2D((-direction*self.B/2., sign_V*self.D/2.))
-#            pbe4 = vm.Point2D((direction*self.B/2., sign_V*self.D/2.))
-#            pbe5 = vm.Point2D((direction*self.B/2., sign_V*D1/2.))
-#            pbe6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-#            be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 
-#                               2: self.radius, 3: self.radius, 4: self.radius}, True)
-#        erc = vm.Contour2D([be1])
-#
-#        return erc
     
     def RollingContour(self):
         
@@ -1420,8 +1352,6 @@ class RadialRollerBearing(RadialBearing):
         bg = vm.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
         return bg
     
-    
-    
     @classmethod
     def DictToObject(cls, d):
         if 'Cr' not in d.keys():
@@ -1432,15 +1362,18 @@ class RadialRollerBearing(RadialBearing):
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
-                  contact_type = d['contact_type'])
+                  contact_type = d['contact_type'],
+                  name=d['name'])
         return obj
     
-    
-class NUPRadialRollerBearing(RadialRollerBearing):
+class NUP(RadialRollerBearing):
     symmetric = True
     taking_loads = 'both'
     generate_axial_load = False
+    class_name = 'NUP'
+
     
+    # TODO: remove alpha?
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name=''):
@@ -1502,11 +1435,13 @@ class NUPRadialRollerBearing(RadialRollerBearing):
         graph.add_edges_from([(list_node[6], list_node[0])])
             
         return graph
+
         
-class NRadialRollerBearing(RadialRollerBearing):
+class N(RadialRollerBearing):
     symmetric = True
     taking_loads = 'free'
     generate_axial_load = False
+    class_name = 'N'
     
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
@@ -1562,10 +1497,12 @@ class NRadialRollerBearing(RadialRollerBearing):
         return graph
         
         
-class NFRadialRollerBearing(RadialRollerBearing):
+class NF(RadialRollerBearing):
     symmetric = True
     taking_loads = 'right'
     generate_axial_load = False
+    class_name = 'NF'
+
     
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
@@ -1631,10 +1568,12 @@ class NFRadialRollerBearing(RadialRollerBearing):
             
         return graph
         
-class NURadialRollerBearing(RadialRollerBearing):
+class NU(RadialRollerBearing):
     symmetric = True
     taking_loads = 'free'
     generate_axial_load = False
+    class_name = 'NU'
+
     
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
@@ -1693,7 +1632,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     linkage = 'cylindric_joint'
     generate_axial_load = True
     coeff_baselife = 10/3.
-
+    # TODO: alpha should not be 0??
     def __init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name=''):
@@ -1877,7 +1816,8 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                   Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
-                  contact_type = d['contact_type'])
+                  contact_type = d['contact_type'],
+                  name=d['name'])
         return obj
     
 with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
@@ -1895,18 +1835,21 @@ base_bearing = pandas_sort
 
     
 class BearingCatalog:
-#    dessia_db_attributes = [{'name':'bearings',
-#                         'class':'mechanical_components.bearings.BearingAssemblySimulation',
-#                         'type':'list'}]
+    dessia_db_attributes = [{'name':'bearings',
+                         'class':'mechanical_components.bearings.RadialBearing',
+                         'type':'list'}]
     def __init__(self, bearings, name=''):
-        self.bearings = {}
+        self.bearings = bearings
+        self.bearings_by_types = {}
         for bearing in bearings:
-            if bearing.__class__ in self.bearings:
-                self.bearings[bearing.__class__].append(bearing)
+            if bearing.__class__ in self.bearings_by_types:
+                self.bearings_by_types[bearing.__class__].append(bearing)
             else:
-                self.bearings[bearing.__class__] = [bearing]
+                self.bearings_by_types[bearing.__class__] = [bearing]
                 
         self.name = name
+        
+        
             
     @classmethod
     def LoadFromDataframe(cls, dataframe, catalog_name):
@@ -1931,19 +1874,19 @@ class BearingCatalog:
             if typ_rlt == 'radial_roller_bearing':
                 typ = dataframe.loc[index,'mounting']
                 if typ == 'NUP':
-                    bearings.append(NUPRadialRollerBearing(d, D, B, i, 
+                    bearings.append(NUP(d, D, B, i, 
                                                       Z, Dw, alpha, Cr, C0r, 
                                                       mass = mass))
                 elif typ == 'N':
-                    bearings.append(NRadialRollerBearing(d, D, B, i, 
+                    bearings.append(N(d, D, B, i, 
                                                       Z, Dw, alpha, Cr, C0r, 
                                                       mass = mass))
                 elif typ == 'NF':
-                    bearings.append(NFRadialRollerBearing(d, D, B, i, 
+                    bearings.append(NF(d, D, B, i, 
                                                       Z, Dw, alpha, Cr, C0r, 
                                                       mass = mass,))
                 elif typ == 'NU':
-                    bearings.append(NURadialRollerBearing(d, D, B, i, 
+                    bearings.append(NU(d, D, B, i, 
                                                       Z, Dw, alpha, Cr, C0r, 
                                                       mass = mass,))
                     
@@ -1964,35 +1907,33 @@ class BearingCatalog:
                                                    Cr, C0r, mass = mass))
         return cls(bearings, catalog_name)
                 
-#    def DictBearingCatalog(bearings):
-#        dict_bearings = {}
-#        for bearing in bearings:
-#            d = str(round(bearing.d, 3))
-#            D = str(round(bearing.D, 3))
-#            if d not in dict_bearings.keys():
-#                dict_bearings[d] = {}
-#            try:
-#                dict_bearings[d][D].append(bearing)
-#            except:
-#                dict_bearings[d][D] = [bearing]
-#                
-#        # sort by Cr
-#        output_dict_bearings = {}
-#        for d, dict_bearings_d in dict_bearings.items():
-#            if d not in output_dict_bearings.keys():
-#                output_dict_bearings[d] = {}
-#            for D, dict_bearings_D in dict_bearings_d.items():
-#                list_sort_Cr = []
-#                for bg in dict_bearings_D:
-#                    list_sort_Cr.append(bg.Cr)
-#                arg_list_sort_Cr = npy.argsort(list_sort_Cr)
-#                output_dict_bearings[d][D] = [dict_bearings_D[i] for i in arg_list_sort_Cr]
-#        return output_dict_bearings
+    def Dict(self):
+        d = {'name': self.name}
+        bearings_dicts = []
+        for bearing in self.bearings:
+            bearings_dicts.append(bearing.Dict())
+    
+        d['bearings'] = bearings_dicts
+        return d
+    
+    @classmethod
+    def DictToObject(cls, dict_):
+        bearings = [RadialBearing.DictToObject(b) for b in dict_['bearings']]
+        return cls(bearings, dict_['name'])
         
+    def SaveToFile(self, filepath, indent = 0):
+        with open(filepath+'.json', 'w') as file:
+            json.dump(self.Dict(), file, indent = indent)
+        
+    @classmethod
+    def LoadFromFile(cls, filepath):
+        with open(filepath, 'r') as file:
+            d = json.load(file)
+            return cls.DictToObject(d) 
     
     def SearchBearingCatalog(self, bearing_class, d, D):
         
-        bearings = self.bearings[bearing_class]
+        bearings = self.bearings_by_types[bearing_class]
         list_bearings = []
         list_sort = []
         for bearing in bearings:
@@ -2021,16 +1962,16 @@ class BearingCatalog:
 generic_catalog = BearingCatalog.LoadFromDataframe(pandas_sort, 'Generic DessIA catalog')
     
 bearing_classes = [RadialBallBearing, AngularBallBearing,
-                   NUPRadialRollerBearing, NRadialRollerBearing, 
-                   NFRadialRollerBearing, NURadialRollerBearing,
+                   NUP, N, 
+                   NF, NU,
                    TaperedRollerBearing]
 
 dict_bearing_classes = {str(RadialBallBearing): RadialBallBearing, 
                         str(AngularBallBearing): AngularBallBearing,
-                        str(NUPRadialRollerBearing): NUPRadialRollerBearing, 
-                        str(NRadialRollerBearing): NRadialRollerBearing, 
-                        str(NFRadialRollerBearing): NFRadialRollerBearing, 
-                        str(NURadialRollerBearing): NURadialRollerBearing,
+                        str(NUP): NUP, 
+                        str(N): N, 
+                        str(NF): NF, 
+                        str(NU): NU,
                         str(TaperedRollerBearing): TaperedRollerBearing}
 
 class ConceptualBearingCombination:
@@ -2544,18 +2485,19 @@ class BearingCombination:
     @classmethod
     def DictToObject(cls, d):
         bearings = []
-        for bearing in d['bearings']:
-            if bearing['class_name'] == 'RadialRollerBearing':
-                BA = RadialRollerBearing.DictToObject(bearing)
-            elif bearing['class_name'] == 'TaperedRollerBearing':
-                BA = TaperedRollerBearing.DictToObject(bearing)
-            elif bearing['class_name'] == 'SphericalBallBearing':
-                BA = SphericalBallBearing.DictToObject(bearing)
-            elif bearing['class_name'] == 'AngularBallBearing':
-                BA = AngularBallBearing.DictToObject(bearing)
-            elif bearing['class_name'] == 'RadialBallBearing':
-                BA = RadialBallBearing.DictToObject(bearing)
-            bearings.append(BA)
+        for bearing_s in d['bearings']:
+            bearing = RadialBearing.DictToObject(bearing_s)
+#            if bearing['class_name'] == 'RadialRollerBearing':
+#                BA = RadialRollerBearing.DictToObject(bearing)
+#            elif bearing['class_name'] == 'TaperedRollerBearing':
+#                BA = TaperedRollerBearing.DictToObject(bearing)
+#            elif bearing['class_name'] == 'SphericalBallBearing':
+#                BA = SphericalBallBearing.DictToObject(bearing)
+#            elif bearing['class_name'] == 'AngularBallBearing':
+#                BA = AngularBallBearing.DictToObject(bearing)
+#            elif bearing['class_name'] == 'RadialBallBearing':
+#                BA = RadialBallBearing.DictToObject(bearing)
+            bearings.append(bearing)
         obj = cls(bearings = bearings, directions = d['directions'], radial_load_linkage = d['radial_load_linkage'], 
                   internal_pre_load = 0, connection_bi = d['connection_bi'], 
                   connection_be = d['connection_be'], behavior_link = d['behavior_link'])

@@ -24,7 +24,7 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
                     bearing_classes = [bearings_opt.RadialBallBearing, 
                                        bearings_opt.AngularBallBearing,
                                        bearings_opt.TaperedRollerBearing,
-                                       bearings_opt.NUPRadialRollerBearing
+                                       bearings_opt.NUP
                                        ])
 
 d = bearing_assembly_opt.Dict()
