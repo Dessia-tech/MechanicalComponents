@@ -1942,6 +1942,18 @@ class BearingCatalog:
                 list_sort.append(bearing.Cr)
         arg_list_sort = npy.argsort(list_sort)
         return [list_bearings[i] for i in arg_list_sort]
+
+    def NextBearingCatalog(self, bearing_class, d, D):
+        
+        bearings = self.bearings_by_types[bearing_class]
+        list_bearings = []
+        list_sort = []
+        for bearing in bearings:
+            if (bearing.d == d) and (bearing.D == D):
+                list_bearings.append(bearing)
+                list_sort.append(bearing.Cr)
+        arg_list_sort = npy.argsort(list_sort)
+        return [list_bearings[i] for i in arg_list_sort]
     
     def Check(self):
         for bearing_class, bearings in self.bearings.items():

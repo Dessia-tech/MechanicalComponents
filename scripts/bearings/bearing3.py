@@ -19,7 +19,7 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
                     outer_diameters = [0.07, 0.07], 
                     lengths = [0.05, 0.05],
 #                    linkage_types = [['cylindric_joint'], ['cylindric_joint']],
-                    mounting_types = [['free', 'both'], ['right', 'left']],
+#                    mounting_types = [['free', 'both'], ['right', 'left']],
                     number_bearings = [[1, 2, 3], [1, 2, 3]],
                     bearing_classes = [bearings_opt.RadialBallBearing, 
                                        bearings_opt.AngularBallBearing,

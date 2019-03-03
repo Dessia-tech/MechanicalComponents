@@ -283,6 +283,20 @@ class BearingCombinationOptimizer:
         self.D = D
         self.length = length
         
+    def CheckLinkage(self, bearings):
+        check = False
+        if (len(bearings) > 1) and (self.linkage == 'cylindric_joint'):
+            check = True
+        if (len(bearings) == 1) and (self.linkage == 'cylindric_joint'):
+            if bearings[0].__class__ not in [RadialBallBearing, 
+                       AngularBallBearing, SphericalBallBearing]:
+                check = True
+        if (len(bearings) == 1) and (self.linkage == 'ball_joint'):
+            if bearings[0].__class__ in [RadialBallBearing, 
+                       AngularBallBearing, SphericalBallBearing]:
+                check = True
+        return check
+            
         
     def ConceptualBearingCombinations(self, max_bearings=3):
         configurations = []
@@ -301,14 +315,15 @@ class BearingCombinationOptimizer:
                 else:
                     directions.append([1, -1][node])
 
-            if ((dt.current_depth + 1) % 2 != 0) and dt.current_depth > 1:
+            if dt.current_depth // 2 == max_bearings:
                 # Instanciating 
-                cbc = ConceptualBearingCombination(bearings, directions, self.mounting)
-                valid = cbc.CheckKinematic()
+                valid = self.CheckLinkage(bearings)
+                if valid:
+                    cbc = ConceptualBearingCombination(bearings, directions, self.mounting)
+                    valid = cbc.CheckKinematic()                
             
             # Testing
             if valid:
-            
                 # Counting possibilities
                 if dt.current_depth % 2 != 0:
                     # counting sides
@@ -375,12 +390,18 @@ class BearingAssemblyOptimizer:
             elif axial_load < 0:
                 list_load_cases.append('left')
         
+        print(self.mounting_types)
         for mounting_type_left, mounting_type_right in self.mounting_types:
             valid_load_case = True
             if 'both' not in set((mounting_type_left, mounting_type_right)):
                 for load_case in list_load_cases:
                     if load_case not in (mounting_type_left, mounting_type_right):
                         valid_load_case = False
+            if ('free' == mounting_type_left) and ('free' == mounting_type_right):
+                valid_load_case = False
+            if 'both' in set((mounting_type_left, mounting_type_right)):
+                if 'free' not in set((mounting_type_left, mounting_type_right)):
+                    valid_load_case = False
             if valid_load_case:
                 for linkage_left, linkage_right in product(*self.linkage_types):
                     configurations.append(((mounting_type_left, linkage_left),
@@ -427,7 +448,7 @@ class BearingAssemblyOptimizer:
             if len(conceptual_bearing_combination.bearing_classes) > 1:
                 for conceptual_bearing in conceptual_bearing_combination.bearing_classes[1:]:
                     try:
-                        bearing_possibilities = self.bearing_catalogue.SearchDictBearingCatalogue(conceptual_bearing, d , D)
+                        bearing_possibilities = self.bearing_catalogue.NextBearingCatalog(conceptual_bearing, d , D)
                         list_L10_max.append(bearing_possibilities[-1].EstimateBaseLifeTime(Fr = radial_elementary_load,
                                                                 N = self.speeds, 
                                                                 t = self.operating_times, Cr = bearing_possibilities[-1].Cr))
@@ -479,6 +500,7 @@ class BearingAssemblyOptimizer:
                                                conceptual_bearing_combination_right,
                                                [r/(1.*nb_bearings_right) for r in radial_load_right],
                                                L10_objective)
+            
 #            bearing_right_possibilies = first_bearing_right_possibilies
             
             bc_left = conceptual_bearing_combination_left.BearingCombination(bearings_left_max)
@@ -586,7 +608,6 @@ class BearingAssemblyOptimizer:
     
                 if (dt.current_depth == nb_bearings) and valid:
                     
-                    print(1)
                     bc_left = conceptual_bearing_combination_left.BearingCombination(bearings[0: nb_bearings_left])
                     bc_right = conceptual_bearing_combination_right.BearingCombination(bearings[nb_bearings_left:])
                     bearing_assembly = BearingAssembly([bc_left, bc_right])
@@ -605,7 +626,6 @@ class BearingAssemblyOptimizer:
                     bearing_assembly.ShaftLoad([(pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.], 
                                                 bearing_assembly_simulation_result)
                     L10 = bearing_assembly_simulation_result.L10
-                    print(L10)
                     if L10 < L10_objective:
                         print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
                         valid = False
@@ -675,7 +695,7 @@ class BearingAssemblyOptimizer:
                         d = bearing.d
                         D = bearing.D
                         try:
-                            bearing_possibilities = self.bearing_catalogue.SearchDictBearingCatalogue(bearing_classe, d , D)
+                            bearing_possibilities = self.bearing_catalogue.NextBearingCatalog(bearing_classe, d , D)
                             dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
                             list_bearing_possibilities[dt.current_depth] = bearing_possibilities
                         except:
@@ -690,7 +710,7 @@ class BearingAssemblyOptimizer:
                         d = bearing.d
                         D = bearing.D
                         try:
-                            bearing_possibilities = self.bearing_catalogue.SearchDictBearingCatalogue(bearing_classe, d , D)
+                            bearing_possibilities = self.bearing_catalogue.NextBearingCatalog(bearing_classe, d , D)
                             dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
                             list_bearing_possibilities[dt.current_depth] = bearing_possibilities
                         except:
