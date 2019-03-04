@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import pandas
 import pkg_resources
 
-from mechanical_components.bearings_snr import RadialRollerBearingSNR
+#from mechanical_components.bearings_snr import RadialRollerBearingSNR
 from mechanical_components.catalogs.ISO_bearings \
     import iso_bearings, iso_rollers, iso_radial_clearances, bearing_rules
 
@@ -422,17 +422,17 @@ class RadialBearing(LoadBearing):
         else:
             return math.inf
     
-    def CheckFNRRules(self, Fr, Fa, N):
-        check_rules = True
-        val_rules = math.inf
-        for fr, fa, n  in zip(Fr, Fa, N):
-            if self.typ_bearing == 'radial_roller_bearing':
-                rules_snr = RadialRollerBearingSNR(self.d, self.D, self.B, self.Z, self.alpha, self.Dpw)
-                check_rules_iter, val_rules_iter = rules_snr.RuleAxialLoad(fr, fa, n, level_axial_load='constant_load')
-                val_rules = min(val_rules_iter, val_rules)
-                if check_rules_iter == False:
-                    check_rules = False
-        return check_rules, val_rules
+#    def CheckFNRRules(self, Fr, Fa, N):
+#        check_rules = True
+#        val_rules = math.inf
+#        for fr, fa, n  in zip(Fr, Fa, N):
+#            if self.typ_bearing == 'radial_roller_bearing':
+#                rules_snr = RadialRollerBearingSNR(self.d, self.D, self.B, self.Z, self.alpha, self.Dpw)
+#                check_rules_iter, val_rules_iter = rules_snr.RuleAxialLoad(fr, fa, n, level_axial_load='constant_load')
+#                val_rules = min(val_rules_iter, val_rules)
+#                if check_rules_iter == False:
+#                    check_rules = False
+#        return check_rules, val_rules
     
     def Mass(self):
         # TODO: enhance this but without querying CAD volumes!
@@ -1626,7 +1626,7 @@ class NU(RadialRollerBearing):
             
         return graph
     
-class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
+class TaperedRollerBearing(RadialRollerBearing):
     symmetric = False
     taking_loads = 'right'
     linkage = 'cylindric_joint'
