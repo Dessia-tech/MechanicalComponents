@@ -746,13 +746,14 @@ class BearingAssemblyOptimizer:
                     
                     valid_fsolve = False
                     for i in range(2):
-                        cond_init = npy.random.random(1)*1e4
+                        cond_init = npy.random.random(1)*3
                         sol = fsolve(funct, cond_init[0])[0]
                         if funct([sol]) < 1e-4:
                             coefficient_Cr = sol
                             valid_fsolve = True
 #                                print('analyse coeff ', coefficient_Cr, funct([coefficient_Cr]))
                             break
+                    print('end', coefficient_Cr)
                     if not valid_fsolve:
                         break
                     

@@ -291,8 +291,16 @@ class RadialBearing(LoadBearing):
         self.B = B
         self.Dpw = (d + D)/2.
         self.i = i
-        self.Z = Z
-        self.Dw = Dw
+        
+        if Dw is None:
+            self.Dw = (D - d)/6.
+        else:
+            self.Dw = Dw
+        if Z is None:
+            self.Z = int(math.pi*self.Dpw/self.Dw)
+        else:    
+            self.Z = Z
+        
         self.alpha = alpha
         self.oil = oil
         self.material = material
@@ -643,7 +651,7 @@ class RadialBallBearing(RadialBearing):
     class_name = 'RadialBallBearing'
     
     # TODO: remove alpha?
-    def __init__(self, d, D, B, i, Z, Dw, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name=''):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=Cr, C0r=C0r, oil=oil,
                                material=material, contact_type=contact_type, mass=mass, name=name)
@@ -835,7 +843,7 @@ class AngularBallBearing(RadialBearing):
     coeff_baselife = 3.
     class_name = 'AngularBallBearing'
     
-    def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name=''):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, 
                                contact_type, mass, name)
@@ -1065,7 +1073,7 @@ class SphericalBallBearing(RadialBearing):
     coeff_baselife = 3.
     class_name = 'SphericalBallBearing'
     
-    def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i=1, Z=None, Dw=None, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name=''):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil,
                                material, contact_type, mass, name)
@@ -1161,7 +1169,7 @@ class RadialRollerBearing(RadialBearing):
     linkage = 'cylindric'
     coeff_baselife = 10/3.
     
-    def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name=''):
         RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr=Cr, C0r=C0r, oil=oil,
@@ -1374,10 +1382,10 @@ class NUP(RadialRollerBearing):
 
     
     # TODO: remove alpha?
-    def __init__(self, d, D, B, i, Z, Dw, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name=''):
-        RadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=Cr,
+        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
                                      material=material, contact_type=contact_type,
                                      mass=mass, name=name)
@@ -1443,10 +1451,10 @@ class N(RadialRollerBearing):
     generate_axial_load = False
     class_name = 'N'
     
-    def __init__(self, d, D, B, i, Z, Dw, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name=''):
-        RadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=Cr,
+        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
                                      material=material, contact_type=contact_type,
                                      mass=mass, name=name)
@@ -1504,10 +1512,10 @@ class NF(RadialRollerBearing):
     class_name = 'NF'
 
     
-    def __init__(self, d, D, B, i, Z, Dw, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name=''):
-        RadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=Cr,
+        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
                                      material=material, contact_type=contact_type,
                                      mass=mass, name=name)
@@ -1575,10 +1583,10 @@ class NU(RadialRollerBearing):
     class_name = 'NU'
 
     
-    def __init__(self, d, D, B, i, Z, Dw, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name=''):
-        RadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=Cr,
+        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
                                      material=material, contact_type=contact_type,
                                      mass=mass, name=name)
@@ -1634,10 +1642,10 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     coeff_baselife = 10/3.
     class_name = 'TaperedRollerBearing'
     
-    def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name=''):
-        RadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha=alpha, Cr=Cr,
+        RadialRollerBearing.__init__(self, d, D, B, alpha=alpha, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
                                      material=material, contact_type=contact_type,
                                      mass=mass, name=name)
