@@ -11,16 +11,16 @@ import mechanical_components.optimization.bearings as bearings_opt
 #import numpy as npy
 
 bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
-                    loads = [[[(0.1, 0, 0), (0, 10000, 0), (0, 0, 0)]]], 
-                    speeds = [300],
+                    loads = [[[(0.1, 0, 0), (2000, 10000, 0), (0, 0, 0)], [(0.3, 0, 0), (1000, 3000, 0), (0, 0, 0)]]], 
+                    speeds = [100],
                     operating_times = [10000*3600],
                     inner_diameters = [0.02, 0.02],
-                    axial_positions = [0, 0.4], 
-                    outer_diameters = [0.07, 0.07], 
-                    lengths = [0.05, 0.05],
+                    axial_positions = [0, 0.2], 
+                    outer_diameters = [0.07, 0.1], 
+                    lengths = [0.07, 0.07],
 #                    linkage_types = [['cylindric_joint'], ['cylindric_joint']],
-#                    mounting_types = [['free', 'both'], ['right', 'left']],
-                    number_bearings = [[1, 2, 3], [1, 2, 3]],
+                    mounting_types = [['free', 'both'], ['right', 'left']],
+                    number_bearings = [[3], [2]],
                     bearing_classes = [bearings_opt.RadialBallBearing, 
                                        bearings_opt.AngularBallBearing,
                                        bearings_opt.TaperedRollerBearing,

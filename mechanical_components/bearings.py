@@ -1846,6 +1846,36 @@ class BearingCatalog:
                 self.bearings_by_types[bearing.__class__].append(bearing)
             else:
                 self.bearings_by_types[bearing.__class__] = [bearing]
+        
+        bearings_by_types = {}
+        for bearing in bearings:
+            d = str(round(bearing.d, 3))
+            D = str(round(bearing.D, 3))
+                    
+            if bearing.__class__ in bearings_by_types:
+                if d not in bearings_by_types.keys():
+                    bearings_by_types[bearing.__class__][d] = {}
+                    bearings_by_types[bearing.__class__][d][D] = [bearing]
+                else:
+                    if D not in bearings_by_types[d].keys():
+                        bearings_by_types[bearing.__class__][d][D] = []
+                    else:
+                        bearings_by_types[bearing.__class__][d][D].append(bearing)
+            else:
+                bearings_by_types[bearing.__class__] = {}
+                bearings_by_types[bearing.__class__][d] = {}
+                bearings_by_types[bearing.__class__][d][D] = [bearing]
+        
+        self.bearings_by_dict = {}
+        for classe, dict_classe in bearings_by_types.items():
+            self.bearings_by_dict[classe] = {}
+            for d, dict_d in dict_classe.items():
+                self.bearings_by_dict[classe][d] = {}
+                for D, dict_D in dict_d.items():
+                    list_Cr = []
+                    for bearing in dict_D:
+                        list_Cr.append(bearing.Cr)
+                    self.bearings_by_dict[classe][d][D] = [dict_D[i] for i in npy.argsort(list_Cr)]
                 
         self.name = name
         
@@ -1944,16 +1974,11 @@ class BearingCatalog:
         return [list_bearings[i] for i in arg_list_sort]
 
     def NextBearingCatalog(self, bearing_class, d, D):
-        
-        bearings = self.bearings_by_types[bearing_class]
-        list_bearings = []
-        list_sort = []
-        for bearing in bearings:
-            if (bearing.d == d) and (bearing.D == D):
-                list_bearings.append(bearing)
-                list_sort.append(bearing.Cr)
-        arg_list_sort = npy.argsort(list_sort)
-        return [list_bearings[i] for i in arg_list_sort]
+        try:
+            next_bearings = self.bearings_by_dict[bearing_class][str(d)][str(D)]
+            return next_bearings
+        except:
+            return False
     
     def Check(self):
         for bearing_class, bearings in self.bearings.items():
@@ -1985,6 +2010,14 @@ dict_bearing_classes = {str(RadialBallBearing): RadialBallBearing,
                         str(NF): NF, 
                         str(NU): NU,
                         str(TaperedRollerBearing): TaperedRollerBearing}
+
+strength_bearing_classes = {str(RadialBallBearing): 1, 
+                        str(AngularBallBearing): 1,
+                        str(NUP): 3, 
+                        str(N): 3, 
+                        str(NF): 3, 
+                        str(NU): 3,
+                        str(TaperedRollerBearing): 2}
 
 class ConceptualBearingCombination:
     def __init__(self, bearing_classes, directions, mounting):
@@ -2764,7 +2797,7 @@ class BearingAssembly:
         
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
                          imposed_displacements)
-        result_sm = sm.Solve(50)
+        result_sm = sm.Solve(500)
         bearing_assembly_simulation_result.axial_load_model = result_sm
                 
         for num_bc, (axial_linkages, component) in enumerate(zip(bc_axial_bearings, components)):
