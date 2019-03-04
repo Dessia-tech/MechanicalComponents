@@ -8,6 +8,7 @@ Created on Fri Oct  5 09:53:05 2018
 #import sys
 #import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
+
 #import numpy as npy
 
 bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
@@ -24,14 +25,14 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
                     bearing_classes = [bearings_opt.RadialBallBearing, 
                                        bearings_opt.AngularBallBearing,
                                        bearings_opt.TaperedRollerBearing,
-                                       bearings_opt.NUP
+                                       bearings_opt.NU
                                        ])
 
 d = bearing_assembly_opt.Dict()
 del bearing_assembly_opt
 bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
 
-bearing_assembly_opt.Optimize(2)
+bearing_assembly_opt.Optimize(10)
 
 for num_sol, ba_simulation in enumerate(bearing_assembly_opt.bearing_assembly_simulations):
     print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)

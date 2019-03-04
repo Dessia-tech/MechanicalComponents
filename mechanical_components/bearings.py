@@ -828,7 +828,7 @@ class RadialBallBearing(RadialBearing):
         if 'C0r' not in d.keys():
             d['C0r'] = None
         obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
-                  Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
+                  Dw = d['Dw'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
@@ -1057,8 +1057,8 @@ class AngularBallBearing(RadialBearing):
             d['Cr'] = None
         if 'C0r' not in d.keys():
             d['C0r'] = None
-        obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
-                  Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
+        obj = cls(d = d['d'], D = d['D'], B = d['B'], alpha = d['alpha'], i = d['i'], Z = d['Z'], 
+                  Dw = d['Dw'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
@@ -1367,7 +1367,7 @@ class RadialRollerBearing(RadialBearing):
         if 'C0r' not in d.keys():
             d['C0r'] = None
         obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
-                  Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
+                  Dw = d['Dw'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
@@ -1822,8 +1822,8 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
             d['Cr'] = None
         if 'C0r' not in d.keys():
             d['C0r'] = None
-        obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
-                  Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
+        obj = cls(d = d['d'], D = d['D'], B = d['B'], alpha = d['alpha'], i = d['i'], Z = d['Z'], 
+                  Dw = d['Dw'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
@@ -2006,8 +2006,9 @@ class BearingCatalog:
                     invalid_bearings.append(bearing)
         return invalid_bearings
     
-generic_catalog = BearingCatalog.LoadFromDataframe(pandas_sort, 'Generic DessIA catalog')
-    
+#generic_catalog = BearingCatalog.LoadFromDataframe(pandas_sort, 'Generic DessIA catalog')
+generic_catalog = BearingCatalog.LoadFromFile('/Users/Pierrem/DessIA/catalogs-scraping/bearings/manufacturers/schaeffler.json')
+
 bearing_classes = [RadialBallBearing, AngularBallBearing,
                    NUP, N, 
                    NF, NU,
