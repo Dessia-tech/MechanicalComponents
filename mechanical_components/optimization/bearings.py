@@ -256,18 +256,18 @@ class RollerBearingContinuousOptimizer:
 
                             print('Lnm: {}, specification: {}'.format(lnm, Lnm))
                             
-with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                                   'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
-    pandas_rlts_FNR = pandas.read_csv(rlts_FNR) 
-            
-pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['Z'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['Dw'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
-#        pandas_sort = pandas_sort[pandas_sort['alpha'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
-base_bearing = pandas_sort
+#with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+#                                   'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
+#    pandas_rlts_FNR = pandas.read_csv(rlts_FNR) 
+#            
+#pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['Z'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['Dw'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
+##        pandas_sort = pandas_sort[pandas_sort['alpha'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
+#base_bearing = pandas_sort
 
 
 class BearingCombinationOptimizer:
@@ -586,7 +586,10 @@ class BearingAssemblyOptimizer:
         
         conceptual_bearing_combination_left, conceptual_bearing_combination_right,\
             bearing_left_possibilies, bearing_right_possibilies = select_configurations
-            
+#        print(conceptual_bearing_combination_left.bearing_classes, conceptual_bearing_combination_right.bearing_classes)
+#        print(conceptual_bearing_combination_left.mounting, conceptual_bearing_combination_right.mounting)
+#        print(conceptual_bearing_combination_left.directions, conceptual_bearing_combination_right.directions)
+        
         nb_bearings_left = len(conceptual_bearing_combination_left.bearing_classes)
         nb_bearings_right = len(conceptual_bearing_combination_right.bearing_classes)
         nb_bearings = nb_bearings_left + nb_bearings_right

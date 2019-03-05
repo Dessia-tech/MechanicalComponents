@@ -1651,7 +1651,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                  mass=None, name='', metadata={}):
         
         if Dw is None:
-            self.Dw = (D - d)/6.
+            self.Dw = (D - d)/7.
 
         RadialRollerBearing.__init__(self, d, D, B, alpha=alpha, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
@@ -1838,18 +1838,18 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                   name=d['name'], metadata=d['metadata'])
         return obj
     
-with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                                   'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
-    pandas_rlts_FNR = pandas.read_csv(rlts_FNR) 
-pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['d'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['D'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['Z'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['Dw'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
-base_bearing = pandas_sort
+#with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+#                                   'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
+#    pandas_rlts_FNR = pandas.read_csv(rlts_FNR) 
+#pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['d'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['D'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['Z'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['Dw'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
+#base_bearing = pandas_sort
 
     
 class BearingCatalog:
@@ -2076,7 +2076,7 @@ class ConceptualBearingCombination:
             connection_bi=['left', 'right']
             connection_be=['left', 'right']
         elif self.mounting == 'free':
-            connection_bi=[]
+            connection_bi=['left', 'right']
             connection_be=[]
         elif self.mounting == 'right':
             connection_bi=['left']
@@ -2210,7 +2210,7 @@ class ConceptualBearingCombination:
             node_output = li_node_output[5]
             try:
                 if (node_input in nx_graph) and (node_output in nx_graph):
-                    sol = list(nx.all_shortest_paths(nx_graph, source=node_input, 
+                    list(nx.all_shortest_paths(nx_graph, source=node_input, 
                                                 target=node_output))
                 else:
                     valid = False
@@ -2222,15 +2222,44 @@ class ConceptualBearingCombination:
             node_output = li_node_output[0]
             try:
                 if (node_input in nx_graph) and (node_output in nx_graph):
-                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    # Pourquoi cette variable n'est pas utilisée?????
-                    sol = list(nx.all_shortest_paths(nx_graph, source=node_input, 
+                    list(nx.all_shortest_paths(nx_graph, source=node_input, 
                                                 target=node_output))
                 else:
                     valid = False
             except nx.NetworkXNoPath:
                 valid = False
                 pass
+            
+        def AnalyseConnection(node_input, node_output):
+            valid = True
+            try:
+                if (node_input in nx_graph) and (node_output in nx_graph):
+                    list(nx.all_shortest_paths(nx_graph, source=node_input, 
+                                                target=node_output))
+                else:
+                    valid = False
+            except nx.NetworkXNoPath:
+                valid = False
+                pass
+            return valid
+            
+        if self.mounting == 'free':
+            if valid:
+                valid = AnalyseConnection(list_node_bearings[0][4], li_node_output[2])
+            if valid:
+                valid = AnalyseConnection(list_node_bearings[-1][1], li_node_output[5])
+        
+        if self.mounting == 'right':
+            if valid:
+                valid = AnalyseConnection(list_node_bearings[0][4], li_node_output[2])
+            if valid:
+                valid = AnalyseConnection(list_node_bearings[-1][3], li_node_output[5])
+                
+        if self.mounting == 'left':
+            if valid:
+                valid = AnalyseConnection(list_node_bearings[0][6], li_node_output[0])
+            if valid:
+                valid = AnalyseConnection(list_node_bearings[-1][1], li_node_output[7])
         
         return valid
 
@@ -2418,7 +2447,7 @@ class BearingCombination:
         axial_bearings = []
         loads = []
         k1 = 1e4
-        j1 = 1e-4
+        j1 = 0
         posx = pos
         for num_bg, (bg, bg_result) in enumerate(zip(self.bearings, bearing_result)):
             component_item = []

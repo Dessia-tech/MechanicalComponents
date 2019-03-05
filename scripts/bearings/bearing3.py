@@ -22,7 +22,7 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
                     lengths = [0.08, 0.08],
                     linkage_types = [['cylindric_joint'], ['cylindric_joint']],
                     mounting_types = [['free', 'both'], ['right', 'left']],
-                    number_bearings = [[1, 2], [1, 2]],
+                    number_bearings = [[2], [2]],
                     bearing_classes = [bearings.RadialBallBearing, 
                                        bearings.AngularBallBearing,
                                        bearings.TaperedRollerBearing,
