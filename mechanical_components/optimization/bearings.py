@@ -162,7 +162,7 @@ class RollerBearingContinuousOptimizer:
         for [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup] in liste_sol_roller_iso:
             E=(E_inf+E_sup)/2.
             F=E-2*Dw
-            Zmax=int(2*math.pi/(2.*math.arcsin((Dw/2)/(F/2.+Dw/2.))))
+            Zmax=int(2*math.pi/(2.*math.asin((Dw/2)/(F/2.+Dw/2.))))
             masse_elem=(math.pi*D**2/4.-math.pi*E**2/4.)*B
             masse_elem+=(math.pi*F**2/4.-math.pi*d**2/4.)*B
             masse_elem+=math.pi*Dw**2/4.*Lw*Zmax
