@@ -586,7 +586,10 @@ class BearingAssemblyOptimizer:
         
         conceptual_bearing_combination_left, conceptual_bearing_combination_right,\
             bearing_left_possibilies, bearing_right_possibilies = select_configurations
-            
+#        print(conceptual_bearing_combination_left.bearing_classes, conceptual_bearing_combination_right.bearing_classes)
+#        print(conceptual_bearing_combination_left.mounting, conceptual_bearing_combination_right.mounting)
+#        print(conceptual_bearing_combination_left.directions, conceptual_bearing_combination_right.directions)
+        
         nb_bearings_left = len(conceptual_bearing_combination_left.bearing_classes)
         nb_bearings_right = len(conceptual_bearing_combination_right.bearing_classes)
         nb_bearings = nb_bearings_left + nb_bearings_right
