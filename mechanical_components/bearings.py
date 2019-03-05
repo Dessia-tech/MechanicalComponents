@@ -1837,19 +1837,6 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'])
         return obj
-    
-#with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-#                                   'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
-#    pandas_rlts_FNR = pandas.read_csv(rlts_FNR) 
-#pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['d'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['D'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['Z'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['Dw'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
-#base_bearing = pandas_sort
 
     
 class BearingCatalog:
@@ -2038,8 +2025,6 @@ class BearingCatalog:
         ax4.set_ylabel('Cr')
         
         
-    
-#generic_catalog = BearingCatalog.LoadFromDataframe(pandas_sort, 'Generic DessIA catalog')
 with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
                            'mechanical_components/catalogs/schaeffler.json') as schaeffler_json:
     schaeffler_catalog = BearingCatalog.LoadFromFile(schaeffler_json)
