@@ -285,7 +285,8 @@ class RadialBearing(LoadBearing):
     linkage = None
     
     def __init__(self, d, D, B, alpha, i, Z, Dw, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, contact_type=None, mass=None, name=''):
+                 material=material_iso, contact_type=None, mass=None, name='', metadata={}):
+
         self.d = d
         self.D = D
         self.B = B
@@ -293,7 +294,7 @@ class RadialBearing(LoadBearing):
         self.i = i
         
         if Dw is None:
-            self.Dw = (D - d)/6.
+            self.Dw = min((D - d)/4, 0.85*B)
         else:
             self.Dw = Dw
         if Z is None:
@@ -319,7 +320,7 @@ class RadialBearing(LoadBearing):
         self.radius = 5e-4
         self.slack = (self.E-self.F-2*self.Dw)/4.
         self.name = name
-#        self.mass = mass
+        self.metadata = metadata
         
     def Check(self):
         if self.d <= 0.:
@@ -652,9 +653,9 @@ class RadialBallBearing(RadialBearing):
     
     # TODO: remove alpha?
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, contact_type=None, mass=None, name=''):
+                 material=material_iso, contact_type=None, mass=None, name='', metadata={}):
         RadialBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr, C0r=C0r, oil=oil,
-                               material=material, contact_type=contact_type, mass=mass, name=name)
+                               material=material, contact_type=contact_type, mass=mass, name=name, metadata=metadata)
         
         # estimation for the graph 2D description
         h1 = self.Dw/2. - (self.E - self.D1)/2.
@@ -832,7 +833,7 @@ class RadialBallBearing(RadialBearing):
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
-                  name=d['name'])
+                  name=d['name'], metadata=d['metadata'])
         return obj
         
 class AngularBallBearing(RadialBearing):
@@ -844,10 +845,10 @@ class AngularBallBearing(RadialBearing):
     class_name = 'AngularBallBearing'
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, contact_type=None, mass=None, name=''):
+                 material=material_iso, contact_type=None, mass=None, name='', metadata={}):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, oil=oil, material=material, 
-                               contact_type=contact_type, mass=mass, name=name)
+                               contact_type=contact_type, mass=mass, name=name, metadata=metadata)
 
         
         # estimation for the graph 2D description
@@ -1063,7 +1064,7 @@ class AngularBallBearing(RadialBearing):
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
-                  name=d['name'])
+                  name=d['name'], metadata=d['metadata'])
         return obj
             
 class SphericalBallBearing(RadialBearing):
@@ -1075,9 +1076,9 @@ class SphericalBallBearing(RadialBearing):
     class_name = 'SphericalBallBearing'
     
     def __init__(self, d, D, B, alpha=0, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, contact_type=None, mass=None, name=''):
+                 material=material_iso, contact_type=None, mass=None, name='', metadata={}):
         RadialBearing.__init__(self, d, D, B, alpha, i, Z, Dw, Cr, C0r, oil,
-                               material, contact_type, mass, name)
+                               material, contact_type, mass, name, metadata=metadata)
         
         
     def EquivalentStaticLoad(self, fr, fa=None):
@@ -1158,7 +1159,7 @@ class SphericalBallBearing(RadialBearing):
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
-                  name=d['name'])
+                  name=d['name'], metadata=d['metadata'])
         return obj
             
 # TODO remove alpha?
@@ -1172,11 +1173,11 @@ class RadialRollerBearing(RadialBearing):
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
-                 mass=None, name=''):
+                 mass=None, name='', metadata={}):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, 
                                Cr=Cr, C0r=C0r, oil=oil,
                                material=material, contact_type=contact_type, 
-                               mass=mass, name=name)
+                               mass=mass, name=name, metadata=metadata)
 #        self.typ = typ
         
         # estimation for the graph 2D description
@@ -1374,7 +1375,7 @@ class RadialRollerBearing(RadialBearing):
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
-                  name=d['name'])
+                  name=d['name'], metadata=d['metadata'])
         return obj
     
 class NUP(RadialRollerBearing):
@@ -1387,11 +1388,11 @@ class NUP(RadialRollerBearing):
     # TODO: remove alpha?
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
-                 mass=None, name=''):
+                 mass=None, name='', metadata={}):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
                                      material=material, contact_type=contact_type,
-                                     mass=mass, name=name)
+                                     mass=mass, name=name, metadata=metadata)
         
     def InternalRingContour(self, direction=1, sign_V=1):
 
@@ -1456,11 +1457,11 @@ class N(RadialRollerBearing):
     
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
-                 mass=None, name=''):
+                 mass=None, name='', metadata={}):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
                                      material=material, contact_type=contact_type,
-                                     mass=mass, name=name)
+                                     mass=mass, name=name, metadata=metadata)
         
     def InternalRingContour(self, direction=1, sign_V=1):
 
@@ -1517,11 +1518,11 @@ class NF(RadialRollerBearing):
     
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
-                 mass=None, name=''):
+                 mass=None, name='', metadata={}):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
                                      material=material, contact_type=contact_type,
-                                     mass=mass, name=name)
+                                     mass=mass, name=name, metadata=metadata)
         
     def InternalRingContour(self, direction=1, sign_V=1):
 
@@ -1588,11 +1589,11 @@ class NU(RadialRollerBearing):
     
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
-                 mass=None, name=''):
+                 mass=None, name='', metadata={}):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
                                      material=material, contact_type=contact_type,
-                                     mass=mass, name=name)
+                                     mass=mass, name=name, metadata=metadata)
 
     def InternalRingContour(self, direction=1, sign_V=1):
         d1 = self.F - 0.1*(self.F - self.d)
@@ -1647,11 +1648,15 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
-                 mass=None, name=''):
+                 mass=None, name='', metadata={}):
+        
+        if Dw is None:
+            self.Dw = (D - d)/6.
+
         RadialRollerBearing.__init__(self, d, D, B, alpha=alpha, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
                                      material=material, contact_type=contact_type,
-                                     mass=mass, name=name)
+                                     mass=mass, name=name, metadata=metadata)
         
         # estimation for the graph 2D description
         self.Dpw = (self.d + self.D)/2.
@@ -1830,7 +1835,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
-                  name=d['name'])
+                  name=d['name'], metadata=d['metadata'])
         return obj
     
 with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
@@ -2010,7 +2015,7 @@ class BearingCatalog:
         return invalid_bearings
     
 generic_catalog = BearingCatalog.LoadFromDataframe(pandas_sort, 'Generic DessIA catalog')
-#generic_catalog = BearingCatalog.LoadFromFile('/Users/Pierrem/DessIA/catalogs-scraping/bearings/manufacturers/schaeffler.json')
+#generic_catalog = BearingCatalog.LoadFromFile('schaeffler.json')
 
 bearing_classes = [RadialBallBearing, AngularBallBearing,
                    NUP, N, 
