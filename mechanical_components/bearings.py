@@ -284,7 +284,7 @@ class RadialBearing(LoadBearing):
     generate_axial_load = None
     linkage = None
     
-    def __init__(self, d, D, B, i, Z, Dw, alpha, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, alpha, i, Z, Dw, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name=''):
         self.d = d
         self.D = D
@@ -653,7 +653,7 @@ class RadialBallBearing(RadialBearing):
     # TODO: remove alpha?
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name=''):
-        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha=0, Cr=Cr, C0r=C0r, oil=oil,
+        RadialBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr, C0r=C0r, oil=oil,
                                material=material, contact_type=contact_type, mass=mass, name=name)
         
         # estimation for the graph 2D description
@@ -845,8 +845,9 @@ class AngularBallBearing(RadialBearing):
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name=''):
-        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil, material, 
-                               contact_type, mass, name)
+        RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, Cr=Cr,
+                               C0r=C0r, oil=oil, material=material, 
+                               contact_type=contact_type, mass=mass, name=name)
 
         
         # estimation for the graph 2D description
@@ -920,7 +921,7 @@ class AngularBallBearing(RadialBearing):
             if fa <= e*fr:
                 Pr = X3*fr+Y3*fa
             else:
-                Pr = X2*fr+Y2*fa  
+                Pr = X2*fr+Y2*fa
         return Pr
     
     def AIso(self, kappa, ec, Cu, Pr):
@@ -1073,9 +1074,9 @@ class SphericalBallBearing(RadialBearing):
     coeff_baselife = 3.
     class_name = 'SphericalBallBearing'
     
-    def __init__(self, d, D, B, i=1, Z=None, Dw=None, alpha=0, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, alpha=0, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name=''):
-        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr, C0r, oil,
+        RadialBearing.__init__(self, d, D, B, alpha, i, Z, Dw, Cr, C0r, oil,
                                material, contact_type, mass, name)
         
         
@@ -1172,8 +1173,10 @@ class RadialRollerBearing(RadialBearing):
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name=''):
-        RadialBearing.__init__(self, d, D, B, i, Z, Dw, alpha, Cr=Cr, C0r=C0r, oil=oil,
-                               material=material, contact_type=contact_type, mass=mass, name=name)
+        RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, 
+                               Cr=Cr, C0r=C0r, oil=oil,
+                               material=material, contact_type=contact_type, 
+                               mass=mass, name=name)
 #        self.typ = typ
         
         # estimation for the graph 2D description
@@ -2006,8 +2009,8 @@ class BearingCatalog:
                     invalid_bearings.append(bearing)
         return invalid_bearings
     
-#generic_catalog = BearingCatalog.LoadFromDataframe(pandas_sort, 'Generic DessIA catalog')
-generic_catalog = BearingCatalog.LoadFromFile('/Users/Pierrem/DessIA/catalogs-scraping/bearings/manufacturers/schaeffler.json')
+generic_catalog = BearingCatalog.LoadFromDataframe(pandas_sort, 'Generic DessIA catalog')
+#generic_catalog = BearingCatalog.LoadFromFile('/Users/Pierrem/DessIA/catalogs-scraping/bearings/manufacturers/schaeffler.json')
 
 bearing_classes = [RadialBallBearing, AngularBallBearing,
                    NUP, N, 

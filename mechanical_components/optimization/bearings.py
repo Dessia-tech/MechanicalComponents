@@ -715,6 +715,7 @@ class BearingAssemblyOptimizer:
                 if L10 < L10_objective:
                     print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
                     valid = False
+                
                     compt_nb_eval_L10 += 1
                     if compt_nb_eval_L10 > 5:
                         break
@@ -753,7 +754,7 @@ class BearingAssemblyOptimizer:
                             valid_fsolve = True
 #                                print('analyse coeff ', coefficient_Cr, funct([coefficient_Cr]))
                             break
-                    print('end', coefficient_Cr)
+#                    print('end', coefficient_Cr)
                     if not valid_fsolve:
                         break
                     
@@ -823,7 +824,6 @@ class BearingAssemblyOptimizer:
                 dt.SetCurrentNodeNumberPossibilities(0)
             
             dt.NextNode(valid)
-        print(dt.current_node)
     
     def Optimize(self, max_solutions=10):
         
@@ -864,7 +864,8 @@ class BearingAssemblyOptimizer:
                     li_bearing_assembly_configurations = bearing_assembly_configurations
                     li_bearing_assembly_L10 = bearing_assembly_L10
                 
-            bearing_assembly_configurations_sort = [li_bearing_assembly_configurations[i] for i in npy.argsort(li_bearing_assembly_L10)[::-1]]
+            bearing_assembly_configurations_sort = li_bearing_assembly_configurations
+#            bearing_assembly_configurations_sort = [li_bearing_assembly_configurations[i] for i in npy.argsort(li_bearing_assembly_L10)[::-1]]
             
             print('number bearing assemblies configurations {}'.format(len(bearing_assembly_configurations_sort)))
             for bearing_assembly_configurations in bearing_assembly_configurations_sort:
