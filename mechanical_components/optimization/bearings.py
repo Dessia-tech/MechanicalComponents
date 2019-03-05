@@ -162,7 +162,7 @@ class RollerBearingContinuousOptimizer:
         for [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup] in liste_sol_roller_iso:
             E=(E_inf+E_sup)/2.
             F=E-2*Dw
-            Zmax=int(2*math.pi/(2.*math.arcsin((Dw/2)/(F/2.+Dw/2.))))
+            Zmax=int(2*math.pi/(2.*math.asin((Dw/2)/(F/2.+Dw/2.))))
             masse_elem=(math.pi*D**2/4.-math.pi*E**2/4.)*B
             masse_elem+=(math.pi*F**2/4.-math.pi*d**2/4.)*B
             masse_elem+=math.pi*Dw**2/4.*Lw*Zmax
@@ -256,18 +256,18 @@ class RollerBearingContinuousOptimizer:
 
                             print('Lnm: {}, specification: {}'.format(lnm, Lnm))
                             
-with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                                   'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
-    pandas_rlts_FNR = pandas.read_csv(rlts_FNR) 
-            
-pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['Z'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['Dw'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
-#        pandas_sort = pandas_sort[pandas_sort['alpha'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
-pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
-base_bearing = pandas_sort
+#with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+#                                   'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
+#    pandas_rlts_FNR = pandas.read_csv(rlts_FNR) 
+#            
+#pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['Z'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['Dw'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
+##        pandas_sort = pandas_sort[pandas_sort['alpha'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
+#pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
+#base_bearing = pandas_sort
 
 
 class BearingCombinationOptimizer:
