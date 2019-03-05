@@ -1975,9 +1975,12 @@ class BearingCatalog:
         
     @classmethod
     def LoadFromFile(cls, filepath):
-        with open(filepath, 'r') as file:
-            d = json.load(file)
-            return cls.DictToObject(d) 
+        if type(filepath) is str:            
+            with open(filepath, 'r') as file:
+                d = json.load(file)
+        else:
+            d = json.load(filepath)
+        return cls.DictToObject(d) 
     
     def SearchBearingCatalog(self, bearing_class, d, D):
         
@@ -1995,7 +1998,7 @@ class BearingCatalog:
         try:
             next_bearings = self.bearings_by_dict[bearing_class][str(d)][str(D)]
             return next_bearings
-        except:
+        except KeyError:
             return False
     
     def Check(self):
@@ -2007,15 +2010,39 @@ class BearingCatalog:
     
     def InvalidBearings(self):
         invalid_bearings = []
-        for bearing_class, bearings in self.bearings.items():
-            for bearing in bearings:
-                if not bearing.Check():
-                    
-                    invalid_bearings.append(bearing)
+        for bearing in self.bearings:
+            if not bearing.Check():                    
+                invalid_bearings.append(bearing)
         return invalid_bearings
+
+    def Plot(self):
+        d = [b.d for b in self.bearings]
+        D = [b.D for b in self.bearings]
+        B = [b.B for b in self.bearings]
+        Cr = [b.Cr for b in self.bearings]
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+        ax1.plot(d ,D, 'o')
+        ax1.set_xlabel('d')
+        ax1.set_ylabel('D')
+        
+        ax2.plot(d, B, 'o')
+        ax2.set_xlabel('d')
+        ax2.set_ylabel('B')
+        
+        ax3.plot(d, Cr, 'o')
+        ax3.set_xlabel('d')
+        ax3.set_ylabel('Cr')
+        
+        ax4.plot(D, Cr, 'o')
+        ax4.set_xlabel('D')
+        ax4.set_ylabel('Cr')
+        
+        
     
-generic_catalog = BearingCatalog.LoadFromDataframe(pandas_sort, 'Generic DessIA catalog')
-#generic_catalog = BearingCatalog.LoadFromFile('schaeffler.json')
+#generic_catalog = BearingCatalog.LoadFromDataframe(pandas_sort, 'Generic DessIA catalog')
+with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                           'mechanical_components/catalogs/schaeffler.json') as schaeffler_json:
+    schaeffler_catalog = BearingCatalog.LoadFromFile(schaeffler_json)
 
 bearing_classes = [RadialBallBearing, AngularBallBearing,
                    NUP, N, 

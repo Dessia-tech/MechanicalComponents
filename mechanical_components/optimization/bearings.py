@@ -9,14 +9,12 @@ Created on Fri Aug 17 02:14:21 2018
 from mechanical_components.bearings import oil_iso_vg_1500, material_iso, iso_bearings, bearing_rules, iso_rollers
 
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
-        SphericalBallBearing, RadialRollerBearing, TaperedRollerBearing, \
-        NUP, N, \
-        NF, NU, \
-        BearingAssembly, BearingCombination, DetailedRadialRollerBearing, \
+        SphericalBallBearing, \
+        BearingAssembly, DetailedRadialRollerBearing, \
         BearingAssemblySimulationResult, \
         BearingCombinationSimulationResult, BearingSimulationResult,\
         BearingAssemblySimulation, bearing_classes, dict_bearing_classes, \
-        ConceptualBearingCombination, BearingCatalog, generic_catalog, \
+        ConceptualBearingCombination, schaeffler_catalog, \
         strength_bearing_classes
         
 import numpy as npy
@@ -362,7 +360,7 @@ class BearingAssemblyOptimizer:
                  number_bearings=[[1, 2], [1, 2]],
                  bearing_classes=bearing_classes,
                  bearing_assembly_simulations=None,
-                 catalog=generic_catalog):
+                 catalog=schaeffler_catalog):
         self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
@@ -545,7 +543,7 @@ class BearingAssemblyOptimizer:
                                         self.inner_diameters[1], self.outer_diameters[1])
             nb_bearings_left = len(conceptual_bearing_combination_left.bearing_classes)
             nb_bearings_right = len(conceptual_bearing_combination_right.bearing_classes)
-            nb_bearings = nb_bearings_left + nb_bearings_right
+            nb_bearings = nb_bearings_left + nb_bearings_right# TODO why unussed?
             
             if len(first_bearing_left_possibilies) == 0 or len(first_bearing_right_possibilies) == 0:
                 continue
@@ -860,7 +858,7 @@ class BearingAssemblyOptimizer:
                 try:
                     li_bearing_assembly_configurations.extend(bearing_assembly_configurations)
                     li_bearing_assembly_L10.extend(bearing_assembly_L10)
-                except:
+                except:# TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!
                     li_bearing_assembly_configurations = bearing_assembly_configurations
                     li_bearing_assembly_L10 = bearing_assembly_L10
                 

@@ -6,7 +6,7 @@ Created on Fri Oct  5 09:53:05 2018
 @author: Pierrem
 """
 #import sys
-#import mechanical_components.bearings as bearings
+import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
 
 #import numpy as npy
@@ -23,11 +23,11 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
                     linkage_types = [['cylindric_joint'], ['cylindric_joint']],
                     mounting_types = [['free', 'both'], ['right', 'left']],
                     number_bearings = [[1, 2], [1, 2]],
-                    bearing_classes = [bearings_opt.RadialBallBearing, 
-                                       bearings_opt.AngularBallBearing,
-                                       bearings_opt.TaperedRollerBearing,
-                                       bearings_opt.NUP, bearings_opt.N, bearings_opt.NU,
-                                       bearings_opt.NF
+                    bearing_classes = [bearings.RadialBallBearing, 
+                                       bearings.AngularBallBearing,
+                                       bearings.TaperedRollerBearing,
+                                       bearings.NUP, bearings.N, bearings.NU,
+#                                       bearings_opt.NF
                                        ])
 
 d = bearing_assembly_opt.Dict()
