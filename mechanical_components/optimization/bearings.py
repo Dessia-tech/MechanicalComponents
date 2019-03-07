@@ -522,7 +522,6 @@ class BearingCombinationOptimizer:
                 Cr_current_node_m = Cr_current_node
 
             if (dt.current_depth == nb_bearings) and valid:
-                
                 bc = conceptual_bearing_combination.BearingCombination(bearings)
                 li_bg_results = []
                 for bearing in bearings:
@@ -530,11 +529,15 @@ class BearingCombinationOptimizer:
                 bearing_combination_simulation_result = BearingCombinationSimulationResult(li_bg_results, self.axial_loads,
                                                                 self.radial_loads, self.speeds, self.operating_times)
 
-                bc.BaseLifeTime(bearing_combination_simulation_result)
+                check = bc.BaseLifeTime(bearing_combination_simulation_result)
+                print(check)
+                if check == False:
+                    break
+                
                 L10 = bearing_combination_simulation_result.L10
                 if L10 is False:
                     break
-                print(L10)
+                print(L10, L10_objective)
                 if L10 < L10_objective:
                     print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
                     valid = False
@@ -554,7 +557,10 @@ class BearingCombinationOptimizer:
                         bearing_combination_simulation_result = BearingCombinationSimulationResult(li_bg_results, self.axial_loads,
                                                                         self.radial_loads, self.speeds, self.operating_times)
         
-                        bc.BaseLifeTime(bearing_combination_simulation_result)
+                        check = bc.BaseLifeTime(bearing_combination_simulation_result)
+                        if not check:
+                            return False
+                        
                         L10 = bearing_combination_simulation_result.L10
                         
                         if L10 is not False:
@@ -596,7 +602,7 @@ class BearingCombinationOptimizer:
                     D = bearing.D
                     try:
                         bearing_possibilities = self.bearing_catalogue.NextBearingCatalog(bearing_classe, d , D)
-                        if bearing_possibilities is not False:
+                        if bearing_possibilities != False:
                             dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
                             list_bearing_possibilities[dt.current_depth] = bearing_possibilities
                         else:
@@ -653,10 +659,16 @@ class BearingCombinationOptimizer:
                                                                      max_bearing_combinations = max_solutions)
 
                 for i_bearing_combination, bearing_combination in enumerate(bearing_combinations):
-                    bearing_combination_simulation = self.ContinuousOptimize(bearing_combination)
-                    if bearing_combination_simulation != False:
-                        L10 = bearing_combination_simulation.bearing_combination_simulation_result.L10
-                        print(L10, L10_objective)
+                    li_bg_results = []
+                    for bearing in bearing_combination.bearings:
+                        li_bg_results.append(BearingSimulationResult())
+                    bearing_combination_simulation_result = BearingCombinationSimulationResult(li_bg_results, self.axial_loads,
+                                                                    self.radial_loads, self.speeds, self.operating_times)
+                    check = bearing_combination.BaseLifeTime(bearing_combination_simulation_result)
+                    if check != False:
+                        bearing_combination.Update(-self.length/2., self.inner_diameter, self.outer_diameter, self.length)
+                        bearing_combination_simulation = BearingCombinationSimulation(bearing_combination, bearing_combination_simulation_result)
+                        L10 = bearing_combination_simulation_result.L10
                         if L10 >= L10_objective:
                             bearing_combination_simulations.append(bearing_combination_simulation)
                             sort_bearing_combination_simulations.append(L10)
@@ -685,7 +697,9 @@ class BearingCombinationOptimizer:
         def fun(x):
             
             obj = 0
-            bearing_combination.BaseLifeTime(bearing_combination_simulation_result)
+            check = bearing_combination.BaseLifeTime(bearing_combination_simulation_result)
+            if not check:
+                return 0
             L10 = bearing_combination_simulation_result.L10
             obj += 1/(L10)**2
             return obj
@@ -715,7 +729,9 @@ class BearingCombinationOptimizer:
            
         if status >= 0:
             bearing_combination.Update(sol_x, self.inner_diameter, self.outer_diameter, self.length)
-            bearing_combination.BaseLifeTime(bearing_combination_simulation_result)            
+            check = bearing_combination.BaseLifeTime(bearing_combination_simulation_result)            
+            if not check:
+                return False
             bearing_combination_simulation = BearingCombinationSimulation(bearing_combination, bearing_combination_simulation_result)
             return bearing_combination_simulation
         else:

@@ -366,7 +366,7 @@ class RadialBearing(LoadBearing):
                 total_cycles += cycles
 
         if total_cycles == 0.:
-            return [math.inf]
+            return math.inf
         else:
             Pr = (Pr / total_cycles) ** (1/self.coeff_baselife)
             L10 = (Cr/Pr)**(self.coeff_baselife)
@@ -2070,7 +2070,8 @@ class ConceptualBearingCombination:
             connection_bi=['right']
             connection_be=['left']
         return BearingCombination(bearings, self.directions, radial_load_linkage = [True]*len(bearings),
-                                  connection_bi = connection_bi, connection_be = connection_be)
+                                  connection_bi = connection_bi, connection_be = connection_be,
+                                  behavior_link = self.mounting)
 
     def CheckKinematic(self):
         
@@ -2425,7 +2426,7 @@ class BearingCombination:
         result = sm.Solve(500)
         result.Plot(intensity_factor=1e-5)
     
-    def ElementaryAxialLoad(self, ground, shaft, pos, radial_load, bearing_result):
+    def ElementaryAxialLoad(self, ground, shaft, pos, radial_load, axial_load, bearing_result):
         nb_bg_radial = sum([1 if (p is True) else 0 for p in self.radial_load_linkage])
         component = []
         nonlinear_linkages = []
@@ -2434,6 +2435,10 @@ class BearingCombination:
         k1 = 1e4
         j1 = 0
         posx = pos
+        check_axial_load = True
+        
+        global_axial_load = 0
+        
         for num_bg, (bg, bg_result) in enumerate(zip(self.bearings, bearing_result)):
             component_item = []
             component_item.append(unidimensional.Body(posx, bg.d/2., name='Inner ring{}'.format(num_bg)))
@@ -2449,12 +2454,14 @@ class BearingCombination:
             elif bg.generate_axial_load:
                 Fp = radial_load/nb_bg_radial*math.tan(bg.alpha)
                 if self.directions[num_bg] == -1:
+                    global_axial_load += Fp
                     link = unidimensional.CompressionSpring(bor, bir, k1, -j1, 'bearing {}'.format(num_bg))
                     nonlinear_linkages.append(link)
                     axial_bearings.append([link])
                     loads.append(unidimensional.Load(bor, -Fp))
                     loads.append(unidimensional.Load(bir, Fp))
                 elif self.directions[num_bg] == 1:
+                    global_axial_load += -Fp
                     link = unidimensional.CompressionSpring(bir, bor, k1, -j1, 'bearing {}'.format(num_bg))
                     nonlinear_linkages.append(link)
                     axial_bearings.append([link])
@@ -2474,6 +2481,15 @@ class BearingCombination:
                 bg_result.radial_load.append(radial_load/nb_bg_radial)
             component.append(component_item)
             posx += bg.B
+            
+            global_axial_load += axial_load
+            if (self.behavior_link == 'right') and (global_axial_load <= 0):
+                check_axial_load = False
+                break
+            if (self.behavior_link == 'left') and (global_axial_load >= 0):
+                check_axial_load = False
+                break
+            
         if len(component) > 1:
             for bg1, bg2 in zip(component[0:-1], component[1:]):
                 pos1 = bg1[0].initial_position
@@ -2492,7 +2508,7 @@ class BearingCombination:
         if 'right' in self.connection_bi:
             bir = component[-1][0]
             nonlinear_linkages.append(unidimensional.UnilateralContact(bir, shaft, shaft.initial_position - bir.initial_position, name='Inner rings'))
-        return component, nonlinear_linkages, loads, axial_bearings
+        return component, nonlinear_linkages, loads, axial_bearings, check_axial_load
     
     @classmethod
     def EstimateBaseLifeTime(cls, L10s):
@@ -2507,11 +2523,22 @@ class BearingCombination:
             bearing_result.radial_load = []
             bearing_result.axial_load = []
                 
+        nb_bg_radial = sum([1 if (p is True) else 0 for p in self.radial_load_linkage])
         result_bgs = bearing_combination_simulation_result.bearing_simulation_results
         for radial_load, axial_load in zip(bearing_combination_simulation_result.radial_loads, 
                                bearing_combination_simulation_result.axial_loads):
-            self.AxialLoad(axial_load, radial_load, bearing_combination_simulation_result)
             
+            if (self.behavior_link != 'free') and (axial_load != 0):
+                check_axial_load = self.AxialLoad(axial_load, radial_load, bearing_combination_simulation_result)
+                if check_axial_load == False:
+                    return False
+            else:
+                for num_bg, bearing_result in enumerate(bearing_combination_simulation_result.bearing_simulation_results):
+                    check_radial_linkage = self.radial_load_linkage[num_bg]
+                    if check_radial_linkage:
+                        bearing_result.radial_load.append(radial_load/nb_bg_radial)
+                    bearing_result.axial_load.append(0)
+                    
         time = bearing_combination_simulation_result.operating_times
         speed = bearing_combination_simulation_result.speeds
         
@@ -2519,7 +2546,7 @@ class BearingCombination:
                                  bearing_combination_simulation_result.bearing_simulation_results):
             L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
                             N = speed, t = time, Cr = bg.Cr)
-            if str(L10) not in ['nan']:
+            if str(L10) not in ['nan', str(math.inf)]:
                 bg_result.L10 = L10
             else:
                 bg_result.L10 = False
@@ -2527,7 +2554,7 @@ class BearingCombination:
         sum_L10_inv = 0
         valid_L10 = True
         for bg_result in result_bgs:
-            if bg_result.L10 is not False:
+            if (bg_result.L10 is not False) and (bg_result.L10 != 0):
                 sum_L10_inv += (1/bg_result.L10)**1.5
             else:
                 valid_L10 = False
@@ -2537,6 +2564,7 @@ class BearingCombination:
             bearing_combination_simulation_result.L10 = False
             
     def AxialLoad(self, axial_load, radial_load, bearing_combination_simulation_result):
+        
         result_bgs = bearing_combination_simulation_result.bearing_simulation_results
         
         shaft = unidimensional.Body(0, 0, name='Shaft')
@@ -2550,8 +2578,8 @@ class BearingCombination:
         bodies = [ground, shaft]
         nonlinear_linkages = []
             
-        component, nonlinear_linkages_iter, loads_iter, axial_bearings \
-            = self.ElementaryAxialLoad(ground, shaft, 0, radial_load, result_bgs)
+        component, nonlinear_linkages_iter, loads_iter, axial_bearings, check_axial_load \
+            = self.ElementaryAxialLoad(ground, shaft, 0, radial_load, axial_load, result_bgs)
         loads = loads + loads_iter
         
         for bir, bor in component:
@@ -2561,14 +2589,18 @@ class BearingCombination:
         
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
                          imposed_displacements)
-        result_sm = sm.Solve(500)
-        bearing_combination_simulation_result.axial_load_model = result_sm
-                
-        for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_bearings, component)):
-            for link in axial_linkage:
-                if link in result_sm.activated_nonlinear_linkages:
-                    positions = (result_sm.positions[bir], result_sm.positions[bor])
-                    result_bgs[num_bg].axial_load.append(link.Strains(positions))
+        if check_axial_load: 
+            result_sm = sm.Solve(500)
+            bearing_combination_simulation_result.axial_load_model = result_sm
+                    
+            for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_bearings, component)):
+                for link in axial_linkage:
+                    if link in result_sm.activated_nonlinear_linkages:
+                        positions = (result_sm.positions[bir], result_sm.positions[bor])
+                        result_bgs[num_bg].axial_load.append(link.Strains(positions))
+            return True
+        else:
+            return False
     
     def Plot(self, pos=0, a=None, box=True, typ=None, ind_load_case=0):
         """
@@ -2889,7 +2921,7 @@ class BearingAssembly:
                 speed = bearing_assembly_simulation_result.speeds
                 L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
                                 N = speed, t = time, Cr = bg.Cr)
-                if str(L10) not in ['nan']:
+                if str(L10) not in ['nan', str(math.inf)]:
                     bg_result.L10 = L10
                 else:
                     bg_result.L10 = False

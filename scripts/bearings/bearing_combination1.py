@@ -35,25 +35,24 @@ bcs = bearings.BearingCombinationSimulationResult(li_bg_results,
                     axial_loads = [1000, 2000], radial_loads = [2500, 3000],
                     speeds = [100, 200], operating_times = [1e6, 1e7])
 BA.BaseLifeTime(bcs)
-print(bcs.L10)
 
 BCO = bearings.BearingCombinationOptimizer(radial_loads = [100, 2000], 
-                                           axial_loads = [-1000, 2000], 
+                                           axial_loads = [0, 0], 
                                            speeds = [100, 150], 
                                            operating_times = [1e6, 1e8],
                                            inner_diameter = 0.04,
                                            outer_diameter = 0.1,
                                            length = 0.1,
                                            linkage_types = ['ball_joint', 'cylindric_joint'],
-                                           mounting_types = ['both', 'right', 'left', 'free'],
-                                           number_bearings = [2, 3],
+                                           mounting_types = ['free', 'right', 'both'],
+                                           number_bearings = [1, 2, 3],
                                            bearing_classes = [bearings.RadialBallBearing, 
                                                bearings.AngularBallBearing,
                                                bearings.TaperedRollerBearing,
                                                bearings.NUP
                                                ],)
-BCO.ConceptualBearingCombinations()
-BCO.Optimize(5)
+    
+BCO.Optimize(10)
 
 for num_sol, bc_simulation in enumerate(BCO.bearing_combination_simulations):
     print(num_sol, bc_simulation.bearing_combination.mass, bc_simulation.bearing_combination_simulation_result.L10)
