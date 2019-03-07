@@ -5,12 +5,10 @@ Created on Fri Oct  5 09:53:05 2018
 
 @author: Pierrem
 """
-import sys as sys
-import mechanical_components.optimization.bearings as bearings
-import numpy as npy
-import volmdlr as vm
-import copy
-from mechanical_components.load import *
+
+import mechanical_components.bearings as bearings
+import mechanical_components.optimization.bearings as bearings_opt
+#from mechanical_components.load import *
 
 b0 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.01, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0.1, Cr = 1e3)
@@ -37,7 +35,8 @@ bcs = bearings.BearingCombinationSimulationResult(li_bg_results,
 BA.BaseLifeTime(bcs)
 print(bcs.L10)
 
-BCO = bearings.BearingCombinationOptimizer(radial_loads = [100, 2000], 
+
+BCO = bearings_opt.BearingCombinationOptimizer(radial_loads = [100, 2000], 
                                            axial_loads = [-1000, 2000], 
                                            speeds = [100, 150], 
                                            operating_times = [1e6, 1e8],
@@ -46,13 +45,13 @@ BCO = bearings.BearingCombinationOptimizer(radial_loads = [100, 2000],
                                            length = 0.1,
                                            linkage_types = ['ball_joint', 'cylindric_joint'],
                                            mounting_types = ['both', 'right', 'left', 'free'],
-                                           number_bearings = [2, 3],
+                                           number_bearings = [1],
                                            bearing_classes = [bearings.RadialBallBearing, 
                                                bearings.AngularBallBearing,
                                                bearings.TaperedRollerBearing,
                                                bearings.NUP
                                                ],)
-BCO.ConceptualBearingCombinations()
+
 BCO.Optimize(5)
 
 for num_sol, bc_simulation in enumerate(BCO.bearing_combination_simulations):
