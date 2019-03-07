@@ -317,7 +317,7 @@ class BearingCombinationOptimizer:
             if valid_load_case:
                 for linkage in self.linkage_types:
                     configurations.append((mounting_type, linkage))
-        print(configurations)
+#        print(configurations)
         return configurations
 
     def ConceptualBearingCombinations(self, max_bearings=2):
@@ -458,7 +458,7 @@ class BearingCombinationOptimizer:
         d_pre = 0
         
         dt = DecisionTree()
-        print('number of initial bearing', len(bearing_possibilies))
+#        print('number of initial bearing', len(bearing_possibilies))
         while not dt.finished:
             # Constructing BearingCombination
             valid = True
@@ -529,16 +529,16 @@ class BearingCombinationOptimizer:
                                                                 self.radial_loads, self.speeds, self.operating_times)
 
                 check = bc.BaseLifeTime(bearing_combination_simulation_result)
-                print(check)
+#                print(check)
                 if check == False:
                     break
                 
                 L10 = bearing_combination_simulation_result.L10
                 if L10 is False:
                     break
-                print(L10, L10_objective)
+#                print(L10, L10_objective)
                 if L10 < L10_objective:
-                    print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
+#                    print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
                     valid = False
                 
                     compt_nb_eval_L10 += 1
@@ -632,7 +632,7 @@ class BearingCombinationOptimizer:
         for speed, time in zip(self.speeds, self.operating_times):
             L10_objective += speed/(2*math.pi)*time
         L10_objective = L10_objective/1e6
-        print('the L10 objective is {}'.format(L10_objective))
+#        print('the L10 objective is {}'.format(L10_objective))
         
         pos_min = -self.length/2.
         pos_max = self.length/2.
@@ -640,10 +640,10 @@ class BearingCombinationOptimizer:
         bearing_combination_simulations = []
         sort_bearing_combination_simulations = []
         for max_bearings in self.number_bearings:
-            print('number of bearings analyzed: {}'.format(max_bearings))
+#            print('number of bearings analyzed: {}'.format(max_bearings))
             self.ConceptualBearingCombinations(max_bearings = (max_bearings))
             for (mounting_type, linkage), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
-                print((mounting_type, linkage))
+#                print((mounting_type, linkage))
                 bearing_combination_configurations = self.SelectBearingCombinations(bearing_combinations_possibility, 
                                                                                     L10_objective = L10_objective)
                 try:
@@ -651,9 +651,9 @@ class BearingCombinationOptimizer:
                 except NameError:
                     li_bearing_assembly_configurations = bearing_combination_configurations
                     
-            print('number bearing combination configurations {}'.format(len(li_bearing_assembly_configurations)))
+#            print('number bearing combination configurations {}'.format(len(li_bearing_assembly_configurations)))
             for bearing_combination_configurations in li_bearing_assembly_configurations:
-                print('decision tree estimation')
+#                print('decision tree estimation')
                 bearing_combinations = self.AnalyzeBearingCombinations(bearing_combination_configurations, 
                                                                      L10_objective = L10_objective,
                                                                      max_bearing_combinations = max_solutions)
@@ -672,7 +672,7 @@ class BearingCombinationOptimizer:
                         if L10 >= L10_objective:
                             bearing_combination_simulations.append(bearing_combination_simulation)
                             sort_bearing_combination_simulations.append(L10)
-                            print('solution with L10 {}, nb solutions {}'.format(L10, len(bearing_combination_simulations)))
+#                            print('solution with L10 {}, nb solutions {}'.format(L10, len(bearing_combination_simulations)))
 #                            break   
                     if len(bearing_combination_simulations) > max_solutions:
                         break
@@ -682,7 +682,7 @@ class BearingCombinationOptimizer:
                 break
             
         self.bearing_combination_simulations = [bearing_combination_simulations[i] for i in npy.argsort(sort_bearing_combination_simulations)]
-        print('Number of solutions: {}'.format(len(self.bearing_combination_simulations)))
+#        print('Number of solutions: {}'.format(len(self.bearing_combination_simulations)))
         
 
 class ConceptualBearingCombinationOptimizer:
@@ -807,7 +807,7 @@ class BearingAssemblyOptimizer:
             elif axial_load < 0:
                 list_load_cases.append('left')
         
-        print(self.mounting_types)
+#        print(self.mounting_types)
         for mounting_type_left, mounting_type_right in self.mounting_types:
             valid_load_case = True
             if 'both' not in set((mounting_type_left, mounting_type_right)):
@@ -949,7 +949,7 @@ class BearingAssemblyOptimizer:
             li_quote.append(quote)
             bearing_combinations.append([conceptual_bearing_combination_left, conceptual_bearing_combination_right])
         
-        print(len(bearing_combinations))
+#        print(len(bearing_combinations))
         for conceptual_bearing_combination_left, conceptual_bearing_combination_right in \
                 [bearing_combinations[i] for i in npy.argsort(li_quote)]:
                     
@@ -1020,7 +1020,7 @@ class BearingAssemblyOptimizer:
         d_right_pre = 0
         
         dt = DecisionTree()
-        print('number of initial bearing', len(bearing_left_possibilies))
+#        print('number of initial bearing', len(bearing_left_possibilies))
         while not dt.finished:
             # Constructing BearingCombination
             valid = True
@@ -1108,7 +1108,7 @@ class BearingAssemblyOptimizer:
 
             if (dt.current_depth == nb_bearings) and valid:
                 
-                print(1)
+#                print(1)
                 bc_left = conceptual_bearing_combination_left.BearingCombination(bearings[0: nb_bearings_left])
                 bc_right = conceptual_bearing_combination_right.BearingCombination(bearings[nb_bearings_left:])
                 bearing_assembly = BearingAssembly([bc_left, bc_right])
@@ -1129,9 +1129,9 @@ class BearingAssemblyOptimizer:
                 L10 = bearing_assembly_simulation_result.L10
                 if L10 is False:
                     break
-                print(L10)
+#                print(L10)
                 if L10 < L10_objective:
-                    print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
+#                    print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
                     valid = False
                 
                     compt_nb_eval_L10 += 1
@@ -1251,7 +1251,7 @@ class BearingAssemblyOptimizer:
         for speed, time in zip(self.speeds, self.operating_times):
             L10_objective += speed/(2*math.pi)*time
         L10_objective = L10_objective/1e6
-        print('the L10 objective is {}'.format(L10_objective))
+#        print('the L10 objective is {}'.format(L10_objective))
         
         pos1_min = self.axial_positions[0]
         pos1_max = self.axial_positions[0] + self.lengths[0]
@@ -1270,10 +1270,10 @@ class BearingAssemblyOptimizer:
         combination_number_bearings = list(product(*self.number_bearings))
         combination_number_bearings = [combination_number_bearings[j] for j in npy.argsort([sum(i) for i in combination_number_bearings])]
         for max_bearings_left, max_bearings_right in combination_number_bearings:
-            print('number of bearings analyzed: {} left and {} right'.format(max_bearings_left, max_bearings_right))
+#            print('number of bearings analyzed: {} left and {} right'.format(max_bearings_left, max_bearings_right))
             self.ConceptualBearingCombinations(max_bearings = (max_bearings_left, max_bearings_right))
             for (left, right), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
-                print((left, right))
+#                print((left, right))
                 bearing_assembly_configurations, bearing_assembly_L10 = self.SelectBearingCombinations(bearing_combinations_possibility, 
                                                                     radial_load = (radial_load_left, radial_load_right), 
                                                                     L10_objective = L10_objective)
@@ -1287,9 +1287,9 @@ class BearingAssemblyOptimizer:
             bearing_assembly_configurations_sort = li_bearing_assembly_configurations
 #            bearing_assembly_configurations_sort = [li_bearing_assembly_configurations[i] for i in npy.argsort(li_bearing_assembly_L10)[::-1]]
             
-            print('number bearing assemblies configurations {}'.format(len(bearing_assembly_configurations_sort)))
+#            print('number bearing assemblies configurations {}'.format(len(bearing_assembly_configurations_sort)))
             for bearing_assembly_configurations in bearing_assembly_configurations_sort:
-                print('decision tree estimation')
+#                print('decision tree estimation')
                 bearing_assemblies = self.AnalyzeBearingCombinations(bearing_assembly_configurations, 
                                                                      L10_objective = L10_objective,
                                                                      max_bearing_assemblies=max_solutions)
@@ -1299,11 +1299,11 @@ class BearingAssemblyOptimizer:
                     bearing_assembly_simulation = self.ContinuousOptimize(bearing_assembly)
                     if bearing_assembly_simulation != False:
                         L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
-                        print(L10, L10_objective)
+#                        print(L10, L10_objective)
                         if L10 >= L10_objective:
                             bearing_assembly_simulations.append(bearing_assembly_simulation)
                             sort_bearing_assembly_simulations.append(L10)
-                            print('solution with L10 {}, nb solutions {}'.format(L10, len(bearing_assembly_simulations)))
+#                            print('solution with L10 {}, nb solutions {}'.format(L10, len(bearing_assembly_simulations)))
 #                            break   
                     if len(bearing_assembly_simulations) > max_solutions:
                         break
@@ -1313,7 +1313,7 @@ class BearingAssemblyOptimizer:
                 break
             
         self.bearing_assembly_simulations = [bearing_assembly_simulations[i] for i in npy.argsort(sort_bearing_assembly_simulations)]
-        print('Number of solutions: {}'.format(len(self.bearing_assembly_simulations)))
+#        print('Number of solutions: {}'.format(len(self.bearing_assembly_simulations)))
         
     # TODO: rename
     def ContinuousOptimize(self, bearing_assembly):

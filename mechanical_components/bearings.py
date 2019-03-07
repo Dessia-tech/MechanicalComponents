@@ -460,7 +460,7 @@ class RadialBearing(LoadBearing):
                                          axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
         ERC=self.ExternalRingContour()
-        erc=primitives3D.RevolvedProfile(center,axis, z, [ERC], center,
+        erc=primitives3D.RevolvedProfile(center, axis, z, [ERC], center,
                                          axis, angle=2*math.pi,name='External Ring')
         #roller
         ROL=self.RollingContourCAD()
@@ -2295,7 +2295,7 @@ class BearingCombination:
             
     def Update(self, axial_positions, internal_diameters, external_diameters, length):
         # TODO Why axial position is not in init?
-        self.axial_positions = axial_positions
+        self.axial_positions = axial_positions# TODO: move this in bearing assembly, for plots pass a center parameter
         self.internal_diameters = internal_diameters
         self.external_diameters = external_diameters
         self.length = length
@@ -2659,13 +2659,13 @@ class BearingCombination:
             contour_box.MPLPlot(a,'-r')
         
                 
-    def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
+    def VolumeModel(self, center = vm.Point3D((0,0,0)), axis = vm.Vector3D((1,0,0))):
         groups = []
-        position = self.axial_positions
-        
+#        position = self.axial_positions
+        center_bearing = center+0.5*(self.bearings[0].B -self.B)*axis
         for bearing in self.bearings:
-            groups.append((bearing.name, bearing.CADVolumes(center=vm.Point3D((position, 0, 0)))))
-            position += bearing.B
+            groups.append((bearing.name, bearing.CADVolumes(center=center_bearing)))
+            center_bearing += bearing.B*axis
         model=vm.VolumeModel(groups)        
         return model   
     
@@ -3471,8 +3471,7 @@ class BearingAssemblySimulationResult:
         return d
     
     @classmethod
-    def DictToObject(cls, d):  
-#        print(d)
+    def DictToObject(cls, d):
         li_bc = []
         for bc in d['bearing_combination_simulation_results']:
             li_bc.append(BearingCombinationSimulationResult.DictToObject(bc))
