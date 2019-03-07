@@ -5,13 +5,11 @@ Created on Fri Oct  5 09:53:05 2018
 
 @author: Pierrem
 """
-import sys as sys
-import mechanical_components.optimization.bearings as bearings_opt
+
+
 import mechanical_components.bearings as bearings
-import numpy as npy
-import volmdlr as vm
-import copy
-from mechanical_components.load import *
+import mechanical_components.optimization.bearings as bearings_opt
+#from mechanical_components.load import *
 
 b0 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.01, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0.1, Cr = 1e3)
@@ -39,6 +37,7 @@ BA.BaseLifeTime(bcs)
 
 BCO = bearings_opt.BearingCombinationOptimizer(radial_loads = [100, 2000], 
                                            axial_loads = [0, 0], 
+
                                            speeds = [100, 150], 
                                            operating_times = [1e6, 1e8],
                                            inner_diameter = 0.04,
@@ -52,6 +51,7 @@ BCO = bearings_opt.BearingCombinationOptimizer(radial_loads = [100, 2000],
                                                bearings.TaperedRollerBearing,
                                                bearings.NUP
                                                ],)
+
     
 BCO.Optimize(10)
 

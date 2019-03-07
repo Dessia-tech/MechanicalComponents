@@ -294,7 +294,7 @@ class BearingCombinationOptimizer:
         self.number_bearings = number_bearings
         self.bearing_classes = bearing_classes
         self.bearing_combination_simulations = bearing_combination_simulations
-        self.bearing_catalogue = catalog
+        self.catalog = catalog
         
     def Configurations(self):
         
@@ -385,7 +385,7 @@ class BearingCombinationOptimizer:
                     dt.SetCurrentNodeNumberPossibilities(len(first_bearing_possibilies))
                 elif dt.current_depth < nb_bearings:
                     conceptual_bearing = conceptual_bearing_combination.bearing_classes[dt.current_depth]
-                    list_next_bearings[dt.current_depth] = self.bearing_catalogue.NextBearingCatalog(conceptual_bearing, d , D)
+                    list_next_bearings[dt.current_depth] = self.catalog.NextBearingCatalog(conceptual_bearing, d , D)
                     if list_next_bearings[dt.current_depth] is not False: 
                         dt.SetCurrentNodeNumberPossibilities(len(list_next_bearings[dt.current_depth]))
                     else:
@@ -424,7 +424,7 @@ class BearingCombinationOptimizer:
         
         for conceptual_bearing_combination in [bearing_combinations[i] for i in npy.argsort(li_quote)]:
                     
-            first_bearing_possibilies = self.bearing_catalogue\
+            first_bearing_possibilies = self.catalog\
                 .SearchBearingCatalog(conceptual_bearing_combination.bearing_classes[0],
                                         self.inner_diameter, self.outer_diameter)
             
@@ -600,8 +600,9 @@ class BearingCombinationOptimizer:
                     d = bearing.d
                     D = bearing.D
                     try:
-                        bearing_possibilities = self.bearing_catalogue.NextBearingCatalog(bearing_classe, d , D)
-                        if bearing_possibilities != False:
+
+                        bearing_possibilities = self.catalog.NextBearingCatalog(bearing_classe, d , D)
+                        if bearing_possibilities is not False:
                             dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
                             list_bearing_possibilities[dt.current_depth] = bearing_possibilities
                         else:
