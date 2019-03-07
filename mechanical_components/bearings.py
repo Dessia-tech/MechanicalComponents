@@ -2494,7 +2494,83 @@ class BearingCombination:
             nonlinear_linkages.append(unidimensional.UnilateralContact(bir, shaft, shaft.initial_position - bir.initial_position, name='Inner rings'))
         return component, nonlinear_linkages, loads, axial_bearings
     
-    def Plot(self, pos=0, a=None, box=True, typ='Graph', ind_load_case=0):
+    @classmethod
+    def EstimateBaseLifeTime(cls, L10s):
+        sum_L10_inv = 0
+        for L10 in L10s:
+            sum_L10_inv += (1/L10)**1.5
+        return sum_L10_inv**(-1/1.5)
+    
+    def BaseLifeTime(self, bearing_combination_simulation_result):
+        
+        for bearing_result in bearing_combination_simulation_result.bearing_simulation_results:
+            bearing_result.radial_load = []
+            bearing_result.axial_load = []
+                
+        result_bgs = bearing_combination_simulation_result.bearing_simulation_results
+        for radial_load, axial_load in zip(bearing_combination_simulation_result.radial_loads, 
+                               bearing_combination_simulation_result.axial_loads):
+            self.AxialLoad(axial_load, radial_load, bearing_combination_simulation_result)
+            
+        time = bearing_combination_simulation_result.operating_times
+        speed = bearing_combination_simulation_result.speeds
+        
+        for bg, bg_result in zip(self.bearings, 
+                                 bearing_combination_simulation_result.bearing_simulation_results):
+            L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
+                            N = speed, t = time, Cr = bg.Cr)
+            if str(L10) not in ['nan']:
+                bg_result.L10 = L10
+            else:
+                bg_result.L10 = False
+                
+        sum_L10_inv = 0
+        valid_L10 = True
+        for bg_result in result_bgs:
+            if bg_result.L10 is not False:
+                sum_L10_inv += (1/bg_result.L10)**1.5
+            else:
+                valid_L10 = False
+        if valid_L10:
+            bearing_combination_simulation_result.L10 = sum_L10_inv**(-1/1.5)
+        else:
+            bearing_combination_simulation_result.L10 = False
+            
+    def AxialLoad(self, axial_load, radial_load, bearing_combination_simulation_result):
+        result_bgs = bearing_combination_simulation_result.bearing_simulation_results
+        
+        shaft = unidimensional.Body(0, 0, name='Shaft')
+        ground = unidimensional.Body(0, 0.05, name='Ground')
+        
+        p_shaft = unidimensional.Load(shaft, axial_load)
+        id_ground = unidimensional.ImposedDisplacement(ground, 0.)
+        imposed_displacements = [id_ground]
+        loads = [p_shaft]
+        
+        bodies = [ground, shaft]
+        nonlinear_linkages = []
+            
+        component, nonlinear_linkages_iter, loads_iter, axial_bearings \
+            = self.ElementaryAxialLoad(ground, shaft, 0, radial_load, result_bgs)
+        loads = loads + loads_iter
+        
+        for bir, bor in component:
+            bodies.append(bir)
+            bodies.append(bor)
+        nonlinear_linkages.extend(nonlinear_linkages_iter)
+        
+        sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
+                         imposed_displacements)
+        result_sm = sm.Solve(500)
+        bearing_combination_simulation_result.axial_load_model = result_sm
+                
+        for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_bearings, component)):
+            for link in axial_linkage:
+                if link in result_sm.activated_nonlinear_linkages:
+                    positions = (result_sm.positions[bir], result_sm.positions[bor])
+                    result_bgs[num_bg].axial_load.append(link.Strains(positions))
+    
+    def Plot(self, pos=0, a=None, box=True, typ=None, ind_load_case=0):
         """
         Generate a Plot
         
@@ -2812,17 +2888,24 @@ class BearingAssembly:
                 time = bearing_assembly_simulation_result.operating_times
                 speed = bearing_assembly_simulation_result.speeds
                 L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
-                                N = speed, t = time, Cr = [bg.Cr])
-                if str(L10[0]) not in ['nan']:
-                    bg_result.L10 = L10[0]
+                                N = speed, t = time, Cr = bg.Cr)
+                if str(L10) not in ['nan']:
+                    bg_result.L10 = L10
                 else:
-                    bg_result.L10 = 1e-10
+                    bg_result.L10 = False
                 
         sum_L10_inv = 0
+        valid_L10 = True
         for bearing_result in result_bgs:
             for bg_result in bearing_result:
-                sum_L10_inv += (1/bg_result.L10)**1.5
-        bearing_assembly_simulation_result.L10 = sum_L10_inv**(-1/1.5)
+                if bg_result.L10 is not False:
+                    sum_L10_inv += (1/bg_result.L10)**1.5
+                else:
+                    valid_L10 = False
+        if valid_L10:
+            bearing_assembly_simulation_result.L10 = sum_L10_inv**(-1/1.5)
+        else:
+            bearing_assembly_simulation_result.L10 = False
         
     def AxialLoad(self, positions, F, bearing_assembly_simulation_result):
         result_bcs = bearing_assembly_simulation_result.bearing_combination_simulation_results
@@ -2857,17 +2940,20 @@ class BearingAssembly:
         
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
                          imposed_displacements)
-        result_sm = sm.Solve(500)
-        bearing_assembly_simulation_result.axial_load_model = result_sm
-                
-        for num_bc, (axial_linkages, component) in enumerate(zip(bc_axial_bearings, components)):
-            for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_linkages, component)):
-                for link in axial_linkage:
-                    if link in result_sm.activated_nonlinear_linkages:
-                        positions = (result_sm.positions[bir], result_sm.positions[bor])
-                        result_bgs[num_bc][num_bg].axial_load.append(link.Strains(positions))
-                    else:
-                        result_bgs[num_bc][num_bg].axial_load.append(0)
+        try:
+            result_sm = sm.Solve(500)
+            bearing_assembly_simulation_result.axial_load_model = result_sm
+                    
+            for num_bc, (axial_linkages, component) in enumerate(zip(bc_axial_bearings, components)):
+                for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_linkages, component)):
+                    for link in axial_linkage:
+                        if link in result_sm.activated_nonlinear_linkages:
+                            positions = (result_sm.positions[bir], result_sm.positions[bor])
+                            result_bgs[num_bc][num_bg].axial_load.append(link.Strains(positions))
+                        else:
+                            result_bgs[num_bc][num_bg].axial_load.append(0)
+        except unidimensional.ModelConvergenceError:
+            pass
     
     def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
         groups = []
@@ -3252,7 +3338,8 @@ class BearingCombinationSimulationResult:
                              'class':'mechanical_components.bearings.BearingSimulationResult',
                              'type':'list'}]
 
-    def __init__(self, bearing_simulation_results, axial_loads=None, radial_loads=None):
+    def __init__(self, bearing_simulation_results, axial_loads=None, radial_loads=None,
+                 speeds=None, operating_times=None, axial_load_model=None):
         if axial_loads is None:
             self.axial_loads = []
         else:
@@ -3262,6 +3349,13 @@ class BearingCombinationSimulationResult:
         else:
             self.radial_loads = radial_loads
         self.bearing_simulation_results = bearing_simulation_results
+        
+        if speeds is not None:
+            self.speeds = speeds
+        if operating_times is not None:
+            self.operating_times = operating_times
+        if axial_load_model is not None:
+            self.axial_load_model = axial_load_model
             
     def Dict(self, subobjects_id = {}, stringify_keys=True):
         """
@@ -3409,5 +3503,55 @@ class BearingAssemblySimulation:
         
         return obj
 
+class BearingCombinationSimulation:
+    dessia_db_attributes = [{'name':'bearing_combination',
+                             'class':'mechanical_components.bearings.BearingCombination',
+                             'type':'object'},
+                            {'name':'bearing_combination_simulation_result',
+                             'class':'mechanical_components.bearings.BearingCombinationSimulationResult',
+                             'type':'object'}]
+    def __init__(self, bearing_combination,
+                 bearing_combination_simulation_result=None):
+        self.bearing_combination = bearing_combination
+        self.bearing_combination_simulation_result = bearing_combination_simulation_result
+        
+    def Dict(self, subobjects_id = {}, stringify_keys=True):
+        """
+        Export dictionary
+        """
+        d = {}
+        for k,v in self.__dict__.items():
+            tv = type(v)
+            if tv == npy.int64:
+                d[k] = int(v)
+            elif tv==npy.float64:
+                d[k]=round(float(v), 5)
+            else:
+                d[k] = v
+                
+        if self.bearing_combination in subobjects_id:
+            d['bearing_combination'] = subobjects_id[self.bearing_combination]
+        else:
+            d['bearing_combination'] = self.bearing_combination.Dict(subobjects_id)
+        
+        if self.bearing_combination_simulation_result in subobjects_id:
+            d['bearing_combination_simulation_result'] = subobjects_id[self.bearing_combination_simulation_result]
+        else:
+            d['bearing_combination_simulation_result'] = self.bearing_combination_simulation_result.Dict(subobjects_id)
+                
+        if stringify_keys:
+            return StringifyDictKeys(d)
+
+        return d
+    
+    @classmethod
+    def DictToObject(cls, d):
+        BC = BearingCombination.DictToObject(d['bearing_combination'])
+        BCS = BearingCombinationSimulationResult.DictToObject(d['bearing_combination_simulation_result'])
+            
+        obj = cls(bearing_combination = BC, 
+                  bearing_combination_simulation_result = BCS)
+        
+        return obj
     
 
