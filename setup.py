@@ -67,7 +67,7 @@ setup(name='mechanical_components',
                 'mechanical_components.optimization'],
       setup_requires=['numpy'],
       install_requires=['scipy','volmdlr','numpy', 'pandas', 'dectree',
-                        'networkx', 'matplotlib'],
+                        'networkx', 'matplotlib', 'genmechanics>=0.0.7'],
       data_files=[('mechanical_components/catalogs',['mechanical_components/catalogs/ferroflex.csv',
                                                      'mechanical_components/catalogs/schaeffler.json'])]
       )
