@@ -2528,7 +2528,7 @@ class BearingCombination:
         for radial_load, axial_load in zip(bearing_combination_simulation_result.radial_loads, 
                                bearing_combination_simulation_result.axial_loads):
             
-            if (self.behavior_link != 'free') and (axial_load != 0):
+            if (self.behavior_link != 'free') and (abs(axial_load) >= 1e-4):
                 check_axial_load = self.AxialLoad(axial_load, radial_load, bearing_combination_simulation_result)
                 if check_axial_load == False:
                     return False
@@ -2589,6 +2589,7 @@ class BearingCombination:
         
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
                          imposed_displacements)
+
         if check_axial_load: 
             result_sm = sm.Solve(500)
             bearing_combination_simulation_result.axial_load_model = result_sm
