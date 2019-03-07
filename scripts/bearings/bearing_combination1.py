@@ -6,7 +6,8 @@ Created on Fri Oct  5 09:53:05 2018
 @author: Pierrem
 """
 import sys as sys
-import mechanical_components.optimization.bearings as bearings
+import mechanical_components.optimization.bearings as bearings_opt
+import mechanical_components.bearings as bearings
 import numpy as npy
 import volmdlr as vm
 import copy
@@ -36,7 +37,7 @@ bcs = bearings.BearingCombinationSimulationResult(li_bg_results,
                     speeds = [100, 200], operating_times = [1e6, 1e7])
 BA.BaseLifeTime(bcs)
 
-BCO = bearings.BearingCombinationOptimizer(radial_loads = [100, 2000], 
+BCO = bearings_opt.BearingCombinationOptimizer(radial_loads = [100, 2000], 
                                            axial_loads = [0, 0], 
                                            speeds = [100, 150], 
                                            operating_times = [1e6, 1e8],

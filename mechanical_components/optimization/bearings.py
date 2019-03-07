@@ -10,7 +10,7 @@ from mechanical_components.bearings import oil_iso_vg_1500, material_iso, iso_be
 
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
         SphericalBallBearing, \
-        BearingAssembly, DetailedRadialRollerBearing, \
+        BearingAssembly, BearingCombination, DetailedRadialRollerBearing, \
         BearingAssemblySimulationResult, BearingCatalog,\
         BearingCombinationSimulationResult, BearingSimulationResult,\
         BearingAssemblySimulation, BearingCombinationSimulation, \
@@ -683,58 +683,6 @@ class BearingCombinationOptimizer:
         self.bearing_combination_simulations = [bearing_combination_simulations[i] for i in npy.argsort(sort_bearing_combination_simulations)]
         print('Number of solutions: {}'.format(len(self.bearing_combination_simulations)))
         
-    def ContinuousOptimize(self, bearing_combination):
-        
-        li_bg_results = []
-        for bearing in bearing_combination.bearings:
-            li_bg_results.append(BearingSimulationResult())
-        bearing_combination_simulation_result = BearingCombinationSimulationResult(li_bg_results, self.axial_loads,
-                                                        self.radial_loads, self.speeds, self.operating_times)
-
-        pos_min = -self.length/2.
-        pos_max = self.length/2.
-        def fun(x):
-            
-            obj = 0
-            check = bearing_combination.BaseLifeTime(bearing_combination_simulation_result)
-            if not check:
-                return 0
-            L10 = bearing_combination_simulation_result.L10
-            obj += 1/(L10)**2
-            return obj
-            
-        def fineq(x):
-            
-            ineq = [0]
-
-            return ineq
-        Bound = [[pos_min, pos_max]]
-        sol_fun = math.inf
-        for p in Bound[0] + [0]:
-#            cons = {'type': 'ineq','fun' : fineq}
-            res = minimize(fun, [p], method='SLSQP', bounds=Bound)
-            if fun(res.x) < sol_fun:
-                sol_fun = fun(res.x)
-                sol_x = res.x
-                status = res.status
-        for itera in range(0,5):
-            x0 = (Bound[0][1]-Bound[0][0])*npy.random.random(1)+Bound[0][0]
-#            cons = {'type': 'ineq','fun' : fineq}
-            res = minimize(fun, x0, method='SLSQP', bounds=Bound)
-            if fun(res.x) < sol_fun:
-                sol_fun = fun(res.x)
-                sol_x = res.x
-                status = res.status
-           
-        if status >= 0:
-            bearing_combination.Update(sol_x, self.inner_diameter, self.outer_diameter, self.length)
-            check = bearing_combination.BaseLifeTime(bearing_combination_simulation_result)            
-            if not check:
-                return False
-            bearing_combination_simulation = BearingCombinationSimulation(bearing_combination, bearing_combination_simulation_result)
-            return bearing_combination_simulation
-        else:
-            return False
 
 class ConceptualBearingCombinationOptimizer:
     
