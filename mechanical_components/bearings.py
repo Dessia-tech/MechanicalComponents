@@ -1841,8 +1841,8 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     
 class BearingCatalog:
     dessia_db_attributes = [{'name':'bearings',
-                         'class':'mechanical_components.bearings.RadialBearing',
-                         'type':'list'}]
+                             'class':'mechanical_components.bearings.RadialBearing',
+                             'type':'list'}]
     def __init__(self, bearings, name=''):
         self.bearings = bearings
         self.bearings_by_types = {}
