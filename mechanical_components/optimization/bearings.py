@@ -1462,9 +1462,12 @@ class BearingAssemblyOptimizer:
         else:
             li_bar = None
             
-        bearing_classes = []
-        for bearing_classe in d['bearing_classes']:
-            bearing_classes.append(dict_bearing_classes[bearing_classe])
+        if 'bearing_classes' in d:
+            bearing_classes_ = []
+            for bearing_classe in d['bearing_classes']:
+                bearing_classes_.append(dict_bearing_classes[bearing_classe])
+        else:
+            bearing_classes_ = bearing_classes
             
         obj = cls(loads = d['loads'], 
                   speeds = d['speeds'], 
@@ -1476,6 +1479,6 @@ class BearingAssemblyOptimizer:
                  linkage_types = d['linkage_types'],
                  mounting_types = d['mounting_types'],
                  number_bearings = d['number_bearings'],
-                 bearing_classes = bearing_classes,
+                 bearing_classes = bearing_classes_,
                  bearing_assembly_simulations = li_bar)
         return obj

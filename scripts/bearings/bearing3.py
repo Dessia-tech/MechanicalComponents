@@ -34,7 +34,7 @@ d = bearing_assembly_opt.Dict()
 del bearing_assembly_opt
 bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
 
-bearing_assembly_opt.Optimize(10)
+bearing_assembly_opt.Optimize(5)
 
 for num_sol, ba_simulation in enumerate(bearing_assembly_opt.bearing_assembly_simulations):
     print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
