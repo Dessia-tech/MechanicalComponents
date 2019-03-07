@@ -8,51 +8,39 @@ Created on Fri Oct  5 09:53:05 2018
 #import sys
 import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
+
 #import numpy as npy
 
-S1 = bearings_opt.BearingAssemblyOptimizer(loads = [[(-0.001, 0.005, 0), (2000, -2500, 100), (0, 100, 0)]], 
-                    speeds = [200], operating_times = [1e6],
-                    inner_diameter = [0.02, 0.025], axial_positions = [0, 0.1], outer_diameter = [0.05, 0.07], 
-                    length = [0.07, 0.04],
-                    linkage_types = [['all'], ['all']],
-                    mounting_types = [['pn', 0]],
-                    number_bearings=[[1,2], [1,2,3]],
-                    number_solutions = [3, 3, 2])
+bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
+                    loads = [[[(0.1, 0, 0), (2000, 10000, 0), (0, 0, 0)], 
+                              [(0.3, 0, 0), (1000, 3000, 0), (0, 0, 0)]]], 
+                    speeds = [1000],
+                    operating_times = [10000*3600],
+                    inner_diameters = [0.02, 0.02],
+                    axial_positions = [0, 0.2], 
+                    outer_diameters = [0.1, 0.1], 
+                    lengths = [0.08, 0.08],
+                    linkage_types = [['cylindric_joint'], ['cylindric_joint']],
+                    mounting_types = [['free', 'both'], ['right', 'left']],
+                    number_bearings = [[2], [2]],
+                    bearing_classes = [bearings.RadialBallBearing, 
+                                       bearings.AngularBallBearing,
+                                       bearings.TaperedRollerBearing,
+                                       bearings.NUP, bearings.N, bearings.NU,
+#                                       bearings_opt.NF
+                                       ])
 
+d = bearing_assembly_opt.Dict()
+del bearing_assembly_opt
+bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
 
+bearing_assembly_opt.Optimize(5)
 
-
-S1.Optimize(number_solutions = 50, verbose = True)
-results = S1.results
-
-for ba in results.bearing_assemblies:
-    bc = ba.bearing_combinations[0]
-    bc_analyze = results.results[ba][0]['bearing_combinations'][0]
-    bc.Plot(typ='Load', bearing_combination_result = bc_analyze)
+for num_sol, ba_simulation in enumerate(bearing_assembly_opt.bearing_assembly_simulations):
+    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
+    ba_simulation.bearing_assembly.Plot()
     
-d = results.Dict()
-obj = bearings.BearingAssemblyOptimizationResults.DictToObject(d)
-obj.Dict()
-
-ba = obj.bearing_assemblies[0]
-bc_result = obj.results[ba][0]['bearing_combinations'][1]
-bc = ba.bearing_combinations[1]
-
-bc.Plot(typ='Load', bearing_combination_result = bc_result)
-#    sol.Graph()
-#    sol.list_bearing_assembly[0].list_bearing[0].FreeCADExport('extrusion2',python_path = '/Applications/FreeCAD.app/Contents/MacOS/FreeCADCmd',
-#            path_lib_freecad = '/Applications/FreeCAD.app/Contents/lib', export_types=['step'])
-#for num_sol, sol in enumerate(S1.solutions):
-#    S1.Plot(sol)
-#    S1.Export(sol, num_sol)
-
-
-#d = results.Dict()
-#import json
-#print(json.dumps(d))
-#obj = bearings.BearingAssemblyOptimizationResults.DictToObject(d)
-#obj.bearing_assemblies[0].Plot(typ='Load', box=True)
-#
-##optim = obj.DefOptimizer()
-#
-#print(json.dumps(sol.PlotData()))
+#d = bearing_assembly_opt.Dict()
+#del bearing_assembly_opt
+#bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
+#bearing_assembly_opt.Optimize(3)

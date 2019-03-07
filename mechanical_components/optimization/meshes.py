@@ -817,7 +817,7 @@ class MeshAssemblyOptimizer:
             var_Z=self.AnalyseZ()
             self.Z=var_Z
             
-        print(self.Z)
+#        print(self.Z)
         self.plex_calcul = self.AnalyzeCombination(verbose)
         
         for i,plex in enumerate(self.plex_calcul):
