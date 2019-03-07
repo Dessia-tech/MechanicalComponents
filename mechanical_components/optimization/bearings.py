@@ -9,10 +9,9 @@ Created on Fri Aug 17 02:14:21 2018
 from mechanical_components.bearings import oil_iso_vg_1500, material_iso, iso_bearings, bearing_rules, iso_rollers
 
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
-        SphericalBallBearing, TaperedRollerBearing,\
-        NUP, N, NF, NU,\
-        BearingAssembly, BearingCombination, DetailedRadialRollerBearing, \
-        BearingAssemblySimulationResult, \
+        SphericalBallBearing, \
+        BearingAssembly, DetailedRadialRollerBearing, \
+        BearingAssemblySimulationResult, BearingCatalog,\
         BearingCombinationSimulationResult, BearingSimulationResult,\
         BearingAssemblySimulation, BearingCombinationSimulation, \
         bearing_classes, dict_bearing_classes, \
@@ -24,10 +23,10 @@ import numpy as npy
 npy.seterr(divide='raise', over='ignore', under='ignore', invalid='ignore')
 
 from scipy.optimize import minimize, fsolve
-import pandas
+#import pandas
 from copy import deepcopy
 #from pandas.plotting import scatter_matrix
-import pkg_resources
+#import pkg_resources
 from itertools import product
 
 from dectree import DecisionTree
@@ -813,7 +812,10 @@ class ConceptualBearingCombinationOptimizer:
 class BearingAssemblyOptimizer:
     dessia_db_attributes = [{'name':'bearing_assembly_simulations',
                              'class':'mechanical_components.bearings.BearingAssemblySimulation',
-                             'type':'list'}]
+                             'type':'list'},
+                            {'name':'catalog',
+                             'class':'mechanical_components.bearings.BearingCatalog',
+                             'type':'object'}]
     
     def __init__(self, loads, speeds, operating_times,
                  inner_diameters,
@@ -840,7 +842,7 @@ class BearingAssemblyOptimizer:
         self.number_bearings = number_bearings
         self.bearing_classes = bearing_classes
         self.bearing_assembly_simulations = bearing_assembly_simulations
-        self.bearing_catalogue = catalog
+        self.catalog = catalog
         
     def Configurations(self):
         configurations = []
@@ -948,7 +950,7 @@ class BearingAssemblyOptimizer:
                     dt.SetCurrentNodeNumberPossibilities(len(first_bearing_possibilies))
                 elif dt.current_depth < nb_bearings:
                     conceptual_bearing = conceptual_bearing_combination.bearing_classes[dt.current_depth]
-                    list_next_bearings[dt.current_depth] = self.bearing_catalogue.NextBearingCatalog(conceptual_bearing, d , D)
+                    list_next_bearings[dt.current_depth] = self.catalog.NextBearingCatalog(conceptual_bearing, d , D)
                     if list_next_bearings[dt.current_depth] is not False: 
                         dt.SetCurrentNodeNumberPossibilities(len(list_next_bearings[dt.current_depth]))
                     else:
@@ -1002,10 +1004,10 @@ class BearingAssemblyOptimizer:
         for conceptual_bearing_combination_left, conceptual_bearing_combination_right in \
                 [bearing_combinations[i] for i in npy.argsort(li_quote)]:
                     
-            first_bearing_left_possibilies = self.bearing_catalogue\
+            first_bearing_left_possibilies = self.catalog\
                 .SearchBearingCatalog(conceptual_bearing_combination_left.bearing_classes[0],
                                         self.inner_diameters[0], self.outer_diameters[0])
-            first_bearing_right_possibilies = self.bearing_catalogue\
+            first_bearing_right_possibilies = self.catalog\
                 .SearchBearingCatalog(conceptual_bearing_combination_right.bearing_classes[0],
                                         self.inner_diameters[1], self.outer_diameters[1])
             nb_bearings_left = len(conceptual_bearing_combination_left.bearing_classes)
@@ -1249,7 +1251,7 @@ class BearingAssemblyOptimizer:
                     d = bearing.d
                     D = bearing.D
                     try:
-                        bearing_possibilities = self.bearing_catalogue.NextBearingCatalog(bearing_classe, d , D)
+                        bearing_possibilities = self.catalog.NextBearingCatalog(bearing_classe, d , D)
                         if bearing_possibilities is not False:
                             dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
                             list_bearing_possibilities[dt.current_depth] = bearing_possibilities
@@ -1267,7 +1269,7 @@ class BearingAssemblyOptimizer:
                     d = bearing.d
                     D = bearing.D
                     try:
-                        bearing_possibilities = self.bearing_catalogue.NextBearingCatalog(bearing_classe, d , D)
+                        bearing_possibilities = self.catalog.NextBearingCatalog(bearing_classe, d , D)
                         if bearing_possibilities is not False:
                             dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
                             list_bearing_possibilities[dt.current_depth] = bearing_possibilities
@@ -1364,6 +1366,7 @@ class BearingAssemblyOptimizer:
         self.bearing_assembly_simulations = [bearing_assembly_simulations[i] for i in npy.argsort(sort_bearing_assembly_simulations)]
         print('Number of solutions: {}'.format(len(self.bearing_assembly_simulations)))
         
+    # TODO: rename
     def ContinuousOptimize(self, bearing_assembly):
         
         bc_results = []
@@ -1444,6 +1447,8 @@ class BearingAssemblyOptimizer:
                 d[k]=round(float(v), 5)
             else:
                 d[k] = v
+                
+                
         if self.bearing_assembly_simulations is not None:
             bar_dict = []
             for bar in self.bearing_assembly_simulations:
@@ -1459,9 +1464,12 @@ class BearingAssemblyOptimizer:
         for bearing_classe in self.bearing_classes:
             bc.append(str(bearing_classe))
         d['bearing_classes'] = bc
-                
+        
+        d['catalog'] = self.catalog.Dict()
+        
         if stringify_keys:
             return StringifyDictKeys(d)
+        
 
         return d
     
@@ -1485,6 +1493,11 @@ class BearingAssemblyOptimizer:
         else:
             bearing_classes_ = bearing_classes
             
+        if not 'catalog' in d:
+            catalog = schaeffler_catalog# TODO: change this??
+        else:
+            catalog = BearingCatalog.DictToObject(d['catalog'])
+            
         obj = cls(loads = d['loads'], 
                   speeds = d['speeds'], 
                   operating_times = d['operating_times'],
@@ -1496,5 +1509,6 @@ class BearingAssemblyOptimizer:
                  mounting_types = d['mounting_types'],
                  number_bearings = d['number_bearings'],
                  bearing_classes = bearing_classes_,
-                 bearing_assembly_simulations = li_bar)
+                 bearing_assembly_simulations = li_bar,
+                 catalog = catalog)
         return obj
