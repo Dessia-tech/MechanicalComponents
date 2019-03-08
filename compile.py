@@ -62,7 +62,7 @@ protected_files = ['mechanical_components/optimization/bearings.py',
 
 error_msg = 'Error, report this error to DessIA support with this traceback token: {}'.format(hashlib.sha256(str(mac).encode()).hexdigest())
 protection_lines = ['valid_license = True\n',
-                    't_execution = time.time()\n',
+                    't_execution = time_package.time()\n',
                     'if t_execution > {}:\n'.format(expiration), 
                     '    valid_license = False\n',
                     'if t_execution < {}:\n'.format(not_before),
@@ -91,12 +91,12 @@ for file in protected_files:
         time_imported = False
         uuid_imported = False
         for line2 in lines:
-            if 'import time' in line2:
+            if 'import time as time_package' in line2:
                 time_imported = True
             if 'import uuid' in line2:
                 uuid_imported = True
         if not time_imported:
-            new_file_lines.append('import time\n')
+            new_file_lines.append('import time as time_package\n')
         if not uuid_imported:
             new_file_lines.append('from uuid import getnode\n')
         
