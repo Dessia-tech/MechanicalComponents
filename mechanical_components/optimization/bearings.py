@@ -1251,7 +1251,7 @@ class BearingAssemblyOptimizer:
         for speed, time in zip(self.speeds, self.operating_times):
             L10_objective += speed/(2*math.pi)*time
         L10_objective = L10_objective/1e6
-#        print('the L10 objective is {}'.format(L10_objective))
+        print('the L10 objective is {}'.format(L10_objective))
         
         pos1_min = self.axial_positions[0]
         pos1_max = self.axial_positions[0] + self.lengths[0]
@@ -1270,7 +1270,7 @@ class BearingAssemblyOptimizer:
         combination_number_bearings = list(product(*self.number_bearings))
         combination_number_bearings = [combination_number_bearings[j] for j in npy.argsort([sum(i) for i in combination_number_bearings])]
         for max_bearings_left, max_bearings_right in combination_number_bearings:
-#            print('number of bearings analyzed: {} left and {} right'.format(max_bearings_left, max_bearings_right))
+            print('number of bearings analyzed: {} left and {} right'.format(max_bearings_left, max_bearings_right))
             self.ConceptualBearingCombinations(max_bearings = (max_bearings_left, max_bearings_right))
             for (left, right), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
 #                print((left, right))
@@ -1299,11 +1299,11 @@ class BearingAssemblyOptimizer:
                     bearing_assembly_simulation = self.ContinuousOptimize(bearing_assembly)
                     if bearing_assembly_simulation != False:
                         L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
-#                        print(L10, L10_objective)
+                        print(L10, L10_objective)
                         if L10 >= L10_objective:
                             bearing_assembly_simulations.append(bearing_assembly_simulation)
                             sort_bearing_assembly_simulations.append(L10)
-#                            print('solution with L10 {}, nb solutions {}'.format(L10, len(bearing_assembly_simulations)))
+                            print('solution with L10 {}, nb solutions {}'.format(L10, len(bearing_assembly_simulations)))
 #                            break   
                     if len(bearing_assembly_simulations) > max_solutions:
                         break

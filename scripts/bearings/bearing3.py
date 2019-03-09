@@ -30,9 +30,9 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
 #                                       bearings_opt.NF
                                        ])
 
-d = bearing_assembly_opt.Dict()
-del bearing_assembly_opt
-bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
+#d = bearing_assembly_opt.Dict()
+#del bearing_assembly_opt
+#bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
 
 bearing_assembly_opt.Optimize(5)
 

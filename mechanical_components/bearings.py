@@ -322,6 +322,33 @@ class RadialBearing(LoadBearing):
         self.name = name
         self.metadata = metadata
         
+    def __eq__(self, other_eb):
+        equal = True
+        for k,v in self.__dict__.items():
+            if k in ['d', 'D', 'B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r',
+                     'contact_type', 'mass', 'metadata', 'symmetric',
+                     'taking_loads', 'generate_axial_load', 'linkage',
+                     'coeff_baselife', 'class_name']:
+                if v is not None:
+                    equal = equal and v == getattr(other_eb, k)
+        return equal
+    
+    def __hash__(self):
+        rlt_hash = hash(int(self.d*1e3)) + hash(int(self.D*1e3))
+        for k,v in self.__dict__.items():
+            if k in ['B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r',
+                     'contact_type', 'mass', 'metadata', 'symmetric',
+                     'taking_loads', 'generate_axial_load', 'linkage',
+                     'coeff_baselife', 'class_name']:
+                tv=type(v)
+                if tv==float:
+                    rlt_hash = rlt_hash + hash(int(getattr(self, k)*1e3))
+                elif tv != dict:
+                    rlt_hash = rlt_hash + hash(v)
+                elif tv == dict:
+                    rlt_hash = rlt_hash + hash(tuple(v.items()))
+        return rlt_hash
+        
     def Check(self):
         if self.d <= 0.:
             return False
@@ -366,7 +393,7 @@ class RadialBearing(LoadBearing):
                 total_cycles += cycles
 
         if total_cycles == 0.:
-            return math.inf
+            return False
         else:
             Pr = (Pr / total_cycles) ** (1/self.coeff_baselife)
             L10 = (Cr/Pr)**(self.coeff_baselife)
@@ -835,6 +862,22 @@ class RadialBallBearing(RadialBearing):
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'])
         return obj
+    
+    def Copy(self):
+        if not hasattr(self, 'Cr'):
+            Cr = None
+        else:
+            Cr = self.Cr
+        if not hasattr(self, 'C0r'):
+            C0r = None
+        else:
+            C0r = self.C0r
+        obj = RadialBallBearing(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z, 
+                  Dw = self.Dw, Cr = Cr, C0r = C0r,
+                  oil = self.oil, material = self.material,  
+                  contact_type = self.contact_type,
+                  name = self.name, metadata = self.metadata)
+        return obj
         
 class AngularBallBearing(RadialBearing):
     symmetric = False
@@ -1066,6 +1109,23 @@ class AngularBallBearing(RadialBearing):
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'])
         return obj
+    
+    def Copy(self):
+        if not hasattr(self, 'Cr'):
+            Cr = None
+        else:
+            Cr = self.Cr
+        if not hasattr(self, 'C0r'):
+            C0r = None
+        else:
+            C0r = self.C0r
+        obj = AngularBallBearing(d = self.d, D = self.D, B = self.B, alpha = self.alpha, 
+                            i = self.i, Z = self.Z, 
+                            Dw = self.Dw, Cr = Cr, C0r = C0r,
+                            oil = self.oil, material = self.material,  
+                            contact_type = self.contact_type,
+                            name = self.name, metadata = self.metadata)
+        return obj
             
 class SphericalBallBearing(RadialBearing):
     symmetric = True
@@ -1154,12 +1214,30 @@ class SphericalBallBearing(RadialBearing):
             d['Cr'] = None
         if 'C0r' not in d.keys():
             d['C0r'] = None
-        obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
-                  Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
+        obj = cls(d = d['d'], D = d['D'], B = d['B'], alpha = d['alpha'], 
+                  i = d['i'], Z = d['Z'], 
+                  Dw = d['Dw'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'])
+        return obj
+    
+    def Copy(self):
+        if not hasattr(self, 'Cr'):
+            Cr = None
+        else:
+            Cr = self.Cr
+        if not hasattr(self, 'C0r'):
+            C0r = None
+        else:
+            C0r = self.C0r
+        obj = SphericalBallBearing(d = self.d, D = self.D, B = self.B, alpha = self.alpha, 
+                            i = self.i, Z = self.Z, 
+                            Dw = self.Dw, Cr = Cr, C0r = C0r,
+                            oil = self.oil, material = self.material,  
+                            contact_type = self.contact_type,
+                            name = self.name, metadata = self.metadata)
         return obj
             
 # TODO remove alpha?
@@ -1378,6 +1456,40 @@ class RadialRollerBearing(RadialBearing):
                   name=d['name'], metadata=d['metadata'])
         return obj
     
+    def Copy(self):
+        if not hasattr(self, 'Cr'):
+            Cr = None
+        else:
+            Cr = self.Cr
+        if not hasattr(self, 'C0r'):
+            C0r = None
+        else:
+            C0r = self.C0r
+        if self.class_name == 'N':
+            return N(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z, 
+                     Dw = self.Dw, Cr = Cr, C0r = C0r,
+                     oil = self.oil, material = self.material,  
+                     contact_type = self.contact_type,
+                     name = self.name, metadata = self.metadata)
+        elif self.class_name == 'NU':
+            return NU(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z, 
+                     Dw = self.Dw, Cr = Cr, C0r = C0r,
+                     oil = self.oil, material = self.material,  
+                     contact_type = self.contact_type,
+                     name = self.name, metadata = self.metadata)
+        elif self.class_name == 'NF':
+            return NF(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z, 
+                     Dw = self.Dw, Cr = Cr, C0r = C0r,
+                     oil = self.oil, material = self.material,  
+                     contact_type = self.contact_type,
+                     name = self.name, metadata = self.metadata)
+        elif self.class_name == 'NUP':
+            return NUP(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z, 
+                     Dw = self.Dw, Cr = Cr, C0r = C0r,
+                     oil = self.oil, material = self.material,  
+                     contact_type = self.contact_type,
+                     name = self.name, metadata = self.metadata)
+    
 class NUP(RadialRollerBearing):
     symmetric = True
     taking_loads = 'both'
@@ -1586,7 +1698,6 @@ class NU(RadialRollerBearing):
     generate_axial_load = False
     class_name = 'NU'
 
-    
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name='', metadata={}):
@@ -1837,8 +1948,24 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'])
         return obj
-
     
+    def Copy(self):
+        if not hasattr(self, 'Cr'):
+            Cr = None
+        else:
+            Cr = self.Cr
+        if not hasattr(self, 'C0r'):
+            C0r = None
+        else:
+            C0r = self.C0r
+        obj = TaperedRollerBearing(d = self.d, D = self.D, B = self.B, alpha = self.alpha, 
+                            i = self.i, Z = self.Z, 
+                            Dw = self.Dw, Cr = Cr, C0r = C0r,
+                            oil = self.oil, material = self.material,  
+                            contact_type = self.contact_type,
+                            name = self.name, metadata = self.metadata)
+        return obj
+                 
 class BearingCatalog:
     dessia_db_attributes = [{'name':'bearings',
                              'class':'mechanical_components.bearings.RadialBearing',
@@ -2426,7 +2553,7 @@ class BearingCombination:
         result = sm.Solve(500)
         result.Plot(intensity_factor=1e-5)
     
-    def ElementaryAxialLoad(self, ground, shaft, pos, radial_load, axial_load, bearing_result):
+    def ElementaryAxialLoad(self, ground, shaft, pos, radial_load, bearing_result, axial_load=None):
         nb_bg_radial = sum([1 if (p is True) else 0 for p in self.radial_load_linkage])
         component = []
         nonlinear_linkages = []
@@ -2482,13 +2609,14 @@ class BearingCombination:
             component.append(component_item)
             posx += bg.B
             
-            global_axial_load += axial_load
-            if (self.behavior_link == 'right') and (global_axial_load <= 0):
-                check_axial_load = False
-                break
-            if (self.behavior_link == 'left') and (global_axial_load >= 0):
-                check_axial_load = False
-                break
+            if axial_load is not None:
+                global_axial_load += axial_load
+                if (self.behavior_link == 'right') and (global_axial_load <= 0):
+                    check_axial_load = False
+                    break
+                if (self.behavior_link == 'left') and (global_axial_load >= 0):
+                    check_axial_load = False
+                    break
             
         if len(component) > 1:
             for bg1, bg2 in zip(component[0:-1], component[1:]):
@@ -2546,7 +2674,7 @@ class BearingCombination:
                                  bearing_combination_simulation_result.bearing_simulation_results):
             L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
                             N = speed, t = time, Cr = bg.Cr)
-            if str(L10) not in ['nan', str(math.inf)]:
+            if (str(L10) != 'nan') and (L10 != False):
                 bg_result.L10 = L10
             else:
                 bg_result.L10 = False
@@ -2579,7 +2707,7 @@ class BearingCombination:
         nonlinear_linkages = []
             
         component, nonlinear_linkages_iter, loads_iter, axial_bearings, check_axial_load \
-            = self.ElementaryAxialLoad(ground, shaft, 0, radial_load, axial_load, result_bgs)
+            = self.ElementaryAxialLoad(ground, shaft, 0, radial_load, result_bgs, axial_load)
         loads = loads + loads_iter
         
         for bir, bor in component:
@@ -2922,7 +3050,7 @@ class BearingAssembly:
                 speed = bearing_assembly_simulation_result.speeds
                 L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
                                 N = speed, t = time, Cr = bg.Cr)
-                if str(L10) not in ['nan', str(math.inf)]:
+                if (str(L10) != 'nan') and (L10 != False):
                     bg_result.L10 = L10
                 else:
                     bg_result.L10 = False
@@ -2931,7 +3059,7 @@ class BearingAssembly:
         valid_L10 = True
         for bearing_result in result_bgs:
             for bg_result in bearing_result:
-                if bg_result.L10 is not False:
+                if bg_result.L10 != False:
                     sum_L10_inv += (1/bg_result.L10)**1.5
                 else:
                     valid_L10 = False
@@ -2940,14 +3068,14 @@ class BearingAssembly:
         else:
             bearing_assembly_simulation_result.L10 = False
         
-    def AxialLoad(self, positions, F, bearing_assembly_simulation_result):
+    def AxialLoad(self, positions, axial_load, bearing_assembly_simulation_result):
         result_bcs = bearing_assembly_simulation_result.bearing_combination_simulation_results
         result_bgs = [bg.bearing_simulation_results for bg in result_bcs]
         
         shaft = unidimensional.Body(0, 0, name='Shaft')
         ground = unidimensional.Body(0, 0.05, name='Ground')
         
-        p_shaft = unidimensional.Load(shaft, F)
+        p_shaft = unidimensional.Load(shaft, axial_load)
         id_ground = unidimensional.ImposedDisplacement(ground, 0.)
         imposed_displacements = [id_ground]
         loads = [p_shaft]
@@ -2961,7 +3089,9 @@ class BearingAssembly:
             pos = positions[num_linkage]
             radial_load = load_bearing_combination_result.radial_loads[-1]
             bearing_result = result_bgs[num_linkage]
-            component, nonlinear_linkages_iter, loads_iter, axial_bearings = bearing_combination.ElementaryAxialLoad(ground, shaft, pos, radial_load, bearing_result)
+            component, nonlinear_linkages_iter, loads_iter, axial_bearings, __\
+                = bearing_combination.ElementaryAxialLoad(ground, shaft, pos, \
+                                                          radial_load, bearing_result)
             bc_axial_bearings.append(axial_bearings)
             loads = loads + loads_iter
             
