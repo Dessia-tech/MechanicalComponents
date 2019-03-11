@@ -30,15 +30,20 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
 #                                       bearings_opt.NF
                                        ])
 
-d = bearing_assembly_opt.Dict()
-del bearing_assembly_opt
-bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
+print(hash(bearing_assembly_opt))
+print(bearing_assembly_opt == bearing_assembly_opt)
 
-bearing_assembly_opt.Optimize(5)
+#d = bearing_assembly_opt.Dict()
+#del bearing_assembly_opt
+#bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
+
+bearing_assembly_opt.Optimize(1)
 
 for num_sol, ba_simulation in enumerate(bearing_assembly_opt.bearing_assembly_simulations):
     print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
-    ba_simulation.bearing_assembly.Plot()
+    ba_simulation.bearing_assembly.Plot()    
+    print(hash(ba_simulation))
+    print(ba_simulation == ba_simulation)
     
 #d = bearing_assembly_opt.Dict()
 #del bearing_assembly_opt

@@ -256,19 +256,6 @@ class RollerBearingContinuousOptimizer:
                         if Lnm is not None:
 
                             print('Lnm: {}, specification: {}'.format(lnm, Lnm))
-                            
-#with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-#                                   'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
-#    pandas_rlts_FNR = pandas.read_csv(rlts_FNR) 
-#            
-#pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['Z'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['Dw'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
-##        pandas_sort = pandas_sort[pandas_sort['alpha'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
-#base_bearing = pandas_sort
 
 class BearingCombinationOptimizer:
     
@@ -295,6 +282,34 @@ class BearingCombinationOptimizer:
         self.bearing_classes = bearing_classes
         self.bearing_combination_simulations = bearing_combination_simulations
         self.catalog = catalog
+        
+    def __eq__(self, other_eb):
+        equal = (self.radial_loads == other_eb.radial_loads
+                 and self.axial_loads == other_eb.axial_loads
+                 and self.speeds == other_eb.speeds
+                 and self.operating_times == other_eb.operating_times
+                 and self.inner_diameter == other_eb.inner_diameter
+                 and self.outer_diameter == other_eb.outer_diameter
+                 and self.length == other_eb.length
+                 and self.linkage_types == other_eb.linkage_types
+                 and self.mounting_types == other_eb.mounting_types
+                 and self.number_bearings == other_eb.number_bearings
+                 and self.bearing_classes == other_eb.bearing_classes
+                 and self.catalog == other_eb.catalog)
+        return equal
+    
+    def __hash__(self):
+        br_hash = hash(tuple(self.radial_loads)) + hash(tuple(self.axial_loads))
+        br_hash += hash(tuple(self.speeds)) + hash(tuple(self.operating_times))
+        br_hash += hash(int(self.inner_diameter*1e3)) + hash(int(self.outer_diameter*1e3))
+        br_hash += hash(int(self.length*1e3))
+        br_hash += hash(tuple(self.linkage_types))
+        br_hash += hash(tuple(self.mounting_types))
+        br_hash += hash(tuple(self.number_bearings))
+        for bearing_classe in self.bearing_classes:
+            br_hash += hash(bearing_classe)
+        br_hash += hash(self.catalog)
+        return br_hash
         
     def Configurations(self):
         
@@ -793,6 +808,41 @@ class BearingAssemblyOptimizer:
         self.bearing_assembly_simulations = bearing_assembly_simulations
         self.catalog = catalog
         
+    def __eq__(self, other_eb):
+        equal = (self.loads == other_eb.loads
+                 and self.speeds == other_eb.speeds
+                 and self.operating_times == other_eb.operating_times
+                 and self.inner_diameters == other_eb.inner_diameters
+                 and self.outer_diameters == other_eb.outer_diameters
+                 and self.axial_positions == other_eb.axial_positions
+                 and self.lengths == other_eb.lengths
+                 and self.linkage_types == other_eb.linkage_types
+                 and self.mounting_types == other_eb.mounting_types
+                 and self.number_bearings == other_eb.number_bearings
+                 and self.bearing_classes == other_eb.bearing_classes
+                 and self.catalog == other_eb.catalog)
+        return equal
+    
+    def __hash__(self):
+        br_hash = hash(False)
+        for loads in self.loads:
+            for load in loads:
+                for item in load:
+                    br_hash += hash(tuple(item))
+        br_hash += hash(tuple(self.speeds)) + hash(tuple(self.operating_times))
+        br_hash += hash(tuple(self.inner_diameters)) + hash(tuple(self.outer_diameters))
+        br_hash += hash(tuple(self.axial_positions)) + hash(tuple(self.lengths))
+        for linkage_type in self.linkage_types:
+            br_hash += hash(tuple(linkage_type))
+        for mounting_type in self.mounting_types:
+            br_hash += hash(tuple(mounting_type))
+        for number_bearing in self.number_bearings:
+            br_hash += hash(tuple(number_bearing))
+        for bearing_classe in self.bearing_classes:
+            br_hash += hash(bearing_classe)
+        br_hash += hash(self.catalog)
+        return br_hash
+        
     def Configurations(self):
         configurations = []
 
@@ -1251,7 +1301,7 @@ class BearingAssemblyOptimizer:
         for speed, time in zip(self.speeds, self.operating_times):
             L10_objective += speed/(2*math.pi)*time
         L10_objective = L10_objective/1e6
-#        print('the L10 objective is {}'.format(L10_objective))
+        print('the L10 objective is {}'.format(L10_objective))
         
         pos1_min = self.axial_positions[0]
         pos1_max = self.axial_positions[0] + self.lengths[0]
@@ -1270,7 +1320,7 @@ class BearingAssemblyOptimizer:
         combination_number_bearings = list(product(*self.number_bearings))
         combination_number_bearings = [combination_number_bearings[j] for j in npy.argsort([sum(i) for i in combination_number_bearings])]
         for max_bearings_left, max_bearings_right in combination_number_bearings:
-#            print('number of bearings analyzed: {} left and {} right'.format(max_bearings_left, max_bearings_right))
+            print('number of bearings analyzed: {} left and {} right'.format(max_bearings_left, max_bearings_right))
             self.ConceptualBearingCombinations(max_bearings = (max_bearings_left, max_bearings_right))
             for (left, right), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
 #                print((left, right))
@@ -1296,15 +1346,17 @@ class BearingAssemblyOptimizer:
 
                 for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
 #                    print('try continuous optim ', i_bearing_assembly)
-                    bearing_assembly_simulation = self.ContinuousOptimize(bearing_assembly)
-                    if bearing_assembly_simulation != False:
+                    try:
+                        bearing_assembly_simulation = self.ContinuousOptimize(bearing_assembly)
                         L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
-#                        print(L10, L10_objective)
+                        print(L10, L10_objective)
                         if L10 >= L10_objective:
                             bearing_assembly_simulations.append(bearing_assembly_simulation)
                             sort_bearing_assembly_simulations.append(L10)
-#                            print('solution with L10 {}, nb solutions {}'.format(L10, len(bearing_assembly_simulations)))
+                            print('solution with L10 {}, nb solutions {}'.format(L10, len(bearing_assembly_simulations)))
 #                            break   
+                    except AxialPositionConvergenceError:
+                        pass
                     if len(bearing_assembly_simulations) > max_solutions:
                         break
                 if len(bearing_assembly_simulations) > max_solutions:
@@ -1380,7 +1432,7 @@ class BearingAssemblyOptimizer:
             bearing_assembly_simulation = BearingAssemblySimulation(bearing_assembly, bearing_assembly_simulation_result)
             return bearing_assembly_simulation
         else:
-            return False
+            raise AxialPositionConvergenceError()
 
         
     def Dict(self, subobjects_id = {}, stringify_keys=True):
@@ -1461,3 +1513,8 @@ class BearingAssemblyOptimizer:
                  bearing_assembly_simulations = li_bar,
                  catalog = catalog)
         return obj
+
+class AxialPositionConvergenceError(Exception):
+    def __init__(self):
+        super().__init__('Fail in axial position optimization')
+        

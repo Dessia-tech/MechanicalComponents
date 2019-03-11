@@ -322,6 +322,36 @@ class RadialBearing(LoadBearing):
         self.name = name
         self.metadata = metadata
         
+    def __eq__(self, other_eb):
+        equal = True
+        for k,v in self.__dict__.items():
+            if k in ['d', 'D', 'B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r',
+                     'contact_type', 'mass', 'metadata', 'symmetric',
+                     'taking_loads', 'generate_axial_load', 'linkage',
+                     'coeff_baselife', 'class_name']:
+                if hasattr(self, k) and hasattr(other_eb, k):
+                    equal = equal and (v == getattr(other_eb, k))
+                elif hasattr(self, k) or hasattr(other_eb, k):
+                    equal = False
+                    break
+        return equal
+    
+    def __hash__(self):
+        rlt_hash = hash(int(self.d*1e3)) + hash(int(self.D*1e3))
+        for k,v in self.__dict__.items():
+            if k in ['B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r',
+                     'contact_type', 'mass', 'metadata', 'symmetric',
+                     'taking_loads', 'generate_axial_load', 'linkage',
+                     'coeff_baselife', 'class_name']:
+                tv=type(v)
+                if tv==float:
+                    rlt_hash = rlt_hash + hash(int(getattr(self, k)*1e3))
+                elif tv != dict:
+                    rlt_hash = rlt_hash + hash(v)
+                elif tv == dict:
+                    rlt_hash = rlt_hash + hash(tuple(v.items()))
+        return rlt_hash
+        
     def Check(self):
         if self.d <= 0.:
             return False
@@ -366,7 +396,7 @@ class RadialBearing(LoadBearing):
                 total_cycles += cycles
 
         if total_cycles == 0.:
-            return math.inf
+            return False
         else:
             Pr = (Pr / total_cycles) ** (1/self.coeff_baselife)
             L10 = (Cr/Pr)**(self.coeff_baselife)
@@ -835,6 +865,22 @@ class RadialBallBearing(RadialBearing):
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'])
         return obj
+    
+    def Copy(self):
+        if not hasattr(self, 'Cr'):
+            Cr = None
+        else:
+            Cr = self.Cr
+        if not hasattr(self, 'C0r'):
+            C0r = None
+        else:
+            C0r = self.C0r
+        obj = RadialBallBearing(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z, 
+                  Dw = self.Dw, Cr = Cr, C0r = C0r,
+                  oil = self.oil, material = self.material,  
+                  contact_type = self.contact_type,
+                  name = self.name, metadata = self.metadata)
+        return obj
         
 class AngularBallBearing(RadialBearing):
     symmetric = False
@@ -1066,6 +1112,23 @@ class AngularBallBearing(RadialBearing):
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'])
         return obj
+    
+    def Copy(self):
+        if not hasattr(self, 'Cr'):
+            Cr = None
+        else:
+            Cr = self.Cr
+        if not hasattr(self, 'C0r'):
+            C0r = None
+        else:
+            C0r = self.C0r
+        obj = AngularBallBearing(d = self.d, D = self.D, B = self.B, alpha = self.alpha, 
+                            i = self.i, Z = self.Z, 
+                            Dw = self.Dw, Cr = Cr, C0r = C0r,
+                            oil = self.oil, material = self.material,  
+                            contact_type = self.contact_type,
+                            name = self.name, metadata = self.metadata)
+        return obj
             
 class SphericalBallBearing(RadialBearing):
     symmetric = True
@@ -1154,12 +1217,30 @@ class SphericalBallBearing(RadialBearing):
             d['Cr'] = None
         if 'C0r' not in d.keys():
             d['C0r'] = None
-        obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
-                  Dw = d['Dw'], alpha = d['alpha'], Cr = d['Cr'], C0r = d['C0r'],
+        obj = cls(d = d['d'], D = d['D'], B = d['B'], alpha = d['alpha'], 
+                  i = d['i'], Z = d['Z'], 
+                  Dw = d['Dw'], Cr = d['Cr'], C0r = d['C0r'],
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'])
+        return obj
+    
+    def Copy(self):
+        if not hasattr(self, 'Cr'):
+            Cr = None
+        else:
+            Cr = self.Cr
+        if not hasattr(self, 'C0r'):
+            C0r = None
+        else:
+            C0r = self.C0r
+        obj = SphericalBallBearing(d = self.d, D = self.D, B = self.B, alpha = self.alpha, 
+                            i = self.i, Z = self.Z, 
+                            Dw = self.Dw, Cr = Cr, C0r = C0r,
+                            oil = self.oil, material = self.material,  
+                            contact_type = self.contact_type,
+                            name = self.name, metadata = self.metadata)
         return obj
             
 # TODO remove alpha?
@@ -1378,6 +1459,40 @@ class RadialRollerBearing(RadialBearing):
                   name=d['name'], metadata=d['metadata'])
         return obj
     
+    def Copy(self):
+        if not hasattr(self, 'Cr'):
+            Cr = None
+        else:
+            Cr = self.Cr
+        if not hasattr(self, 'C0r'):
+            C0r = None
+        else:
+            C0r = self.C0r
+        if self.class_name == 'N':
+            return N(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z, 
+                     Dw = self.Dw, Cr = Cr, C0r = C0r,
+                     oil = self.oil, material = self.material,  
+                     contact_type = self.contact_type,
+                     name = self.name, metadata = self.metadata)
+        elif self.class_name == 'NU':
+            return NU(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z, 
+                     Dw = self.Dw, Cr = Cr, C0r = C0r,
+                     oil = self.oil, material = self.material,  
+                     contact_type = self.contact_type,
+                     name = self.name, metadata = self.metadata)
+        elif self.class_name == 'NF':
+            return NF(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z, 
+                     Dw = self.Dw, Cr = Cr, C0r = C0r,
+                     oil = self.oil, material = self.material,  
+                     contact_type = self.contact_type,
+                     name = self.name, metadata = self.metadata)
+        elif self.class_name == 'NUP':
+            return NUP(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z, 
+                     Dw = self.Dw, Cr = Cr, C0r = C0r,
+                     oil = self.oil, material = self.material,  
+                     contact_type = self.contact_type,
+                     name = self.name, metadata = self.metadata)
+    
 class NUP(RadialRollerBearing):
     symmetric = True
     taking_loads = 'both'
@@ -1586,7 +1701,6 @@ class NU(RadialRollerBearing):
     generate_axial_load = False
     class_name = 'NU'
 
-    
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name='', metadata={}):
@@ -1837,8 +1951,24 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'])
         return obj
-
     
+    def Copy(self):
+        if not hasattr(self, 'Cr'):
+            Cr = None
+        else:
+            Cr = self.Cr
+        if not hasattr(self, 'C0r'):
+            C0r = None
+        else:
+            C0r = self.C0r
+        obj = TaperedRollerBearing(d = self.d, D = self.D, B = self.B, alpha = self.alpha, 
+                            i = self.i, Z = self.Z, 
+                            Dw = self.Dw, Cr = Cr, C0r = C0r,
+                            oil = self.oil, material = self.material,  
+                            contact_type = self.contact_type,
+                            name = self.name, metadata = self.metadata)
+        return obj
+                 
 class BearingCatalog:
     dessia_db_attributes = [{'name':'bearings',
                              'class':'mechanical_components.bearings.RadialBearing',
@@ -1884,7 +2014,19 @@ class BearingCatalog:
                 
         self.name = name
         
+    def __eq__(self, other_eb):
         
+        equal = True
+        for bg, other_bg in zip(self.bearings, other_eb.bearings):
+            equal = equal and bg == other_bg
+        return equal
+    
+    def __hash__(self):
+        
+        catalog_hash = hash(False)
+        for bg in self.bearings:
+            catalog_hash = catalog_hash + hash(bg)
+        return catalog_hash
             
     @classmethod
     def LoadFromDataframe(cls, dataframe, catalog_name):
@@ -2052,9 +2194,27 @@ strength_bearing_classes = {str(RadialBallBearing): 1,
 
 class ConceptualBearingCombination:
     def __init__(self, bearing_classes, directions, mounting):
+        
         self.bearing_classes = bearing_classes
         self.directions = directions
         self.mounting = mounting
+        
+    def __eq__(self, other_eb):
+        
+        equal = True
+        for bg, other_bg in zip(self.bearing_classes, other_eb.bearing_classes):
+            equal = equal and bg == other_bg
+        equal = equal and self.directions == other_eb.directions
+        equal = equal and self.mounting == other_eb.mounting
+        return equal
+    
+    def __hash__(self):
+        
+        cbc_hash = hash(False)
+        for bgc in self.bearing_classes:
+            cbc_hash = cbc_hash + hash(bgc)
+        cbc_hash = cbc_hash + hash(tuple(self.directions)) + hash(self.mounting)
+        return cbc_hash
         
     def BearingCombination(self, bearings):
         if self.mounting == 'both':
@@ -2278,6 +2438,27 @@ class BearingCombination:
         self.d = math.inf
         for bg in bearings:
             self.d = min(self.d, bg.d)
+            
+    def __eq__(self, other_eb):
+        
+        equal = True
+        for bg, other_bg in zip(self.bearings, other_eb.bearings):
+            equal = equal and bg == other_bg
+        equal = (equal and self.directions == other_eb.directions
+                       and self.radial_load_linkage == other_eb.radial_load_linkage
+                       and self.internal_pre_load == other_eb.internal_pre_load
+                       and self.connection_be == other_eb.connection_be
+                       and self.connection_bi == other_eb.connection_bi
+                       and self.behavior_link == other_eb.behavior_link)
+        return equal
+    
+    def __hash__(self):
+        bc_hash = hash(tuple(self.radial_load_linkage)) + hash(self.internal_pre_load) \
+                  + hash(tuple(self.connection_be)) + hash(tuple(self.connection_bi)) \
+                  + hash(self.behavior_link) + hash(tuple(self.directions))
+        for bg in self.bearings:
+            bc_hash = bc_hash + hash(bg)
+        return bc_hash
         
     def PlotGraph(self):
                 
@@ -2426,7 +2607,7 @@ class BearingCombination:
         result = sm.Solve(500)
         result.Plot(intensity_factor=1e-5)
     
-    def ElementaryAxialLoad(self, ground, shaft, pos, radial_load, axial_load, bearing_result):
+    def ElementaryAxialLoad(self, ground, shaft, pos, radial_load, bearing_result, axial_load=None):
         nb_bg_radial = sum([1 if (p is True) else 0 for p in self.radial_load_linkage])
         component = []
         nonlinear_linkages = []
@@ -2482,13 +2663,14 @@ class BearingCombination:
             component.append(component_item)
             posx += bg.B
             
-            global_axial_load += axial_load
-            if (self.behavior_link == 'right') and (global_axial_load <= 0):
-                check_axial_load = False
-                break
-            if (self.behavior_link == 'left') and (global_axial_load >= 0):
-                check_axial_load = False
-                break
+            if axial_load is not None:
+                global_axial_load += axial_load
+                if (self.behavior_link == 'right') and (global_axial_load <= 0):
+                    check_axial_load = False
+                    break
+                if (self.behavior_link == 'left') and (global_axial_load >= 0):
+                    check_axial_load = False
+                    break
             
         if len(component) > 1:
             for bg1, bg2 in zip(component[0:-1], component[1:]):
@@ -2546,7 +2728,7 @@ class BearingCombination:
                                  bearing_combination_simulation_result.bearing_simulation_results):
             L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
                             N = speed, t = time, Cr = bg.Cr)
-            if str(L10) not in ['nan', str(math.inf)]:
+            if (str(L10) != 'nan') and (L10 != False):
                 bg_result.L10 = L10
             else:
                 bg_result.L10 = False
@@ -2579,7 +2761,7 @@ class BearingCombination:
         nonlinear_linkages = []
             
         component, nonlinear_linkages_iter, loads_iter, axial_bearings, check_axial_load \
-            = self.ElementaryAxialLoad(ground, shaft, 0, radial_load, axial_load, result_bgs)
+            = self.ElementaryAxialLoad(ground, shaft, 0, radial_load, result_bgs, axial_load)
         loads = loads + loads_iter
         
         for bir, bor in component:
@@ -2730,9 +2912,8 @@ class BearingAssembly:
         self.Cr_equ = self.Cr_equ()
         self.pre_load = pre_load
         self.load_bearing_assembly_results = None
-#        if axial_position is not None:
-#            axial_position = list(axial_position)
-        self.axial_positions = axial_positions
+        if axial_positions is not None:
+            self.axial_positions = axial_positions
         self.B = 0
         for bc in bearing_combinations:
             self.B += bc.B
@@ -2742,6 +2923,25 @@ class BearingAssembly:
         self.d = 0
         for bc in bearing_combinations:
             self.d = max(bc.d, self.d)
+            
+    def __eq__(self, other_eb):
+        equal = True
+        for bc, other_bc in zip(self.bearing_combinations, other_eb.bearing_combinations):
+            equal = equal and bc == other_bc
+        equal = equal and self.pre_load == other_eb.pre_load
+        if hasattr(self, 'axial_positions') and hasattr(other_eb, 'axial_positions'):
+            equal = equal and list(self.axial_positions) == list(other_eb.axial_positions)
+        elif hasattr(self, 'axial_positions') or hasattr(other_eb, 'axial_positions'):
+            equal = False
+        return equal
+    
+    def __hash__(self):
+        ba_hash = hash(self.pre_load)
+        if hasattr(self, 'axial_positions'):
+            ba_hash = ba_hash + hash(tuple(self.axial_positions))
+        for bc in self.bearing_combinations:
+            ba_hash = ba_hash + hash(bc)
+        return ba_hash
         
     def Update(self, axial_positions, internal_diameters, axial_pos, 
                external_diameters, length):
@@ -2922,7 +3122,7 @@ class BearingAssembly:
                 speed = bearing_assembly_simulation_result.speeds
                 L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
                                 N = speed, t = time, Cr = bg.Cr)
-                if str(L10) not in ['nan', str(math.inf)]:
+                if (str(L10) != 'nan') and (L10 != False):
                     bg_result.L10 = L10
                 else:
                     bg_result.L10 = False
@@ -2931,7 +3131,7 @@ class BearingAssembly:
         valid_L10 = True
         for bearing_result in result_bgs:
             for bg_result in bearing_result:
-                if bg_result.L10 is not False:
+                if bg_result.L10 != False:
                     sum_L10_inv += (1/bg_result.L10)**1.5
                 else:
                     valid_L10 = False
@@ -2940,14 +3140,14 @@ class BearingAssembly:
         else:
             bearing_assembly_simulation_result.L10 = False
         
-    def AxialLoad(self, positions, F, bearing_assembly_simulation_result):
+    def AxialLoad(self, positions, axial_load, bearing_assembly_simulation_result):
         result_bcs = bearing_assembly_simulation_result.bearing_combination_simulation_results
         result_bgs = [bg.bearing_simulation_results for bg in result_bcs]
         
         shaft = unidimensional.Body(0, 0, name='Shaft')
         ground = unidimensional.Body(0, 0.05, name='Ground')
         
-        p_shaft = unidimensional.Load(shaft, F)
+        p_shaft = unidimensional.Load(shaft, axial_load)
         id_ground = unidimensional.ImposedDisplacement(ground, 0.)
         imposed_displacements = [id_ground]
         loads = [p_shaft]
@@ -2961,7 +3161,9 @@ class BearingAssembly:
             pos = positions[num_linkage]
             radial_load = load_bearing_combination_result.radial_loads[-1]
             bearing_result = result_bgs[num_linkage]
-            component, nonlinear_linkages_iter, loads_iter, axial_bearings = bearing_combination.ElementaryAxialLoad(ground, shaft, pos, radial_load, bearing_result)
+            component, nonlinear_linkages_iter, loads_iter, axial_bearings, __\
+                = bearing_combination.ElementaryAxialLoad(ground, shaft, pos, \
+                                                          radial_load, bearing_result)
             bc_axial_bearings.append(axial_bearings)
             loads = loads + loads_iter
             
@@ -3341,6 +3543,17 @@ class BearingSimulationResult:
             self.radial_load = radial_load
         self.L10 = L10
         
+    def __eq__(self, other_eb):
+        equal = (self.axial_load == other_eb.axial_load
+                 and self.radial_load == other_eb.radial_load
+                 and self.L10 == other_eb.L10)
+        return equal
+    
+    def __hash__(self):
+        br_hash = hash(tuple(self.axial_load)) + hash(tuple(self.radial_load))\
+                    + hash(self.L10)
+        return br_hash
+    
     def Dict(self, subobjects_id = {}, stringify_keys=True):
         """Export dictionary
         """
@@ -3389,6 +3602,31 @@ class BearingCombinationSimulationResult:
             self.operating_times = operating_times
         if axial_load_model is not None:
             self.axial_load_model = axial_load_model
+            
+    def __eq__(self, other_eb):
+        equal = (self.axial_loads == other_eb.axial_loads
+                 and self.radial_loads == other_eb.radial_loads)
+        if hasattr(self, 'speeds') and hasattr(other_eb, 'speeds'):
+            equal = equal and self.speeds == other_eb.speeds
+        elif hasattr(self, 'speeds') or hasattr(other_eb, 'speeds'):
+            equal = False
+        if hasattr(self, 'operating_times') and hasattr(other_eb, 'operating_times'):
+            equal = equal and self.operating_times == other_eb.operating_times
+        elif hasattr(self, 'operating_times') or hasattr(other_eb, 'operating_times'):
+            equal = False
+        for bearing_simulation_result, other_bearing_simulation_result in zip(self.bearing_simulation_results, other_eb.bearing_simulation_results):
+            equal = equal and bearing_simulation_result == other_bearing_simulation_result
+        return equal
+    
+    def __hash__(self):
+        br_hash = hash(tuple(self.axial_loads)) + hash(tuple(self.radial_loads))
+        if hasattr(self, 'speeds'):
+            br_hash += hash(tuple(self.speeds))
+        if hasattr(self, 'operating_times'):
+            br_hash += hash(tuple(self.operating_times))
+        for bearing_simulation_result in self.bearing_simulation_results:
+            br_hash += hash(bearing_simulation_result)
+        return br_hash
             
     def Dict(self, subobjects_id = {}, stringify_keys=True):
         """
@@ -3441,6 +3679,33 @@ class BearingAssemblySimulationResult:
         self.L10 = L10
         self.bearing_combination_simulation_results = bearing_combination_simulation_results
         
+    def __eq__(self, other_eb):
+        equal = (self.loads == other_eb.loads
+                 and self.speeds == other_eb.speeds
+                 and self.operating_times == other_eb.operating_times)
+        if hasattr(self, 'L10') and hasattr(other_eb, 'L10'):
+            equal = equal and self.L10 == other_eb.L10
+        elif hasattr(self, 'L10') or hasattr(other_eb, 'L10'):
+            equal = False
+        for bearing_combination_simulation_result, other_bearing_combination_simulation_result \
+                in zip(self.bearing_combination_simulation_results,\
+                       other_eb.bearing_combination_simulation_results):
+            equal = equal and bearing_combination_simulation_result == other_bearing_combination_simulation_result
+        return equal
+    
+    def __hash__(self):
+        br_hash = hash(False)
+        for loads in self.loads:
+            for load in loads:
+                for item in load:
+                    br_hash += hash(tuple(item))
+        br_hash += hash(tuple(self.speeds)) + hash(tuple(self.operating_times))
+        if hasattr(self, 'L10'):
+            br_hash += hash(self.L10)
+        for bearing_combination_simulation_result in self.bearing_combination_simulation_results:
+            br_hash += hash(bearing_combination_simulation_result)
+        return br_hash
+        
     def PlotAxialModel(self):
         self.axial_load_model.Plot(intensity_factor=1e-5)
         
@@ -3492,9 +3757,19 @@ class BearingAssemblySimulation:
                              'class':'mechanical_components.bearings.BearingAssemblySimulationResult',
                              'type':'object'}]
     def __init__(self, bearing_assembly,
-                 bearing_assembly_simulation_result=None):
+                 bearing_assembly_simulation_result):
         self.bearing_assembly = bearing_assembly
         self.bearing_assembly_simulation_result = bearing_assembly_simulation_result
+        
+    def __eq__(self, other_eb):
+        equal = (self.bearing_assembly == other_eb.bearing_assembly
+                 and self.bearing_assembly_simulation_result == other_eb.bearing_assembly_simulation_result)
+        return equal
+    
+    def __hash__(self):
+        br_hash = hash(self.bearing_assembly) \
+                + hash(self.bearing_assembly_simulation_result)
+        return br_hash
         
     def Dict(self, subobjects_id = {}, stringify_keys=True):
         """
@@ -3543,9 +3818,19 @@ class BearingCombinationSimulation:
                              'class':'mechanical_components.bearings.BearingCombinationSimulationResult',
                              'type':'object'}]
     def __init__(self, bearing_combination,
-                 bearing_combination_simulation_result=None):
+                 bearing_combination_simulation_result):
         self.bearing_combination = bearing_combination
         self.bearing_combination_simulation_result = bearing_combination_simulation_result
+    
+    def __eq__(self, other_eb):
+        equal = (self.bearing_combination == other_eb.bearing_combination
+                 and self.bearing_combination_simulation_result == other_eb.bearing_combination_simulation_result)
+        return equal
+    
+    def __hash__(self):
+        br_hash = hash(self.bearing_combination) \
+                + hash(self.bearing_combination_simulation_result)
+        return br_hash
         
     def Dict(self, subobjects_id = {}, stringify_keys=True):
         """

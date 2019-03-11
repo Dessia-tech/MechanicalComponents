@@ -26,6 +26,9 @@ b5 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1,
 list_bearing = [b1, b2, b2, b2]
 BA = bearings.BearingCombination(list_bearing, directions = [1, 1, 1, 1], radial_load_linkage = [True]*4, internal_pre_load = 0, 
                  connection_bi = ['left', 'right'], connection_be = ['left', 'right'], behavior_link = 'both')
+print(hash(BA))
+print(BA == BA)
+
 
 li_bg_results = []
 for bearing in BA.bearings:
@@ -45,16 +48,20 @@ BCO = bearings_opt.BearingCombinationOptimizer(radial_loads = [100, 2000],
                                            length = 0.1,
                                            linkage_types = ['ball_joint', 'cylindric_joint'],
                                            mounting_types = ['free', 'right', 'both'],
-                                           number_bearings = [1, 2, 3],
+                                           number_bearings = [3],
                                            bearing_classes = [bearings.RadialBallBearing, 
                                                bearings.AngularBallBearing,
                                                bearings.TaperedRollerBearing,
                                                bearings.NUP
                                                ],)
 
+print(hash(BCO))
+print(BCO == BCO)
     
 BCO.Optimize(10)
 
 for num_sol, bc_simulation in enumerate(BCO.bearing_combination_simulations):
     print(num_sol, bc_simulation.bearing_combination.mass, bc_simulation.bearing_combination_simulation_result.L10)
     bc_simulation.bearing_combination.Plot()
+    print(hash(bc_simulation))
+    print(bc_simulation == bc_simulation)
