@@ -1964,9 +1964,9 @@ class BearingCatalog:
     def LoadFromFile(cls, filepath):
         if type(filepath) is str:            
             with open(filepath, 'r') as file:
-                d = json.load(file)
+                d = json.loads(file)
         else:
-            d = json.load(filepath)
+            d = json.loads(filepath.read().decode('utf-8'))
         return cls.DictToObject(d) 
     
     def SearchBearingCatalog(self, bearing_class, d, D):
