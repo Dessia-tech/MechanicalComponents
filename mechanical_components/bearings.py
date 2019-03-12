@@ -2170,6 +2170,7 @@ class BearingCatalog:
 with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
                            'mechanical_components/catalogs/schaeffler.json') as schaeffler_json:
     schaeffler_catalog = BearingCatalog.LoadFromFile(schaeffler_json)
+    
 
 bearing_classes = [RadialBallBearing, AngularBallBearing,
                    NUP, N, 
