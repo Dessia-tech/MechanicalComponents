@@ -299,17 +299,8 @@ class BearingCombinationOptimizer:
         return equal
     
     def __hash__(self):
-        br_hash = hash(tuple(self.radial_loads)) + hash(tuple(self.axial_loads))
-        br_hash += hash(tuple(self.speeds)) + hash(tuple(self.operating_times))
-        br_hash += hash(int(self.inner_diameter*1e3)) + hash(int(self.outer_diameter*1e3))
-        br_hash += hash(int(self.length*1e3))
-        br_hash += hash(tuple(self.linkage_types))
-        br_hash += hash(tuple(self.mounting_types))
-        br_hash += hash(tuple(self.number_bearings))
-        for bearing_classe in self.bearing_classes:
-            br_hash += hash(bearing_classe)
-        br_hash += hash(self.catalog)
-        return br_hash
+        h = int(sum(self.operating_times) % 230080000)
+        return h
         
     def Configurations(self):
         

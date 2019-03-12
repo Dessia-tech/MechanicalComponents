@@ -322,35 +322,21 @@ class RadialBearing(LoadBearing):
         self.name = name
         self.metadata = metadata
         
-    def __eq__(self, other_eb):
-        equal = True
+    def __eq__(self, other_bearing):
+        if self.class_name != other_bearing.class_name:
+            return False
+        
         for k,v in self.__dict__.items():
-            if k in ['d', 'D', 'B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r',
-                     'contact_type', 'mass', 'symmetric',
-                     'taking_loads', 'generate_axial_load', 'linkage',
-                     'coeff_baselife', 'class_name']:
-                if hasattr(self, k) and hasattr(other_eb, k):
-                    equal = equal and (v == getattr(other_eb, k))
-                elif hasattr(self, k) or hasattr(other_eb, k):
-                    equal = False
-                    break
-        return equal
+            if k in ['d', 'D', 'B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r']:
+                v2 = getattr(other_bearing, k)
+                if v != v2:
+                    return False
+        return True
     
     def __hash__(self):
-        return int(self.d*1e3) + int(self.D*10e3) + int(self.B*5e2)+self.i
-#        for k,v in self.__dict__.items():
-#            if k in ['B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r',
-#                     'contact_type', 'mass', 'symmetric',
-#                     'taking_loads', 'generate_axial_load', 'linkage',
-#                     'coeff_baselife', 'class_name']:
-#                tv=type(v)
-#                if tv==float:
-#                    rlt_hash = rlt_hash + hash(int(getattr(self, k)*1e3))
-#                elif tv != dict:
-#                    rlt_hash = rlt_hash + hash(v)
-#                elif tv == dict:
-#                    rlt_hash = rlt_hash + hash(tuple(v.items()))
-#        return rlt_hash
+        h= int(self.d*4e3) + int(self.D*12e3) + int(self.B*1e3)+self.i
+        h+= len(self.__class__.__name__)
+        return h
         
     def Check(self):
         if self.d <= 0.:
@@ -2112,16 +2098,18 @@ class BearingCatalog:
         return cls.DictToObject(d) 
     
     def SearchBearingCatalog(self, bearing_class, d, D):
-        
-        bearings = self.bearings_by_types[bearing_class]
-        list_bearings = []
-        list_sort = []
-        for bearing in bearings:
-            if (bearing.d >= d) and (bearing.D <= D):
-                list_bearings.append(bearing)
-                list_sort.append(bearing.Cr)
-        arg_list_sort = npy.argsort(list_sort)
-        return [list_bearings[i] for i in arg_list_sort]
+        if bearing_class in self.bearings_by_types:
+            bearings = self.bearings_by_types[bearing_class]
+            list_bearings = []
+            list_sort = []
+            for bearing in bearings:
+                if (bearing.d >= d) and (bearing.D <= D):
+                    list_bearings.append(bearing)
+                    list_sort.append(bearing.Cr)
+            arg_list_sort = npy.argsort(list_sort)
+            return [list_bearings[i] for i in arg_list_sort]
+        else:
+            return []
 
     def NextBearingCatalog(self, bearing_class, d, D):
         try:
@@ -2210,12 +2198,10 @@ class ConceptualBearingCombination:
         return equal
     
     def __hash__(self):
-        
-        cbc_hash = hash(False)
-        for bgc in self.bearing_classes:
-            cbc_hash = cbc_hash + hash(bgc)
-        cbc_hash = cbc_hash + hash(tuple(self.directions)) + hash(self.mounting)
-        return cbc_hash
+        h = 3*len(self.mounting) + 127*sum(self.directions)
+        for class_ in self.bearing_classes:
+            h += len(class_.__name__)
+        return h
         
     def BearingCombination(self, bearings):
         if self.mounting == 'both':
@@ -2457,12 +2443,11 @@ class BearingCombination:
         return equal
     
     def __hash__(self):
-        bc_hash = hash(tuple(self.radial_load_linkage)) + hash(self.internal_pre_load) \
-                  + hash(tuple(self.connection_be)) + hash(tuple(self.connection_bi)) \
-                  + hash(self.behavior_link) + hash(tuple(self.directions))
+        h = 0
         for bg in self.bearings:
-            bc_hash = bc_hash + hash(bg)
-        return bc_hash
+            h += hash(bg)
+        h += sum(self.directions)
+        return h
         
     def PlotGraph(self):
                 
@@ -2948,12 +2933,10 @@ class BearingAssembly:
         return equal
     
     def __hash__(self):
-        ba_hash = hash(self.pre_load)
-        if hasattr(self, 'axial_positions'):
-            ba_hash = ba_hash + hash(tuple(self.axial_positions))
+        h = 0
         for bc in self.bearing_combinations:
-            ba_hash = ba_hash + hash(bc)
-        return ba_hash
+            h += hash(bc)
+        return h
         
     def Update(self, axial_positions, internal_diameters, axial_pos, 
                external_diameters, length):
@@ -3020,8 +3003,8 @@ class BearingAssembly:
     def Graph(self):
         for li_bg in self.bearing_combinations:
             G, positions, li_axial_link, nd_axial_load = li_bg.Graph()
-            plt.figure()
-            nx.draw_networkx(G, pos = positions)
+#            plt.figure()
+#            nx.draw_networkx(G, pos = positions)
             
     def CheckLoad(self, bearing_assembly_simulation_result):
         loads = bearing_assembly_simulation_result.loads
@@ -3573,9 +3556,8 @@ class BearingSimulationResult:
         return equal
     
     def __hash__(self):
-        br_hash = hash(tuple(self.axial_load)) + hash(tuple(self.radial_load))\
-                    + hash(self.L10)
-        return br_hash
+        h = int(self.L10 % 230)
+        return h
     
     def Dict(self, subobjects_id = {}, stringify_keys=True):
         """Export dictionary
@@ -3642,14 +3624,10 @@ class BearingCombinationSimulationResult:
         return equal
     
     def __hash__(self):
-        br_hash = hash(tuple(self.axial_loads)) + hash(tuple(self.radial_loads))
-        if hasattr(self, 'speeds'):
-            br_hash += hash(tuple(self.speeds))
-        if hasattr(self, 'operating_times'):
-            br_hash += hash(tuple(self.operating_times))
-        for bearing_simulation_result in self.bearing_simulation_results:
-            br_hash += hash(bearing_simulation_result)
-        return br_hash
+        h = 0
+        for bsr in self.bearing_simulation_results:
+            h += hash(bsr)
+        return int(h % 2091)
             
     def Dict(self, subobjects_id = {}, stringify_keys=True):
         """
@@ -3717,17 +3695,8 @@ class BearingAssemblySimulationResult:
         return equal
     
     def __hash__(self):
-        br_hash = hash(False)
-        for loads in self.loads:
-            for load in loads:
-                for item in load:
-                    br_hash += hash(tuple(item))
-        br_hash += hash(tuple(self.speeds)) + hash(tuple(self.operating_times))
-        if hasattr(self, 'L10'):
-            br_hash += hash(self.L10)
-        for bearing_combination_simulation_result in self.bearing_combination_simulation_results:
-            br_hash += hash(bearing_combination_simulation_result)
-        return br_hash
+        h = int(self.L10 % 9397)
+        return h
         
     def PlotAxialModel(self):
         self.axial_load_model.Plot(intensity_factor=1e-5)
