@@ -19,9 +19,9 @@ import sys
 
 args_delete = []
 for arg in sys.argv:
-    if arg.startswith('--mac='):
-        mac = arg[6:]
-        print('Compiling for MAC adress: {}'.format(mac))
+    if arg.startswith('--macs='):
+        macs = arg[7:]
+        print('Compiling for MAC adress: {}'.format(macs))
         args_delete.append(arg)
     if arg.startswith('--exp_year='):
         year = int(arg[11:])
@@ -45,7 +45,7 @@ except NameError:
     raise NameError
     
 try:
-    mac
+    macs
 except NameError:
     print('MAC address undefined: pass with --mac= option')
     raise NameError
@@ -54,25 +54,27 @@ expiration = int(calendar.timegm(time.struct_time((year, month, 1, 0, 0, 0 ,0, 0
 print('Expiration date: {}/{}: {}'.format(month, year, expiration))
 not_before = int(time.time())
 
-protected_files = ['mechanical_components/optimization/bearings.py',
-                   'mechanical_components/optimization/common.py',
-                   'mechanical_components/optimization/meshes.py',
-                   'mechanical_components/optimization/wires.py',
-                   ]
+protected_files = ['agb_arch.py',
+                   'agb_model3d.py',
+                   'agb_optimization.py']
 
-error_msg = 'Error, report this error to DessIA support with this traceback token: {}'.format(hashlib.sha256(str(mac).encode()).hexdigest())
+
+physical_token = hashlib.sha256(str(macs[0]).encode()).hexdigest()
+error_msg_time_before = 'Invalid licence Please report this error to DessIA support with this traceback token: TB{}'.format(physical_token)
+error_msg_time_after = 'Invalid licence Please report this error to DessIA support with this traceback token: TA{}'.format(physical_token)
+error_msg_mac = 'Invalid licence. Please report this error to DessIA support with this traceback token: M{}'.format(physical_token)
 protection_lines = ['valid_license = True\n',
-                    't_execution = time_package.time()\n',
+                    't_execution = time.time()\n',
                     'if t_execution > {}:\n'.format(expiration), 
-                    '    valid_license = False\n',
+                    '    print("{}")\n'.format(error_msg_time_after),
+                    '    raise RuntimeError\n\n',
                     'if t_execution < {}:\n'.format(not_before),
-                    '    valid_license = False\n',
-                    'if getnode() != {}:\n'.format(mac),
-                    '    valid_license = False\n',
-                    'if not valid_license:\n',
-                    '    print("{}")\n\n'.format(error_msg),
-                    '    raise RuntimeError\n']
-
+                    '    print("{}")\n'.format(error_msg_time_before),
+                    '    raise RuntimeError\n\n',
+                    'if getnode() not in {}:\n'.format(macs),
+                    '    print("{}")\n'.format(error_msg_mac),
+                    '    raise RuntimeError\n\n'
+                    ]
 
 files_to_compile = []
 for file in protected_files:
@@ -135,6 +137,7 @@ for file in protected_files:
 
                 for protection_line in protection_lines:
                     new_file_lines.append('    {}'.format(protection_line))
+
 
                 new_file_lines.append(line)
 
