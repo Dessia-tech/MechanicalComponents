@@ -326,7 +326,7 @@ class RadialBearing(LoadBearing):
         equal = True
         for k,v in self.__dict__.items():
             if k in ['d', 'D', 'B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r',
-                     'contact_type', 'mass', 'metadata', 'symmetric',
+                     'contact_type', 'mass', 'symmetric',
                      'taking_loads', 'generate_axial_load', 'linkage',
                      'coeff_baselife', 'class_name']:
                 if hasattr(self, k) and hasattr(other_eb, k):
@@ -337,20 +337,20 @@ class RadialBearing(LoadBearing):
         return equal
     
     def __hash__(self):
-        rlt_hash = hash(int(self.d*1e3)) + hash(int(self.D*1e3))
-        for k,v in self.__dict__.items():
-            if k in ['B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r',
-                     'contact_type', 'mass', 'metadata', 'symmetric',
-                     'taking_loads', 'generate_axial_load', 'linkage',
-                     'coeff_baselife', 'class_name']:
-                tv=type(v)
-                if tv==float:
-                    rlt_hash = rlt_hash + hash(int(getattr(self, k)*1e3))
-                elif tv != dict:
-                    rlt_hash = rlt_hash + hash(v)
-                elif tv == dict:
-                    rlt_hash = rlt_hash + hash(tuple(v.items()))
-        return rlt_hash
+        return int(self.d*1e3) + int(self.D*10e3) + int(self.B*5e2)+self.i
+#        for k,v in self.__dict__.items():
+#            if k in ['B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r',
+#                     'contact_type', 'mass', 'symmetric',
+#                     'taking_loads', 'generate_axial_load', 'linkage',
+#                     'coeff_baselife', 'class_name']:
+#                tv=type(v)
+#                if tv==float:
+#                    rlt_hash = rlt_hash + hash(int(getattr(self, k)*1e3))
+#                elif tv != dict:
+#                    rlt_hash = rlt_hash + hash(v)
+#                elif tv == dict:
+#                    rlt_hash = rlt_hash + hash(tuple(v.items()))
+#        return rlt_hash
         
     def Check(self):
         if self.d <= 0.:
@@ -2023,10 +2023,10 @@ class BearingCatalog:
     
     def __hash__(self):
         
-        catalog_hash = hash(False)
+        catalog_hash = 0.
         for bg in self.bearings:
             catalog_hash = catalog_hash + hash(bg)
-        return catalog_hash
+        return int(catalog_hash%100000)
             
     @classmethod
     def LoadFromDataframe(cls, dataframe, catalog_name):

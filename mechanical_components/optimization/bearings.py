@@ -824,22 +824,23 @@ class BearingAssemblyOptimizer:
         return equal
     
     def __hash__(self):
-        br_hash = hash(False)
-        for loads in self.loads:
-            for load in loads:
-                for item in load:
-                    br_hash += hash(tuple(item))
-        br_hash += hash(tuple(self.speeds)) + hash(tuple(self.operating_times))
-        br_hash += hash(tuple(self.inner_diameters)) + hash(tuple(self.outer_diameters))
-        br_hash += hash(tuple(self.axial_positions)) + hash(tuple(self.lengths))
-        for linkage_type in self.linkage_types:
-            br_hash += hash(tuple(linkage_type))
-        for mounting_type in self.mounting_types:
-            br_hash += hash(tuple(mounting_type))
-        for number_bearing in self.number_bearings:
-            br_hash += hash(tuple(number_bearing))
-        for bearing_classe in self.bearing_classes:
-            br_hash += hash(bearing_classe)
+        br_hash = int(sum(self.operating_times)/300000)
+        br_hash += int(sum(self.outer_diameters*145))
+#        for loads in self.loads:
+#            for load in loads:
+#                for item in load:
+#                    br_hash += hash(tuple(item))
+#        br_hash += hash(tuple(self.speeds)) + hash(tuple(self.operating_times))
+#        br_hash += hash(tuple(self.inner_diameters)) + hash(tuple(self.outer_diameters))
+#        br_hash += hash(tuple(self.axial_positions)) + hash(tuple(self.lengths))
+#        for linkage_type in self.linkage_types:
+#            br_hash += hash(tuple(linkage_type))
+#        for mounting_type in self.mounting_types:
+#            br_hash += hash(tuple(mounting_type))
+#        for number_bearing in self.number_bearings:
+#            br_hash += hash(tuple(number_bearing))
+#        for bearing_classe in self.bearing_classes:
+#            br_hash += hash(bearing_classe)
         br_hash += hash(self.catalog)
         return br_hash
         
@@ -1330,9 +1331,9 @@ class BearingAssemblyOptimizer:
                 try:
                     li_bearing_assembly_configurations.extend(bearing_assembly_configurations)
                     li_bearing_assembly_L10.extend(bearing_assembly_L10)
-                except NameError:# TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!
+                except NameError:
                     li_bearing_assembly_configurations = bearing_assembly_configurations
-                    li_bearing_assembly_L10 = bearing_assembly_L10
+                    li_bearing_assembly_L10 = bearing_assembly_L10# TODO: variable inutile?
                 
             bearing_assembly_configurations_sort = li_bearing_assembly_configurations
 #            bearing_assembly_configurations_sort = [li_bearing_assembly_configurations[i] for i in npy.argsort(li_bearing_assembly_L10)[::-1]]
@@ -1440,14 +1441,16 @@ class BearingAssemblyOptimizer:
         Export dictionary
         """
         d = {}
-        for k,v in self.__dict__.items():
-            tv = type(v)
-            if tv == npy.int64:
-                d[k] = int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k] = v
+        d['loads'] = self.loads
+        d['speeds'] = self.speeds
+        d['operating_times'] = self.operating_times
+        d['inner_diameters'] = self.inner_diameters
+        d['axial_positions'] = self.axial_positions
+        d['outer_diameters'] = self.outer_diameters
+        d['lengths'] = self.lengths
+        d['linkage_types'] = self.linkage_types
+        d['mounting_types'] = self.mounting_types
+        d['number_bearings'] = self.number_bearings
                 
                 
         if self.bearing_assembly_simulations is not None:
@@ -1461,10 +1464,11 @@ class BearingAssemblyOptimizer:
             bar_dict = None
         d['bearing_assembly_simulations'] = bar_dict
         
-        bc = []
-        for bearing_classe in self.bearing_classes:
-            bc.append(str(bearing_classe))
-        d['bearing_classes'] = bc
+        # TODO: serialize classes as string -> see another todo in dict to object
+#        bc = []
+#        for bearing_classe in self.bearing_classes:
+#            bc.append(str(bearing_classe))
+#        d['bearing_classes'] = bc
         
         d['catalog'] = self.catalog.Dict()
         
