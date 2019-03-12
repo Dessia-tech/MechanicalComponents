@@ -717,11 +717,11 @@ class ConceptualBearingCombinationOptimizer:
         if (len(bearings) > 1) and (self.linkage == 'cylindric_joint'):
             check = True
         if (len(bearings) == 1) and (self.linkage == 'cylindric_joint'):
-            if bearings[0].__class__ not in [RadialBallBearing, 
+            if bearings[0] not in [RadialBallBearing, 
                        AngularBallBearing, SphericalBallBearing]:
                 check = True
         if (len(bearings) == 1) and (self.linkage == 'ball_joint'):
-            if bearings[0].__class__ in [RadialBallBearing, 
+            if bearings[0] in [RadialBallBearing, 
                        AngularBallBearing, SphericalBallBearing]:
                 check = True
         return check
@@ -749,7 +749,7 @@ class ConceptualBearingCombinationOptimizer:
                 valid = self.CheckLinkage(bearings)
                 if valid:
                     cbc = ConceptualBearingCombination(bearings, directions, self.mounting)
-                    valid = cbc.CheckKinematic()                
+                    valid = cbc.CheckKinematic()  
             
             # Testing
             if valid:
@@ -895,6 +895,7 @@ class BearingAssemblyOptimizer:
                                                       self.lengths[1], 
                                                       bearing_classes = self.bearing_classes
                                                      )
+
                 bearing_combinations_possibilities[(left, right)] = \
                     (DBC_l.ConceptualBearingCombinations(max_bearings[0]), DBC_r.ConceptualBearingCombinations(max_bearings[1]))
         self.bearing_combinations_possibilities = bearing_combinations_possibilities
@@ -934,7 +935,7 @@ class BearingAssemblyOptimizer:
                     valid = False
                     break
                 
-                if (bearings[-1].Cr < 20) or (d > D) or (d == 0) or (D == 0):
+                if (bearings[-1].Cr < 5) or (d > D) or (d == 0) or (D == 0):
                     valid = False
                     break
                 
@@ -962,7 +963,7 @@ class BearingAssemblyOptimizer:
                                                                 N = self.speeds, 
                                                                 t = self.operating_times, Cr = bearing.Cr))
                         L10 = BearingAssembly.EstimateBaseLifeTime(list_L10)
-#                        print(L10, L10_objective)
+                        
                         if L10 > L10_objective:
                             best_L10 = max(best_L10, L10)
 #                            print(best_L10)
@@ -1159,7 +1160,6 @@ class BearingAssemblyOptimizer:
 
             if (dt.current_depth == nb_bearings) and valid:
                 
-#                print(1)
                 bc_left = conceptual_bearing_combination_left.BearingCombination(bearings[0: nb_bearings_left])
                 bc_right = conceptual_bearing_combination_right.BearingCombination(bearings[nb_bearings_left:])
                 bearing_assembly = BearingAssembly([bc_left, bc_right])
@@ -1175,14 +1175,14 @@ class BearingAssemblyOptimizer:
                 pos1_max = self.axial_positions[0] + self.lengths[0]
                 pos2_min = self.axial_positions[1]
                 pos2_max = self.axial_positions[1] + self.lengths[1]
+
                 bearing_assembly.ShaftLoad([(pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.], 
                                             bearing_assembly_simulation_result)
                 L10 = bearing_assembly_simulation_result.L10
                 if L10 is False:
                     break
-#                print(L10)
                 if L10 < L10_objective:
-#                    print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
+                    print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
                     valid = False
                 
                     compt_nb_eval_L10 += 1
@@ -1225,7 +1225,6 @@ class BearingAssemblyOptimizer:
                             valid_fsolve = True
 #                                print('analyse coeff ', coefficient_Cr, funct([coefficient_Cr]))
                             break
-#                    print('end', coefficient_Cr)
                     if not valid_fsolve:
                         break
                     
@@ -1323,11 +1322,13 @@ class BearingAssemblyOptimizer:
         for max_bearings_left, max_bearings_right in combination_number_bearings:
             print('number of bearings analyzed: {} left and {} right'.format(max_bearings_left, max_bearings_right))
             self.ConceptualBearingCombinations(max_bearings = (max_bearings_left, max_bearings_right))
+
             for (left, right), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
 #                print((left, right))
                 bearing_assembly_configurations, bearing_assembly_L10 = self.SelectBearingCombinations(bearing_combinations_possibility, 
                                                                     radial_load = (radial_load_left, radial_load_right), 
                                                                     L10_objective = L10_objective)
+
                 try:
                     li_bearing_assembly_configurations.extend(bearing_assembly_configurations)
                     li_bearing_assembly_L10.extend(bearing_assembly_L10)
@@ -1350,7 +1351,6 @@ class BearingAssemblyOptimizer:
                     try:
                         bearing_assembly_simulation = self.ContinuousOptimize(bearing_assembly)
                         L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
-                        print(L10, L10_objective)
                         if L10 >= L10_objective:
                             bearing_assembly_simulations.append(bearing_assembly_simulation)
                             sort_bearing_assembly_simulations.append(L10)

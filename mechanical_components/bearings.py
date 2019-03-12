@@ -2376,6 +2376,7 @@ class ConceptualBearingCombination:
                 valid = False
                 pass
             
+            
         def AnalyseConnection(node_input, node_output):
             valid = True
             try:
@@ -2389,11 +2390,13 @@ class ConceptualBearingCombination:
                 pass
             return valid
             
-        if self.mounting == 'free':
-            if valid:
-                valid = AnalyseConnection(list_node_bearings[0][4], li_node_output[2])
-            if valid:
-                valid = AnalyseConnection(list_node_bearings[-1][1], li_node_output[5])
+#        if self.mounting == 'free':
+#            valid_free1 = AnalyseConnection(list_node_bearings[0][3], list_node_bearings[-1][5])
+#            valid_free2 = AnalyseConnection(list_node_bearings[-1][6], list_node_bearings[0][0])
+#            if not valid_free1 and not valid_free2:
+#                valid = True
+#            else:
+#                valid = False
         
         if self.mounting == 'right':
             if valid:
@@ -2627,11 +2630,19 @@ class BearingCombination:
             bir = component_item[0]
             bor = component_item[1]
             if bg.taking_loads == 'both':
+                pos1 = bir.initial_position
+                pos2 = bor.initial_position
                 link1 = unidimensional.CompressionSpring(bir, bor, k1, -j1, 'bearing {}'.format(num_bg))
                 link2 = unidimensional.CompressionSpring(bor, bir, k1, -j1, 'bearing {}'.format(num_bg))
                 nonlinear_linkages.append(link1)
                 nonlinear_linkages.append(link2)
                 axial_bearings.append([link1, link2])
+#            elif bg.taking_loads == 'free':
+#                link1 = unidimensional.CompressionSpring(bir, bor, 10, -j1, 'bearing {}'.format(num_bg))
+##                link2 = unidimensional.CompressionSpring(bor, bir, 100, -j1, 'bearing {}'.format(num_bg))
+#                nonlinear_linkages.append(link1)
+##                nonlinear_linkages.append(link2)
+#                axial_bearings.append([link1])
             elif bg.generate_axial_load:
                 Fp = radial_load/nb_bg_radial*math.tan(bg.alpha)
                 if self.directions[num_bg] == -1:
@@ -3158,37 +3169,48 @@ class BearingAssembly:
         components = []
         for num_linkage, (bearing_combination, load_bearing_combination_result) in enumerate(zip(self.bearing_combinations, 
                                                       result_bcs)):
+            
             pos = positions[num_linkage]
             radial_load = load_bearing_combination_result.radial_loads[-1]
             bearing_result = result_bgs[num_linkage]
             component, nonlinear_linkages_iter, loads_iter, axial_bearings, __\
                 = bearing_combination.ElementaryAxialLoad(ground, shaft, pos, \
                                                           radial_load, bearing_result)
-            bc_axial_bearings.append(axial_bearings)
-            loads = loads + loads_iter
-            
-            components.append(component)
-            for bir, bor in component:
-                bodies.append(bir)
-                bodies.append(bor)
-            nonlinear_linkages.extend(nonlinear_linkages_iter)
+            if bearing_combination.behavior_link != 'free':
+                bc_axial_bearings.append(axial_bearings)
+                loads = loads + loads_iter
+                
+                components.append(component)
+                for bir, bor in component:
+                    bodies.append(bir)
+                    bodies.append(bor)
+                nonlinear_linkages.extend(nonlinear_linkages_iter)
+            else:
+                bc_axial_bearings.append([])
+                components.append([])
         
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
                          imposed_displacements)
         try:
             result_sm = sm.Solve(500)
             bearing_assembly_simulation_result.axial_load_model = result_sm
-                    
             for num_bc, (axial_linkages, component) in enumerate(zip(bc_axial_bearings, components)):
+                if len(axial_linkages) == 0:
+                    for result_bg in result_bgs[num_bc]:
+                        result_bg.axial_load.append(0)
                 for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_linkages, component)):
                     for link in axial_linkage:
                         if link in result_sm.activated_nonlinear_linkages:
                             positions = (result_sm.positions[bir], result_sm.positions[bor])
                             result_bgs[num_bc][num_bg].axial_load.append(link.Strains(positions))
-                        else:
-                            result_bgs[num_bc][num_bg].axial_load.append(0)
+
         except unidimensional.ModelConvergenceError:
+            print('Convergence Error')
             pass
+#            sm.PlotGraph()
+#            sm.Plot()
+#            raise unidimensional.ModelConvergenceError()
+            
     
     def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
         groups = []
