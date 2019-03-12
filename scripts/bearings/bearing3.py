@@ -33,14 +33,14 @@ import mechanical_components.optimization.bearings as bearings_opt
 
 bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
                     loads = [[[[-0.05, 0, 0], [2000, 1000, 0], [0, 0, 0]]]], 
-                    speeds = [200],
+                    speeds = [202],
                     operating_times = [1000000],
                     inner_diameters = [0.02, 0.025],
                     axial_positions = [0, 0.3], 
                     outer_diameters = [0.1, 0.1], 
                     lengths = [0.1, 0.1],
                     linkage_types = [['cylindric_joint'], ['cylindric_joint']],
-                    mounting_types = [['both', 'free']],
+                    mounting_types = [['left', 'right']],
                     number_bearings = [[1, 2], [1, 2]],
                     bearing_classes = [bearings.RadialBallBearing, 
                                        bearings.AngularBallBearing,
