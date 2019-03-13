@@ -54,9 +54,11 @@ expiration = int(calendar.timegm(time.struct_time((year, month, 1, 0, 0, 0 ,0, 0
 print('Expiration date: {}/{}: {}'.format(month, year, expiration))
 not_before = int(time.time())
 
-protected_files = ['agb_arch.py',
-                   'agb_model3d.py',
-                   'agb_optimization.py']
+protected_files = ['mechanical_components/optimization/bearings.py',
+                   'mechanical_components/optimization/common.py',
+                   'mechanical_components/optimization/meshes.py',
+                   'mechanical_components/optimization/wires.py',
+                   ]
 
 
 physical_token = hashlib.sha256(str(macs[0]).encode()).hexdigest()
