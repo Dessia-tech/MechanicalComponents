@@ -14,21 +14,26 @@ import copy
 from mechanical_components.load import *
 
 b0 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.01, i = 1, 
-                                       Z = 20, Dw = 0.005, alpha = 0, direction = -1)
+                                       Z = 20, Dw = 0.005, alpha = 0.1, Cr = 1e3)
 b1 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
-                                       Z = 20, Dw = 0.005, alpha = 0)
+                                       Z = 20, Dw = 0.005, Cr = 1e3)
 b2 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
-                                       Z = 20, Dw = 0.005, alpha = 0)
+                                       Z = 20, Dw = 0.005, Cr = 1e3)
 b3 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
-                                       Z = 20, Dw = 0.005, alpha = 0, direction = -1)
+                                       Z = 20, Dw = 0.005, alpha = 0.1, Cr = 1e3)
 b4 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
-                                       Z = 20, Dw = 0.005, alpha = 0, direction = 1)
+                                       Z = 20, Dw = 0.005, alpha = 0.1, Cr = 1e3)
 b5 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
-                                       Z = 20, Dw = 0.005, alpha = 0)
+                                       Z = 20, Dw = 0.005, Cr = 1e3)
 list_bearing = [b1, b2, b2, b2]
-BA = bearings.BearingCombination(list_bearing, radial_load_linkage = [True]*1, internal_pre_load = 0, 
-                 connection_bi = ['n'], connection_be = ['p'], behavior_link = 'pn')
+BA = bearings.BearingCombination(list_bearing, directions = [1, 1, 1, 1], radial_load_linkage = [True]*4, internal_pre_load = 0, 
+                 connection_bi = ['left', 'right'], connection_be = ['left', 'right'], behavior_link = 'both')
 
+print(hash(b1))
+b1_copy = b1.Copy()
+#print(hash(b0))
+print(b1 == b1_copy)
+print(hash(b1), hash(b1_copy))
 #BA.SolveAxialLoad()
 #BA.PlotGraph()
 #fa = BA.SearchBestGraph()
