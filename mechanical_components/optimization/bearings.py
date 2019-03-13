@@ -1286,7 +1286,7 @@ class BearingAssemblyOptimizer:
             
             dt.NextNode(valid)
     
-    def Optimize(self, max_solutions=10):
+    def Optimize(self, max_solutions=10, progress_callback=lambda x:0):
         
         L10_objective = 0
         for speed, time in zip(self.speeds, self.operating_times):
@@ -1310,8 +1310,10 @@ class BearingAssemblyOptimizer:
         sort_bearing_assembly_simulations = []
         combination_number_bearings = list(product(*self.number_bearings))
         combination_number_bearings = [combination_number_bearings[j] for j in npy.argsort([sum(i) for i in combination_number_bearings])]
-        for max_bearings_left, max_bearings_right in combination_number_bearings:
+        ncnb = float(len(combination_number_bearings))
+        for icnb, (max_bearings_left, max_bearings_right) in enumerate(combination_number_bearings):
             print('number of bearings analyzed: {} left and {} right'.format(max_bearings_left, max_bearings_right))
+            progress_callback(icnb/ncnb)
             self.ConceptualBearingCombinations(max_bearings = (max_bearings_left, max_bearings_right))
 
             for (left, right), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
