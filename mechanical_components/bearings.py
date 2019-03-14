@@ -381,12 +381,12 @@ class RadialBearing(LoadBearing):
                 Pr += cycles * C
                 total_cycles += cycles
 
-        if total_cycles == 0.:
-            return False
-        else:
+        if total_cycles != 0:
             Pr = (Pr / total_cycles) ** (1/self.coeff_baselife)
             L10 = (Cr/Pr)**(self.coeff_baselife)
             return L10
+        else:
+            raise BearingL10Error()
         
     def AdjustedLifeTime(self, Fr, Fa, N, t, T, Cr=None, C0r=None, S=0.9):
         """
@@ -781,7 +781,7 @@ class RadialBallBearing(RadialBearing):
         bg = vm.Contour2D([bearing_sup, bearing_inf])
         return bg
     
-    def PlotData(self, pos=0, quote=True, constructor=True):
+    def PlotData(self, pos=0, quote=True, constructor=True, direction=1):
         
         be_sup = self.ExternalRingContour()
         be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
@@ -1026,12 +1026,12 @@ class AngularBallBearing(RadialBearing):
         bg = vm.Contour2D([be_sup, bi_sup, ball_sup, be_inf, bi_inf, ball_inf])
         return bg
     
-    def PlotData(self, pos=0, quote=True, constructor=True):
+    def PlotData(self, pos=0, quote=True, constructor=True, direction=1):
         
-        be_sup = self.ExternalRingContour(1)
+        be_sup = self.ExternalRingContour(direction = direction, sign_V = 1)
         be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
         export_D3 = [be_sup1.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
-        bi_sup = self.InternalRingContour(1)
+        bi_sup = self.InternalRingContour(direction = direction, sign_V = 1)
         bi_sup1 = bi_sup.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(bi_sup1.PlotData('bi_sup', fill = 'url(#diagonal-stripe-1)'))
         ball = self.RollingContour()
@@ -1039,10 +1039,10 @@ class AngularBallBearing(RadialBearing):
         ball_sup1 = ball_sup.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(ball_sup1.PlotData('ball_sup', fill = None))
         
-        be_inf = self.ExternalRingContour(-1)
+        be_inf = self.ExternalRingContour(direction = direction, sign_V = -1)
         be_inf1 = be_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(be_inf1.PlotData('be_inf', fill = 'url(#diagonal-stripe-1)'))
-        bi_inf = self.InternalRingContour(-1)
+        bi_inf = self.InternalRingContour(direction = direction, sign_V = -1)
         bi_inf1 = bi_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(bi_inf1.PlotData('bi_inf', fill = 'url(#diagonal-stripe-1)'))
         ball_inf = ball.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
@@ -1373,21 +1373,21 @@ class RadialRollerBearing(RadialBearing):
         rol = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4], {1: self.radius, 2: self.radius}, True)
         return vm.Contour2D([rol])
     
-    def PlotData(self, pos=0, quote=True, constructor=True):
+    def PlotData(self, pos=0, quote=True, constructor=True, direction=1):
         
-        be_sup = self.ExternalRingContour(1)
+        be_sup = self.ExternalRingContour(direction = direction, sign_V = 1)
         be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
         export_D3 = [be_sup1.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
                 
-        be_inf = self.ExternalRingContour(-1)
+        be_inf = self.ExternalRingContour(direction = direction, sign_V = -1)
         be_inf1 = be_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(be_inf1.PlotData('be_inf', fill = 'url(#diagonal-stripe-1)'))
                 
-        bi_sup = self.InternalRingContour(1)
+        bi_sup = self.InternalRingContour(direction = direction, sign_V = 1)
         bi_sup1 = bi_sup.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(bi_sup1.PlotData('bi_sup', fill = 'url(#diagonal-stripe-1)'))
                 
-        bi_inf = self.InternalRingContour(-1)
+        bi_inf = self.InternalRingContour(direction = direction, sign_V = -1)
         bi_inf1 = bi_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(bi_inf1.PlotData('bi_inf', fill = 'url(#diagonal-stripe-1)'))
                 
@@ -1862,29 +1862,29 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     
     def PlotData(self, pos=0, direction=1, quote=True, constructor=True):
         
-        be_sup = self.ExternalRingContour(1)
+        be_sup = self.ExternalRingContour(direction = direction, sign_V = 1)
         be_sup1 = be_sup.Translation(vm.Vector2D((pos, 0)), True)
         export_D3 = [be_sup1.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
                 
-        be_inf = self.ExternalRingContour(-1)
+        be_inf = self.ExternalRingContour(direction = direction, sign_V = -1)
         be_inf1 = be_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(be_inf1.PlotData('be_inf', fill = 'url(#diagonal-stripe-1)'))
                 
-        bi_sup = self.InternalRingContour(1)
+        bi_sup = self.InternalRingContour(direction = direction, sign_V = 1)
         bi_sup1 = bi_sup.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(bi_sup1.PlotData('bi_sup', fill = 'url(#diagonal-stripe-1)'))
                 
-        bi_inf = self.InternalRingContour(-1)
+        bi_inf = self.InternalRingContour(direction = direction, sign_V = -1)
         bi_inf1 = bi_inf.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(bi_inf1.PlotData('bi_inf', fill = 'url(#diagonal-stripe-1)'))
                 
-        roller_sup = self.RollingContour(1)
+        roller_sup = self.RollingContour(direction = direction, sign_V = 1)
         roller_sup = roller_sup.Rotation(vm.Point2D((0, 0)), -direction*self.alpha, True)
         roller_sup = roller_sup.Translation(vm.Vector2D((0, self.Dpw/2.)), True)
         roller_sup1 = roller_sup.Translation(vm.Vector2D((pos, 0)), True)
         export_D3.append(roller_sup1.PlotData('roller_sup', fill = 'none'))
         
-        roller_inf = self.RollingContour(-1)
+        roller_inf = self.RollingContour(direction = direction, sign_V = -1)
         roller_inf = roller_inf.Rotation(vm.Point2D((0, 0)), direction*self.alpha, True)
         roller_inf = roller_inf.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
         roller_inf1 = roller_inf.Translation(vm.Vector2D((pos, 0)), True)
@@ -2524,8 +2524,9 @@ class BearingCombination:
         
 #        contour = []
         pos_m = -self.B/2.
-        for num_bg, bg in enumerate(self.bearings):
-            cont = bg.PlotData(pos = pos_m + bg.B/2. + pos, constructor = constructor, quote = False)
+        for bg, di in zip(self.bearings, self.directions):
+            cont = bg.PlotData(pos = pos_m + bg.B/2. + pos, constructor = constructor, 
+                               quote = False, direction = di)
 #            cont1 = cont.Translation(vm.Vector2D((pos_m + bg.B/2. + pos, 0)), True)
 #            cont_bg = vm.Contour2D([cont1])
             pos_m += bg.B
@@ -3098,7 +3099,10 @@ class BearingAssembly:
                 fr = (tensor[1]**2 + tensor[2]**2)**(0.5)
                 bearing_combination_result.radial_loads.append(fr)
             self.AxialLoad(positions, axial_load, bearing_assembly_simulation_result)
-        self.BaseLifeTime(bearing_assembly_simulation_result)
+        try:
+            self.BaseLifeTime(bearing_assembly_simulation_result)
+        except BearingL10Error:
+            raise BearingL10Error()
         
     @classmethod
     def EstimateBaseLifeTime(cls, L10s):
@@ -3115,25 +3119,24 @@ class BearingAssembly:
             for bg, bg_result in zip(bearing_combination.bearings, bearing_result):
                 time = bearing_assembly_simulation_result.operating_times
                 speed = bearing_assembly_simulation_result.speeds
-                L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
-                                N = speed, t = time, Cr = bg.Cr)
-                if (str(L10) != 'nan') and (L10 != False):
+                try:
+                    L10 = bg.BaseLifeTime(Fr = bg_result.radial_load, Fa = bg_result.axial_load, 
+                                    N = speed, t = time, Cr = bg.Cr)
+#                if (str(L10) != 'nan') and (L10 != False):
                     bg_result.L10 = L10
-                else:
-                    bg_result.L10 = False
+                except BearingL10Error:
+                    raise BearingL10Error()
                 
         sum_L10_inv = 0
         valid_L10 = True
         for bearing_result in result_bgs:
             for bg_result in bearing_result:
-                if bg_result.L10 != False:
-                    sum_L10_inv += (1/bg_result.L10)**1.5
-                else:
-                    valid_L10 = False
-        if valid_L10:
-            bearing_assembly_simulation_result.L10 = sum_L10_inv**(-1/1.5)
-        else:
-            bearing_assembly_simulation_result.L10 = False
+#                if bg_result.L10 != False:
+                sum_L10_inv += (1/bg_result.L10)**1.5
+#                else:
+#                    valid_L10 = False
+                
+        bearing_assembly_simulation_result.L10 = sum_L10_inv**(-1/1.5)
         
     def AxialLoad(self, positions, axial_load, bearing_assembly_simulation_result):
         result_bcs = bearing_assembly_simulation_result.bearing_combination_simulation_results
@@ -3864,3 +3867,10 @@ class BearingCombinationSimulation:
         return obj
     
 
+class BearingL10Error(Exception):
+    def __init__(self):
+        super().__init__('L10 simulation failed due to dynamic equivalent load equal 0')
+        
+class CatalogSearchError(Exception):
+    def __init__(self):
+        super().__init__('No available bearings with d and D defined')
