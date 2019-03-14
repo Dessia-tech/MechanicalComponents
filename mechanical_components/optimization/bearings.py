@@ -1342,7 +1342,7 @@ class BearingAssemblyOptimizer:
                 for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
 #                    print('try continuous optim ', i_bearing_assembly)
                     try:
-                        bearing_assembly_simulation = self.ContinuousOptimize(bearing_assembly)
+                        bearing_assembly_simulation = self.ContinuousOptimization(bearing_assembly)
                         L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
                         if L10 >= L10_objective:
                             bearing_assembly_simulations.append(bearing_assembly_simulation)
@@ -1362,7 +1362,7 @@ class BearingAssemblyOptimizer:
 #        print('Number of solutions: {}'.format(len(self.bearing_assembly_simulations)))
         
     # TODO: rename
-    def ContinuousOptimize(self, bearing_assembly):
+    def ContinuousOptimization(self, bearing_assembly):
         
         bc_results = []
         for bearing_combination in bearing_assembly.bearing_combinations:
@@ -1389,9 +1389,10 @@ class BearingAssemblyOptimizer:
                 L10 = bearing_assembly_simulation_result.L10
                 obj += 1/(L10)**2
                 return obj
-            except:
+            except:# TODO: mark the exception to catch!!!
                 L10 = bearing_assembly_simulation_result.L10
                 bearing_assembly.ShaftLoad([x[0], x[1]], bearing_assembly_simulation_result)
+        # This function can return None!!!!!!
             
         def fineq(x):
             
