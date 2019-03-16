@@ -1382,7 +1382,7 @@ class BearingAssemblyOptimizer:
                 obj += 1/(L10)**2
                 return obj
             except BearingL10Error:
-                return False
+                return 1e6
             
         def fineq(x):
             ineq = [0]
