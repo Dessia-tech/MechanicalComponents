@@ -3163,7 +3163,7 @@ class BearingAssembly:
             component, nonlinear_linkages_iter, loads_iter, axial_bearings, __\
                 = bearing_combination.ElementaryAxialLoad(ground, shaft, pos, \
                                                           radial_load, bearing_result)
-            if bearing_combination.behavior_link != 'free':
+            if (bearing_combination.behavior_link != 'free') and (axial_load != 0):
                 bc_axial_bearings.append(axial_bearings)
                 loads = loads + loads_iter
                 

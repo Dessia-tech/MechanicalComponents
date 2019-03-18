@@ -270,6 +270,10 @@ class BearingCombinationOptimizer:
                  bearing_classes=bearing_classes,
                  bearing_combination_simulations=None,
                  catalog=schaeffler_catalog):
+        
+        if linkage_types == ['all']:
+            linkage_types = ['ball_joint', 'cylindric_joint']
+            
         self.radial_loads = radial_loads
         self.axial_loads = axial_loads
         self.speeds = speeds
@@ -782,6 +786,12 @@ class BearingAssemblyOptimizer:
                  bearing_classes=bearing_classes,
                  bearing_assembly_simulations=None,
                  catalog=schaeffler_catalog):
+                     
+        self.linkage_types = linkage_types
+        for i_linkage, linkage_type in enumerate(linkage_types):
+            if linkage_type == ['all']:
+                self.linkage_types[i_linkage] = ['ball_joint', 'cylindric_joint']
+                     
         self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
@@ -789,7 +799,6 @@ class BearingAssemblyOptimizer:
         self.axial_positions = axial_positions
         self.outer_diameters = outer_diameters
         self.lengths = lengths
-        self.linkage_types = linkage_types
         self.mounting_types = mounting_types
         self.number_bearings = number_bearings
         self.bearing_classes = bearing_classes
@@ -883,7 +892,7 @@ class BearingAssemblyOptimizer:
                                                       self.lengths[1], 
                                                       bearing_classes = self.bearing_classes
                                                      )
-
+                
                 bearing_combinations_possibilities[(left, right)] = \
                     (DBC_l.ConceptualBearingCombinations(max_bearings[0]), DBC_r.ConceptualBearingCombinations(max_bearings[1]))
         self.bearing_combinations_possibilities = bearing_combinations_possibilities
@@ -989,7 +998,6 @@ class BearingAssemblyOptimizer:
             li_quote.append(quote)
             bearing_combinations.append([conceptual_bearing_combination_left, conceptual_bearing_combination_right])
         
-#        print(len(bearing_combinations))
         for conceptual_bearing_combination_left, conceptual_bearing_combination_right in \
                 [bearing_combinations[i] for i in npy.argsort(li_quote)]:
                     
@@ -1310,7 +1318,6 @@ class BearingAssemblyOptimizer:
             self.ConceptualBearingCombinations(max_bearings = (max_bearings_left, max_bearings_right))
 
             for (left, right), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
-#                print((left, right))
                 bearing_assembly_configurations, bearing_assembly_L10 = self.SelectBearingCombinations(bearing_combinations_possibility, 
                                                                     radial_load = (radial_load_left, radial_load_right), 
                                                                     L10_objective = L10_objective)
@@ -1325,7 +1332,7 @@ class BearingAssemblyOptimizer:
             bearing_assembly_configurations_sort = li_bearing_assembly_configurations
 #            bearing_assembly_configurations_sort = [li_bearing_assembly_configurations[i] for i in npy.argsort(li_bearing_assembly_L10)[::-1]]
             
-#            print('number bearing assemblies configurations {}'.format(len(bearing_assembly_configurations_sort)))
+            print('number bearing assemblies configurations {}'.format(len(bearing_assembly_configurations_sort)))
             for bearing_assembly_configurations in bearing_assembly_configurations_sort:
 #                print('decision tree estimation')
                 bearing_assemblies = self.AnalyzeBearingCombinations(bearing_assembly_configurations, 
