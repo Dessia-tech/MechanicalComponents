@@ -66,7 +66,7 @@ error_msg_time_before = 'Invalid licence Please report this error to DessIA supp
 error_msg_time_after = 'Invalid licence Please report this error to DessIA support with this traceback token: TA{}'.format(physical_token)
 error_msg_mac = 'Invalid licence. Please report this error to DessIA support with this traceback token: M{}'.format(physical_token)
 protection_lines = ['valid_license = True\n',
-                    't_execution = time.time()\n',
+                    't_execution = time_package.time()\n',
                     'if t_execution > {}:\n'.format(expiration), 
                     '    print("{}")\n'.format(error_msg_time_after),
                     '    raise RuntimeError\n\n',
@@ -94,11 +94,11 @@ for file in protected_files:
             
         time_imported = False
         uuid_imported = False
-        for line2 in lines:
-            if 'import time as time_package' in line2:
-                time_imported = True
-            if 'import uuid' in line2:
-                uuid_imported = True
+#        for line2 in lines:
+#            if 'import time as time_package' in line2:
+#                time_imported = True
+#            if 'import uuid' in line2:
+#                uuid_imported = True
         if not time_imported:
             new_file_lines.append('import time as time_package\n')
         if not uuid_imported:
