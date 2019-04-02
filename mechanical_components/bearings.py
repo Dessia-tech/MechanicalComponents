@@ -333,15 +333,15 @@ class RadialBearing:
             return False
         
         for k,v in self.__dict__.items():
-            if k in ['d', 'D', 'B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r']:
+            if k in ['d', 'D', 'B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r', 'mass']:
                 v2 = getattr(other_bearing, k)
                 if v != v2:
                     return False
         return True
     
     def __hash__(self):
-        h= int(self.d*4e3) + int(self.D*12e3) + int(self.B*1e3)+self.i
-        h+= len(self.__class__.__name__)
+        h = int(self.d*4e3) + int(self.D*12e3) + int(self.B*1e3)+self.i+ int(1000*self.mass)
+        h += len(self.__class__.__name__)
         return h
         
     def Check(self):
