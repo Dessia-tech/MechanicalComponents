@@ -497,8 +497,10 @@ class RadialBearing(LoadBearing):
     def FreeCADExport(self, fcstd_filepath, python_path='python', 
                       freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
         model = self.VolumeModel()
+        tolerance = self.D/130.
         model.FreeCADExport(fcstd_filepath, python_path=python_path,
-                            freecad_lib_path=freecad_lib_path, export_types=export_types)
+                            freecad_lib_path=freecad_lib_path,
+                            export_types=export_types, tolerance=tolerance)
         
     def PlotDataQuote(self, pos=0):
         delta_quote = 0.05*self.B
@@ -735,8 +737,13 @@ class RadialBallBearing(RadialBearing):
         pbi4 = vm.Point2D((self.B/2., self.d/2.))
         pbi5 = vm.Point2D((self.B/2., self.d1/2.))
         pbi6 = pbi5.Translation(vm.Vector2D((-self.h, 0)))
-        bi1 = primitives2D.RoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1], {1: self.radius, 
-                                                     2: self.radius, 3: self.radius, 4: self.radius}, False)
+        bi1 = primitives2D.RoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1],
+                                                 {1: self.radius, 
+                                                  2: self.radius,
+                                                  3: self.radius,
+                                                  4: self.radius},
+                                                  False,
+                                                  adapt_radius=True)
         cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, self.F/2)), pbi6)
         return vm.Contour2D([bi1, cbi1])
         
@@ -748,8 +755,16 @@ class RadialBallBearing(RadialBearing):
         pbe4 = vm.Point2D((self.B/2., self.D/2.))
         pbe5 = vm.Point2D((self.B/2., self.D1/2.))
         pbe6 = pbe5.Translation(vm.Vector2D((-self.h, 0)))
-        be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 
-                                                 2: self.radius, 3: self.radius, 4: self.radius}, False)
+#        betest = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],{}, False)
+#        betest.MPLPlot()
+
+        be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
+                                                 {1: self.radius, 
+                                                  2: self.radius,
+                                                  3: self.radius,
+                                                  4: self.radius},
+                                                  False,
+                                                  adapt_radius=True)
         cbe1 = vm.Arc2D(pbe6, vm.Point2D((0, self.E/2)), pbe1)
         return vm.Contour2D([be1, cbe1])
     
