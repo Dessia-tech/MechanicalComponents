@@ -1397,8 +1397,9 @@ class BearingAssemblyOptimizer:
         list_sort = []
         list_ba = []
         for num_family, num_elem in add_best_mass.items():
-            list_ba.append(bearing_assembly_simulations[num_family][num_elem])
-            list_sort.append(bearing_assembly_simulations[num_family][num_elem].bearing_assembly.mass)
+            if num_family != num_best_mass:
+                list_ba.append(bearing_assembly_simulations[num_family][num_elem])
+                list_sort.append(bearing_assembly_simulations[num_family][num_elem].bearing_assembly.mass)
                 
 #        self.bearing_assembly_simulations = bearing_assembly_simulations[0: max_solutions_family[0]]
 #        another_bearing_assembly_simulations = bearing_assembly_simulations[max_solutions_family[0]:]
