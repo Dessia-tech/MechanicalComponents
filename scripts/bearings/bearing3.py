@@ -37,11 +37,11 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
                     operating_times = [3600000],
                     inner_diameters = [0.03, 0.03],
                     axial_positions = [0, 0.25], 
-                    outer_diameters = [0.08, 0.08], 
-                    lengths = [0.04, 0.04],
-                    linkage_types = [['all'], ['all']],
-                    mounting_types = [['both', 'free']],
-                    number_bearings = [[1, 2, 3], [1, 2, 3]],
+                    outer_diameters = [0.08, 0.09], 
+                    lengths = [0.04, 0.1],
+                    linkage_types = [['ball_joint'], ['cylindric_joint']],
+                    mounting_types = [['right', 'left']],
+                    number_bearings = [[1, 2], [1, 2]],
 
                     bearing_classes = [bearings.RadialBallBearing, 
                                        bearings.AngularBallBearing,
@@ -70,7 +70,7 @@ print(bearing_assembly_opt == bearing_assembly_opt)
 #del bearing_assembly_opt
 #bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
 
-bearing_assembly_opt.Optimize(1)
+bearing_assembly_opt.Optimize(12)
 
 for num_sol, ba_simulation in enumerate(bearing_assembly_opt.bearing_assembly_simulations):
     print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)

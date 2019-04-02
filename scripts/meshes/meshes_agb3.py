@@ -4,7 +4,7 @@ import numpy as npy
 # 7 gears Test case with fixed modulus to 2
 # definition of input data
 
-connections = [(0, 1), (2, 3), (0, 3)]
+connections = [[(0, 1), (2, 3), (0, 3)]]
 
 speeds = {0: [425.3901758131878, 427.26601944275086],
           1: [416.7824497926327, 435.53339845406],
@@ -26,10 +26,11 @@ list_rack = {0:{'name':'Catalogue_A','module':[2*1e-3,2*1e-3],
 rack_choices = {0:[0], 1:[0], 2:[0],3:[0], 4:[0], 5:[0], 6:[0]}
 
 GA=meshes_opt.MeshAssemblyOptimizer(connections = connections, 
-                                  gear_speed = speeds,
-                                  center_distance = center_distances,
+                                  gear_speeds = speeds,
+                                  center_distances = center_distances,
                                   rack_list = list_rack,
-                                  torque = torques,
+                                  torques = torques,
+                                  cycles = {0:1e8},
                                   rack_choice=rack_choices,
                                   verbose = True)
 
