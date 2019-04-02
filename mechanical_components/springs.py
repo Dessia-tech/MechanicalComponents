@@ -200,33 +200,36 @@ class Spring:
             self.matching_products.extend(products)
     
     def Contour(self):
-        p0 = vm.Point2D((0, 0))
+        p0 = vm.Point2D((self.D, 0))
         
         l1 = vm.Circle2D(p0, self.d/2)
         
         return vm.Contour2D([l1])
     
-    def Volume(self, F):
-        p_spring_coord = (self.pos_x, self.pos_y, 0)
-        p_spring = vm.Point3D(p_spring_coord)
+    def Volume(self, F=0., position=vm.o3D, x=vm.x3D, z=vm.z3D):
+#        p_spring_coord = (self.pos_x, self.pos_y, 0)
+#        p_spring = vm.Point3D(p_spring_coord)
         
-        xp_coord = (self.pos_x/(math.sqrt(self.pos_x**2 + self.pos_y**2)), self.pos_y/(math.sqrt(self.pos_x**2 + self.pos_y**2)), 0)
-        p_plan = p_spring.Translation(((self.D/(2*math.sqrt(2)))*xp_coord[0], (self.D/(2*math.sqrt(2)))*xp_coord[1], 0))
+#        xp_coord = (self.pos_x/(math.sqrt(self.pos_x**2 + self.pos_y**2)),
+#                    self.pos_y/(math.sqrt(self.pos_x**2 + self.pos_y**2)),
+#                    0)
+#        p_plan = p_spring.Translation(((self.D/(2*math.sqrt(2)))*xp_coord[0],
+#                                       (self.D/(2*math.sqrt(2)))*xp_coord[1], 0))
 #        p0_coord = ((self.D/2 + 1), (self.D/2 + 1), 0)
-        zp_coord = (0, 0, 1)
+#        zp_coord = (0, 0, 1)
         
 #        p0 = vm.Point3D(p0_coord)
 #        pc = p0.Translation((self.d/2, 0, 0))
         
-        xp = vm.Vector3D(xp_coord)
-#        yp = vm.Vector3D((0, 1, 0))
-        zp = vm.Vector3D(zp_coord)
+#        xp = vm.Vector3D(xp_coord)
+#        zp = vm.Vector3D(zp_coord)
         
         l = self.Length(F)
         p = l/self.n
         
         primitives = []
-        volume = primitives3D.HelicalExtrudedProfile(p_plan, xp, zp, p_spring_coord, (0, 0, l), p, self.contour, name = 'spring')
+        volume = primitives3D.HelicalExtrudedProfile(position, x, z, position,
+                                                     l*z, p, self.contour, name = 'spring')
         primitives.append(volume)
         
         return primitives
