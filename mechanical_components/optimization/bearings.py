@@ -1296,7 +1296,7 @@ class BearingAssemblyOptimizer:
             
             dt.NextNode(valid)
     
-    def Optimize(self, max_solutions=10, max_solutions_family=[5, 1], progress_callback=lambda x:0):
+    def Optimize(self, max_solutions=10, nb_solutions_family=5, progress_callback=lambda x:0):
         
         L10_objective = 0
         for speed, time in zip(self.speeds, self.operating_times):
@@ -1315,7 +1315,7 @@ class BearingAssemblyOptimizer:
             radial_load_left.append((rl[0]**2 + (0)**2)**0.5)
             radial_load_right.append((rl[1]**2 + (0)**2)**0.5)
             
-        nb_solutions_family = max_solutions_family[0]
+#        nb_solutions_family = max_solutions_family[0]
             
         bearing_assembly_simulations = []
         sort_bearing_assembly_simulations = []
@@ -1350,6 +1350,7 @@ class BearingAssemblyOptimizer:
                                                                      L10_objective = L10_objective,
                                                                      max_bearing_assemblies=nb_solutions_family)
 
+                cas_bearing_assembly_simulations = []
                 for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
                     print('try continuous optim ', i_bearing_assembly)
                     try:
@@ -1357,27 +1358,52 @@ class BearingAssemblyOptimizer:
                         L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
                         mass = bearing_assembly_simulation.bearing_assembly.mass
                         if L10 >= L10_objective:
-                            bearing_assembly_simulations.append(bearing_assembly_simulation)
+                            cas_bearing_assembly_simulations.append(bearing_assembly_simulation)
                             sort_bearing_assembly_simulations.append(mass)
-                            print('solution with L10 {}, nb solutions {}'.format(L10, len(bearing_assembly_simulations)))
+                            print('solution with L10 {}, nb solutions {}'.format(L10, len(cas_bearing_assembly_simulations)))
 #                            break   
                     except AxialPositionConvergenceError:
                         pass
-                    if len(bearing_assembly_simulations) > max_solutions_family[0]:
-                        nb_solutions_family = max_solutions_family[1]
+#                    if len(bearing_assembly_simulations) > max_solutions_family[0]:
+#                        nb_solutions_family = max_solutions_family[1]
+#                        break
+                    if len(bearing_assembly_simulations) > nb_solutions_family:
                         break
-                    if len(bearing_assembly_simulations) > max_solutions:
-                        break
-                if len(bearing_assembly_simulations) > max_solutions:
+                if cas_bearing_assembly_simulations!= []:
+                    bearing_assembly_simulations.append(cas_bearing_assembly_simulations)
+                if len(bearing_assembly_simulations) > nb_solutions_family:
                     break
-            if len(bearing_assembly_simulations) > max_solutions:
+            if len(bearing_assembly_simulations) > nb_solutions_family:
                 break
             
 #        self.bearing_assembly_simulations = bearing_assembly_simulations
-        self.bearing_assembly_simulations = bearing_assembly_simulations[0: max_solutions_family[0]]
-        another_bearing_assembly_simulations = bearing_assembly_simulations[max_solutions_family[0]:]
-        another_sort_bearing_assembly_simulations = sort_bearing_assembly_simulations[max_solutions_family[0]:]
-        self.bearing_assembly_simulations.extend([another_bearing_assembly_simulations[i] for i in npy.argsort(another_sort_bearing_assembly_simulations)])
+        best_mass = npy.inf
+        num_best_mass = 0
+        add_best_mass = {}
+        for num_family, typ_bearing_assembly_simulation in enumerate(bearing_assembly_simulations):
+            best_mass_elem = npy.inf
+            for num_elem, bearing_assembly_simulation in enumerate(typ_bearing_assembly_simulation):
+                mass = bearing_assembly_simulation.bearing_assembly.mass
+                if mass < best_mass:
+                    best_mass = mass
+                    num_best_mass = num_family
+                if mass < best_mass_elem:
+                    best_mass_elem = mass
+                    num_best_mass_elem = num_elem
+            add_best_mass[num_family] = num_elem
+            
+            
+        self.bearing_assembly_simulations = bearing_assembly_simulations[num_best_mass]
+        list_sort = []
+        list_ba = []
+        for num_family, num_elem in add_best_mass.items():
+            list_ba.append(bearing_assembly_simulations[num_family][num_elem])
+            list_sort.append(bearing_assembly_simulations[num_family][num_elem].bearing_assembly.mass)
+                
+#        self.bearing_assembly_simulations = bearing_assembly_simulations[0: max_solutions_family[0]]
+#        another_bearing_assembly_simulations = bearing_assembly_simulations[max_solutions_family[0]:]
+#        another_sort_bearing_assembly_simulations = sort_bearing_assembly_simulations[max_solutions_family[0]:]
+        self.bearing_assembly_simulations.extend([list_ba[i] for i in npy.argsort(list_sort)])
         
         
     # TODO: rename
