@@ -816,6 +816,14 @@ class BearingAssemblyOptimizer:
                  and self.number_bearings == other_eb.number_bearings
                  and self.bearing_classes == other_eb.bearing_classes
                  and self.catalog == other_eb.catalog)
+        
+        if (self.bearing_assembly_simulations is not None) and (other_eb.bearing_assembly_simulations is not None):
+            for bearing_assembly_simulation, other_bearing_assembly_simulation in zip(self.bearing_assembly_simulations, other_eb.bearing_assembly_simulations):
+                equal = equal and bearing_assembly_simulation == other_bearing_assembly_simulation
+        elif (self.bearing_assembly_simulations is None) and (other_eb.bearing_assembly_simulations is None):
+            pass
+        elif (self.bearing_assembly_simulations is None) or (other_eb.bearing_assembly_simulations is None):
+            equal = False
         return equal
     
     def __hash__(self):
