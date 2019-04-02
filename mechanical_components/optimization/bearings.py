@@ -10,7 +10,7 @@ from mechanical_components.bearings import oil_iso_vg_1500, material_iso, iso_be
 
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
         SphericalBallBearing, \
-        BearingAssembly, BearingCombination, DetailedRadialRollerBearing, \
+        BearingAssembly, BearingCombination, \
         BearingAssemblySimulationResult, BearingCatalog,\
         BearingCombinationSimulationResult, BearingSimulationResult,\
         BearingAssemblySimulation, BearingCombinationSimulation, \
@@ -42,221 +42,221 @@ import math
 
 from mechanical_components.tools import StringifyDictKeys
 
-# TODO: Cumulative damages
-class RollerBearingContinuousOptimizer:
-    """
-    Objet avec 3 fonctions de selection des roulements cylindriques
-     * Combinatoire sur les dimensions externe ISO
-     * Combinatoire en prenant en compte les règles SKF
-     * Estimation des durées de vie et charge dynamique et fonction de tri
-
-    """
-    def __init__(self):
-        
-        self.bearing_assemblies=[]
-    
-    def Optimization(self, d, D, B, Fr, Fa, N, t, T, L10=None, C0r=None, Cr=None,
-                         Lnm=None, grade=['Gr_gn'], S=0.9,
-                         oil=oil_iso_vg_1500, material=material_iso,
-                         number_solutions=1, maxi=None, mini=None, rsmin=None, typ='NF',
-                         verbose = False):
-
-#        self.d = d
-#        self.D = D
-#        self.B = B
-#        self.Fr = Fr
-#        self.Fa = Fa
-#        self.
-        
-        err_default=0.05
-        def def_inter(data):
-            if data==None:
-                # TODO utiliser math.inf plutot
-                sol=[-math.inf,math.inf]
-            else:
-                if 'nom' in data.keys():
-                    if 'err' in data.keys():
-                        err=data['err']
-                    else:
-                        err=err_default
-                    sol=[data['nom']*(1-err),data['nom']*(1+err)]
-                elif 'min' in data.keys():
-                    sol=[data['min'],data['max']]
-            return sol
-        
-        
-        #Approche combinatoire sur les dimensions externe d/D/B
-        liste_keys=[]
-        interval_d=def_inter(d)
-        interval_D=def_inter(D)
-        interval_B=def_inter(B)
-        lk_d=[]
-        for item_d in iso_bearings.keys():
-            if (item_d<=interval_d[1]) and (item_d>=interval_d[0]):
-                lk_d.append([item_d])
-        liste_keys=lk_d
-        lk_D=[]
-        for [item_d] in liste_keys:
-            for item_D in iso_bearings[item_d].keys():
-                if (item_D<=interval_D[1]) and (item_D>=interval_D[0]):
-                    lk_D.append([item_d,item_D])
-        liste_keys=lk_D
-        lk_B=[]
-        for item_d,item_D in liste_keys:
-            for item_B in iso_bearings[item_d][item_D].keys():
-                if (item_B<=interval_B[1]) and (item_B>=interval_B[0]):
-                    lk_B.append([item_d,item_D,item_B])
-        liste_keys=lk_B
-        liste_sol_iso=[]
-        for item_d,item_D,item_B in liste_keys:
-            dk=[item_d,item_D,item_B]
-            dk.append(list(iso_bearings[item_d][item_D][item_B].keys())[0])
-            dk.append(list(iso_bearings[item_d][item_D][item_B].values())[0])
-            liste_sol_iso.append(dk) #Liste dk contient [d,D,B,rsmin,serial]
-        
-        #Approche combinatoire sur les rouleaux
-        def analyse_rule(Y,inter_min,inter_max,input_var,data_var):
-            for (var_x,var_y,typ),[a,b] in bearing_rules.items():
-                if var_y==Y:
-                    if var_x in input_var:
-                        ind_x=input_var.index(var_x)
-                        Var_x=data_var[ind_x]
-                        if typ=='inf':
-                            inter_min=max(inter_min,a*Var_x+b)
-                        else:
-                            inter_max=min(inter_max,a*Var_x+b)
-            return inter_min,inter_max
-                            
-        liste_sol_roller_iso=[]
-        for [d,D,B,rsmin,serial] in liste_sol_iso:
-            
-            #Estimation des plages admissibles de E et F
-            E_inf,E_sup=-math.inf,math.inf
-            F_inf,F_sup=-math.inf,math.inf
-            E_inf,E_sup=analyse_rule('E',E_inf,E_sup,['d','D','B'],[d,D,B])
-            F_inf,F_sup=analyse_rule('F',F_inf,F_sup,['d','D','B'],[d,D,B])
-                            
-            #Analyse borne sup/inf de Lw et Dw
-            Lw_inf,Lw_sup=-math.inf,math.inf
-            Dw_inf,Dw_sup=E_inf-F_sup,E_sup-F_inf
-            Lw_inf,Lw_sup=analyse_rule('Lw',Lw_inf,Lw_sup,['d','D','B'],[d,D,B])
-            Dw_inf,Dw_sup=analyse_rule('Dw',Dw_inf,Dw_sup,['d','D','B'],[d,D,B])
-            
-            #Choix des dimensions rouleaux compatible
-            Dw_sup=min(Dw_sup,(D-d)/2.)
-            for Dw in iso_rollers.keys():
-                if (Dw>=Dw_inf) and (Dw<=Dw_sup):
-                    for Lw in iso_rollers[Dw].keys():
-                        if (Lw>=Lw_inf) and (Lw<=Lw_sup):
-                            E_inf,E_sup=analyse_rule('E',-math.inf,math.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
-                            F_inf,F_sup=analyse_rule('F',-math.inf,math.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
-                            if ((E_inf-F_sup)/2.<=Dw) and ((E_sup-F_inf)/2.>=Dw):
-                                liste_sol_roller_iso.append([d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup])
-
-
-        #Analyse de détail des roulements
-        a_ED1_inf,b_ED1_inf=bearing_rules[('E','D1','inf')]
-        a_ED1_sup,b_ED1_sup=bearing_rules[('E','D1','sup')]
-        a_Fd1_inf,b_Fd1_inf=bearing_rules[('F','d1','inf')]
-        a_Fd1_sup,b_Fd1_sup=bearing_rules[('F','d1','sup')]
-        estim_masse=[]
-        #Construction d'une fonctionnelle pour le tri afin d'engager une optimisation continue
-        for [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup] in liste_sol_roller_iso:
-            E=(E_inf+E_sup)/2.
-            F=E-2*Dw
-            Zmax=int(2*math.pi/(2.*math.asin((Dw/2)/(F/2.+Dw/2.))))
-            masse_elem=(math.pi*D**2/4.-math.pi*E**2/4.)*B
-            masse_elem+=(math.pi*F**2/4.-math.pi*d**2/4.)*B
-            masse_elem+=math.pi*Dw**2/4.*Lw*Zmax
-            estim_masse.append(masse_elem)
-        
-        #Optimisation Minimize du détail du roulement (E,D1 et d1)
-        fonct_sort=npy.argsort(estim_masse)
-        liminf_lifetime=False
-        # BUG: rien n'empeche i de dépasser du tableau!
-        # Vérifier ma correction
-        
-        # TODO: permettre de ne donner qu'un borne min au L10/ Lnm
-        
-        i=0
-        iter_max = len(liste_sol_roller_iso)
-        while (not liminf_lifetime) and (i<iter_max):
-            [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup]=liste_sol_roller_iso[fonct_sort[i]]
-            i+=1
-            # Var X: (E,D1,d1)
-            R1 = DetailedRadialRollerBearing(d, D, B, i = 1, Z = 0, Lw = Lw, Dw = Dw, radius = rsmin)
-            def fun(x):
-                obj=0
-                F=x[0]-2*Dw
-                Zmax=int(2*math.pi/(2*npy.arcsin((Dw/2.)/(F/2.+Dw/2.))))
-                R1.Update(x[2],x[1],x[0],F,Zmax)
-                l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
-
-                obj+=(1/l10)**2
-                obj+=(x[0]-x[1])**2 #minimisation de la hauteur de l'épaulement externe
-                obj+=(F-x[2])**2 #minimisation de la hauteur de l'épaulement interne
-                return obj
-            def ineg(x):
-                ine=[]
-                D1_inf=a_ED1_inf*x[0]+b_ED1_inf
-                D1_sup=a_ED1_sup*x[0]+b_ED1_sup
-                ine.append(x[1]-D1_inf)
-                ine.append(D1_sup-x[1])
-                F=x[0]-2*Dw
-                d1_inf=a_Fd1_inf*F+b_Fd1_inf
-                d1_sup=a_Fd1_sup*F+b_Fd1_sup
-                ine.append(x[2]-d1_inf)
-                ine.append(d1_sup-x[2])
-                ine.append(x[0]-x[1])
-                ine.append(x[1]-x[2])
-                ine.append((x[0]+F)/2.-x[2])  #d1 inférieur au diamètre passant par l'axe des rouleaux
-                return ine
-            cons = ({'type': 'ineq','fun' : ineg})
-            valid_optim=1
-            while valid_optim==1:
-                Bound=[[E_inf,E_sup],[d,D],[d,D]]
-                x0=(npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(3)+npy.array(Bound)[:,0]
-                res = minimize(fun,x0, method='SLSQP', bounds=Bound,constraints=cons)
-                if (min(ineg(res.x))>=0):
-                    valid_optim=0
-                    
-            #Validation finale vis à vis des bornes du CDC
-            if valid_optim==0:
-                x_opt=res.x
-                F=x_opt[0]-2*Dw
-                Zmax=int(2*math.pi/(2*npy.arcsin((Dw/2.)/(F/2.+Dw/2.))))
-                R1.Update(x_opt[2],x_opt[1],x_opt[0],F,Zmax)
-                l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
-
-                
-                liminf_lifetime=True
-                if L10 is not None:
-                    if (l10<L10['min']) or (l10>L10['max']):
-                        liminf_lifetime=False
-                if Lnm is not None:
-                    lnm=R1.AdjustedLifeTime(Fr, Fa, N, t, T, R1.BaseDynamicLoad(), R1.BaseStaticLoad(), S)
-
-                    if (lnm<Lnm['min']) or (lnm>Lnm['max']):
-                        liminf_lifetime=False
-                if C0r is not None:
-                    c0r=R1.BaseStaticLoad()
-                    if (c0r<C0r['min']) or (c0r>C0r['max']):
-                        liminf_lifetime=False
-                if Cr is not None:
-                    cr=R1.BaseDynamicLoad()
-                    if (cr<Cr['min']) or (cr>Cr['max']):
-                        liminf_lifetime=False
-                if liminf_lifetime==True:
-                    self.bearing_assemblies.append(R1)
-                    if len(self.bearing_assemblies)<number_solutions:
-                        liminf_lifetime=False
-                    if verbose:
-#                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.bearing_assemblies),l10,D,d,B,Dw,Zmax))
-                        if L10 is not None:
-                            print('L10: {}, specification: {}'.format(l10, L10))
-                        if Lnm is not None:
-
-                            print('Lnm: {}, specification: {}'.format(lnm, Lnm))
+## TODO: Cumulative damages
+#class RollerBearingContinuousOptimizer:
+#    """
+#    Objet avec 3 fonctions de selection des roulements cylindriques
+#     * Combinatoire sur les dimensions externe ISO
+#     * Combinatoire en prenant en compte les règles SKF
+#     * Estimation des durées de vie et charge dynamique et fonction de tri
+#
+#    """
+#    def __init__(self):
+#        
+#        self.bearing_assemblies=[]
+#    
+#    def Optimization(self, d, D, B, Fr, Fa, N, t, T, L10=None, C0r=None, Cr=None,
+#                         Lnm=None, grade=['Gr_gn'], S=0.9,
+#                         oil=oil_iso_vg_1500, material=material_iso,
+#                         number_solutions=1, maxi=None, mini=None, rsmin=None, typ='NF',
+#                         verbose = False):
+#
+##        self.d = d
+##        self.D = D
+##        self.B = B
+##        self.Fr = Fr
+##        self.Fa = Fa
+##        self.
+#        
+#        err_default=0.05
+#        def def_inter(data):
+#            if data==None:
+#                # TODO utiliser math.inf plutot
+#                sol=[-math.inf,math.inf]
+#            else:
+#                if 'nom' in data.keys():
+#                    if 'err' in data.keys():
+#                        err=data['err']
+#                    else:
+#                        err=err_default
+#                    sol=[data['nom']*(1-err),data['nom']*(1+err)]
+#                elif 'min' in data.keys():
+#                    sol=[data['min'],data['max']]
+#            return sol
+#        
+#        
+#        #Approche combinatoire sur les dimensions externe d/D/B
+#        liste_keys=[]
+#        interval_d=def_inter(d)
+#        interval_D=def_inter(D)
+#        interval_B=def_inter(B)
+#        lk_d=[]
+#        for item_d in iso_bearings.keys():
+#            if (item_d<=interval_d[1]) and (item_d>=interval_d[0]):
+#                lk_d.append([item_d])
+#        liste_keys=lk_d
+#        lk_D=[]
+#        for [item_d] in liste_keys:
+#            for item_D in iso_bearings[item_d].keys():
+#                if (item_D<=interval_D[1]) and (item_D>=interval_D[0]):
+#                    lk_D.append([item_d,item_D])
+#        liste_keys=lk_D
+#        lk_B=[]
+#        for item_d,item_D in liste_keys:
+#            for item_B in iso_bearings[item_d][item_D].keys():
+#                if (item_B<=interval_B[1]) and (item_B>=interval_B[0]):
+#                    lk_B.append([item_d,item_D,item_B])
+#        liste_keys=lk_B
+#        liste_sol_iso=[]
+#        for item_d,item_D,item_B in liste_keys:
+#            dk=[item_d,item_D,item_B]
+#            dk.append(list(iso_bearings[item_d][item_D][item_B].keys())[0])
+#            dk.append(list(iso_bearings[item_d][item_D][item_B].values())[0])
+#            liste_sol_iso.append(dk) #Liste dk contient [d,D,B,rsmin,serial]
+#        
+#        #Approche combinatoire sur les rouleaux
+#        def analyse_rule(Y,inter_min,inter_max,input_var,data_var):
+#            for (var_x,var_y,typ),[a,b] in bearing_rules.items():
+#                if var_y==Y:
+#                    if var_x in input_var:
+#                        ind_x=input_var.index(var_x)
+#                        Var_x=data_var[ind_x]
+#                        if typ=='inf':
+#                            inter_min=max(inter_min,a*Var_x+b)
+#                        else:
+#                            inter_max=min(inter_max,a*Var_x+b)
+#            return inter_min,inter_max
+#                            
+#        liste_sol_roller_iso=[]
+#        for [d,D,B,rsmin,serial] in liste_sol_iso:
+#            
+#            #Estimation des plages admissibles de E et F
+#            E_inf,E_sup=-math.inf,math.inf
+#            F_inf,F_sup=-math.inf,math.inf
+#            E_inf,E_sup=analyse_rule('E',E_inf,E_sup,['d','D','B'],[d,D,B])
+#            F_inf,F_sup=analyse_rule('F',F_inf,F_sup,['d','D','B'],[d,D,B])
+#                            
+#            #Analyse borne sup/inf de Lw et Dw
+#            Lw_inf,Lw_sup=-math.inf,math.inf
+#            Dw_inf,Dw_sup=E_inf-F_sup,E_sup-F_inf
+#            Lw_inf,Lw_sup=analyse_rule('Lw',Lw_inf,Lw_sup,['d','D','B'],[d,D,B])
+#            Dw_inf,Dw_sup=analyse_rule('Dw',Dw_inf,Dw_sup,['d','D','B'],[d,D,B])
+#            
+#            #Choix des dimensions rouleaux compatible
+#            Dw_sup=min(Dw_sup,(D-d)/2.)
+#            for Dw in iso_rollers.keys():
+#                if (Dw>=Dw_inf) and (Dw<=Dw_sup):
+#                    for Lw in iso_rollers[Dw].keys():
+#                        if (Lw>=Lw_inf) and (Lw<=Lw_sup):
+#                            E_inf,E_sup=analyse_rule('E',-math.inf,math.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
+#                            F_inf,F_sup=analyse_rule('F',-math.inf,math.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
+#                            if ((E_inf-F_sup)/2.<=Dw) and ((E_sup-F_inf)/2.>=Dw):
+#                                liste_sol_roller_iso.append([d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup])
+#
+#
+#        #Analyse de détail des roulements
+#        a_ED1_inf,b_ED1_inf=bearing_rules[('E','D1','inf')]
+#        a_ED1_sup,b_ED1_sup=bearing_rules[('E','D1','sup')]
+#        a_Fd1_inf,b_Fd1_inf=bearing_rules[('F','d1','inf')]
+#        a_Fd1_sup,b_Fd1_sup=bearing_rules[('F','d1','sup')]
+#        estim_masse=[]
+#        #Construction d'une fonctionnelle pour le tri afin d'engager une optimisation continue
+#        for [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup] in liste_sol_roller_iso:
+#            E=(E_inf+E_sup)/2.
+#            F=E-2*Dw
+#            Zmax=int(2*math.pi/(2.*math.asin((Dw/2)/(F/2.+Dw/2.))))
+#            masse_elem=(math.pi*D**2/4.-math.pi*E**2/4.)*B
+#            masse_elem+=(math.pi*F**2/4.-math.pi*d**2/4.)*B
+#            masse_elem+=math.pi*Dw**2/4.*Lw*Zmax
+#            estim_masse.append(masse_elem)
+#        
+#        #Optimisation Minimize du détail du roulement (E,D1 et d1)
+#        fonct_sort=npy.argsort(estim_masse)
+#        liminf_lifetime=False
+#        # BUG: rien n'empeche i de dépasser du tableau!
+#        # Vérifier ma correction
+#        
+#        # TODO: permettre de ne donner qu'un borne min au L10/ Lnm
+#        
+#        i=0
+#        iter_max = len(liste_sol_roller_iso)
+#        while (not liminf_lifetime) and (i<iter_max):
+#            [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup]=liste_sol_roller_iso[fonct_sort[i]]
+#            i+=1
+#            # Var X: (E,D1,d1)
+#            R1 = DetailedRadialRollerBearing(d, D, B, i = 1, Z = 0, Lw = Lw, Dw = Dw, radius = rsmin)
+#            def fun(x):
+#                obj=0
+#                F=x[0]-2*Dw
+#                Zmax=int(2*math.pi/(2*npy.arcsin((Dw/2.)/(F/2.+Dw/2.))))
+#                R1.Update(x[2],x[1],x[0],F,Zmax)
+#                l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
+#
+#                obj+=(1/l10)**2
+#                obj+=(x[0]-x[1])**2 #minimisation de la hauteur de l'épaulement externe
+#                obj+=(F-x[2])**2 #minimisation de la hauteur de l'épaulement interne
+#                return obj
+#            def ineg(x):
+#                ine=[]
+#                D1_inf=a_ED1_inf*x[0]+b_ED1_inf
+#                D1_sup=a_ED1_sup*x[0]+b_ED1_sup
+#                ine.append(x[1]-D1_inf)
+#                ine.append(D1_sup-x[1])
+#                F=x[0]-2*Dw
+#                d1_inf=a_Fd1_inf*F+b_Fd1_inf
+#                d1_sup=a_Fd1_sup*F+b_Fd1_sup
+#                ine.append(x[2]-d1_inf)
+#                ine.append(d1_sup-x[2])
+#                ine.append(x[0]-x[1])
+#                ine.append(x[1]-x[2])
+#                ine.append((x[0]+F)/2.-x[2])  #d1 inférieur au diamètre passant par l'axe des rouleaux
+#                return ine
+#            cons = ({'type': 'ineq','fun' : ineg})
+#            valid_optim=1
+#            while valid_optim==1:
+#                Bound=[[E_inf,E_sup],[d,D],[d,D]]
+#                x0=(npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(3)+npy.array(Bound)[:,0]
+#                res = minimize(fun,x0, method='SLSQP', bounds=Bound,constraints=cons)
+#                if (min(ineg(res.x))>=0):
+#                    valid_optim=0
+#                    
+#            #Validation finale vis à vis des bornes du CDC
+#            if valid_optim==0:
+#                x_opt=res.x
+#                F=x_opt[0]-2*Dw
+#                Zmax=int(2*math.pi/(2*npy.arcsin((Dw/2.)/(F/2.+Dw/2.))))
+#                R1.Update(x_opt[2],x_opt[1],x_opt[0],F,Zmax)
+#                l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
+#
+#                
+#                liminf_lifetime=True
+#                if L10 is not None:
+#                    if (l10<L10['min']) or (l10>L10['max']):
+#                        liminf_lifetime=False
+#                if Lnm is not None:
+#                    lnm=R1.AdjustedLifeTime(Fr, Fa, N, t, T, R1.BaseDynamicLoad(), R1.BaseStaticLoad(), S)
+#
+#                    if (lnm<Lnm['min']) or (lnm>Lnm['max']):
+#                        liminf_lifetime=False
+#                if C0r is not None:
+#                    c0r=R1.BaseStaticLoad()
+#                    if (c0r<C0r['min']) or (c0r>C0r['max']):
+#                        liminf_lifetime=False
+#                if Cr is not None:
+#                    cr=R1.BaseDynamicLoad()
+#                    if (cr<Cr['min']) or (cr>Cr['max']):
+#                        liminf_lifetime=False
+#                if liminf_lifetime==True:
+#                    self.bearing_assemblies.append(R1)
+#                    if len(self.bearing_assemblies)<number_solutions:
+#                        liminf_lifetime=False
+#                    if verbose:
+##                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.bearing_assemblies),l10,D,d,B,Dw,Zmax))
+#                        if L10 is not None:
+#                            print('L10: {}, specification: {}'.format(l10, L10))
+#                        if Lnm is not None:
+#
+#                            print('Lnm: {}, specification: {}'.format(lnm, Lnm))
 
 class BearingCombinationOptimizer:
     
@@ -1345,13 +1345,13 @@ class BearingAssemblyOptimizer:
             
             print('number bearing assemblies configurations {}'.format(len(bearing_assembly_configurations_sort)))
             for bearing_assembly_configurations in bearing_assembly_configurations_sort:
-                print('decision tree estimation', nb_solutions_family)
+#                print('decision tree estimation', nb_solutions_family)
                 bearing_assemblies = self.AnalyzeBearingCombinations(bearing_assembly_configurations, 
                                                                      L10_objective = L10_objective,
                                                                      max_bearing_assemblies=nb_solutions_family)
 
                 for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
-                    print('try continuous optim ', i_bearing_assembly)
+#                    print('try continuous optim ', i_bearing_assembly)
                     try:
                         bearing_assembly_simulation = self.ContinuousOptimization(bearing_assembly)
                         L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10

@@ -83,8 +83,8 @@ bis = bearings_opt.BearingAssemblyOptimizer(
 # 'outer_diameters': ,
 # 'speeds': 
 
-print(hash(bearing_assembly_opt))
-print(bearing_assembly_opt == bis)
+#print(hash(bearing_assembly_opt))
+#print(bearing_assembly_opt == bis)
 
 #d = bearing_assembly_opt.Dict()
 #del bearing_assembly_opt
@@ -95,7 +95,7 @@ bearing_assembly_opt.Optimize(10)
 for num_sol, ba_simulation in enumerate(bearing_assembly_opt.bearing_assembly_simulations):
     print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
     ba_simulation.bearing_assembly.Plot()    
-    print(hash(ba_simulation))
+#    print(hash(ba_simulation))
     print(ba_simulation == ba_simulation)
     
 print(bearing_assembly_opt == bis)
