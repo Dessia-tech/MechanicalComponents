@@ -31,7 +31,7 @@ getnode_defined = False
 args_delete = []
 for arg in sys.argv:
     if arg.startswith('--macs='):
-        macs = arg[7:].strip('[]').replace("'",'').split(',')
+        macs = arg[8:].strip('[]').replace("'",'').split(',')
         if type(macs) != list:
             raise ValueError
         macs_defined = True
@@ -100,7 +100,7 @@ addresses_determination_lines = ['import netifaces\n',
                                  ]
 
 if macs_defined:
-    protection_lines.extend(['if addrs != set({}):\n'.format(macs),
+    protection_lines.extend(['if addrs.isdisjoint(set({})):\n'.format(macs),
                              '    print("{}")\n'.format(error_msg_mac),
                              '    raise RuntimeError\n\n'])
 elif getnode_defined:
