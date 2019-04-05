@@ -605,16 +605,19 @@ class RadialBearing:
     def Dict(self, stringify_keys=True):
         """Export dictionary
         """
-        d={}
-        for k,v in self.__dict__.items():
-            tv=type(v)
-            if tv==npy.int64:
-                d[k]=int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k]=v
-
+        d = {}
+        d['d'] = self.d
+        d['D'] = self.D
+        d['B'] = self.B
+        d['alpha'] = self.alpha
+        d['i'] = self.i
+        d['Z'] = self.Z
+        d['Dw'] = self.Dw
+        d['Cr'] = self.Cr
+        d['C0r'] = self.C0r
+        d['name'] = self.name
+        d['metadata'] = self.metadata
+        d['contact_type'] = self.contact_type
         d['class_name'] = self.class_name
         d['material'] = self.material.Dict()
         d['oil'] = self.oil.Dict()
@@ -2876,14 +2879,13 @@ class BearingCombination:
         Export dictionary
         """
         d={}
-        for k,v in self.__dict__.items():
-            tv=type(v)
-            if tv == npy.int64:
-                d[k]=int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k]=v
+        d['directions'] = self.directions
+        
+        d['radial_load_linkage'] = self.radial_load_linkage
+        d['internal_pre_load'] = self.internal_pre_load 
+        d['connection_bi'] = self.connection_bi
+        d['connection_be'] = self.connection_be
+        d['behavior_link'] = self.behavior_link
 
         bearings = []
         for bearing in self.bearings:
