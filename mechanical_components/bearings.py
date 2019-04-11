@@ -80,6 +80,7 @@ dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},
 
 
 class Oil:
+    
     def __init__(self,oil_data):
         self.oil_data = oil_data
         self.oil_kinematic_viscosity_curve = self.KinematicViscosity(oil_data)
@@ -283,6 +284,51 @@ class RadialBearing:
     taking_loads = None
     generate_axial_load = None
     linkage = None
+    
+    _jsonschema = {
+        "definitions": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "title": "mechanical_components.bearings.RadialBearing Base Schema",
+        "required": [
+            "d",
+            "D",
+            "B",
+            "alpha",
+            "i",
+            "Z",
+            "Dw",
+            "Cr",
+            "C0r",
+            "contact_type",
+            "class_name",
+#            "material",
+#            "oil",
+            "mass"
+          ],
+          "properties": {
+            "d": {"type": "number",  "examples": [0.02],
+                  "physical_quantity": 'distance', "unit": "m"},
+            "D": {"type": "number",  "examples": [0.02],
+                  "physical_quantity": 'distance', "unit": "m"},
+            "B": {"type": "number",  "examples": [0.04],
+                  "physical_quantity": 'distance', "unit": "m"},
+            "alpha": {"type": "number",  "examples": [0.],
+                      "physical_quantity": 'angle', "unit": "rad"},
+            "i": {"type": "number", "multipleOf": 1.0, "examples": [1]},
+            "Z": {"type": "number", "multipleOf": 1.0, "examples": [13]},
+            "Dw": {"type": "number",  "examples": [0.01],
+                   "physical_quantity": 'distance', "unit": "m"},
+            "Cr": {"type": "number",  "examples": [29500],
+                   "physical_quantity": 'force', "unit": "N"},
+            "C0r": {"type": "number",  "examples": [25000],
+                    "physical_quantity": 'force', "unit": "N"},
+            "mass": {"type": "number",  "examples": [0.04],
+                     "physical_quantity": 'mass', "unit": "kg"},
+            "name": {"type": "string",  "examples": 'SNR 6062'},
+            }
+          }
+
     
     # TODO: remove oil
     def __init__(self, d, D, B, alpha, i, Z, Dw, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -503,10 +549,10 @@ class RadialBearing:
     def FreeCADExport(self, fcstd_filepath, python_path='python', 
                       freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
         model = self.VolumeModel()
-        tolerance = self.D/130.
+#        tolerance = self.D/130.
         model.FreeCADExport(fcstd_filepath, python_path=python_path,
                             freecad_lib_path=freecad_lib_path,
-                            export_types=export_types, tolerance=tolerance)
+                            export_types=export_types)
         
     def PlotDataQuote(self, pos=0):
         delta_quote = 0.05*self.B
@@ -678,7 +724,20 @@ class RadialBallBearing(RadialBearing):
     coeff_baselife = 3.
     class_name = 'RadialBallBearing'
     
-    # TODO: remove alpha?
+    _jsonschema = {
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        "allOf": [
+            { "$ref": "#/definitions/RadialBearing" },
+            {'type': 'object',
+             "properties": {
+                'alpha': {'const': 0.},
+              },
+            "required": ['alpha']
+            }
+          ]
+      }
+    
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
         RadialBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr, C0r=C0r, oil=oil,
@@ -899,6 +958,14 @@ class AngularBallBearing(RadialBearing):
     linkage = 'ball_joint'
     coeff_baselife = 3.
     class_name = 'AngularBallBearing'
+    
+    _jsonschema = {
+    "definitions": {
+            "RadialBearing": RadialBearing._jsonschema},
+    "allOf": [
+        { "$ref": "#/definitions/RadialBearing" }
+      ]
+    }
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
@@ -1148,6 +1215,20 @@ class SphericalBallBearing(RadialBearing):
     coeff_baselife = 3.
     class_name = 'SphericalBallBearing'
     
+    _jsonschema = {
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        "allOf": [
+            { "$ref": "#/definitions/RadialBearing" },
+            {'type': 'object',
+             "properties": {
+                'alpha': {'const': 0.},
+              },
+            "required": ['alpha']
+            }
+          ]
+      }
+    
     def __init__(self, d, D, B, alpha=0, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
         RadialBearing.__init__(self, d, D, B, alpha, i, Z, Dw, Cr, C0r, oil,
@@ -1262,8 +1343,23 @@ class RadialRollerBearing(RadialBearing):
     linkage = 'cylindric'
     coeff_baselife = 10/3.
     
-    def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, contact_type='linear_contact',
+    _jsonschema = {
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        "allOf": [
+            { "$ref": "#/definitions/RadialBearing" },
+            {'type': 'object',
+             "properties": {
+                'alpha': {'const': 0.},
+              },
+            "required": ['alpha']
+            }
+          ]
+      }
+    
+    def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None,
+                 oil=oil_iso_vg_1500, material=material_iso,
+                 contact_type='linear_contact',
                  mass=None, name='', metadata={}):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, 
                                Cr=Cr, C0r=C0r, oil=oil,
@@ -1508,7 +1604,6 @@ class NUP(RadialRollerBearing):
     taking_loads = 'both'
     generate_axial_load = False
     class_name = 'NUP'
-
     
     # TODO: remove alpha?
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -1639,7 +1734,6 @@ class NF(RadialRollerBearing):
     taking_loads = 'right'
     generate_axial_load = False
     class_name = 'NF'
-
     
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
@@ -1769,6 +1863,20 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     generate_axial_load = True
     coeff_baselife = 10/3.
     class_name = 'TaperedRollerBearing'
+    
+    _jsonschema = {
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        "allOf": [
+            {"$ref": "#/definitions/RadialBearing" },
+#            {'type': 'object',
+#             "properties": {
+#                'alpha': {'const': 0.},
+#              },
+#            "required": ['alpha']
+#            }
+          ]
+      }
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
@@ -2424,6 +2532,20 @@ class ConceptualBearingCombination:
         return valid
 
 class BearingCombination:
+    
+    _jsonschema = {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        'type': 'object',
+        "properties": {
+            'bearings': {
+               "type": "array",
+               "items": { "$ref": "#/definitions/RadialBearing"},
+                         },
+          },
+        "required": ['bearings']
+    }
     
     dessia_db_attributes = [{'name':'bearings',
                              'class':'mechanical_components.bearings.RadialBearing',
