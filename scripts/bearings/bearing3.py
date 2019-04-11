@@ -41,7 +41,7 @@ bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
                     lengths = [0.1, 0.1],
                     linkage_types = [['cylindric_joint'], ['ball_joint']],
                     mounting_types = [['left', 'right']],
-                    number_bearings = [[1, 2, 3], [1]],
+                    number_bearings = [[1, 2], [1]],
 
 #                    bearing_classes = [bearings.RadialBallBearing, 
 #                                       bearings.AngularBallBearing,
@@ -95,6 +95,7 @@ bearing_assembly_opt.Optimize(10)
 for num_sol, ba_simulation in enumerate(bearing_assembly_opt.bearing_assembly_simulations):
     print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
     ba_simulation.bearing_assembly.Plot()    
+    print(ba_simulation.bearing_assembly.cost)
 #    print(hash(ba_simulation))
     print(ba_simulation == ba_simulation)
     

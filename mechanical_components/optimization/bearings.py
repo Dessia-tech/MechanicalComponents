@@ -1392,7 +1392,7 @@ class BearingAssemblyOptimizer:
         list_mass = []
         for cas_bearing_assembly_simulations in bearing_assembly_generic:
             li_mass = [ba.mass for ba in cas_bearing_assembly_simulations]
-            list_mass.append(min(li_cost))
+            list_mass.append(min(li_mass))
         bearing_assembly_simulations_sort = [bearing_assembly_generic[i] for i in npy.argsort(list_mass)]
             
         bearing_assembly_simulations = []
