@@ -372,6 +372,7 @@ class RadialBearing:
             self.mass = self.Mass()
         else:
             self.mass = mass
+        self.cost = self.mass*self.cost_coefficient + self.cost_constant
             
         
     def __eq__(self, other_bearing):
@@ -723,6 +724,8 @@ class RadialBallBearing(RadialBearing):
     linkage = 'ball'
     coeff_baselife = 3.
     class_name = 'RadialBallBearing'
+    cost_coefficient = 0.2
+    cost_constant = 1
     
     _jsonschema = {
         "definitions": {
@@ -958,6 +961,8 @@ class AngularBallBearing(RadialBearing):
     linkage = 'ball_joint'
     coeff_baselife = 3.
     class_name = 'AngularBallBearing'
+    cost_coefficient = 0.4
+    cost_constant = 1.5
     
     _jsonschema = {
     "definitions": {
@@ -1214,6 +1219,8 @@ class SphericalBallBearing(RadialBearing):
     linkage = 'ball_joint'
     coeff_baselife = 3.
     class_name = 'SphericalBallBearing'
+    cost_coefficient = 0.4
+    cost_constant = 2
     
     _jsonschema = {
         "definitions": {
@@ -1342,6 +1349,8 @@ class RadialRollerBearing(RadialBearing):
     symmetric = True
     linkage = 'cylindric'
     coeff_baselife = 10/3.
+    cost_coefficient = 0.5
+    cost_constant = 2.5
     
     _jsonschema = {
         "definitions": {
@@ -1604,6 +1613,8 @@ class NUP(RadialRollerBearing):
     taking_loads = 'both'
     generate_axial_load = False
     class_name = 'NUP'
+    cost_coefficient = 0.5
+    cost_constant = 2.7
     
     # TODO: remove alpha?
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -1674,6 +1685,8 @@ class N(RadialRollerBearing):
     taking_loads = 'free'
     generate_axial_load = False
     class_name = 'N'
+    cost_coefficient = 0.5
+    cost_constant = 2.5
     
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
@@ -1734,6 +1747,9 @@ class NF(RadialRollerBearing):
     taking_loads = 'right'
     generate_axial_load = False
     class_name = 'NF'
+    cost_coefficient = 0.5
+    cost_constant = 2.5
+
     
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
@@ -1804,6 +1820,8 @@ class NU(RadialRollerBearing):
     taking_loads = 'free'
     generate_axial_load = False
     class_name = 'NU'
+    cost_coefficient = 0.5
+    cost_constant = 2.5
 
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
@@ -1863,6 +1881,8 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     generate_axial_load = True
     coeff_baselife = 10/3.
     class_name = 'TaperedRollerBearing'
+    cost_coefficient = 0.4
+    cost_constant = 2
     
     _jsonschema = {
         "definitions": {
@@ -2560,11 +2580,14 @@ class BearingCombination:
         self.connection_bi = connection_bi
         self.behavior_link = behavior_link
         self.mass = 0
+        self.cost = 0
         self.directions = directions
         
         for bg in bearings:
             if bg.mass is not None:
                 self.mass += bg.mass
+            if bg.cost is not None:
+                self.cost += bg.cost
         self.B = 0
         for bg in bearings:
             self.B += bg.B
@@ -3056,6 +3079,9 @@ class BearingAssembly:
         self.d = 0
         for bc in bearing_combinations:
             self.d = max(bc.d, self.d)
+        self.cost = 0
+        for bc in bearing_combinations:
+            self.cost += bc.cost
             
     def __eq__(self, other_eb):
         equal = True
