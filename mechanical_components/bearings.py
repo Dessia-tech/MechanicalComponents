@@ -189,101 +189,102 @@ class Material:
 
 material_iso=Material()
 
-class LoadBearing:
-    def __init__(self, class_name, typ=None, direction=None):
-        self.class_name = class_name
-        self.typ = typ
-        self.direction = direction
-                
-    def PlotGraph(self, d, D, B, d1, D1, ind_load_case=0):
-        
-        list_node = self.load_bearing_results[ind_load_case].list_node
-        delta_1 = (D - D1)/10.
-        delta_2 = (d1 - d)/10.
-        positions = {}
-        positions[list_node[0]] = vm.Point2D((-B/2., D/2. - delta_1))
-        positions[list_node[1]] = vm.Point2D((-B/2., D/2. - 2*delta_1))
-        positions[list_node[2]] = vm.Point2D((-B/2., d/2. + 2*delta_2))
-        positions[list_node[3]] = vm.Point2D((-B/2., d/2. + delta_2))
-        positions[list_node[4]] = vm.Point2D((B/2., D/2. - delta_1))
-        positions[list_node[5]] = vm.Point2D((B/2., D/2. - 2*delta_1))
-        positions[list_node[6]] = vm.Point2D((B/2., d/2. + 2*delta_2))
-        positions[list_node[7]] = vm.Point2D((B/2., d/2. + delta_2))
-        
-        list_line = []
-        check_line = []
-        for nd in list_node:
-            np = self.load_bearing_results[ind_load_case].next[nd]
-            for n in np:
-                if (n in list_node) and [nd, n] not in check_line:
-                    n1 = positions[nd]
-                    n2 = positions[n]
-                    list_line.append(vm.LineSegment2D(n1, n2))
-                    check_line.append([nd, n])
-                    
-        load_arrow = vm.Contour2D(list_line)
-        return load_arrow
-                
-    def PlotLoad(self, a, pos, d, D, B, d1, D1, ind_load_case=0, max_load=None):
-        
-        list_node = self.load_bearing_results[ind_load_case].list_node
-        transversale_load = self.load_bearing_results[ind_load_case].transversale_load
-        internal_ring_load = self.load_bearing_results[ind_load_case].internal_ring_load
-        external_ring_load = self.load_bearing_results[ind_load_case].external_ring_load
-        
-        delta_1 = (D - D1)/10.
-        delta_2 = (d1 - d)/10.
-        positions = {}
-        positions[list_node[0]] = vm.Point2D((-B/2., D/2. - delta_1))
-        positions[list_node[1]] = vm.Point2D((-B/2., D/2. - 3*delta_1))
-        positions[list_node[2]] = vm.Point2D((-B/2., d/2. + 3*delta_2))
-        positions[list_node[3]] = vm.Point2D((-B/2., d/2. + delta_2))
-        positions[list_node[4]] = vm.Point2D((B/2., D/2. - delta_1))
-        positions[list_node[5]] = vm.Point2D((B/2., D/2. - 3*delta_1))
-        positions[list_node[6]] = vm.Point2D((B/2., d/2. + 3*delta_2))
-        positions[list_node[7]] = vm.Point2D((B/2., d/2. + delta_2))
-        
-        if max_load is None:
-            max_load = 0
-            for nd in list_node:
-                if nd.load is not None:
-                    max_load = max(nd.load, max_load)
+#class LoadBearing:
+#    def __init__(self, class_name, typ=None, direction=None):
+#        self.class_name = class_name
+#        self.typ = typ
+#        self.direction = direction
+#                
+#    def PlotGraph(self, d, D, B, d1, D1, ind_load_case=0):
+#        
+#        list_node = self.load_bearing_results[ind_load_case].list_node
+#        delta_1 = (D - D1)/10.
+#        delta_2 = (d1 - d)/10.
+#        positions = {}
+#        positions[list_node[0]] = vm.Point2D((-B/2., D/2. - delta_1))
+#        positions[list_node[1]] = vm.Point2D((-B/2., D/2. - 2*delta_1))
+#        positions[list_node[2]] = vm.Point2D((-B/2., d/2. + 2*delta_2))
+#        positions[list_node[3]] = vm.Point2D((-B/2., d/2. + delta_2))
+#        positions[list_node[4]] = vm.Point2D((B/2., D/2. - delta_1))
+#        positions[list_node[5]] = vm.Point2D((B/2., D/2. - 2*delta_1))
+#        positions[list_node[6]] = vm.Point2D((B/2., d/2. + 2*delta_2))
+#        positions[list_node[7]] = vm.Point2D((B/2., d/2. + delta_2))
+#        
+#        list_line = []
+#        check_line = []
+#        for nd in list_node:
+#            np = self.load_bearing_results[ind_load_case].next[nd]
+#            for n in np:
+#                if (n in list_node) and [nd, n] not in check_line:
+#                    n1 = positions[nd]
+#                    n2 = positions[n]
+#                    list_line.append(vm.LineSegment2D(n1, n2))
+#                    check_line.append([nd, n])
+#                    
+#        load_arrow = vm.Contour2D(list_line)
+#        return load_arrow
+#                
+#    def PlotLoad(self, a, pos, d, D, B, d1, D1, ind_load_case=0, max_load=None):
+#        
+#        list_node = self.load_bearing_results[ind_load_case].list_node
+#        transversale_load = self.load_bearing_results[ind_load_case].transversale_load
+#        internal_ring_load = self.load_bearing_results[ind_load_case].internal_ring_load
+#        external_ring_load = self.load_bearing_results[ind_load_case].external_ring_load
+#        
+#        delta_1 = (D - D1)/10.
+#        delta_2 = (d1 - d)/10.
+#        positions = {}
+#        positions[list_node[0]] = vm.Point2D((-B/2., D/2. - delta_1))
+#        positions[list_node[1]] = vm.Point2D((-B/2., D/2. - 3*delta_1))
+#        positions[list_node[2]] = vm.Point2D((-B/2., d/2. + 3*delta_2))
+#        positions[list_node[3]] = vm.Point2D((-B/2., d/2. + delta_2))
+#        positions[list_node[4]] = vm.Point2D((B/2., D/2. - delta_1))
+#        positions[list_node[5]] = vm.Point2D((B/2., D/2. - 3*delta_1))
+#        positions[list_node[6]] = vm.Point2D((B/2., d/2. + 3*delta_2))
+#        positions[list_node[7]] = vm.Point2D((B/2., d/2. + delta_2))
+#        
+#        if max_load is None:
+#            max_load = 0
+#            for nd in list_node:
+#                if nd.load is not None:
+#                    max_load = max(nd.load, max_load)
+#
+#        if (self.direction == 1) or (self.load_bearing_results[ind_load_case].sub_direction == 1):
+#            if transversale_load != 0:
+#                list_line = [vm.LineSegment2D(positions[list_node[3]], positions[list_node[5]])]
+#                list_line.append(vm.LineSegment2D(positions[list_node[4]], positions[list_node[2]]))
+#                load_arrow = vm.Contour2D(list_line)
+#                load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
+#                load_arrow.MPLPlot(a,'-b', True, width = B/10./max_load*transversale_load)
+#        elif (self.direction == -1) or (self.load_bearing_results[ind_load_case].sub_direction == -1):
+#            if transversale_load != 0:
+#                list_line = [vm.LineSegment2D(positions[list_node[6]], positions[list_node[0]])]
+#                list_line.append(vm.LineSegment2D(positions[list_node[1]], positions[list_node[7]]))
+#                load_arrow = vm.Contour2D(list_line)
+#                load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
+#                load_arrow.MPLPlot(a,'-b', True, width = B/10./max_load*transversale_load)
+#        if internal_ring_load != 0:
+#            list_line = [vm.LineSegment2D(positions[list_node[3]], positions[list_node[7]])]
+#            list_line.append(vm.LineSegment2D(positions[list_node[6]], positions[list_node[2]]))
+#            load_arrow = vm.Contour2D(list_line)
+#            load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
+#            load_arrow.MPLPlot(a,'-b', True, width = B/10./max_load*internal_ring_load)
+#        if external_ring_load != 0:
+#            list_line = [vm.LineSegment2D(positions[list_node[1]], positions[list_node[5]])]
+#            list_line.append(vm.LineSegment2D(positions[list_node[4]], positions[list_node[0]]))
+#            load_arrow = vm.Contour2D(list_line)
+#            load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
+#            load_arrow.MPLPlot(a,'-b', True, width = B/10./max_load*external_ring_load)
+#            
 
-        if (self.direction == 1) or (self.load_bearing_results[ind_load_case].sub_direction == 1):
-            if transversale_load != 0:
-                list_line = [vm.LineSegment2D(positions[list_node[3]], positions[list_node[5]])]
-                list_line.append(vm.LineSegment2D(positions[list_node[4]], positions[list_node[2]]))
-                load_arrow = vm.Contour2D(list_line)
-                load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
-                load_arrow.MPLPlot(a,'-b', True, width = B/10./max_load*transversale_load)
-        elif (self.direction == -1) or (self.load_bearing_results[ind_load_case].sub_direction == -1):
-            if transversale_load != 0:
-                list_line = [vm.LineSegment2D(positions[list_node[6]], positions[list_node[0]])]
-                list_line.append(vm.LineSegment2D(positions[list_node[1]], positions[list_node[7]]))
-                load_arrow = vm.Contour2D(list_line)
-                load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
-                load_arrow.MPLPlot(a,'-b', True, width = B/10./max_load*transversale_load)
-        if internal_ring_load != 0:
-            list_line = [vm.LineSegment2D(positions[list_node[3]], positions[list_node[7]])]
-            list_line.append(vm.LineSegment2D(positions[list_node[6]], positions[list_node[2]]))
-            load_arrow = vm.Contour2D(list_line)
-            load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
-            load_arrow.MPLPlot(a,'-b', True, width = B/10./max_load*internal_ring_load)
-        if external_ring_load != 0:
-            list_line = [vm.LineSegment2D(positions[list_node[1]], positions[list_node[5]])]
-            list_line.append(vm.LineSegment2D(positions[list_node[4]], positions[list_node[0]]))
-            load_arrow = vm.Contour2D(list_line)
-            load_arrow = load_arrow.Translation(vm.Vector2D((pos, 0)), True)
-            load_arrow.MPLPlot(a,'-b', True, width = B/10./max_load*external_ring_load)
             
-
-            
-class RadialBearing(LoadBearing):
+class RadialBearing:
     symmetric = None
     taking_loads = None
     generate_axial_load = None
     linkage = None
     
+    # TODO: remove oil
     def __init__(self, d, D, B, alpha, i, Z, Dw, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
 
@@ -321,21 +322,27 @@ class RadialBearing(LoadBearing):
         self.slack = (self.E-self.F-2*self.Dw)/4.
         self.name = name
         self.metadata = metadata
+        if mass is None:
+            self.mass = self.Mass()
+        else:
+            self.mass = mass
+        self.cost = self.mass*self.cost_coefficient + self.cost_constant
+            
         
     def __eq__(self, other_bearing):
         if self.class_name != other_bearing.class_name:
             return False
         
         for k,v in self.__dict__.items():
-            if k in ['d', 'D', 'B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r']:
+            if k in ['d', 'D', 'B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r', 'mass']:
                 v2 = getattr(other_bearing, k)
                 if v != v2:
                     return False
         return True
     
     def __hash__(self):
-        h= int(self.d*4e3) + int(self.D*12e3) + int(self.B*1e3)+self.i
-        h+= len(self.__class__.__name__)
+        h = int(self.d*4e3) + int(self.D*12e3) + int(self.B*1e3)+self.i+ int(1000*self.mass)
+        h += len(self.__class__.__name__)
         return h
         
     def Check(self):
@@ -497,8 +504,10 @@ class RadialBearing(LoadBearing):
     def FreeCADExport(self, fcstd_filepath, python_path='python', 
                       freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
         model = self.VolumeModel()
+        tolerance = self.D/130.
         model.FreeCADExport(fcstd_filepath, python_path=python_path,
-                            freecad_lib_path=freecad_lib_path, export_types=export_types)
+                            freecad_lib_path=freecad_lib_path,
+                            export_types=export_types, tolerance=tolerance)
         
     def PlotDataQuote(self, pos=0):
         delta_quote = 0.05*self.B
@@ -592,21 +601,24 @@ class RadialBearing(LoadBearing):
         model=vm.VolumeModel([(self.name, self.CADVolumes(center, axis))])
         return model   
     
-    mass = property(Mass)
+#    mass = property(Mass)
     
     def Dict(self, stringify_keys=True):
         """Export dictionary
         """
-        d={}
-        for k,v in self.__dict__.items():
-            tv=type(v)
-            if tv==npy.int64:
-                d[k]=int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k]=v
-
+        d = {}
+        d['d'] = self.d
+        d['D'] = self.D
+        d['B'] = self.B
+        d['alpha'] = self.alpha
+        d['i'] = self.i
+        d['Z'] = self.Z
+        d['Dw'] = self.Dw
+        d['Cr'] = self.Cr
+        d['C0r'] = self.C0r
+        d['name'] = self.name
+        d['metadata'] = self.metadata
+        d['contact_type'] = self.contact_type
         d['class_name'] = self.class_name
         d['material'] = self.material.Dict()
         d['oil'] = self.oil.Dict()
@@ -666,6 +678,8 @@ class RadialBallBearing(RadialBearing):
     linkage = 'ball'
     coeff_baselife = 3.
     class_name = 'RadialBallBearing'
+    cost_coefficient = 0.2
+    cost_constant = 1
     
     # TODO: remove alpha?
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -735,8 +749,13 @@ class RadialBallBearing(RadialBearing):
         pbi4 = vm.Point2D((self.B/2., self.d/2.))
         pbi5 = vm.Point2D((self.B/2., self.d1/2.))
         pbi6 = pbi5.Translation(vm.Vector2D((-self.h, 0)))
-        bi1 = primitives2D.RoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1], {1: self.radius, 
-                                                     2: self.radius, 3: self.radius, 4: self.radius}, False)
+        bi1 = primitives2D.RoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1],
+                                                 {1: self.radius, 
+                                                  2: self.radius,
+                                                  3: self.radius,
+                                                  4: self.radius},
+                                                  False,
+                                                  adapt_radius=True)
         cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, self.F/2)), pbi6)
         return vm.Contour2D([bi1, cbi1])
         
@@ -748,8 +767,16 @@ class RadialBallBearing(RadialBearing):
         pbe4 = vm.Point2D((self.B/2., self.D/2.))
         pbe5 = vm.Point2D((self.B/2., self.D1/2.))
         pbe6 = pbe5.Translation(vm.Vector2D((-self.h, 0)))
-        be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 
-                                                 2: self.radius, 3: self.radius, 4: self.radius}, False)
+#        betest = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],{}, False)
+#        betest.MPLPlot()
+
+        be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
+                                                 {1: self.radius, 
+                                                  2: self.radius,
+                                                  3: self.radius,
+                                                  4: self.radius},
+                                                  False,
+                                                  adapt_radius=True)
         cbe1 = vm.Arc2D(pbe6, vm.Point2D((0, self.E/2)), pbe1)
         return vm.Contour2D([be1, cbe1])
     
@@ -849,7 +876,7 @@ class RadialBallBearing(RadialBearing):
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
-                  name=d['name'], metadata=d['metadata'])
+                  name=d['name'], metadata=d['metadata'], mass=d['mass'])
         return obj
     
     def Copy(self):
@@ -875,6 +902,8 @@ class AngularBallBearing(RadialBearing):
     linkage = 'ball_joint'
     coeff_baselife = 3.
     class_name = 'AngularBallBearing'
+    cost_coefficient = 0.4
+    cost_constant = 1.5
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
@@ -1096,7 +1125,7 @@ class AngularBallBearing(RadialBearing):
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
-                  name=d['name'], metadata=d['metadata'])
+                  name=d['name'], metadata=d['metadata'], mass=d['mass'])
         return obj
     
     def Copy(self):
@@ -1123,6 +1152,8 @@ class SphericalBallBearing(RadialBearing):
     linkage = 'ball_joint'
     coeff_baselife = 3.
     class_name = 'SphericalBallBearing'
+    cost_coefficient = 0.4
+    cost_constant = 2
     
     def __init__(self, d, D, B, alpha=0, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
@@ -1209,7 +1240,7 @@ class SphericalBallBearing(RadialBearing):
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
-                  name=d['name'], metadata=d['metadata'])
+                  name=d['name'], metadata=d['metadata'], mass=d['mass'])
         return obj
     
     def Copy(self):
@@ -1237,6 +1268,8 @@ class RadialRollerBearing(RadialBearing):
     symmetric = True
     linkage = 'cylindric'
     coeff_baselife = 10/3.
+    cost_coefficient = 0.5
+    cost_constant = 2.5
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
@@ -1442,7 +1475,7 @@ class RadialRollerBearing(RadialBearing):
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
-                  name=d['name'], metadata=d['metadata'])
+                  name=d['name'], metadata=d['metadata'], mass=d['mass'])
         return obj
     
     def Copy(self):
@@ -1484,7 +1517,8 @@ class NUP(RadialRollerBearing):
     taking_loads = 'both'
     generate_axial_load = False
     class_name = 'NUP'
-
+    cost_coefficient = 0.5
+    cost_constant = 2.7
     
     # TODO: remove alpha?
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -1555,6 +1589,8 @@ class N(RadialRollerBearing):
     taking_loads = 'free'
     generate_axial_load = False
     class_name = 'N'
+    cost_coefficient = 0.5
+    cost_constant = 2.5
     
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
@@ -1615,6 +1651,8 @@ class NF(RadialRollerBearing):
     taking_loads = 'right'
     generate_axial_load = False
     class_name = 'NF'
+    cost_coefficient = 0.5
+    cost_constant = 2.5
 
     
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
@@ -1686,6 +1724,8 @@ class NU(RadialRollerBearing):
     taking_loads = 'free'
     generate_axial_load = False
     class_name = 'NU'
+    cost_coefficient = 0.5
+    cost_constant = 2.5
 
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
@@ -1745,13 +1785,15 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     generate_axial_load = True
     coeff_baselife = 10/3.
     class_name = 'TaperedRollerBearing'
+    cost_coefficient = 0.4
+    cost_constant = 2
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name='', metadata={}):
         
         if Dw is None:
-            self.Dw = (D - d)/7.
+            self.Dw = (D - d)/7.*math.cos(alpha)
 
         RadialRollerBearing.__init__(self, d, D, B, alpha=alpha, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r ,oil=oil, 
@@ -1935,7 +1977,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                   oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
-                  name=d['name'], metadata=d['metadata'])
+                  name=d['name'], metadata=d['metadata'], mass=d['mass'])
         return obj
     
     def Copy(self):
@@ -2414,11 +2456,14 @@ class BearingCombination:
         self.connection_bi = connection_bi
         self.behavior_link = behavior_link
         self.mass = 0
+        self.cost = 0
         self.directions = directions
         
         for bg in bearings:
             if bg.mass is not None:
                 self.mass += bg.mass
+            if bg.cost is not None:
+                self.cost += bg.cost
         self.B = 0
         for bg in bearings:
             self.B += bg.B
@@ -2855,14 +2900,13 @@ class BearingCombination:
         Export dictionary
         """
         d={}
-        for k,v in self.__dict__.items():
-            tv=type(v)
-            if tv == npy.int64:
-                d[k]=int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k]=v
+        d['directions'] = self.directions
+        
+        d['radial_load_linkage'] = self.radial_load_linkage
+        d['internal_pre_load'] = self.internal_pre_load 
+        d['connection_bi'] = self.connection_bi
+        d['connection_be'] = self.connection_be
+        d['behavior_link'] = self.behavior_link
 
         bearings = []
         for bearing in self.bearings:
@@ -2881,16 +2925,6 @@ class BearingCombination:
         bearings = []
         for bearing_s in d['bearings']:
             bearing = RadialBearing.DictToObject(bearing_s)
-#            if bearing['class_name'] == 'RadialRollerBearing':
-#                BA = RadialRollerBearing.DictToObject(bearing)
-#            elif bearing['class_name'] == 'TaperedRollerBearing':
-#                BA = TaperedRollerBearing.DictToObject(bearing)
-#            elif bearing['class_name'] == 'SphericalBallBearing':
-#                BA = SphericalBallBearing.DictToObject(bearing)
-#            elif bearing['class_name'] == 'AngularBallBearing':
-#                BA = AngularBallBearing.DictToObject(bearing)
-#            elif bearing['class_name'] == 'RadialBallBearing':
-#                BA = RadialBallBearing.DictToObject(bearing)
             bearings.append(bearing)
         obj = cls(bearings = bearings, directions = d['directions'], radial_load_linkage = d['radial_load_linkage'], 
                   internal_pre_load = 0, connection_bi = d['connection_bi'], 
@@ -2921,6 +2955,9 @@ class BearingAssembly:
         self.d = 0
         for bc in bearing_combinations:
             self.d = max(bc.d, self.d)
+        self.cost = 0
+        for bc in bearing_combinations:
+            self.cost += bc.cost
             
     def __eq__(self, other_eb):
         equal = True
@@ -3262,139 +3299,139 @@ class BearingAssembly:
                        length = d['length'])
         return obj
 
-class DetailedRadialRollerBearing(RadialRollerBearing):
-    #Roulement à rouleaux
-    def __init__(self, d, D, B, i, Z, Dw, d1=None, D1=None, Lw=None, radius=None, E=None, F=None, 
-                 alpha=0, bm=1.1, oil=oil_iso_vg_1500, material=material_iso, direction=1, typ='N'):
-        RadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha ,
-                                oil = oil, material = material, contact_type = 'linear_contact',
-                                direction = direction, typ = typ)
+#class DetailedRadialRollerBearing(RadialRollerBearing):
+#    #Roulement à rouleaux
+#    def __init__(self, d, D, B, i, Z, Dw, d1=None, D1=None, Lw=None, radius=None, E=None, F=None, 
+#                 alpha=0, bm=1.1, oil=oil_iso_vg_1500, material=material_iso, direction=1, typ='N'):
+#        RadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha ,
+#                                oil = oil, material = material, contact_type = 'linear_contact',
+#                                direction = direction, typ = typ)
+#
+#        #diametre rouleau moyen
+#        self.Dwe = Dw
+#        self.bm = bm
+#        
+#        if d1 is not None:
+#            self.d1 = d1
+#        if D1 is not None:
+#            self.D1 = D1
+#        if Lw is not None:
+#            self.Lw = Lw
+#        if E is not None:
+#            self.E = E
+#        if F is not None:
+#            self.F = F
+#        if radius is not None:
+#            self.radius = radius
+#                
+#        self.Dpw, self.Lwe, self.slack, self.ep = self.DefParam()
+#        self.mass = self.Mass()
+#        
+#    def __str__(self):
+#        s = '{}\n'.format(self.__class__.__name__)
+#        s += 'Dimensions d:{} D:{} B:{} Dw:{} Z:{}'.format(self.d, self.D, self.B, self.Dw, self.Z)
+##        s += 'L10: {} Lnm: {}
+#        return s
+#        
+#    def Update(self, d1, D1, E, F, Z):
+#        self.d1 = d1
+#        self.D1 = D1
+#        self.E = E
+#        self.F = F
+#        self.Z = Z
+#        self.Dpw,self.Lwe,self.slack,self.ep = self.DefParam()
+#        self.mass = self.Mass()
+#        
+#    def DefParam(self):
+#        Dpw = (self.E+self.F)/2.
+#        Lwe = self.Lw-2*self.radius
+#        slack = (self.E-self.F-2*self.Dw)/4.
+#        ep = (self.B-self.Lw-2*slack)/2.
+#        return Dpw,Lwe,slack,ep
+#        
+#    def Mass(self):
+#        rho = 7800
+#        m = self.Z*math.pi*(self.Dw)**2/4.*self.Lw*rho
+#        m += (math.pi*(self.D)**2/4.-math.pi*(self.E)**2/4.)*self.B*rho
+#        m += (math.pi*(self.F)**2/4.-math.pi*(self.d)**2/4.)*self.B*rho
+#        return m
+#    
+#    def BaseStaticLoad(self):
+#        #Charge radiale statique de base
+#        #besoin de convertir les dimensions en mm pour les formules ISO
+#        C0r = 44*(1-(self.Dw*1e3*math.cos(self.alpha))/(self.Dpw*1e3))*self.i*self.Z \
+#                *self.Lwe*1e3*self.Dw*1e3*math.cos(self.alpha)
+#        return C0r
+#    
+#    def BaseDynamicLoad(self):
+#        #Charge radiale dynamique de base
+#        mu = float((self.Dwe*1e3)*math.cos(self.alpha)/(self.Dpw*1e3))
+#        fc = 0.377*self.material.mu_delta*1/((2**((self.material.weibull_c\
+#                +self.material.weibull_h-1)/(self.material.weibull_c-self.material.weibull_h+1)))\
+#                *(0.5**(2*self.material.weibull_e/(self.material.weibull_c-self.material.weibull_h+1))))\
+#                *self.material.B1*((1-mu)**((self.material.weibull_c+self.material.weibull_h-3)/\
+#                (self.material.weibull_c-self.material.weibull_h+1))/((1+mu)**(2*self.material.weibull_e\
+#                /(self.material.weibull_c-self.material.weibull_h+1))))\
+#                *(mu**(2/(self.material.weibull_c-self.material.weibull_h+1)))\
+#                *(1+(1.04*((1-mu)/(1+mu))**((self.material.weibull_c+self.material.weibull_h\
+#                +2*self.material.weibull_e-3)/(self.material.weibull_c-self.material.weibull_h+1)))\
+#                **((self.material.weibull_c-self.material.weibull_h+1)/2.))\
+#                **(-2/(self.material.weibull_c-self.material.weibull_h+1))
+#        Cr = fc*self.bm*self.i*((self.Lwe*1e3)*math.cos(self.alpha))\
+#                **((self.material.weibull_c-self.material.weibull_h-1)/(self.material.weibull_c\
+#                -self.material.weibull_h+1))*self.Z**((self.material.weibull_c\
+#                -self.material.weibull_h-2*self.material.weibull_e+1)/(self.material.weibull_c\
+#                -self.material.weibull_h+1))*(self.Dwe*1e3)**((self.material.weibull_c\
+#                -self.material.weibull_h-3)/(self.material.weibull_c-self.material.weibull_h+1))
+#        return Cr
+#
+#    def Dict(self):
+#
+#        d = {}
+#        for k,v in self.__dict__.items():
+#            tv = type(v)
+#            if tv == npy.int64:
+#                d[k] = int(v)
+#            elif tv == npy.float64:
+#                d[k] = round(float(v), 5)
+#            else:
+#                d[k] = v
+#
+#        d['oil'] = self.oil.Dict()
+#        d['material'] = self.material.Dict()
+#        return d
 
-        #diametre rouleau moyen
-        self.Dwe = Dw
-        self.bm = bm
-        
-        if d1 is not None:
-            self.d1 = d1
-        if D1 is not None:
-            self.D1 = D1
-        if Lw is not None:
-            self.Lw = Lw
-        if E is not None:
-            self.E = E
-        if F is not None:
-            self.F = F
-        if radius is not None:
-            self.radius = radius
-                
-        self.Dpw, self.Lwe, self.slack, self.ep = self.DefParam()
-        self.mass = self.Mass()
-        
-    def __str__(self):
-        s = '{}\n'.format(self.__class__.__name__)
-        s += 'Dimensions d:{} D:{} B:{} Dw:{} Z:{}'.format(self.d, self.D, self.B, self.Dw, self.Z)
-#        s += 'L10: {} Lnm: {}
-        return s
-        
-    def Update(self, d1, D1, E, F, Z):
-        self.d1 = d1
-        self.D1 = D1
-        self.E = E
-        self.F = F
-        self.Z = Z
-        self.Dpw,self.Lwe,self.slack,self.ep = self.DefParam()
-        self.mass = self.Mass()
-        
-    def DefParam(self):
-        Dpw = (self.E+self.F)/2.
-        Lwe = self.Lw-2*self.radius
-        slack = (self.E-self.F-2*self.Dw)/4.
-        ep = (self.B-self.Lw-2*slack)/2.
-        return Dpw,Lwe,slack,ep
-        
-    def Mass(self):
-        rho = 7800
-        m = self.Z*math.pi*(self.Dw)**2/4.*self.Lw*rho
-        m += (math.pi*(self.D)**2/4.-math.pi*(self.E)**2/4.)*self.B*rho
-        m += (math.pi*(self.F)**2/4.-math.pi*(self.d)**2/4.)*self.B*rho
-        return m
-    
-    def BaseStaticLoad(self):
-        #Charge radiale statique de base
-        #besoin de convertir les dimensions en mm pour les formules ISO
-        C0r = 44*(1-(self.Dw*1e3*math.cos(self.alpha))/(self.Dpw*1e3))*self.i*self.Z \
-                *self.Lwe*1e3*self.Dw*1e3*math.cos(self.alpha)
-        return C0r
-    
-    def BaseDynamicLoad(self):
-        #Charge radiale dynamique de base
-        mu = float((self.Dwe*1e3)*math.cos(self.alpha)/(self.Dpw*1e3))
-        fc = 0.377*self.material.mu_delta*1/((2**((self.material.weibull_c\
-                +self.material.weibull_h-1)/(self.material.weibull_c-self.material.weibull_h+1)))\
-                *(0.5**(2*self.material.weibull_e/(self.material.weibull_c-self.material.weibull_h+1))))\
-                *self.material.B1*((1-mu)**((self.material.weibull_c+self.material.weibull_h-3)/\
-                (self.material.weibull_c-self.material.weibull_h+1))/((1+mu)**(2*self.material.weibull_e\
-                /(self.material.weibull_c-self.material.weibull_h+1))))\
-                *(mu**(2/(self.material.weibull_c-self.material.weibull_h+1)))\
-                *(1+(1.04*((1-mu)/(1+mu))**((self.material.weibull_c+self.material.weibull_h\
-                +2*self.material.weibull_e-3)/(self.material.weibull_c-self.material.weibull_h+1)))\
-                **((self.material.weibull_c-self.material.weibull_h+1)/2.))\
-                **(-2/(self.material.weibull_c-self.material.weibull_h+1))
-        Cr = fc*self.bm*self.i*((self.Lwe*1e3)*math.cos(self.alpha))\
-                **((self.material.weibull_c-self.material.weibull_h-1)/(self.material.weibull_c\
-                -self.material.weibull_h+1))*self.Z**((self.material.weibull_c\
-                -self.material.weibull_h-2*self.material.weibull_e+1)/(self.material.weibull_c\
-                -self.material.weibull_h+1))*(self.Dwe*1e3)**((self.material.weibull_c\
-                -self.material.weibull_h-3)/(self.material.weibull_c-self.material.weibull_h+1))
-        return Cr
-
-    def Dict(self):
-
-        d = {}
-        for k,v in self.__dict__.items():
-            tv = type(v)
-            if tv == npy.int64:
-                d[k] = int(v)
-            elif tv == npy.float64:
-                d[k] = round(float(v), 5)
-            else:
-                d[k] = v
-
-        d['oil'] = self.oil.Dict()
-        d['material'] = self.material.Dict()
-        return d
-
-class DetailedDrawnCupNeedleRollerBearing(DetailedRadialRollerBearing):
-    #Douille à aiguilles
-
-    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
-                 alpha,bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
-                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
-                 oil_name='iso_vg_100'):
-        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
-                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
-                                     weibull_h, B1, mu_delta, c_gamma, oil_name)
-        
-class DetailedNeedleRollerBearing(DetailedRadialRollerBearing):
-    #Cage à aiguilles
-    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
-                 alpha, bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
-                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
-                 oil_name='iso_vg_100'):
-        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
-                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
-                                     weibull_h, B1, mu_delta, c_gamma, oil_name)
-
-class DetailedSphericalRollerBearing(DetailedRadialRollerBearing):
-    #Roulement à rotule à rouleaux
-    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
-                 alpha,bm=1.15, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
-                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
-                 oil_name='iso_vg_100'):
-        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
-                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
-                                     weibull_h, B1, mu_delta, c_gamma,
-                                     oil_name)
+#class DetailedDrawnCupNeedleRollerBearing(DetailedRadialRollerBearing):
+#    #Douille à aiguilles
+#
+#    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
+#                 alpha,bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
+#                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
+#                 oil_name='iso_vg_100'):
+#        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
+#                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
+#                                     weibull_h, B1, mu_delta, c_gamma, oil_name)
+#        
+#class DetailedNeedleRollerBearing(DetailedRadialRollerBearing):
+#    #Cage à aiguilles
+#    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
+#                 alpha, bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
+#                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
+#                 oil_name='iso_vg_100'):
+#        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
+#                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
+#                                     weibull_h, B1, mu_delta, c_gamma, oil_name)
+#
+#class DetailedSphericalRollerBearing(DetailedRadialRollerBearing):
+#    #Roulement à rotule à rouleaux
+#    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
+#                 alpha,bm=1.15, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
+#                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
+#                 oil_name='iso_vg_100'):
+#        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
+#                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
+#                                     weibull_h, B1, mu_delta, c_gamma,
+#                                     oil_name)
         
         
 #class BearingAssemblyOptimizationResults:
