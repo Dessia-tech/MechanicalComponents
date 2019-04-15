@@ -81,7 +81,7 @@ dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},
 
 class Oil:
     
-    def __init__(self,oil_data):
+    def __init__(self, oil_data):
         self.oil_data = oil_data
         self.oil_kinematic_viscosity_curve = self.KinematicViscosity(oil_data)
     
@@ -297,35 +297,58 @@ class RadialBearing:
             "alpha",
             "i",
             "Z",
-            "Dw",
-            "Cr",
-            "C0r",
-            "contact_type",
-            "class_name",
-#            "material",
-#            "oil",
-            "mass"
+            "Dw"
           ],
           "properties": {
             "d": {"type": "number",  "examples": [0.02],
-                  "physical_quantity": 'distance', "unit": "m"},
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "true", "description": "Internal diameter"},
             "D": {"type": "number",  "examples": [0.02],
-                  "physical_quantity": 'distance', "unit": "m"},
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "true", "description": "External diameter"},
             "B": {"type": "number",  "examples": [0.04],
-                  "physical_quantity": 'distance', "unit": "m"},
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "true", "description": "Width"},
             "alpha": {"type": "number",  "examples": [0.],
-                      "physical_quantity": 'angle', "unit": "rad"},
-            "i": {"type": "number", "multipleOf": 1.0, "examples": [1]},
-            "Z": {"type": "number", "multipleOf": 1.0, "examples": [13]},
+                      "physical_quantity": 'angle', "unit": "rad",
+                      "editable": "true", "description": "Contact angle"},
+            "i": {"type": "number", "multipleOf": 1.0, "examples": [1],
+                  "editable": "true", "description": "Row number"},
+            "Z": {"type": "number", "multipleOf": 1.0, "examples": [13],
+                  "editable": "true", "description": "Rolling number"},
             "Dw": {"type": "number",  "examples": [0.01],
-                   "physical_quantity": 'distance', "unit": "m"},
+                   "physical_quantity": 'distance', "unit": "m",
+                   "editable": "true", "description": "Rolling diameter"},
             "Cr": {"type": "number",  "examples": [29500],
-                   "physical_quantity": 'force', "unit": "N"},
+                   "physical_quantity": 'force', "unit": "N",
+                   "editable": "true", "description": "Based dynamic load"},
             "C0r": {"type": "number",  "examples": [25000],
-                    "physical_quantity": 'force', "unit": "N"},
+                    "physical_quantity": 'force', "unit": "N",
+                    "editable": "true", "description": "Based static load"},
+            "contact_type": {"examples": ["linear_contact"],
+                     "physical_quantity": 'contact_property',
+                     "anyOf": [{"type": "string", "enum": [ "linear_contact", "point_contact", "mixed_contact" ]}, {"type": "null"}],
+                     "editable": "true", "description": "Contact type"},
             "mass": {"type": "number",  "examples": [0.04],
-                     "physical_quantity": 'mass', "unit": "kg"},
-            "name": {"type": "string",  "examples": 'SNR 6062'},
+                     "physical_quantity": 'mass', "unit": "kg",
+                     "editable": "true", "description": "Mass"},
+            "name": {"type": "string",  "examples": 'SNR 6062',
+                     "editable": "true", "description": "Name"},
+            "cost": {"type": "number",  "examples": [4.0],
+                     "physical_quantity": 'cost', "unit": "Euro",
+                     "editable": "false", "description": "Cost"},
+            "E": {"type": "number",  "examples": [0.04],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "false", "description": "External rolling diameter"},
+            "F": {"type": "number",  "examples": [0.04],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "false", "description": "Internal rolling diameter"},
+            "d1": {"type": "number",  "examples": [0.04],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "false", "description": "External diameter of internal ring"},
+            "D1": {"type": "number",  "examples": [0.04],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "false", "description": "Internal diameter of external ring"},
             }
           }
 
@@ -660,8 +683,11 @@ class RadialBearing:
         d['i'] = self.i
         d['Z'] = self.Z
         d['Dw'] = self.Dw
-        d['Cr'] = self.Cr
-        d['C0r'] = self.C0r
+        if hasattr(self, 'Cr'):
+            d['Cr'] = self.Cr
+        if hasattr(self, 'C0r'):
+            d['C0r'] = self.C0r
+        
         d['name'] = self.name
         d['metadata'] = self.metadata
         d['contact_type'] = self.contact_type
@@ -669,7 +695,6 @@ class RadialBearing:
         d['material'] = self.material.Dict()
         d['oil'] = self.oil.Dict()
         d['mass'] = self.mass
-        
         
         if 'load_bearing_results' in d:
             load_bearing_results = []
@@ -734,9 +759,9 @@ class RadialBallBearing(RadialBearing):
             { "$ref": "#/definitions/RadialBearing" },
             {'type': 'object',
              "properties": {
-                'alpha': {'const': 0.},
+                'alpha': {'const': 0},
               },
-            "required": ['alpha']
+#            "required": ['alpha']
             }
           ]
       }
@@ -965,12 +990,18 @@ class AngularBallBearing(RadialBearing):
     cost_constant = 1.5
     
     _jsonschema = {
-    "definitions": {
-            "RadialBearing": RadialBearing._jsonschema},
-    "allOf": [
-        { "$ref": "#/definitions/RadialBearing" }
-      ]
-    }
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        "allOf": [
+            { "$ref": "#/definitions/RadialBearing" },
+            {'type': 'object',
+             "properties": {
+                'i': {'const': 1},
+              },
+#            "required": ['i']
+            }
+          ]
+      }
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
@@ -1231,7 +1262,7 @@ class SphericalBallBearing(RadialBearing):
              "properties": {
                 'alpha': {'const': 0.},
               },
-            "required": ['alpha']
+#            "required": ['alpha']
             }
           ]
       }
@@ -1359,9 +1390,10 @@ class RadialRollerBearing(RadialBearing):
             { "$ref": "#/definitions/RadialBearing" },
             {'type': 'object',
              "properties": {
-                'alpha': {'const': 0.},
+                'i': {'const': 1},
+                'contact_type': {'const': 'linear_contact'},
               },
-            "required": ['alpha']
+            "required": ['contact_type']
             }
           ]
       }
@@ -1886,15 +1918,18 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     
     _jsonschema = {
         "definitions": {
-                "RadialBearing": RadialBearing._jsonschema},
+                "RadialRollerBearing": RadialRollerBearing._jsonschema,
+                "AngularBallBearing": AngularBallBearing._jsonschema},
         "allOf": [
-            {"$ref": "#/definitions/RadialBearing" },
-#            {'type': 'object',
-#             "properties": {
-#                'alpha': {'const': 0.},
-#              },
-#            "required": ['alpha']
-#            }
+            { "$ref1": "#/definitions/RadialRollerBearing" },
+            { "$ref2": "#/definitions/AngularBallBearing" },
+            {'type': 'object',
+             "properties": {
+                'i': {'const': 1},
+                'contact_type': {'const': 'linear_contact'},
+              },
+            "required": ['contact_type']
+            }
           ]
       }
     
