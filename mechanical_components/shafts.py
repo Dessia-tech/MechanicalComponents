@@ -28,18 +28,22 @@ class ShaftMaterial:
         
 
 class Accessory:
-    def __init__(self, functional_points, external_vector, linkage_points=None, linkage_external_vector=None, montage='axial'):
+    def __init__(self, functional_points, external_vector, shaft, linkage_points=None, linkage_external_vector=None, link=None, montage='axial'):
         """
         We suppose that the coordinate origin of the accessories 
-        match the origin of the shaft
+            match the origin of the shaft
         The functional_points should be sorted according to increasing x
         The external_vector should be either (0,1) or (0,-1)
+        The link can either be with an other accessory (ie. gears), 
+            or with a shaft (ie. bearings)
         The montage should be either radial, axial or inbuilt
         """
         self.functional_points = functional_points
         self.external_vector = external_vector
+        self.shaft = shaft
         self.linkage_points = linkage_points
         self.linkage_external_vector = linkage_external_vector
+        self.link = link        
         self.montage = montage
         
 #    def AccessoryBoundary(self):
@@ -61,8 +65,6 @@ class FunctionalAccessories:
         sorted_ext_acc.reverse()
         sorted_accessories = sorted_int_acc + sorted_ext_acc
         return sorted_accessories
-    
-#    def SortAccessories2(self):
         
     
     def FunctionalContour(self): 
@@ -77,9 +79,6 @@ class FunctionalAccessories:
                     linkage_contours.append(vm.Contour2D([vm.primitives2D.RoundedLineSegments2D(accessory.linkage_points, {})]))
             if accessory.montage == 'inbuilt':
                 functional_contours_inbuilt.append(vm.Contour2D([vm.primitives2D.RoundedLineSegments2D(accessory.functional_points, {})]))
-        print('linkage_contours ', linkage_contours)
-        print('functional_contours ', functional_contours)
-        print('functional_contours_inbuilt ', functional_contours_inbuilt)
         return functional_contours, functional_contours_inbuilt, linkage_contours
     
         
@@ -195,44 +194,57 @@ class Shaft:
                             return False
         return True
             
+
+
+class ShaftsAssembly:
+    def __init__(self, shafts):
+        self.shafts = shafts # A list of Shaft objects
     
-#    def ShaftCheck(self):
-#        points_inf, points_sup = self.ShaftDrawingPoints()
-#        
-#        for i, accessoire in enumerate(self.sorted_functional_accessories[1:-1], 1):
-#            if accessoire.montage == 'axial':
+
+        
+
+    def TwoShaftsAssembly(self, shaft1, shaft2):
+        return
+#        if 
+        
+#        matching_accessories = []
+#        for i, accessory1 in enumerate(shaft1.accessories):
+#            for j, accessory2 in enumerate(shaft2.accessories):
+#                if self.AccessoryComparisonFunctionalToLinkage(accessory1, accessory2):
+#                    matching_accessories.append((i, j))
+#                elif self.AccessoryComparisonLinkagelToLinkage(accessory1, accessory2):
+#                    matching_accessories.append((i, j))
 #                
-#                if accessoire.external_vector[1] > 0:
-#                    points_inf_left = points_inf[: i]
-#                    points_inf_right = points_inf[i+1 :]
-#                    print('points_inf_left: ', points_inf_left, '\n')
-#                    print('points_inf_right: ', points_inf_right, '\n')
-#                    
-#                    
-#                    
-#                else:
-#                    points_sup_left = points_sup[: i]
-#                    points_sup_right = points_sup[i+1 :]
-#                    print('points_sup_left: ', points_sup_left, '\n')
-#                    print('points_sup_right: ', points_sup_right, '\n')
-#                
-#                    
-#                    
-#        min_inf_left = min([point[1] for point in list(chain.from_iterable(points_inf_left))])
-#        min_inf_right = min([point[1] for point in list(chain.from_iterable(points_inf_right))])
-#        r_accessoire = min([point[1] for point in accessoire.functional_points])
-#        
-#        if r_accessoire > min_inf_left and r_accessoire > min_inf_right:
-#            return False
-#        
-#        max_sup_left = max([point[1] for point in list(chain.from_iterable(points_sup_left))])
-#        max_sup_right = max([point[1] for point in list(chain.from_iterable(points_sup_right))])
-#        R_accessoire = max([point[1] for point in accessoire.functional_points])
-#        
-#        if R_accessoire < max_sup_left and R_accessoire < max_sup_right:
-#            return False
-#
-#        return True
+                    
+        
+    def AccessoryComparisonFunctionalToLinkage(self, accessory1, accessory2):
+        f1  = accessory1.functional_points
+        v1  = accessory1.external_vector
+        l1  = accessory1.linkage_points
+        lv1 = accessory1.linkage_external_vector
+        f2  = accessory2.functional_points
+        v2  = accessory2.external_vector
+        l2  = accessory2.linkage_points
+        lv2 = accessory2.linkage_external_vector
+        
+        if f1 == l2 and l1 == f2 and v1 == lv2 and lv1 == v2:
+            return True
+        else:
+            return False
+            
+            
+    def AccessoryComparisonLinkagelToLinkage(self, accessory1, accessory2):
+        l1  = accessory1.linkage_points
+        lv1 = accessory1.linkage_external_vector
+        l2  = accessory2.linkage_points
+        lv2 = accessory2.linkage_external_vector
+        
+        if l1 == l2 and lv1[1] == -lv2[1]:
+            return True
+        else:
+            return False
+            
+            
 
 
 
