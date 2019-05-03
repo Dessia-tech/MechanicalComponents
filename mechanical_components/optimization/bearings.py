@@ -771,6 +771,8 @@ class BearingAssemblyOptimizer:
                              'class':'mechanical_components.bearings.BearingCatalog',
                              'type':'object'}]
     
+    _dessia_methods = ['Optimize']
+    
     def __init__(self, loads, speeds, operating_times,
                  inner_diameters,
                  outer_diameters,
