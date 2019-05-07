@@ -6,7 +6,8 @@ Created on Fri Aug 17 02:14:21 2018
 @author: steven
 """
 
-from mechanical_components.bearings import oil_iso_vg_1500, material_iso, iso_bearings, bearing_rules, iso_rollers
+
+#from mechanical_components.catalogs.ISO_bearings import iso_bearings, bearing_rules
 
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
         SphericalBallBearing, \
