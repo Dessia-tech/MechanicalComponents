@@ -78,10 +78,10 @@ bis2 = bearings_opt.BearingAssemblyOptimizer(
                     inner_diameters = [0.035, 0.035],
                     axial_positions = [0, 0.3], 
                     outer_diameters = [0.072, 0.072], 
-                    lengths = [0.02, 0.02],
+                    lengths = [0.06, 0.04],
                     linkage_types = [['all'], ['all']],
-                    mounting_types = [['free', 'right']],
-                    number_bearings = [[1, 2], [1, 2]],
+                    mounting_types = [['free', 'left']],
+                    number_bearings = [[1, 2], [1]],
 
 #                    bearing_classes = [bearings.RadialBallBearing, 
 #                                       bearings.AngularBallBearing,
