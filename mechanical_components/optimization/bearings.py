@@ -942,7 +942,7 @@ class BearingAssemblyOptimizer:
                     valid = False
                     break
                 
-                if (bearings[-1].Cr < 5) or (d > D) or (d == 0) or (D == 0):
+                if (bearings[-1].Cr < 1) or (d > D) or (d == 0) or (D == 0):
                     valid = False
                     break
                 
@@ -970,7 +970,7 @@ class BearingAssemblyOptimizer:
                                                                 N = self.speeds, 
                                                                 t = self.operating_times, Cr = bearing.Cr))
                         L10 = BearingAssembly.EstimateBaseLifeTime(list_L10)
-                        
+
                         if L10 > L10_objective:
                             best_L10 = max(best_L10, L10)
 #                            print(best_L10)
@@ -1146,14 +1146,14 @@ class BearingAssemblyOptimizer:
 #                        break
                 
                 # a supprimer suite MAJ base rlts
-                if Cr_current_node[-1] < 20:
-                    valid = False
-                    break
+#                if Cr_current_node[-1] < 20:
+#                    valid = False
+#                    break
                 
-                if len(list_Cr) > 0:
-                    if Cr_current_node[-1] < min([cr[depth] for cr in list_Cr]):
-                        valid = False
-                        break
+#                if len(list_Cr) > 0:
+#                    if Cr_current_node[-1] < min([cr[depth] for cr in list_Cr]):
+#                        valid = False
+#                        break
                     
             if (dt.current_depth == nb_bearings) and valid:
                     
@@ -1348,7 +1348,6 @@ class BearingAssemblyOptimizer:
                 bearing_assemblies = self.AnalyzeBearingCombinations(bearing_assembly_configurations, 
                                                                      L10_objective = L10_objective,
                                                                      max_bearing_assemblies=nb_solutions_family)
-
                 cas_bearing_assembly_simulations = []
                 for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
                     cas_bearing_assembly_simulations.append(bearing_assembly)
