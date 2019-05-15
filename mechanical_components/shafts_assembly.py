@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import dectree
 import volmdlr as vm
-#import volmdlr.primitives3D as vm3d
+from volmdlr import primitives2D
 #from scipy import interpolate
 #import json
 #import pkg_resources
@@ -81,7 +81,7 @@ def OffsetHatch(points, offset):
     connected together and their offset in a direction.
     """
     len_points = len(points)
-    line = vm.primitives2D.RoundedLineSegments2D(points, {})
+    line = primitives2D.RoundedLineSegments2D(points, {})
     offset_line = line.Offset(-offset)
     len_offset_points = len(offset_line.points)
     xy_coordinate = npy.zeros((len_points+len_offset_points, 2))
@@ -99,7 +99,7 @@ def OffsetSurface(surface, offset):
     """
     Returns the offset points of the surface.
     """
-    line = vm.primitives2D.RoundedLineSegments2D(surface, {})
+    line = primitives2D.RoundedLineSegments2D(surface, {})
     offset_line = line.Offset(-offset)
     return offset_line.points
 
@@ -248,7 +248,7 @@ class Part:
 
             if points[0] != points[-1]:
                 points.append(points[0])
-            line = vm.primitives2D.RoundedLineSegments2D(points, {},
+            line = primitives2D.RoundedLineSegments2D(points, {},
                                                          closed=True)
             shaft = Shaft(perm_i, line, name='{}_{}'.format(self.name, i))
             shafts.append(shaft)
@@ -411,7 +411,7 @@ class Shaft(Part):
                     offset_points = []
                     repair_points = []
                     for surface in perm_surfaces:
-                        line_surface = vm.primitives2D.RoundedLineSegments2D(surface, {})
+                        line_surface = primitives2D.RoundedLineSegments2D(surface, {})
                         repair_points.extend(surface)
                         offset_points.extend(line_surface.Offset(-self.offset).points)
                     offset_points.reverse()
@@ -421,7 +421,7 @@ class Shaft(Part):
                     if repair_points[0] != repair_points[-1]:
                         repair_points_line.append(repair_points_line[0])
 
-                    repaired_line = vm.primitives2D.RoundedLineSegments2D(repair_points_line, {})
+                    repaired_line = primitives2D.RoundedLineSegments2D(repair_points_line, {})
                     perm_repaired_line.append(repaired_line)
                     repaired_shaft = Shaft(self.ordered_partsurfaces, repaired_line, self.name)
                     repaired_shafts.append(repaired_shaft)
@@ -478,7 +478,7 @@ class Shaft(Part):
                                 intersect0 = vm.Polygon2D(repaired_points[:-1]).SelfIntersect()[0]
                                 i_point += 1
 
-                                repaired_line = vm.primitives2D.RoundedLineSegments2D(repaired_points, {})
+                                repaired_line = primitives2D.RoundedLineSegments2D(repaired_points, {})
 
         if repaired_line is None:
             print("Repair failed")
@@ -629,7 +629,7 @@ class ShaftAssembly:
         polygon1 = vm.Polygon2D(polygon1_points)
         polygon2 = vm.Polygon2D(polygon2_points)
         new_polygon = PolygonFusion2(polygon1, polygon2)
-        new_contour = vm.primitives2D.RoundedLineSegments2D(new_polygon.points+[new_polygon.points[0]],
+        new_contour = primitives2D.RoundedLineSegments2D(new_polygon.points+[new_polygon.points[0]],
                                                             {})
 
         return new_contour
@@ -729,7 +729,7 @@ class ShaftAssembly:
                     current_assembly.append(dt.data[tuple(dt.current_node[:index+1])])
 
                 viable_next_shafts = self.NextShaftsToMount(current_assembly, viability=True)
-                if not viable_next_shafts == 0:
+                if not viable_next_shafts:
                     valid = False
                     dt.SetCurrentNodeNumberPossibilities(0)
                 else:
