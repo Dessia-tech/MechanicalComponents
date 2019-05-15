@@ -17,61 +17,99 @@ import calendar
 import hashlib
 import sys
 
-args_delete = []
-for arg in sys.argv:
-    if arg.startswith('--mac='):
-        mac = arg[6:]
-        print('Compiling for MAC adress: {}'.format(mac))
-        args_delete.append(arg)
-    if arg.startswith('--exp_year='):
-        year = int(arg[11:])
-        args_delete.append(arg)
-    if arg.startswith('--exp_month='):
-        month = int(arg[12:])
-        args_delete.append(arg)
-for arg in args_delete:
-    sys.argv.remove(arg)        
-
-try:
-    month
-except NameError:
-    print('Month of expiration undefined: pass with --exp_month= option')
-    raise NameError
-
-try:
-    year
-except NameError:
-    print('Year of expiration undefined: pass with --exp_year= option')
-    raise NameError
-    
-try:
-    mac
-except NameError:
-    print('MAC address undefined: pass with --mac= option')
-    raise NameError
-
-expiration = int(calendar.timegm(time.struct_time((year, month, 1, 0, 0, 0 ,0, 0, 0))))
-print('Expiration date: {}/{}: {}'.format(month, year, expiration))
-not_before = int(time.time())
-
 protected_files = ['mechanical_components/optimization/bearings.py',
                    'mechanical_components/optimization/common.py',
                    'mechanical_components/optimization/meshes.py',
                    'mechanical_components/optimization/wires.py',
                    ]
 
-error_msg = 'Error, report this error to DessIA support with this traceback token: {}'.format(hashlib.sha256(str(mac).encode()).hexdigest())
+month_exp_defined = False
+year_exp_defined = False
+macs_defined = False
+getnode_defined = False
+
+args_delete = []
+for arg in sys.argv:
+    if arg.startswith('--macs='):
+        macs = arg[7:].strip('[]').replace("'",'').split(',')
+        if type(macs) != list:
+            raise ValueError
+        macs_defined = True
+        print('Compiling for MACs adresses: {}'.format(macs))
+        args_delete.append(arg)
+    if arg.startswith('--exp_year='):
+        year = int(arg[11:])
+        year_exp_defined = True
+        args_delete.append(arg)
+    if arg.startswith('--exp_month='):
+        month = int(arg[12:])
+        month_exp_defined = True
+        args_delete.append(arg)
+    if arg.startswith('--getnodes='):
+        getnodes = int(arg[11:])
+        if type(getnodes) != list:
+            raise ValueError
+        print('Compiling for getnodes: {}'.format(getnodes))
+        args_delete.append(arg)
+        
+for arg in args_delete:
+    sys.argv.remove(arg)        
+
+if not month_exp_defined:
+    print('Month of expiration undefined: pass with --exp_month= option')
+    raise NameError
+
+if not year_exp_defined:
+    print('Year of expiration undefined: pass with --exp_year= option')
+    raise NameError
+    
+if (not macs_defined) and (not getnode_defined):
+    print('MAC addresses undefined: pass with --macs= option or --getnodes=')
+    raise NameError
+
+expiration = int(calendar.timegm(time.struct_time((year, month, 1, 0, 0, 0 ,0, 0, 0))))
+print('Expiration date: {}/{}: {}'.format(month, year, expiration))
+not_before = int(time.time())
+
+
+
+physical_token = hashlib.sha256(str(macs[0]).encode()).hexdigest()
+error_msg_time_before = 'Invalid licence Please report this error to DessIA support with this traceback token: TB{}'.format(physical_token)
+error_msg_time_after = 'Invalid licence Please report this error to DessIA support with this traceback token: TA{}'.format(physical_token)
+error_msg_mac = 'Invalid licence. Please report this error to DessIA support with this traceback token: M{}'.format(physical_token)
 protection_lines = ['valid_license = True\n',
                     't_execution = time_package.time()\n',
                     'if t_execution > {}:\n'.format(expiration), 
-                    '    valid_license = False\n',
+                    '    print("{}")\n'.format(error_msg_time_after),
+                    '    raise RuntimeError\n\n',
                     'if t_execution < {}:\n'.format(not_before),
-                    '    valid_license = False\n',
-                    'if getnode() != {}:\n'.format(mac),
-                    '    valid_license = False\n',
-                    'if not valid_license:\n',
-                    '    print("{}")\n\n'.format(error_msg),
-                    '    raise RuntimeError\n']
+                    '    print("{}")\n'.format(error_msg_time_before),
+                    '    raise RuntimeError\n\n']
+
+addresses_determination_lines = ['import netifaces\n',
+                                 'addrs = []\n',
+                                 'for i in netifaces.interfaces():\n',
+                                 "    if i != 'lo':\n",
+                                 "        for k, v in netifaces.ifaddresses(i).items():\n",
+                                 "            for v2 in v:\n",
+                                 "                if 'addr' in v2:\n",
+                                 "                    a = v2['addr']\n",
+                                 "                    if len(a) == 17:\n",
+                                 "                        addrs.append(a.replace(':',''))\n",
+                                 "addrs = set(addrs)\n\n"
+                                 ]
+
+if macs_defined:
+    protection_lines.extend(['if addrs != set({}):\n'.format(macs),
+                             '    print("{}")\n'.format(error_msg_mac),
+                             '    raise RuntimeError\n\n'])
+elif getnode_defined:
+    protection_lines.extend(['if getnode() not in {}:\n'.format(getnodes),
+                             '    print("{}")\n'.format(error_msg_mac),
+                             '    raise RuntimeError\n\n'])
+
+
+
 
 
 files_to_compile = []
@@ -88,18 +126,12 @@ for file in protected_files:
             line_index += 1
             line = lines[line_index]
             
-        time_imported = False
-        uuid_imported = False
-        for line2 in lines:
-            if 'import time as time_package' in line2:
-                time_imported = True
-            if 'import uuid' in line2:
-                uuid_imported = True
-        if not time_imported:
-            new_file_lines.append('import time as time_package\n')
-        if not uuid_imported:
+            
+        new_file_lines.append('import time as time_package\n')
+        if getnode_defined:
             new_file_lines.append('from uuid import getnode\n')
-        
+        if macs_defined:
+            new_file_lines.extend(addresses_determination_lines)
 
         while line_index < len(lines):
             line = lines[line_index]
@@ -157,8 +189,7 @@ for file in protected_files:
                 if line.startswith('        """'):
                     new_file_lines.append(line)    
                     line_index += 1
-                    line = lines[line_index]                
-
+                    line = lines[line_index]
                     while not line.startswith('        """'):
                         new_file_lines.append(line)
                         line_index += 1
@@ -170,7 +201,7 @@ for file in protected_files:
 
                 for protection_line in protection_lines:
                     new_file_lines.append('        {}'.format(protection_line))
-
+                    
                 new_file_lines.append(line)
                
             line_index+=1

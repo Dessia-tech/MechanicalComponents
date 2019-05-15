@@ -6,17 +6,19 @@ Created on Fri Aug 17 02:14:21 2018
 @author: steven
 """
 
-from mechanical_components.bearings import oil_iso_vg_1500, material_iso, iso_bearings, bearing_rules, iso_rollers
+
+#from mechanical_components.catalogs.ISO_bearings import iso_bearings, bearing_rules
 
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
         SphericalBallBearing, \
-        BearingAssembly, BearingCombination, DetailedRadialRollerBearing, \
+        BearingAssembly, BearingCombination, \
         BearingAssemblySimulationResult, BearingCatalog,\
         BearingCombinationSimulationResult, BearingSimulationResult,\
         BearingAssemblySimulation, BearingCombinationSimulation, \
         bearing_classes, dict_bearing_classes, \
         ConceptualBearingCombination, schaeffler_catalog, \
-        strength_bearing_classes
+        strength_bearing_classes, \
+        BearingL10Error, CatalogSearchError
         
 import numpy as npy
 
@@ -41,234 +43,221 @@ import math
 
 from mechanical_components.tools import StringifyDictKeys
 
-# TODO: Cumulative damages
-class RollerBearingContinuousOptimizer:
-    """
-    Objet avec 3 fonctions de selection des roulements cylindriques
-     * Combinatoire sur les dimensions externe ISO
-     * Combinatoire en prenant en compte les règles SKF
-     * Estimation des durées de vie et charge dynamique et fonction de tri
-
-    """
-    def __init__(self):
-        
-        self.bearing_assemblies=[]
-    
-    def Optimization(self, d, D, B, Fr, Fa, N, t, T, L10=None, C0r=None, Cr=None,
-                         Lnm=None, grade=['Gr_gn'], S=0.9,
-                         oil=oil_iso_vg_1500, material=material_iso,
-                         number_solutions=1, maxi=None, mini=None, rsmin=None, typ='NF',
-                         verbose = False):
-
-#        self.d = d
-#        self.D = D
-#        self.B = B
-#        self.Fr = Fr
-#        self.Fa = Fa
-#        self.
-        
-        err_default=0.05
-        def def_inter(data):
-            if data==None:
-                # TODO utiliser math.inf plutot
-                sol=[-math.inf,math.inf]
-            else:
-                if 'nom' in data.keys():
-                    if 'err' in data.keys():
-                        err=data['err']
-                    else:
-                        err=err_default
-                    sol=[data['nom']*(1-err),data['nom']*(1+err)]
-                elif 'min' in data.keys():
-                    sol=[data['min'],data['max']]
-            return sol
-        
-        
-        #Approche combinatoire sur les dimensions externe d/D/B
-        liste_keys=[]
-        interval_d=def_inter(d)
-        interval_D=def_inter(D)
-        interval_B=def_inter(B)
-        lk_d=[]
-        for item_d in iso_bearings.keys():
-            if (item_d<=interval_d[1]) and (item_d>=interval_d[0]):
-                lk_d.append([item_d])
-        liste_keys=lk_d
-        lk_D=[]
-        for [item_d] in liste_keys:
-            for item_D in iso_bearings[item_d].keys():
-                if (item_D<=interval_D[1]) and (item_D>=interval_D[0]):
-                    lk_D.append([item_d,item_D])
-        liste_keys=lk_D
-        lk_B=[]
-        for item_d,item_D in liste_keys:
-            for item_B in iso_bearings[item_d][item_D].keys():
-                if (item_B<=interval_B[1]) and (item_B>=interval_B[0]):
-                    lk_B.append([item_d,item_D,item_B])
-        liste_keys=lk_B
-        liste_sol_iso=[]
-        for item_d,item_D,item_B in liste_keys:
-            dk=[item_d,item_D,item_B]
-            dk.append(list(iso_bearings[item_d][item_D][item_B].keys())[0])
-            dk.append(list(iso_bearings[item_d][item_D][item_B].values())[0])
-            liste_sol_iso.append(dk) #Liste dk contient [d,D,B,rsmin,serial]
-        
-        #Approche combinatoire sur les rouleaux
-        def analyse_rule(Y,inter_min,inter_max,input_var,data_var):
-            for (var_x,var_y,typ),[a,b] in bearing_rules.items():
-                if var_y==Y:
-                    if var_x in input_var:
-                        ind_x=input_var.index(var_x)
-                        Var_x=data_var[ind_x]
-                        if typ=='inf':
-                            inter_min=max(inter_min,a*Var_x+b)
-                        else:
-                            inter_max=min(inter_max,a*Var_x+b)
-            return inter_min,inter_max
-                            
-        liste_sol_roller_iso=[]
-        for [d,D,B,rsmin,serial] in liste_sol_iso:
-            
-            #Estimation des plages admissibles de E et F
-            E_inf,E_sup=-math.inf,math.inf
-            F_inf,F_sup=-math.inf,math.inf
-            E_inf,E_sup=analyse_rule('E',E_inf,E_sup,['d','D','B'],[d,D,B])
-            F_inf,F_sup=analyse_rule('F',F_inf,F_sup,['d','D','B'],[d,D,B])
-                            
-            #Analyse borne sup/inf de Lw et Dw
-            Lw_inf,Lw_sup=-math.inf,math.inf
-            Dw_inf,Dw_sup=E_inf-F_sup,E_sup-F_inf
-            Lw_inf,Lw_sup=analyse_rule('Lw',Lw_inf,Lw_sup,['d','D','B'],[d,D,B])
-            Dw_inf,Dw_sup=analyse_rule('Dw',Dw_inf,Dw_sup,['d','D','B'],[d,D,B])
-            
-            #Choix des dimensions rouleaux compatible
-            Dw_sup=min(Dw_sup,(D-d)/2.)
-            for Dw in iso_rollers.keys():
-                if (Dw>=Dw_inf) and (Dw<=Dw_sup):
-                    for Lw in iso_rollers[Dw].keys():
-                        if (Lw>=Lw_inf) and (Lw<=Lw_sup):
-                            E_inf,E_sup=analyse_rule('E',-math.inf,math.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
-                            F_inf,F_sup=analyse_rule('F',-math.inf,math.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
-                            if ((E_inf-F_sup)/2.<=Dw) and ((E_sup-F_inf)/2.>=Dw):
-                                liste_sol_roller_iso.append([d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup])
-
-
-        #Analyse de détail des roulements
-        a_ED1_inf,b_ED1_inf=bearing_rules[('E','D1','inf')]
-        a_ED1_sup,b_ED1_sup=bearing_rules[('E','D1','sup')]
-        a_Fd1_inf,b_Fd1_inf=bearing_rules[('F','d1','inf')]
-        a_Fd1_sup,b_Fd1_sup=bearing_rules[('F','d1','sup')]
-        estim_masse=[]
-        #Construction d'une fonctionnelle pour le tri afin d'engager une optimisation continue
-        for [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup] in liste_sol_roller_iso:
-            E=(E_inf+E_sup)/2.
-            F=E-2*Dw
-            Zmax=int(2*math.pi/(2.*math.asin((Dw/2)/(F/2.+Dw/2.))))
-            masse_elem=(math.pi*D**2/4.-math.pi*E**2/4.)*B
-            masse_elem+=(math.pi*F**2/4.-math.pi*d**2/4.)*B
-            masse_elem+=math.pi*Dw**2/4.*Lw*Zmax
-            estim_masse.append(masse_elem)
-        
-        #Optimisation Minimize du détail du roulement (E,D1 et d1)
-        fonct_sort=npy.argsort(estim_masse)
-        liminf_lifetime=False
-        # BUG: rien n'empeche i de dépasser du tableau!
-        # Vérifier ma correction
-        
-        # TODO: permettre de ne donner qu'un borne min au L10/ Lnm
-        
-        i=0
-        iter_max = len(liste_sol_roller_iso)
-        while (not liminf_lifetime) and (i<iter_max):
-            [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup]=liste_sol_roller_iso[fonct_sort[i]]
-            i+=1
-            # Var X: (E,D1,d1)
-            R1 = DetailedRadialRollerBearing(d, D, B, i = 1, Z = 0, Lw = Lw, Dw = Dw, radius = rsmin)
-            def fun(x):
-                obj=0
-                F=x[0]-2*Dw
-                Zmax=int(2*math.pi/(2*npy.arcsin((Dw/2.)/(F/2.+Dw/2.))))
-                R1.Update(x[2],x[1],x[0],F,Zmax)
-                l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
-
-                obj+=(1/l10)**2
-                obj+=(x[0]-x[1])**2 #minimisation de la hauteur de l'épaulement externe
-                obj+=(F-x[2])**2 #minimisation de la hauteur de l'épaulement interne
-                return obj
-            def ineg(x):
-                ine=[]
-                D1_inf=a_ED1_inf*x[0]+b_ED1_inf
-                D1_sup=a_ED1_sup*x[0]+b_ED1_sup
-                ine.append(x[1]-D1_inf)
-                ine.append(D1_sup-x[1])
-                F=x[0]-2*Dw
-                d1_inf=a_Fd1_inf*F+b_Fd1_inf
-                d1_sup=a_Fd1_sup*F+b_Fd1_sup
-                ine.append(x[2]-d1_inf)
-                ine.append(d1_sup-x[2])
-                ine.append(x[0]-x[1])
-                ine.append(x[1]-x[2])
-                ine.append((x[0]+F)/2.-x[2])  #d1 inférieur au diamètre passant par l'axe des rouleaux
-                return ine
-            cons = ({'type': 'ineq','fun' : ineg})
-            valid_optim=1
-            while valid_optim==1:
-                Bound=[[E_inf,E_sup],[d,D],[d,D]]
-                x0=(npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(3)+npy.array(Bound)[:,0]
-                res = minimize(fun,x0, method='SLSQP', bounds=Bound,constraints=cons)
-                if (min(ineg(res.x))>=0):
-                    valid_optim=0
-                    
-            #Validation finale vis à vis des bornes du CDC
-            if valid_optim==0:
-                x_opt=res.x
-                F=x_opt[0]-2*Dw
-                Zmax=int(2*math.pi/(2*npy.arcsin((Dw/2.)/(F/2.+Dw/2.))))
-                R1.Update(x_opt[2],x_opt[1],x_opt[0],F,Zmax)
-                l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
-
-                
-                liminf_lifetime=True
-                if L10 is not None:
-                    if (l10<L10['min']) or (l10>L10['max']):
-                        liminf_lifetime=False
-                if Lnm is not None:
-                    lnm=R1.AdjustedLifeTime(Fr, Fa, N, t, T, R1.BaseDynamicLoad(), R1.BaseStaticLoad(), S)
-
-                    if (lnm<Lnm['min']) or (lnm>Lnm['max']):
-                        liminf_lifetime=False
-                if C0r is not None:
-                    c0r=R1.BaseStaticLoad()
-                    if (c0r<C0r['min']) or (c0r>C0r['max']):
-                        liminf_lifetime=False
-                if Cr is not None:
-                    cr=R1.BaseDynamicLoad()
-                    if (cr<Cr['min']) or (cr>Cr['max']):
-                        liminf_lifetime=False
-                if liminf_lifetime==True:
-                    self.bearing_assemblies.append(R1)
-                    if len(self.bearing_assemblies)<number_solutions:
-                        liminf_lifetime=False
-                    if verbose:
-#                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.bearing_assemblies),l10,D,d,B,Dw,Zmax))
-                        if L10 is not None:
-                            print('L10: {}, specification: {}'.format(l10, L10))
-                        if Lnm is not None:
-
-                            print('Lnm: {}, specification: {}'.format(lnm, Lnm))
-                            
-#with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-#                                   'mechanical_components/catalogs/SNR.csv') as rlts_FNR:
-#    pandas_rlts_FNR = pandas.read_csv(rlts_FNR) 
+## TODO: Cumulative damages
+#class RollerBearingContinuousOptimizer:
+#    """
+#    Objet avec 3 fonctions de selection des roulements cylindriques
+#     * Combinatoire sur les dimensions externe ISO
+#     * Combinatoire en prenant en compte les règles SKF
+#     * Estimation des durées de vie et charge dynamique et fonction de tri
+#
+#    """
+#    def __init__(self):
+#        
+#        self.bearing_assemblies=[]
+#    
+#    def Optimization(self, d, D, B, Fr, Fa, N, t, T, L10=None, C0r=None, Cr=None,
+#                         Lnm=None, grade=['Gr_gn'], S=0.9,
+#                         oil=oil_iso_vg_1500, material=material_iso,
+#                         number_solutions=1, maxi=None, mini=None, rsmin=None, typ='NF',
+#                         verbose = False):
+#
+##        self.d = d
+##        self.D = D
+##        self.B = B
+##        self.Fr = Fr
+##        self.Fa = Fa
+##        self.
+#        
+#        err_default=0.05
+#        def def_inter(data):
+#            if data==None:
+#                # TODO utiliser math.inf plutot
+#                sol=[-math.inf,math.inf]
+#            else:
+#                if 'nom' in data.keys():
+#                    if 'err' in data.keys():
+#                        err=data['err']
+#                    else:
+#                        err=err_default
+#                    sol=[data['nom']*(1-err),data['nom']*(1+err)]
+#                elif 'min' in data.keys():
+#                    sol=[data['min'],data['max']]
+#            return sol
+#        
+#        
+#        #Approche combinatoire sur les dimensions externe d/D/B
+#        liste_keys=[]
+#        interval_d=def_inter(d)
+#        interval_D=def_inter(D)
+#        interval_B=def_inter(B)
+#        lk_d=[]
+#        for item_d in iso_bearings.keys():
+#            if (item_d<=interval_d[1]) and (item_d>=interval_d[0]):
+#                lk_d.append([item_d])
+#        liste_keys=lk_d
+#        lk_D=[]
+#        for [item_d] in liste_keys:
+#            for item_D in iso_bearings[item_d].keys():
+#                if (item_D<=interval_D[1]) and (item_D>=interval_D[0]):
+#                    lk_D.append([item_d,item_D])
+#        liste_keys=lk_D
+#        lk_B=[]
+#        for item_d,item_D in liste_keys:
+#            for item_B in iso_bearings[item_d][item_D].keys():
+#                if (item_B<=interval_B[1]) and (item_B>=interval_B[0]):
+#                    lk_B.append([item_d,item_D,item_B])
+#        liste_keys=lk_B
+#        liste_sol_iso=[]
+#        for item_d,item_D,item_B in liste_keys:
+#            dk=[item_d,item_D,item_B]
+#            dk.append(list(iso_bearings[item_d][item_D][item_B].keys())[0])
+#            dk.append(list(iso_bearings[item_d][item_D][item_B].values())[0])
+#            liste_sol_iso.append(dk) #Liste dk contient [d,D,B,rsmin,serial]
+#        
+#        #Approche combinatoire sur les rouleaux
+#        def analyse_rule(Y,inter_min,inter_max,input_var,data_var):
+#            for (var_x,var_y,typ),[a,b] in bearing_rules.items():
+#                if var_y==Y:
+#                    if var_x in input_var:
+#                        ind_x=input_var.index(var_x)
+#                        Var_x=data_var[ind_x]
+#                        if typ=='inf':
+#                            inter_min=max(inter_min,a*Var_x+b)
+#                        else:
+#                            inter_max=min(inter_max,a*Var_x+b)
+#            return inter_min,inter_max
+#                            
+#        liste_sol_roller_iso=[]
+#        for [d,D,B,rsmin,serial] in liste_sol_iso:
 #            
-#pandas_sort = pandas_rlts_FNR[pandas_rlts_FNR['i'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['Z'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['Dw'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['mass'].notnull()]
-##        pandas_sort = pandas_sort[pandas_sort['alpha'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['Cr'].notnull()]
-#pandas_sort = pandas_sort[pandas_sort['C0r'].notnull()]
-#base_bearing = pandas_sort
+#            #Estimation des plages admissibles de E et F
+#            E_inf,E_sup=-math.inf,math.inf
+#            F_inf,F_sup=-math.inf,math.inf
+#            E_inf,E_sup=analyse_rule('E',E_inf,E_sup,['d','D','B'],[d,D,B])
+#            F_inf,F_sup=analyse_rule('F',F_inf,F_sup,['d','D','B'],[d,D,B])
+#                            
+#            #Analyse borne sup/inf de Lw et Dw
+#            Lw_inf,Lw_sup=-math.inf,math.inf
+#            Dw_inf,Dw_sup=E_inf-F_sup,E_sup-F_inf
+#            Lw_inf,Lw_sup=analyse_rule('Lw',Lw_inf,Lw_sup,['d','D','B'],[d,D,B])
+#            Dw_inf,Dw_sup=analyse_rule('Dw',Dw_inf,Dw_sup,['d','D','B'],[d,D,B])
+#            
+#            #Choix des dimensions rouleaux compatible
+#            Dw_sup=min(Dw_sup,(D-d)/2.)
+#            for Dw in iso_rollers.keys():
+#                if (Dw>=Dw_inf) and (Dw<=Dw_sup):
+#                    for Lw in iso_rollers[Dw].keys():
+#                        if (Lw>=Lw_inf) and (Lw<=Lw_sup):
+#                            E_inf,E_sup=analyse_rule('E',-math.inf,math.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
+#                            F_inf,F_sup=analyse_rule('F',-math.inf,math.inf,['d','D','B','Dw','Lw'],[d,D,B,Dw,Lw])
+#                            if ((E_inf-F_sup)/2.<=Dw) and ((E_sup-F_inf)/2.>=Dw):
+#                                liste_sol_roller_iso.append([d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup])
+#
+#
+#        #Analyse de détail des roulements
+#        a_ED1_inf,b_ED1_inf=bearing_rules[('E','D1','inf')]
+#        a_ED1_sup,b_ED1_sup=bearing_rules[('E','D1','sup')]
+#        a_Fd1_inf,b_Fd1_inf=bearing_rules[('F','d1','inf')]
+#        a_Fd1_sup,b_Fd1_sup=bearing_rules[('F','d1','sup')]
+#        estim_masse=[]
+#        #Construction d'une fonctionnelle pour le tri afin d'engager une optimisation continue
+#        for [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup] in liste_sol_roller_iso:
+#            E=(E_inf+E_sup)/2.
+#            F=E-2*Dw
+#            Zmax=int(2*math.pi/(2.*math.asin((Dw/2)/(F/2.+Dw/2.))))
+#            masse_elem=(math.pi*D**2/4.-math.pi*E**2/4.)*B
+#            masse_elem+=(math.pi*F**2/4.-math.pi*d**2/4.)*B
+#            masse_elem+=math.pi*Dw**2/4.*Lw*Zmax
+#            estim_masse.append(masse_elem)
+#        
+#        #Optimisation Minimize du détail du roulement (E,D1 et d1)
+#        fonct_sort=npy.argsort(estim_masse)
+#        liminf_lifetime=False
+#        # BUG: rien n'empeche i de dépasser du tableau!
+#        # Vérifier ma correction
+#        
+#        # TODO: permettre de ne donner qu'un borne min au L10/ Lnm
+#        
+#        i=0
+#        iter_max = len(liste_sol_roller_iso)
+#        while (not liminf_lifetime) and (i<iter_max):
+#            [d,D,B,rsmin,serial,Dw,Lw,E_inf,E_sup,F_inf,F_sup]=liste_sol_roller_iso[fonct_sort[i]]
+#            i+=1
+#            # Var X: (E,D1,d1)
+#            R1 = DetailedRadialRollerBearing(d, D, B, i = 1, Z = 0, Lw = Lw, Dw = Dw, radius = rsmin)
+#            def fun(x):
+#                obj=0
+#                F=x[0]-2*Dw
+#                Zmax=int(2*math.pi/(2*npy.arcsin((Dw/2.)/(F/2.+Dw/2.))))
+#                R1.Update(x[2],x[1],x[0],F,Zmax)
+#                l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
+#
+#                obj+=(1/l10)**2
+#                obj+=(x[0]-x[1])**2 #minimisation de la hauteur de l'épaulement externe
+#                obj+=(F-x[2])**2 #minimisation de la hauteur de l'épaulement interne
+#                return obj
+#            def ineg(x):
+#                ine=[]
+#                D1_inf=a_ED1_inf*x[0]+b_ED1_inf
+#                D1_sup=a_ED1_sup*x[0]+b_ED1_sup
+#                ine.append(x[1]-D1_inf)
+#                ine.append(D1_sup-x[1])
+#                F=x[0]-2*Dw
+#                d1_inf=a_Fd1_inf*F+b_Fd1_inf
+#                d1_sup=a_Fd1_sup*F+b_Fd1_sup
+#                ine.append(x[2]-d1_inf)
+#                ine.append(d1_sup-x[2])
+#                ine.append(x[0]-x[1])
+#                ine.append(x[1]-x[2])
+#                ine.append((x[0]+F)/2.-x[2])  #d1 inférieur au diamètre passant par l'axe des rouleaux
+#                return ine
+#            cons = ({'type': 'ineq','fun' : ineg})
+#            valid_optim=1
+#            while valid_optim==1:
+#                Bound=[[E_inf,E_sup],[d,D],[d,D]]
+#                x0=(npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(3)+npy.array(Bound)[:,0]
+#                res = minimize(fun,x0, method='SLSQP', bounds=Bound,constraints=cons)
+#                if (min(ineg(res.x))>=0):
+#                    valid_optim=0
+#                    
+#            #Validation finale vis à vis des bornes du CDC
+#            if valid_optim==0:
+#                x_opt=res.x
+#                F=x_opt[0]-2*Dw
+#                Zmax=int(2*math.pi/(2*npy.arcsin((Dw/2.)/(F/2.+Dw/2.))))
+#                R1.Update(x_opt[2],x_opt[1],x_opt[0],F,Zmax)
+#                l10=R1.BaseLifeTime(Fr, Fa, N, t, Cr = R1.BaseDynamicLoad())
+#
+#                
+#                liminf_lifetime=True
+#                if L10 is not None:
+#                    if (l10<L10['min']) or (l10>L10['max']):
+#                        liminf_lifetime=False
+#                if Lnm is not None:
+#                    lnm=R1.AdjustedLifeTime(Fr, Fa, N, t, T, R1.BaseDynamicLoad(), R1.BaseStaticLoad(), S)
+#
+#                    if (lnm<Lnm['min']) or (lnm>Lnm['max']):
+#                        liminf_lifetime=False
+#                if C0r is not None:
+#                    c0r=R1.BaseStaticLoad()
+#                    if (c0r<C0r['min']) or (c0r>C0r['max']):
+#                        liminf_lifetime=False
+#                if Cr is not None:
+#                    cr=R1.BaseDynamicLoad()
+#                    if (cr<Cr['min']) or (cr>Cr['max']):
+#                        liminf_lifetime=False
+#                if liminf_lifetime==True:
+#                    self.bearing_assemblies.append(R1)
+#                    if len(self.bearing_assemblies)<number_solutions:
+#                        liminf_lifetime=False
+#                    if verbose:
+##                        print('Bearing solution n°{} with L10:{},D:{},d:{},B:{},Dw:{},Z:{}'.format(len(self.bearing_assemblies),l10,D,d,B,Dw,Zmax))
+#                        if L10 is not None:
+#                            print('L10: {}, specification: {}'.format(l10, L10))
+#                        if Lnm is not None:
+#
+#                            print('Lnm: {}, specification: {}'.format(lnm, Lnm))
 
 class BearingCombinationOptimizer:
     
@@ -282,6 +271,10 @@ class BearingCombinationOptimizer:
                  bearing_classes=bearing_classes,
                  bearing_combination_simulations=None,
                  catalog=schaeffler_catalog):
+        
+        if linkage_types == ['all']:
+            linkage_types = ['ball_joint', 'cylindric_joint']
+            
         self.radial_loads = radial_loads
         self.axial_loads = axial_loads
         self.speeds = speeds
@@ -295,6 +288,25 @@ class BearingCombinationOptimizer:
         self.bearing_classes = bearing_classes
         self.bearing_combination_simulations = bearing_combination_simulations
         self.catalog = catalog
+        
+    def __eq__(self, other_eb):
+        equal = (self.radial_loads == other_eb.radial_loads
+                 and self.axial_loads == other_eb.axial_loads
+                 and self.speeds == other_eb.speeds
+                 and self.operating_times == other_eb.operating_times
+                 and self.inner_diameter == other_eb.inner_diameter
+                 and self.outer_diameter == other_eb.outer_diameter
+                 and self.length == other_eb.length
+                 and self.linkage_types == other_eb.linkage_types
+                 and self.mounting_types == other_eb.mounting_types
+                 and self.number_bearings == other_eb.number_bearings
+                 and self.bearing_classes == other_eb.bearing_classes
+                 and self.catalog == other_eb.catalog)
+        return equal
+    
+    def __hash__(self):
+        h = int(sum(self.operating_times) % 230080000)
+        return h
         
     def Configurations(self):
         
@@ -600,14 +612,10 @@ class BearingCombinationOptimizer:
                     d = bearing.d
                     D = bearing.D
                     try:
-
                         bearing_possibilities = self.catalog.NextBearingCatalog(bearing_classe, d , D)
-                        if bearing_possibilities is not False:
-                            dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
-                            list_bearing_possibilities[dt.current_depth] = bearing_possibilities
-                        else:
-                            dt.SetCurrentNodeNumberPossibilities(0)
-                    except:
+                        dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
+                        list_bearing_possibilities[dt.current_depth] = bearing_possibilities
+                    except CatalogSearchError:
                         valid = False
                         dt.SetCurrentNodeNumberPossibilities(0)
                 elif dt.current_depth == nb_bearings:
@@ -702,11 +710,11 @@ class ConceptualBearingCombinationOptimizer:
         if (len(bearings) > 1) and (self.linkage == 'cylindric_joint'):
             check = True
         if (len(bearings) == 1) and (self.linkage == 'cylindric_joint'):
-            if bearings[0].__class__ not in [RadialBallBearing, 
+            if bearings[0] not in [RadialBallBearing, 
                        AngularBallBearing, SphericalBallBearing]:
                 check = True
         if (len(bearings) == 1) and (self.linkage == 'ball_joint'):
-            if bearings[0].__class__ in [RadialBallBearing, 
+            if bearings[0] in [RadialBallBearing, 
                        AngularBallBearing, SphericalBallBearing]:
                 check = True
         return check
@@ -714,7 +722,6 @@ class ConceptualBearingCombinationOptimizer:
         
     def ConceptualBearingCombinations(self, max_bearings=3):
         configurations = []
-        
         dt = DecisionTree()
         nclasses = len(self.bearing_classes)
         while not dt.finished:
@@ -734,7 +741,7 @@ class ConceptualBearingCombinationOptimizer:
                 valid = self.CheckLinkage(bearings)
                 if valid:
                     cbc = ConceptualBearingCombination(bearings, directions, self.mounting)
-                    valid = cbc.CheckKinematic()                
+                    valid = cbc.CheckKinematic()  
             
             # Testing
             if valid:
@@ -755,7 +762,6 @@ class ConceptualBearingCombinationOptimizer:
                 dt.SetCurrentNodeNumberPossibilities(0) 
             
             dt.NextNode(valid)
-                            
         return configurations
     
 class BearingAssemblyOptimizer:
@@ -765,6 +771,8 @@ class BearingAssemblyOptimizer:
                             {'name':'catalog',
                              'class':'mechanical_components.bearings.BearingCatalog',
                              'type':'object'}]
+    
+    _dessia_methods = ['Optimize']
     
     def __init__(self, loads, speeds, operating_times,
                  inner_diameters,
@@ -779,6 +787,12 @@ class BearingAssemblyOptimizer:
                  bearing_classes=bearing_classes,
                  bearing_assembly_simulations=None,
                  catalog=schaeffler_catalog):
+                     
+        self.linkage_types = linkage_types
+        for i_linkage, linkage_type in enumerate(linkage_types):
+            if linkage_type == ['all']:
+                self.linkage_types[i_linkage] = ['ball_joint', 'cylindric_joint']
+                     
         self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
@@ -786,12 +800,55 @@ class BearingAssemblyOptimizer:
         self.axial_positions = axial_positions
         self.outer_diameters = outer_diameters
         self.lengths = lengths
-        self.linkage_types = linkage_types
         self.mounting_types = mounting_types
         self.number_bearings = number_bearings
         self.bearing_classes = bearing_classes
         self.bearing_assembly_simulations = bearing_assembly_simulations
         self.catalog = catalog
+        
+    def __eq__(self, other_eb):
+        equal = (self.loads == other_eb.loads
+                 and self.speeds == other_eb.speeds
+                 and self.operating_times == other_eb.operating_times
+                 and self.inner_diameters == other_eb.inner_diameters
+                 and self.outer_diameters == other_eb.outer_diameters
+                 and self.axial_positions == other_eb.axial_positions
+                 and self.lengths == other_eb.lengths
+                 and self.linkage_types == other_eb.linkage_types
+                 and self.mounting_types == other_eb.mounting_types
+                 and self.number_bearings == other_eb.number_bearings
+                 and self.bearing_classes == other_eb.bearing_classes
+                 and self.catalog == other_eb.catalog)
+        
+        if (self.bearing_assembly_simulations is not None) and (other_eb.bearing_assembly_simulations is not None):
+            for bearing_assembly_simulation, other_bearing_assembly_simulation in zip(self.bearing_assembly_simulations, other_eb.bearing_assembly_simulations):
+                equal = equal and bearing_assembly_simulation == other_bearing_assembly_simulation
+        elif (self.bearing_assembly_simulations is None) and (other_eb.bearing_assembly_simulations is None):
+            pass
+        elif (self.bearing_assembly_simulations is None) or (other_eb.bearing_assembly_simulations is None):
+            equal = False
+        return equal
+    
+    def __hash__(self):
+        br_hash = int(sum(self.operating_times)/300000)
+        br_hash += int(sum(self.outer_diameters*145))
+#        for loads in self.loads:
+#            for load in loads:
+#                for item in load:
+#                    br_hash += hash(tuple(item))
+#        br_hash += hash(tuple(self.speeds)) + hash(tuple(self.operating_times))
+#        br_hash += hash(tuple(self.inner_diameters)) + hash(tuple(self.outer_diameters))
+#        br_hash += hash(tuple(self.axial_positions)) + hash(tuple(self.lengths))
+#        for linkage_type in self.linkage_types:
+#            br_hash += hash(tuple(linkage_type))
+#        for mounting_type in self.mounting_types:
+#            br_hash += hash(tuple(mounting_type))
+#        for number_bearing in self.number_bearings:
+#            br_hash += hash(tuple(number_bearing))
+#        for bearing_classe in self.bearing_classes:
+#            br_hash += hash(bearing_classe)
+        br_hash += hash(self.catalog)
+        return br_hash
         
     def Configurations(self):
         configurations = []
@@ -844,9 +901,14 @@ class BearingAssemblyOptimizer:
                                                       self.lengths[1], 
                                                       bearing_classes = self.bearing_classes
                                                      )
-                bearing_combinations_possibilities[(left, right)] = \
-                    (DBC_l.ConceptualBearingCombinations(max_bearings[0]), DBC_r.ConceptualBearingCombinations(max_bearings[1]))
-        self.bearing_combinations_possibilities = bearing_combinations_possibilities
+                
+                combination_left = DBC_l.ConceptualBearingCombinations(max_bearings[0])
+                combination_right = DBC_r.ConceptualBearingCombinations(max_bearings[1])
+                if (len(combination_left) > 0) and (len(combination_right) > 0):
+                    bearing_combinations_possibilities[(left, right)] = (combination_left, combination_right)
+#        print(len(DBC_l.ConceptualBearingCombinations(max_bearings[0])))
+        return bearing_combinations_possibilities
+
         
     def SelectBestBearingCombinations(self, first_bearing_possibilies, conceptual_bearing_combination, 
                                       radial_elementary_load, L10_objective, length):
@@ -883,7 +945,7 @@ class BearingAssemblyOptimizer:
                     valid = False
                     break
                 
-                if (bearings[-1].Cr < 20) or (d > D) or (d == 0) or (D == 0):
+                if (bearings[-1].Cr < 1) or (d > D) or (d == 0) or (D == 0):
                     valid = False
                     break
                 
@@ -911,7 +973,7 @@ class BearingAssemblyOptimizer:
                                                                 N = self.speeds, 
                                                                 t = self.operating_times, Cr = bearing.Cr))
                         L10 = BearingAssembly.EstimateBaseLifeTime(list_L10)
-#                        print(L10, L10_objective)
+
                         if L10 > L10_objective:
                             best_L10 = max(best_L10, L10)
 #                            print(best_L10)
@@ -949,7 +1011,6 @@ class BearingAssemblyOptimizer:
             li_quote.append(quote)
             bearing_combinations.append([conceptual_bearing_combination_left, conceptual_bearing_combination_right])
         
-#        print(len(bearing_combinations))
         for conceptual_bearing_combination_left, conceptual_bearing_combination_right in \
                 [bearing_combinations[i] for i in npy.argsort(li_quote)]:
                     
@@ -1034,10 +1095,10 @@ class BearingAssemblyOptimizer:
                     bearing = bearing_left_possibilies[node]
                     bearings.append(bearing)
                     d = bearing.d
-                    if (d == d_left_pre) and (dt.current_depth == 1):
-                        valid = False
-                        break
-                    d_left_pre = d
+#                    if (d == d_left_pre) and (dt.current_depth == 1):
+#                        valid = False
+#                        break
+#                    d_left_pre = d
                     D = bearing.D
                     B_left += bearing.B                    
                     
@@ -1051,10 +1112,10 @@ class BearingAssemblyOptimizer:
                     bearing = bearing_right_possibilies[node]
                     bearings.append(bearing)
                     d = bearing.d
-                    if (d == d_right_pre) and (dt.current_depth == 1):
-                        valid = False
-                        break
-                    d_right_pre = d
+#                    if (d == d_right_pre) and (dt.current_depth == 1):
+#                        valid = False
+#                        break
+#                    d_right_pre = d
                     D = bearing.D
                     B_right += bearing.B
 #                        if d_right < d_left:
@@ -1088,27 +1149,26 @@ class BearingAssemblyOptimizer:
 #                        break
                 
                 # a supprimer suite MAJ base rlts
-                if Cr_current_node[-1] < 20:
-                    valid = False
-                    break
+#                if Cr_current_node[-1] < 20:
+#                    valid = False
+#                    break
                 
-                if len(list_Cr) > 0:
-                    if Cr_current_node[-1] < min([cr[depth] for cr in list_Cr]):
-                        valid = False
-                        break
+#                if len(list_Cr) > 0:
+#                    if Cr_current_node[-1] < min([cr[depth] for cr in list_Cr]):
+#                        valid = False
+#                        break
                     
             if (dt.current_depth == nb_bearings) and valid:
                     
                 if (B_left > self.lengths[0]) or (B_right > self.lengths[1]):
                     valid = False
                     
-                if Cr_current_node_m == Cr_current_node:
-                    valid = False
-                Cr_current_node_m = Cr_current_node
+#                if Cr_current_node_m == Cr_current_node:
+#                    valid = False
+#                Cr_current_node_m = Cr_current_node
 
             if (dt.current_depth == nb_bearings) and valid:
                 
-#                print(1)
                 bc_left = conceptual_bearing_combination_left.BearingCombination(bearings[0: nb_bearings_left])
                 bc_right = conceptual_bearing_combination_right.BearingCombination(bearings[nb_bearings_left:])
                 bearing_assembly = BearingAssembly([bc_left, bc_right])
@@ -1124,12 +1184,16 @@ class BearingAssemblyOptimizer:
                 pos1_max = self.axial_positions[0] + self.lengths[0]
                 pos2_min = self.axial_positions[1]
                 pos2_max = self.axial_positions[1] + self.lengths[1]
-                bearing_assembly.ShaftLoad([(pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.], 
-                                            bearing_assembly_simulation_result)
-                L10 = bearing_assembly_simulation_result.L10
-                if L10 is False:
+
+                try:
+                    L10 = 0
+                    for pos1, pos2 in product([pos1_min, pos1_max], [pos2_min, pos2_max]):
+                        bearing_assembly.ShaftLoad([pos1, pos2], 
+                                                    bearing_assembly_simulation_result)
+                        L10 = max(L10, bearing_assembly_simulation_result.L10)
+                except BearingL10Error:
                     break
-#                print(L10)
+                
                 if L10 < L10_objective:
 #                    print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
                     valid = False
@@ -1157,16 +1221,16 @@ class BearingAssemblyOptimizer:
                         pos1_max = self.axial_positions[0] + self.lengths[0]
                         pos2_min = self.axial_positions[1]
                         pos2_max = self.axial_positions[1] + self.lengths[1]
-                        bearing_assembly.ShaftLoad([(pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.], 
-                                                    bearing_assembly_simulation_result)
-                        L10 = bearing_assembly_simulation_result.L10
-                        if L10 is not False:
+                        try:
+                            bearing_assembly.ShaftLoad([(pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.], 
+                                                        bearing_assembly_simulation_result)
+                            L10 = bearing_assembly_simulation_result.L10
                             return (L10 - L10_objective)**2
-                        else:
+                        except BearingL10Error:
                             return False
                     
                     valid_fsolve = False
-                    for i in range(2):
+                    for i in range(5):
                         cond_init = npy.random.random(1)*3
                         sol = fsolve(funct, cond_init[0])[0]
                         if funct([sol]) < 1e-4:
@@ -1174,7 +1238,6 @@ class BearingAssemblyOptimizer:
                             valid_fsolve = True
 #                                print('analyse coeff ', coefficient_Cr, funct([coefficient_Cr]))
                             break
-#                    print('end', coefficient_Cr)
                     if not valid_fsolve:
                         break
                     
@@ -1201,12 +1264,9 @@ class BearingAssemblyOptimizer:
                     D = bearing.D
                     try:
                         bearing_possibilities = self.catalog.NextBearingCatalog(bearing_classe, d , D)
-                        if bearing_possibilities is not False:
-                            dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
-                            list_bearing_possibilities[dt.current_depth] = bearing_possibilities
-                        else:
-                            dt.SetCurrentNodeNumberPossibilities(0)
-                    except:
+                        dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
+                        list_bearing_possibilities[dt.current_depth] = bearing_possibilities
+                    except CatalogSearchError:
                         valid = False
                         dt.SetCurrentNodeNumberPossibilities(0)
                 elif dt.current_depth == nb_bearings_left:
@@ -1219,12 +1279,9 @@ class BearingAssemblyOptimizer:
                     D = bearing.D
                     try:
                         bearing_possibilities = self.catalog.NextBearingCatalog(bearing_classe, d , D)
-                        if bearing_possibilities is not False:
-                            dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
-                            list_bearing_possibilities[dt.current_depth] = bearing_possibilities
-                        else:
-                            dt.SetCurrentNodeNumberPossibilities(0)
-                    except:
+                        dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
+                        list_bearing_possibilities[dt.current_depth] = bearing_possibilities
+                    except CatalogSearchError:
                         valid = False
                         dt.SetCurrentNodeNumberPossibilities(0)
                 elif dt.current_depth == nb_bearings:
@@ -1233,10 +1290,9 @@ class BearingAssemblyOptimizer:
                     bc_right = conceptual_bearing_combination_right.BearingCombination(bearings[nb_bearings_left:])
                     ba = BearingAssembly([bc_left, bc_right])
                     compt_same_configuration += 1
-                    
                     yield ba
                     
-                    if compt_same_configuration > 0:
+                    if compt_same_configuration > max_bearing_assemblies - 1:
                         break
                 else:
                     dt.SetCurrentNodeNumberPossibilities(0)      
@@ -1245,13 +1301,13 @@ class BearingAssemblyOptimizer:
             
             dt.NextNode(valid)
     
-    def Optimize(self, max_solutions=10):
+    def Optimize(self, max_solutions=10, nb_solutions_family=5, progress_callback=lambda x:0):
         
         L10_objective = 0
         for speed, time in zip(self.speeds, self.operating_times):
             L10_objective += speed/(2*math.pi)*time
         L10_objective = L10_objective/1e6
-#        print('the L10 objective is {}'.format(L10_objective))
+        print('the L10 objective is {}'.format(L10_objective))
         
         pos1_min = self.axial_positions[0]
         pos1_max = self.axial_positions[0] + self.lengths[0]
@@ -1264,59 +1320,139 @@ class BearingAssemblyOptimizer:
             radial_load_left.append((rl[0]**2 + (0)**2)**0.5)
             radial_load_right.append((rl[1]**2 + (0)**2)**0.5)
             
+#        nb_solutions_family = max_solutions_family[0]
             
-        bearing_assembly_simulations = []
-        sort_bearing_assembly_simulations = []
+        bearing_assembly_generic = []
         combination_number_bearings = list(product(*self.number_bearings))
         combination_number_bearings = [combination_number_bearings[j] for j in npy.argsort([sum(i) for i in combination_number_bearings])]
-        for max_bearings_left, max_bearings_right in combination_number_bearings:
-#            print('number of bearings analyzed: {} left and {} right'.format(max_bearings_left, max_bearings_right))
-            self.ConceptualBearingCombinations(max_bearings = (max_bearings_left, max_bearings_right))
-            for (left, right), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
-#                print((left, right))
+        ncnb = float(len(combination_number_bearings))
+        for icnb, (max_bearings_left, max_bearings_right) in enumerate(combination_number_bearings):
+            print('number of bearings analyzed: {} left and {} right'.format(max_bearings_left, max_bearings_right))
+            progress_callback(icnb/ncnb)
+            
+            li_bearing_assembly_configurations = []
+            li_bearing_assembly_L10 = []
+            
+            bearing_combinations_possibilities = self.ConceptualBearingCombinations(max_bearings = (max_bearings_left, max_bearings_right))
+            if len(bearing_combinations_possibilities) == 0:
+                continue
+            for (left, right), bearing_combinations_possibility in bearing_combinations_possibilities.items():
                 bearing_assembly_configurations, bearing_assembly_L10 = self.SelectBearingCombinations(bearing_combinations_possibility, 
                                                                     radial_load = (radial_load_left, radial_load_right), 
                                                                     L10_objective = L10_objective)
-                try:
-                    li_bearing_assembly_configurations.extend(bearing_assembly_configurations)
-                    li_bearing_assembly_L10.extend(bearing_assembly_L10)
-                except NameError:# TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    li_bearing_assembly_configurations = bearing_assembly_configurations
-                    li_bearing_assembly_L10 = bearing_assembly_L10
+
+                li_bearing_assembly_configurations.extend(bearing_assembly_configurations)
+                li_bearing_assembly_L10.extend(bearing_assembly_L10)
                 
             bearing_assembly_configurations_sort = li_bearing_assembly_configurations
 #            bearing_assembly_configurations_sort = [li_bearing_assembly_configurations[i] for i in npy.argsort(li_bearing_assembly_L10)[::-1]]
             
-#            print('number bearing assemblies configurations {}'.format(len(bearing_assembly_configurations_sort)))
+            print('number bearing assemblies configurations {}'.format(len(bearing_assembly_configurations_sort)))
             for bearing_assembly_configurations in bearing_assembly_configurations_sort:
-#                print('decision tree estimation')
+                print('decision tree estimation', 1)
                 bearing_assemblies = self.AnalyzeBearingCombinations(bearing_assembly_configurations, 
                                                                      L10_objective = L10_objective,
-                                                                     max_bearing_assemblies=max_solutions)
-
+                                                                     max_bearing_assemblies=nb_solutions_family)
+                cas_bearing_assembly_simulations = []
                 for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
-#                    print('try continuous optim ', i_bearing_assembly)
-                    bearing_assembly_simulation = self.ContinuousOptimize(bearing_assembly)
-                    if bearing_assembly_simulation != False:
-                        L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
-#                        print(L10, L10_objective)
-                        if L10 >= L10_objective:
-                            bearing_assembly_simulations.append(bearing_assembly_simulation)
-                            sort_bearing_assembly_simulations.append(L10)
-#                            print('solution with L10 {}, nb solutions {}'.format(L10, len(bearing_assembly_simulations)))
-#                            break   
-                    if len(bearing_assembly_simulations) > max_solutions:
-                        break
-                if len(bearing_assembly_simulations) > max_solutions:
+                    cas_bearing_assembly_simulations.append(bearing_assembly)
+                if cas_bearing_assembly_simulations != []:
+                    bearing_assembly_generic.append(cas_bearing_assembly_simulations)
+                print('size solutions {}'.format(len(bearing_assembly_generic)))
+                
+        #Cost optimization
+        list_cost = []
+        for cas_bearing_assembly_simulations in bearing_assembly_generic:
+            li_cost = [ba.cost for ba in cas_bearing_assembly_simulations]
+            list_cost.append(min(li_cost))
+        bearing_assembly_simulations_sort = [bearing_assembly_generic[i] for i in npy.argsort(list_cost)]
+            
+        bearing_assembly_simulations = []
+        sort_bearing_assembly_simulations = []
+        for bearing_assemblies in bearing_assembly_simulations_sort:
+            cas_bearing_assembly_simulations = []
+            for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
+                try:
+                    bearing_assembly_simulation = self.ContinuousOptimization(bearing_assembly)
+                    L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
+                    mass = bearing_assembly_simulation.bearing_assembly.mass
+                    if L10 >= L10_objective:
+                        cas_bearing_assembly_simulations.append(bearing_assembly_simulation)
+                        sort_bearing_assembly_simulations.append(mass)
+                        print('solution with L10 {}, nb solutions {}'.format(L10, len(cas_bearing_assembly_simulations)))
+                except AxialPositionConvergenceError:
+                    pass
+                if len(bearing_assembly_simulations) > nb_solutions_family:
                     break
-            if len(bearing_assembly_simulations) > max_solutions:
+            if cas_bearing_assembly_simulations!= []:
+                bearing_assembly_simulations.append(cas_bearing_assembly_simulations)
+            if len(bearing_assembly_simulations) > nb_solutions_family:
                 break
             
-        self.bearing_assembly_simulations = [bearing_assembly_simulations[i] for i in npy.argsort(sort_bearing_assembly_simulations)]
-#        print('Number of solutions: {}'.format(len(self.bearing_assembly_simulations)))
+        self.bearing_assembly_simulations = bearing_assembly_simulations[0]
+        self.bearing_assembly_simulations.extend([bas[0] for bas in bearing_assembly_simulations[1:]])
+                
+        #Mass optimization
+        list_mass = []
+        for cas_bearing_assembly_simulations in bearing_assembly_generic:
+            li_mass = [ba.mass for ba in cas_bearing_assembly_simulations]
+            list_mass.append(min(li_mass))
+        bearing_assembly_simulations_sort = [bearing_assembly_generic[i] for i in npy.argsort(list_mass)]
+            
+        bearing_assembly_simulations = []
+        sort_bearing_assembly_simulations = []
+        for bearing_assemblies in bearing_assembly_simulations_sort:
+            cas_bearing_assembly_simulations = []
+            for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
+                try:
+                    bearing_assembly_simulation = self.ContinuousOptimization(bearing_assembly)
+                    L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
+                    mass = bearing_assembly_simulation.bearing_assembly.mass
+                    if L10 >= L10_objective:
+                        cas_bearing_assembly_simulations.append(bearing_assembly_simulation)
+                        sort_bearing_assembly_simulations.append(mass)
+                        print('solution with L10 {}, nb solutions {}'.format(L10, len(cas_bearing_assembly_simulations)))
+                except AxialPositionConvergenceError:
+                    pass
+                if len(bearing_assembly_simulations) > nb_solutions_family:
+                    break
+            if cas_bearing_assembly_simulations!= []:
+                bearing_assembly_simulations.append(cas_bearing_assembly_simulations)
+            if len(bearing_assembly_simulations) > nb_solutions_family:
+                break
+            
+        self.bearing_assembly_simulations.extend(bearing_assembly_simulations[0])
+        self.bearing_assembly_simulations.extend([bas[0] for bas in bearing_assembly_simulations[1:]])
+          
         
-    # TODO: rename
-    def ContinuousOptimize(self, bearing_assembly):
+#        best_mass = npy.inf
+#        num_best_mass = 0
+#        add_best_mass = {}
+#        for num_family, typ_bearing_assembly_simulation in enumerate(bearing_assembly_simulations):
+#            best_mass_elem = npy.inf
+#            for num_elem, bearing_assembly_simulation in enumerate(typ_bearing_assembly_simulation):
+#                mass = bearing_assembly_simulation.bearing_assembly.mass
+#                if mass < best_mass:
+#                    best_mass = mass
+#                    num_best_mass = num_family
+#                if mass < best_mass_elem:
+#                    best_mass_elem = mass
+#                    num_best_mass_elem = num_elem
+#            add_best_mass[num_family] = num_elem
+#            
+#            
+#        self.bearing_assembly_simulations = bearing_assembly_simulations[num_best_mass]
+#        list_sort = []
+#        list_ba = []
+#        for num_family, num_elem in add_best_mass.items():
+#            if num_family != num_best_mass:
+#                list_ba.append(bearing_assembly_simulations[num_family][num_elem])
+#                list_sort.append(bearing_assembly_simulations[num_family][num_elem].bearing_assembly.mass)
+#                
+#        self.bearing_assembly_simulations.extend([list_ba[i] for i in npy.argsort(list_sort)])
+        
+        
+    def ContinuousOptimization(self, bearing_assembly):
         
         bc_results = []
         for bearing_combination in bearing_assembly.bearing_combinations:
@@ -1335,24 +1471,21 @@ class BearingAssemblyOptimizer:
         pos2_max = self.axial_positions[1] + self.lengths[1] - l2/2.
         pos1_moy = (pos1_min + pos1_max)/2.
         pos2_moy = (pos2_min + pos2_max)/2.
+        
         def fun(x):
-            
             obj = 0
             try:
                 bearing_assembly.ShaftLoad([x[0], x[1]], bearing_assembly_simulation_result)
                 L10 = bearing_assembly_simulation_result.L10
                 obj += 1/(L10)**2
                 return obj
-            except:
-                L10 = bearing_assembly_simulation_result.L10
-                bearing_assembly.ShaftLoad([x[0], x[1]], bearing_assembly_simulation_result)
+            except BearingL10Error:
+                return 1e6
             
         def fineq(x):
-            
-            
             ineq = [0]
-
             return ineq
+        
         Bound = [[pos1_min, pos1_max], [pos2_min, pos2_max]]
         sol_fun = math.inf
         for p1, p2 in product(Bound[0] + [pos1_moy],Bound[1] + [pos2_moy]):
@@ -1363,7 +1496,6 @@ class BearingAssemblyOptimizer:
                 sol_x = res.x
                 status = res.status
         for itera in range(0,5):
-            # TODO: optimize this!
             x0 = (npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(2)+npy.array(Bound)[:,0]
 #            cons = {'type': 'ineq','fun' : fineq}
             res = minimize(fun, x0, method='SLSQP', bounds=Bound)
@@ -1380,7 +1512,7 @@ class BearingAssemblyOptimizer:
             bearing_assembly_simulation = BearingAssemblySimulation(bearing_assembly, bearing_assembly_simulation_result)
             return bearing_assembly_simulation
         else:
-            return False
+            raise AxialPositionConvergenceError()
 
         
     def Dict(self, subobjects_id = {}, stringify_keys=True):
@@ -1388,14 +1520,16 @@ class BearingAssemblyOptimizer:
         Export dictionary
         """
         d = {}
-        for k,v in self.__dict__.items():
-            tv = type(v)
-            if tv == npy.int64:
-                d[k] = int(v)
-            elif tv==npy.float64:
-                d[k]=round(float(v), 5)
-            else:
-                d[k] = v
+        d['loads'] = self.loads
+        d['speeds'] = self.speeds
+        d['operating_times'] = self.operating_times
+        d['inner_diameters'] = self.inner_diameters
+        d['axial_positions'] = self.axial_positions
+        d['outer_diameters'] = self.outer_diameters
+        d['lengths'] = self.lengths
+        d['linkage_types'] = self.linkage_types
+        d['mounting_types'] = self.mounting_types
+        d['number_bearings'] = self.number_bearings
                 
                 
         if self.bearing_assembly_simulations is not None:
@@ -1409,10 +1543,11 @@ class BearingAssemblyOptimizer:
             bar_dict = None
         d['bearing_assembly_simulations'] = bar_dict
         
-        bc = []
-        for bearing_classe in self.bearing_classes:
-            bc.append(str(bearing_classe))
-        d['bearing_classes'] = bc
+        # TODO: serialize classes as string -> see another todo in dict to object
+#        bc = []
+#        for bearing_classe in self.bearing_classes:
+#            bc.append(str(bearing_classe))
+#        d['bearing_classes'] = bc
         
         d['catalog'] = self.catalog.Dict()
         
@@ -1461,3 +1596,8 @@ class BearingAssemblyOptimizer:
                  bearing_assembly_simulations = li_bar,
                  catalog = catalog)
         return obj
+
+class AxialPositionConvergenceError(Exception):
+    def __init__(self):
+        super().__init__('Fail in axial position optimization')
+        

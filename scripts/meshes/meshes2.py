@@ -20,13 +20,13 @@ list_cycle={1 : 1e12}
 
 GA = meshes_opt.MeshAssemblyOptimizer(Z={},
                                   connections = connections, 
-                                  gear_speed = list_speed,
-                                  center_distance = list_cd,
+                                  gear_speeds = list_speed,
+                                  center_distances = list_cd,
                                   rack_list = list_rack,
                                   rack_choice = list_rack_choice,
                                   helix_angle = list_helix_angle,
-                                  material = list_material,torque = list_torque,
-                                  cycle = list_cycle,verbose=True)
+                                  material = list_material,torques = list_torque,
+                                  cycles = list_cycle,verbose=True)
 
 #Optimization for gear set with center-distance closed to the minimum boundary
 GA.OptimizeCD(nb_sol=10, verbose=True)
