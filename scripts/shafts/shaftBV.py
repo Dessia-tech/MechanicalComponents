@@ -6,8 +6,6 @@ Created on Fri Mar 29 15:46:45 2019
 @author: ringhausen
 """
 
-
-import mechanical_components.shafts as shafts
 import mechanical_components.shafts_assembly as ass
 import matplotlib.pyplot as plt
 import math
