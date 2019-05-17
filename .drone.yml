@@ -2,9 +2,16 @@ kind: pipeline
 name: default
 
 steps:
-- name: test
+- name: install
   image: python:3
   commands:
   - git fetch --tags
   - pip install Cython
   - python setup.py install
+
+- name: develop
+  image: python:3
+  commands:
+  - git fetch --tags
+  - pip install Cython
+  - python setup.py develop

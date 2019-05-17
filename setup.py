@@ -29,7 +29,7 @@ def get_version():
     d = dirname(__file__)
     
     if isdir(join(d, '.git')):
-        cmd = 'git describe --tags  --dirty'
+        cmd = 'git describe --tags'
         try:
             version = check_output(cmd.split()).decode().strip()[:]
         except CalledProcessError:
