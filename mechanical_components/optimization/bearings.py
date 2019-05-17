@@ -1466,9 +1466,9 @@ class BearingAssemblyOptimizer:
         l1 = bearing_assembly.bearing_combinations[0].B
         l2 = bearing_assembly.bearing_combinations[1].B
         pos1_min = self.axial_positions[0] + l1/2.
-        pos1_max = self.axial_positions[0] + self.lengths[0] - l1/2.
+        pos1_max = max(pos1_min, self.axial_positions[0] + self.lengths[0] - l1/2.)
         pos2_min = self.axial_positions[1] + l2/2.
-        pos2_max = self.axial_positions[1] + self.lengths[1] - l2/2.
+        pos2_max = max(pos2_min, self.axial_positions[1] + self.lengths[1] - l2/2.)
         pos1_moy = (pos1_min + pos1_max)/2.
         pos2_moy = (pos2_min + pos2_max)/2.
         

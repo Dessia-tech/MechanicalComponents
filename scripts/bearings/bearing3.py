@@ -72,16 +72,16 @@ bis = bearings_opt.BearingAssemblyOptimizer(
                     )
 
 bis2 = bearings_opt.BearingAssemblyOptimizer(
-                    loads = [[[[0.159, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
-                    speeds = [150],
-                    operating_times = [1000*3600],
+                    loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
+                    speeds = [157.07],
+                    operating_times = [3600000],
                     inner_diameters = [0.035, 0.035],
                     axial_positions = [0, 0.3], 
                     outer_diameters = [0.072, 0.072], 
-                    lengths = [0.06, 0.04],
-                    linkage_types = [['all'], ['all']],
+                    lengths = [0.03, 0.03],
+                    linkage_types = [['ball_joint', 'cylindric_joint'], ['ball_joint', 'cylindric_joint']],
                     mounting_types = [['free', 'left']],
-                    number_bearings = [[1, 2], [1]],
+                    number_bearings = [[1, 2], [1, 2]],
 
 #                    bearing_classes = [bearings.RadialBallBearing, 
 #                                       bearings.AngularBallBearing,
