@@ -80,7 +80,7 @@ bis2 = bearings_opt.BearingAssemblyOptimizer(
                     outer_diameters = [0.072, 0.072], 
                     lengths = [0.03, 0.03],
                     linkage_types = [['ball_joint', 'cylindric_joint'], ['ball_joint', 'cylindric_joint']],
-                    mounting_types = [['free', 'left']],
+                    mounting_types = [['left', 'right']],
                     number_bearings = [[1, 2], [1, 2]],
 
 #                    bearing_classes = [bearings.RadialBallBearing, 
@@ -113,11 +113,11 @@ bis2 = bearings_opt.BearingAssemblyOptimizer(
 bis2.Optimize(10)
 
 for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
-    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
+#    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
     ba_simulation.bearing_assembly.Plot()    
-    print(ba_simulation.bearing_assembly.cost)
+    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly.cost, ba_simulation.bearing_assembly_simulation_result.L10)
 #    print(hash(ba_simulation))
-    print(ba_simulation == ba_simulation)
+    equal = (ba_simulation == ba_simulation)
     
 print(bearing_assembly_opt == bis2)
     
