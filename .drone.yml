@@ -22,6 +22,13 @@ steps:
   - git fetch --tags
   - python setup.py sdist
 
+- name: compile windows
+  image: dockcross/windows-static-x64
+  commands:
+  - apt install -y python3-pip python3-dev
+  - pip3 install Cython 
+  - python3 compile.py build_ext --exp_month=7 --exp_year=2019 --macs=2234420019928
+
 - name: upload sdist
   image: appleboy/drone-scp
   settings:
@@ -32,3 +39,4 @@ steps:
     username: drone
     password:
       from_secret: ssh_drone_password
+

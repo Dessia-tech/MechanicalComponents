@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# cython: language_level=3
 """
-Created on Fri Aug 17 02:13:01 2018
 
-@author: Pierre-Emmanuel Dumouchel
 """
 
 #import itertools as it
 from mechanical_components.meshes import MeshAssembly, hardened_alloy_steel
 import numpy as npy
 import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
-import itertools
+#import volmdlr.primitives3D as primitives3D
+#import volmdlr.primitives2D as primitives2D
+#import itertools
 import networkx as nx
 #import powertransmission.tools as tools
 import dectree
