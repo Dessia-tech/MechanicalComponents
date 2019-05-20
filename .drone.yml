@@ -15,3 +15,20 @@ steps:
   - git fetch --tags
   - pip install Cython
   - python setup.py develop
+
+- name: sdist
+  image: python:3
+  commands:
+  - git fetch --tags
+  - python setup.py sdist
+
+- name: upload sdist
+  image: appleboy/drone-scp
+  settings:
+    host: austerlitz.dessia.tech
+    target: /home/drone/autobuild/mechanical_components/
+    source: dist/*.tar.gz
+    strip_components: 1
+    username: drone
+    password:
+      from_secret: ssh_drone_password
