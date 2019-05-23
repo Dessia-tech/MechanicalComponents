@@ -22,21 +22,21 @@ steps:
   - git fetch --tags
   - python setup.py sdist
 
-- name: compile windows
-  image: dockcross/windows-static-x64
-  commands:
-  - apt install -y python3-pip python3-dev
-  - pip3 install Cython 
-  - python3 compile.py build_ext --exp_month=7 --exp_year=2019 --macs=2234420019928
-
 - name: upload sdist
   image: appleboy/drone-scp
+  when:
+    branch: master
   settings:
     host: austerlitz.dessia.tech
-    target: /home/drone/autobuild/mechanical_components/
-    source: dist/*.tar.gz
+    target: /home/drone/autobuild/mechanical_components/sdist
+    source: dist/*
     strip_components: 1
     username: drone
     password:
       from_secret: ssh_drone_password
 
+- name: compile linux
+  image: python:3
+  commands:
+  - pip install Cython
+  - python compile.py build_ext --exp_month=7 --exp_year=2029 --macs=2234420019928
