@@ -29,11 +29,11 @@ list_bearing = [b1, b2, b2, b2]
 BA = bearings.BearingCombination(list_bearing, directions = [1, 1, 1, 1], radial_load_linkage = [True]*4, internal_pre_load = 0, 
                  connection_bi = ['left', 'right'], connection_be = ['left', 'right'], behavior_link = 'both')
 
-print(hash(b1))
-b1_copy = b1.Copy()
+#print(hash(b1))
+#b1_copy = b1.Copy()
 #print(hash(b0))
-print(b1 == b1_copy)
-print(hash(b1), hash(b1_copy))
+#print(b1 == b1_copy)
+#print(hash(b1), hash(b1_copy))
 #BA.SolveAxialLoad()
 #BA.PlotGraph()
 #fa = BA.SearchBestGraph()

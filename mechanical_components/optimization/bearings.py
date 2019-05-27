@@ -933,7 +933,7 @@ class BearingAssemblyOptimizer:
                     if (dt.current_depth == 1) and (d == d_pre):
                         valid = False
                         break
-                    d_pre = d
+#                    d_pre = d
                 elif depth < nb_bearings:
                     next_bearings = list_next_bearings[depth]
                     bearings.append(next_bearings[node])
@@ -949,10 +949,10 @@ class BearingAssemblyOptimizer:
                     valid = False
                     break
                 
-            if (dt.current_depth == nb_bearings) and valid:
-                if current_Cr == current_Cr_pre:
-                    valid = False
-                current_Cr_pre = current_Cr
+#            if (dt.current_depth == nb_bearings) and valid:
+#                if current_Cr == current_Cr_pre:
+#                    valid = False
+#                current_Cr_pre = current_Cr
             
             # Testing
             if valid:
@@ -973,13 +973,13 @@ class BearingAssemblyOptimizer:
                                                                 N = self.speeds, 
                                                                 t = self.operating_times, Cr = bearing.Cr))
                         L10 = BearingAssembly.EstimateBaseLifeTime(list_L10)
-
+    
                         if L10 > L10_objective:
                             best_L10 = max(best_L10, L10)
-#                            print(best_L10)
+    #                            print(best_L10)
                             if bearings[0] not in bearing_possibilies:
                                 bearing_possibilies.append(bearings[0])
-#                                print(len(bearing_possibilies))
+    #                                print(len(bearing_possibilies))
                     dt.SetCurrentNodeNumberPossibilities(0)
                 else:
                     dt.SetCurrentNodeNumberPossibilities(0)
@@ -1180,18 +1180,28 @@ class BearingAssemblyOptimizer:
                     bc_results.append(BearingCombinationSimulationResult(li_bg_results))
                 bearing_assembly_simulation_result = BearingAssemblySimulationResult(bc_results, 
                                                                 self.loads, self.speeds, self.operating_times)
-                pos1_min = self.axial_positions[0]
-                pos1_max = self.axial_positions[0] + self.lengths[0]
-                pos2_min = self.axial_positions[1]
-                pos2_max = self.axial_positions[1] + self.lengths[1]
+#                pos1_min = self.axial_positions[0]
+#                pos1_max = self.axial_positions[0] + self.lengths[0]
+#                pos2_min = self.axial_positions[1]
+#                pos2_max = self.axial_positions[1] + self.lengths[1]
+                
+                pos1_min = self.axial_positions[0] + B_left/2.
+                pos1_max = max(pos1_min, self.axial_positions[0] + self.lengths[0] - B_left/2.)
+                pos2_min = self.axial_positions[1] + B_right/2.
+                pos2_max = max(pos2_min, self.axial_positions[1] + self.lengths[1] - B_right/2.)
+                pos1_moy = (pos1_min + pos1_max)/2.
+                pos2_moy = (pos2_min + pos2_max)/2.
 
-                try:
-                    L10 = 0
-                    for pos1, pos2 in product([pos1_min, pos1_max], [pos2_min, pos2_max]):
+                L10 = 0
+                for pos1, pos2 in product([pos1_min, pos1_moy, pos1_max], [pos2_min, pos2_moy, pos2_max]):
+                    try:
                         bearing_assembly.ShaftLoad([pos1, pos2], 
                                                     bearing_assembly_simulation_result)
                         L10 = max(L10, bearing_assembly_simulation_result.L10)
-                except BearingL10Error:
+                    except BearingL10Error:
+                        pass
+                    
+                if L10 == 0:
                     break
                 
                 if L10 < L10_objective:
@@ -1301,7 +1311,7 @@ class BearingAssemblyOptimizer:
             
             dt.NextNode(valid)
     
-    def Optimize(self, max_solutions=10, nb_solutions_family=5, progress_callback=lambda x:0):
+    def OptimizeGeneric(self, max_solutions=10, nb_solutions_family=10, progress_callback=lambda x:0):
         
         L10_objective = 0
         for speed, time in zip(self.speeds, self.operating_times):
@@ -1313,7 +1323,9 @@ class BearingAssemblyOptimizer:
         pos1_max = self.axial_positions[0] + self.lengths[0]
         pos2_min = self.axial_positions[1]
         pos2_max = self.axial_positions[1] + self.lengths[1]
-        load = BearingAssembly.QuickShaftLoad(((pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.), self.loads)
+        pos1_moy = (pos1_min + pos1_max)/2.
+        pos2_moy = (pos2_min + pos2_max)/2.
+        load = BearingAssembly.QuickShaftLoad((pos1_min, pos2_min), self.loads)
         radial_load_left = []
         radial_load_right = []
         for rl in load:
@@ -1359,7 +1371,18 @@ class BearingAssemblyOptimizer:
                 if cas_bearing_assembly_simulations != []:
                     bearing_assembly_generic.append(cas_bearing_assembly_simulations)
                 print('size solutions {}'.format(len(bearing_assembly_generic)))
+        return bearing_assembly_generic
                 
+    def Optimize(self, max_solutions=10, bearing_assembly_generic=None, nb_solutions_family=10, progress_callback=lambda x:0):
+        
+        if bearing_assembly_generic is None:
+            bearing_assembly_generic = self.OptimizeGeneric(max_solutions)
+            
+        L10_objective = 0
+        for speed, time in zip(self.speeds, self.operating_times):
+            L10_objective += speed/(2*math.pi)*time
+        L10_objective = L10_objective/1e6
+        
         #Cost optimization
         #Initial sort before continuous optim
         list_cost = []
@@ -1376,7 +1399,7 @@ class BearingAssemblyOptimizer:
             cas_bearing_assembly_simulations = []
             for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies_temp):
                 try:
-                    bearing_assembly_simulation = self.ContinuousOptimization(bearing_assembly)
+                    bearing_assembly_simulation = self.ContinuousOptimization(bearing_assembly, L10_objective)
                     L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
                     mass = bearing_assembly_simulation.bearing_assembly.mass
                     cost = bearing_assembly_simulation.bearing_assembly.cost
@@ -1413,6 +1436,7 @@ class BearingAssemblyOptimizer:
             list_mass.append(min(li_mass))
         bearing_assembly_simulations_sort = [bearing_assembly_generic[i] for i in npy.argsort(list_mass)]
             
+        print('init', list_mass, npy.argsort(list_mass))
         bearing_assembly_simulations = []
         sort_bearing_assembly_simulations = []
         for bearing_assemblies in bearing_assembly_simulations_sort:
@@ -1421,10 +1445,11 @@ class BearingAssemblyOptimizer:
             cas_bearing_assembly_simulations = []
             for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies_temp):
                 try:
-                    bearing_assembly_simulation = self.ContinuousOptimization(bearing_assembly)
+                    bearing_assembly_simulation = self.ContinuousOptimization(bearing_assembly, L10_objective)
                     L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
                     mass = bearing_assembly_simulation.bearing_assembly.mass
                     cost = bearing_assembly_simulation.bearing_assembly.cost
+                    print('L10 {}, nb solutions {}, cost {}, mass {}'.format(L10, len(cas_bearing_assembly_simulations), cost, mass))
                     if L10 >= L10_objective:
                         cas_bearing_assembly_simulations.append(bearing_assembly_simulation)
                         sort_bearing_assembly_simulations.append(mass)
@@ -1451,7 +1476,7 @@ class BearingAssemblyOptimizer:
         self.bearing_assembly_simulations.extend([bas[0] for bas in bas_sort[1:]])
         
         
-    def ContinuousOptimization(self, bearing_assembly):
+    def ContinuousOptimization(self, bearing_assembly, L10_objective):
         
         bc_results = []
         for bearing_combination in bearing_assembly.bearing_combinations:
@@ -1494,7 +1519,7 @@ class BearingAssemblyOptimizer:
                 sol_fun = fun(res.x)
                 sol_x = res.x
                 status = res.status
-        for itera in range(0,5):
+        for itera in range(0, 5):
             x0 = (npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(2)+npy.array(Bound)[:,0]
 #            cons = {'type': 'ineq','fun' : fineq}
             res = minimize(fun, x0, method='SLSQP', bounds=Bound)
