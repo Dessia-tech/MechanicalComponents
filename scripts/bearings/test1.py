@@ -15,7 +15,7 @@ import copy
 from mechanical_components.load import *
 
 cbc = bearings.ConceptualBearingCombination([bearings.AngularBallBearing, bearings.AngularBallBearing, 
-                                             bearings.NUPRadialRollerBearing],
+                                             bearings.NUP],
                                             [-1, 1, -1], 'left')
 print(cbc.CheckKinematic())
 

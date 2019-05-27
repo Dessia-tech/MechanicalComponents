@@ -15,12 +15,12 @@ from scipy.optimize import fsolve
 import networkx as nx
 import matplotlib.pyplot as plt
 
-import pandas
+#import pandas
 import pkg_resources
 
 #from mechanical_components.bearings_snr import RadialRollerBearingSNR
-from mechanical_components.catalogs.ISO_bearings \
-    import iso_bearings, iso_rollers, iso_radial_clearances, bearing_rules
+#from mechanical_components.catalogs.ISO_bearings \
+#    import iso_bearings, iso_rollers, iso_radial_clearances, bearing_rules
 
 import genmechanics
 import genmechanics.linkages as linkages
@@ -80,7 +80,8 @@ dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},
 
 
 class Oil:
-    def __init__(self,oil_data):
+    
+    def __init__(self, oil_data):
         self.oil_data = oil_data
         self.oil_kinematic_viscosity_curve = self.KinematicViscosity(oil_data)
     
@@ -284,8 +285,76 @@ class RadialBearing:
     generate_axial_load = None
     linkage = None
     
+    _jsonschema = {
+        "definitions": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "title": "mechanical_components.bearings.RadialBearing Base Schema",
+        "required": [
+            "d",
+            "D",
+            "B",
+            "alpha",
+            "i",
+            "Z",
+            "Dw"
+          ],
+          "properties": {
+            "d": {"type": "number",  "examples": [0.02],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "true", "description": "Internal diameter"},
+            "D": {"type": "number",  "examples": [0.02],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "true", "description": "External diameter"},
+            "B": {"type": "number",  "examples": [0.04],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "true", "description": "Width"},
+            "alpha": {"type": "number",  "examples": [0.],
+                      "physical_quantity": 'angle', "unit": "rad",
+                      "editable": "true", "description": "Contact angle"},
+            "i": {"type": "number", "multipleOf": 1.0, "examples": [1],
+                  "editable": "true", "description": "Row number"},
+            "Z": {"type": "number", "multipleOf": 1.0, "examples": [13],
+                  "editable": "true", "description": "Rolling number"},
+            "Dw": {"type": "number",  "examples": [0.01],
+                   "physical_quantity": 'distance', "unit": "m",
+                   "editable": "true", "description": "Rolling diameter"},
+            "Cr": {"type": "number",  "examples": [29500],
+                   "physical_quantity": 'force', "unit": "N",
+                   "editable": "true", "description": "Based dynamic load"},
+            "C0r": {"type": "number",  "examples": [25000],
+                    "physical_quantity": 'force', "unit": "N",
+                    "editable": "true", "description": "Based static load"},
+            "contact_type": {"examples": ["linear_contact"],
+                     "physical_quantity": 'contact_property',
+                     "anyOf": [{"type": "string", "enum": [ "linear_contact", "point_contact", "mixed_contact" ]}, {"type": "null"}],
+                     "editable": "true", "description": "Contact type"},
+            "mass": {"type": "number",  "examples": [0.04],
+                     "physical_quantity": 'mass', "unit": "kg",
+                     "editable": "true", "description": "Mass"},
+            "name": {"type": "string",  "examples": 'SNR 6062',
+                     "editable": "true", "description": "Name"},
+            "cost": {"type": "number",  "examples": [4.0],
+                     "physical_quantity": 'cost', "unit": "Euro",
+                     "editable": "false", "description": "Cost"},
+            "E": {"type": "number",  "examples": [0.04],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "false", "description": "External rolling diameter"},
+            "F": {"type": "number",  "examples": [0.04],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "false", "description": "Internal rolling diameter"},
+            "d1": {"type": "number",  "examples": [0.04],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "false", "description": "External diameter of internal ring"},
+            "D1": {"type": "number",  "examples": [0.04],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": "false", "description": "Internal diameter of external ring"},
+            }
+          }
+
+    
     # TODO: remove oil
-    def __init__(self, d, D, B, alpha, i, Z, Dw, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, alpha, i, Z, Dw, Cr=None, C0r=None, 
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
 
         self.d = d
@@ -304,7 +373,6 @@ class RadialBearing:
             self.Z = Z
         
         self.alpha = alpha
-        self.oil = oil
         self.material = material
         self.contact_type = contact_type
 #        self.sub_direction = 0
@@ -504,10 +572,10 @@ class RadialBearing:
     def FreeCADExport(self, fcstd_filepath, python_path='python', 
                       freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
         model = self.VolumeModel()
-        tolerance = self.D/130.
+#        tolerance = self.D/130.
         model.FreeCADExport(fcstd_filepath, python_path=python_path,
                             freecad_lib_path=freecad_lib_path,
-                            export_types=export_types, tolerance=tolerance)
+                            export_types=export_types)
         
     def PlotDataQuote(self, pos=0):
         delta_quote = 0.05*self.B
@@ -614,16 +682,17 @@ class RadialBearing:
         d['i'] = self.i
         d['Z'] = self.Z
         d['Dw'] = self.Dw
-        d['Cr'] = self.Cr
-        d['C0r'] = self.C0r
+        if hasattr(self, 'Cr'):
+            d['Cr'] = self.Cr
+        if hasattr(self, 'C0r'):
+            d['C0r'] = self.C0r
+        
         d['name'] = self.name
         d['metadata'] = self.metadata
         d['contact_type'] = self.contact_type
         d['class_name'] = self.class_name
         d['material'] = self.material.Dict()
-        d['oil'] = self.oil.Dict()
         d['mass'] = self.mass
-        
         
         if 'load_bearing_results' in d:
             load_bearing_results = []
@@ -681,11 +750,26 @@ class RadialBallBearing(RadialBearing):
     cost_coefficient = 0.2
     cost_constant = 1
     
-    # TODO: remove alpha?
-    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    _jsonschema = {
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        "allOf": [
+            { "$ref": "#/definitions/RadialBearing" },
+            {'type': 'object',
+             "properties": {
+                'alpha': {'const': 0},
+              },
+#            "required": ['alpha']
+            }
+          ]
+      }
+    
+    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None,
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
-        RadialBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr, C0r=C0r, oil=oil,
-                               material=material, contact_type=contact_type, mass=mass, name=name, metadata=metadata)
+        RadialBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr,
+                               C0r=C0r, material=material,
+                               contact_type=contact_type, mass=mass,
+                               name=name, metadata=metadata)
         
         # estimation for the graph 2D description
         h1 = self.Dw/2. - (self.E - self.D1)/2.
@@ -873,7 +957,6 @@ class RadialBallBearing(RadialBearing):
             d['C0r'] = None
         obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
                   Dw = d['Dw'], Cr = d['Cr'], C0r = d['C0r'],
-                  oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'], mass=d['mass'])
@@ -905,10 +988,24 @@ class AngularBallBearing(RadialBearing):
     cost_coefficient = 0.4
     cost_constant = 1.5
     
-    def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    _jsonschema = {
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        "allOf": [
+            { "$ref": "#/definitions/RadialBearing" },
+            {'type': 'object',
+             "properties": {
+                'i': {'const': 1},
+              },
+#            "required": ['i']
+            }
+          ]
+      }
+    
+    def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, Cr=Cr,
-                               C0r=C0r, oil=oil, material=material, 
+                               C0r=C0r, material=material, 
                                contact_type=contact_type, mass=mass, name=name, metadata=metadata)
 
         
@@ -1122,7 +1219,6 @@ class AngularBallBearing(RadialBearing):
             d['C0r'] = None
         obj = cls(d = d['d'], D = d['D'], B = d['B'], alpha = d['alpha'], i = d['i'], Z = d['Z'], 
                   Dw = d['Dw'], Cr = d['Cr'], C0r = d['C0r'],
-                  oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'], mass=d['mass'])
@@ -1155,9 +1251,24 @@ class SphericalBallBearing(RadialBearing):
     cost_coefficient = 0.4
     cost_constant = 2
     
-    def __init__(self, d, D, B, alpha=0, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, contact_type=None, mass=None, name='', metadata={}):
-        RadialBearing.__init__(self, d, D, B, alpha, i, Z, Dw, Cr, C0r, oil,
+    _jsonschema = {
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        "allOf": [
+            { "$ref": "#/definitions/RadialBearing" },
+            {'type': 'object',
+             "properties": {
+                'alpha': {'const': 0.},
+              },
+#            "required": ['alpha']
+            }
+          ]
+      }
+    
+    def __init__(self, d, D, B, alpha=0, i=1, Z=None, Dw=None, Cr=None, C0r=None,
+                 material=material_iso, contact_type=None, mass=None, name='',
+                 metadata={}):
+        RadialBearing.__init__(self, d, D, B, alpha, i, Z, Dw, Cr, C0r,
                                material, contact_type, mass, name, metadata=metadata)
         
         
@@ -1237,7 +1348,6 @@ class SphericalBallBearing(RadialBearing):
         obj = cls(d = d['d'], D = d['D'], B = d['B'], alpha = d['alpha'], 
                   i = d['i'], Z = d['Z'], 
                   Dw = d['Dw'], Cr = d['Cr'], C0r = d['C0r'],
-                  oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'], mass=d['mass'])
@@ -1271,11 +1381,27 @@ class RadialRollerBearing(RadialBearing):
     cost_coefficient = 0.5
     cost_constant = 2.5
     
-    def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
-                 material=material_iso, contact_type='linear_contact',
+    _jsonschema = {
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        "allOf": [
+            { "$ref": "#/definitions/RadialBearing" },
+            {'type': 'object',
+             "properties": {
+                'i': {'const': 1},
+                'contact_type': {'const': 'linear_contact'},
+              },
+            "required": ['contact_type']
+            }
+          ]
+      }
+    
+    def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None,
+                 material=material_iso,
+                 contact_type='linear_contact',
                  mass=None, name='', metadata={}):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, 
-                               Cr=Cr, C0r=C0r, oil=oil,
+                               Cr=Cr, C0r=C0r,
                                material=material, contact_type=contact_type, 
                                mass=mass, name=name, metadata=metadata)
 #        self.typ = typ
@@ -1472,7 +1598,6 @@ class RadialRollerBearing(RadialBearing):
             d['C0r'] = None
         obj = cls(d = d['d'], D = d['D'], B = d['B'], i = d['i'], Z = d['Z'], 
                   Dw = d['Dw'], Cr = d['Cr'], C0r = d['C0r'],
-                  oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'], mass=d['mass'])
@@ -1521,11 +1646,11 @@ class NUP(RadialRollerBearing):
     cost_constant = 2.7
     
     # TODO: remove alpha?
-    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name='', metadata={}):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
-                                     C0r=C0r ,oil=oil, 
+                                     C0r=C0r,
                                      material=material, contact_type=contact_type,
                                      mass=mass, name=name, metadata=metadata)
         
@@ -1592,11 +1717,11 @@ class N(RadialRollerBearing):
     cost_coefficient = 0.5
     cost_constant = 2.5
     
-    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name='', metadata={}):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
-                                     C0r=C0r ,oil=oil, 
+                                     C0r=C0r,
                                      material=material, contact_type=contact_type,
                                      mass=mass, name=name, metadata=metadata)
         
@@ -1655,11 +1780,11 @@ class NF(RadialRollerBearing):
     cost_constant = 2.5
 
     
-    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None,
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name='', metadata={}):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
-                                     C0r=C0r ,oil=oil, 
+                                     C0r=C0r,
                                      material=material, contact_type=contact_type,
                                      mass=mass, name=name, metadata=metadata)
         
@@ -1727,11 +1852,11 @@ class NU(RadialRollerBearing):
     cost_coefficient = 0.5
     cost_constant = 2.5
 
-    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None,
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name='', metadata={}):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
-                                     C0r=C0r ,oil=oil, 
+                                     C0r=C0r,
                                      material=material, contact_type=contact_type,
                                      mass=mass, name=name, metadata=metadata)
 
@@ -1787,16 +1912,32 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     class_name = 'TaperedRollerBearing'
     cost_coefficient = 0.4
     cost_constant = 2
+        
+        
+    _jsonschema = {
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        "allOf": [
+            { "$ref": "#/definitions/RadialBearing" },
+            {'type': 'object',
+             "properties": {
+                'i': {'const': 1},
+                'contact_type': {'const': 'linear_contact'},
+              },
+            "required": ['contact_type']
+            }
+          ]
+      }
     
-    def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,oil=oil_iso_vg_1500, 
+    def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None,
                  material=material_iso, contact_type='linear_contact',
                  mass=None, name='', metadata={}):
         
         if Dw is None:
             self.Dw = (D - d)/7.*math.cos(alpha)
 
-        RadialRollerBearing.__init__(self, d, D, B, alpha=alpha, i = i, Z = Z, Dw = Dw, Cr=Cr,
-                                     C0r=C0r ,oil=oil, 
+        RadialRollerBearing.__init__(self, d, D, B, alpha=alpha, i = i, Z = Z,
+                                     Dw = Dw, Cr=Cr, C0r=C0r,
                                      material=material, contact_type=contact_type,
                                      mass=mass, name=name, metadata=metadata)
         
@@ -1974,7 +2115,6 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
             d['C0r'] = None
         obj = cls(d = d['d'], D = d['D'], B = d['B'], alpha = d['alpha'], i = d['i'], Z = d['Z'], 
                   Dw = d['Dw'], Cr = d['Cr'], C0r = d['C0r'],
-                  oil = Oil.DictToObject(d['oil']), 
                   material = Material.DictToObject(d['material']),  
                   contact_type = d['contact_type'],
                   name=d['name'], metadata=d['metadata'], mass=d['mass'])
@@ -2443,6 +2583,20 @@ class ConceptualBearingCombination:
 
 class BearingCombination:
     
+    _jsonschema = {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "definitions": {
+                "RadialBearing": RadialBearing._jsonschema},
+        'type': 'object',
+        "properties": {
+            'bearings': {
+               "type": "array",
+               "items": { "$ref": "#/definitions/RadialBearing"},
+                         },
+          },
+        "required": ['bearings']
+    }
+    
     dessia_db_attributes = [{'name':'bearings',
                              'class':'mechanical_components.bearings.RadialBearing',
                              'type':'list'}]
@@ -2485,6 +2639,13 @@ class BearingCombination:
                        and self.connection_be == other_eb.connection_be
                        and self.connection_bi == other_eb.connection_bi
                        and self.behavior_link == other_eb.behavior_link)
+        if hasattr(self, 'axial_positions') and hasattr(other_eb, 'axial_positions'):
+            equal = (equal and self.axial_positions == other_eb.axial_positions
+                           and self.internal_diameters == other_eb.internal_diameters
+                           and self.external_diameters == other_eb.external_diameters
+                           and self.length == other_eb.length)
+        elif hasattr(self, 'axial_positions') or hasattr(other_eb, 'axial_positions'):
+            equal = False
         return equal
     
     def __hash__(self):
