@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# cython: language_level=3
 """
 Created on Fri Aug 17 02:14:21 2018
 
