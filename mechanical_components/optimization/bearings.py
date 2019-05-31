@@ -1316,12 +1316,19 @@ class BearingAssemblyOptimizer:
         pos2_max = self.axial_positions[1] + self.lengths[1]
         pos1_moy = (pos1_min + pos1_max)/2.
         pos2_moy = (pos2_min + pos2_max)/2.
-        load = BearingAssembly.QuickShaftLoad((pos1_min, pos2_min), self.loads)
+        
         radial_load_left = []
         radial_load_right = []
-        for rl in load:
-            radial_load_left.append((rl[0]**2 + (0)**2)**0.5)
-            radial_load_right.append((rl[1]**2 + (0)**2)**0.5)
+        for load in self.loads:
+            radial_load_left_temp = []
+            radial_load_right_temp = []
+            for pos1, pos2 in product([pos1_min, pos1_moy, pos1_max], [pos2_min, pos2_moy, pos2_max]):
+                load_simul = BearingAssembly.QuickShaftLoad((pos1, pos2), [load])
+                for rl in load_simul:
+                    radial_load_left_temp.append((rl[0]**2 + (0)**2)**0.5)
+                    radial_load_right_temp.append((rl[1]**2 + (0)**2)**0.5)
+            radial_load_left.append(min(radial_load_left_temp))
+            radial_load_right.append(min(radial_load_right_temp))
             
 #        nb_solutions_family = max_solutions_family[0]
             
