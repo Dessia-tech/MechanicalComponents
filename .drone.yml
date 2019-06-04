@@ -2,7 +2,7 @@ kind: pipeline
 name: default
 
 steps:
-- name: install
+- name: install, doc and script running
   image: python:3
   commands:
   - git fetch --tags
@@ -11,6 +11,9 @@ steps:
   - pip install sphinx sphinx_rtd_theme
   - cd doc
   - make html
+  - cd ../
+  - python scripts/bearings/bearing3.py
+  - python scripts/meshes/meshes_agb.py
 
 - name: develop
   image: python:3
