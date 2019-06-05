@@ -271,7 +271,7 @@ class ContinuousMeshesAssemblyOptimizer:
             X0.append((interval[1]-interval[0])*float(npy.random.random(1))+interval[0])
         return X0
     
-    def _convert_X2x(self,X):
+    def _convert_X2x(self, X):
         optimizer_data={'center_distance':[],'transverse_pressure_angle':[],
                  'coefficient_profile_shift':{},'transverse_pressure_angle_rack':{},
                  'coeff_gear_addendum':{},'coeff_gear_dedendum':{},
@@ -354,7 +354,9 @@ class ContinuousMeshesAssemblyOptimizer:
                 num_mesh+=1
         num_mesh=0
         for num_cd,list_connection in enumerate(self.connections):
+#            print('optimizer_data {} dict_cd {} num_cd {}'.format(optimizer_data, dict_cd, num_cd))
             optimizer_data['center_distance'].append(dict_cd[num_cd])
+
             for num_mesh_iter,(eng1,eng2) in enumerate(list_connection):
                 optimizer_data['transverse_pressure_angle'].append(dict_tpa[num_mesh])
                 num_mesh+=1
