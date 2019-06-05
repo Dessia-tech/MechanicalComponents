@@ -6,10 +6,10 @@
 """
 
 #import itertools as it
-from mechanical_components.meshes import MeshCombination, MeshAssembly, hardened_alloy_steel,\
-        gear_graph_simple, gear_graph_complex
+from mechanical_components.meshes import MeshAssembly, hardened_alloy_steel,\
+        gear_graph_simple, gear_graph_complex, ValidGearDiameterError
 import numpy as npy
-import volmdlr as vm
+#import volmdlr as vm
 #import volmdlr.primitives3D as primitives3D
 #import volmdlr.primitives2D as primitives2D
 #import itertools
@@ -277,7 +277,7 @@ class ContinuousMeshesAssemblyOptimizer:
                  'coeff_gear_addendum':{},'coeff_gear_dedendum':{},
                  'coeff_root_radius':{},'coeff_circular_tooth_thickness':{}} # dictionary of possibily/currently optimization data
         # copy and transfert data to the dictionary optimizer_data
-        liste_transverse_pressure_angle=[]
+#        liste_transverse_pressure_angle=[]
         for key,list_ind in self.dict_global.items():
             for num_elem in list_ind:
                 if key in ['coefficient_profile_shift']:
@@ -379,12 +379,12 @@ class ContinuousMeshesAssemblyOptimizer:
     def Update(self,X):
         
         optimizer_data = self._convert_X2x(X)
-        output_x = self.mesh_assembly.Update(optimizer_data)
+        _ = self.mesh_assembly.Update(optimizer_data)
         return optimizer_data
     
     def Fineq(self,X):
         
-        x=self.Update(X)
+        _ = self.Update(X)
         ineq=[]
         for mesh_assembly_iter in self.mesh_assembly.mesh_assembly:
             ineq.extend(mesh_assembly_iter.ListeIneq())
@@ -423,7 +423,7 @@ class ContinuousMeshesAssemblyOptimizer:
         return ineq
         
     def Objective(self,X):
-        x=self.Update(X)
+        _ = self.Update(X)
         fineq=self.Fineq(X)
         obj=0
         for mesh_assembly_iter in self.mesh_assembly.mesh_assembly:
@@ -462,11 +462,11 @@ class ContinuousMeshesAssemblyOptimizer:
         arret = 0 
         while i < max_iter and arret == 0:
             X0 = self.CondInit()
-            x_temp = self.Update(X0)
+            _ = self.Update(X0)
             cons = {'type': 'ineq','fun' : self.Fineq}
             try:
                 cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons)
-            except ValidGearDiameter:
+            except ValidGearDiameterError:
                 i += 1
                 continue
             Xsol = cx.x
