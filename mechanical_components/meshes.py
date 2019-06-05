@@ -668,9 +668,11 @@ class Mesh:
         :param tan_alpha: tan of the pressure angle
         :results: tuple of the involute point (x,y) with the origin of the involute position at the point (x=base_diameter/2, y=0) and pressure angle is positive in the direction counter clockwise
         """
-        involute_list=(self.db/2*math.cos(tan_alpha)+self.db/2*tan_alpha*math.sin(tan_alpha),
-             self.db/2*math.sin(tan_alpha)-self.db/2*tan_alpha*math.cos(tan_alpha))
-        return involute_list
+        x, y = [], []
+        for ta in tan_alpha:
+            x.append(self.db/2*math.cos(ta)+self.db/2*ta*math.sin(ta))
+            y.append(self.db/2*math.sin(ta)-self.db/2*ta*math.cos(ta))
+        return (x, y)
 
     def _Trochoide(self,phi,type_flank='T'):
         # function generation of trochoide point
@@ -795,40 +797,40 @@ class MeshCombination:
                  coeff_circular_tooth_thickness, material=None, torque=None, cycle=None,
                  safety_factor=1, verbose=False):
 
-        self.center_distance=center_distance
-        self.Z=Z
-        self.connections=connections
-        self.transverse_pressure_angle_0=transverse_pressure_angle[0] # transverse pressure angle of the first gear mesh on the connections list order
-        self.helix_angle=0
+        self.center_distance = center_distance
+        self.Z = Z
+        self.connections = connections
+        self.transverse_pressure_angle_0 = transverse_pressure_angle[0] # transverse pressure angle of the first gear mesh on the connections list order
+        self.helix_angle = 0
 
         # NetworkX graph construction
-        list_gear=[]
+        list_gear = []
         for gs in self.connections:
             for g in gs:
                 if g not in list_gear:
                     list_gear.append(g)
-        gear_graph=nx.Graph()
+        gear_graph = nx.Graph()
         gear_graph.add_nodes_from(list_gear)
         gear_graph.add_edges_from(self.connections)
-        self.gear_graph=gear_graph
-        self.list_gear=list_gear
+        self.gear_graph = gear_graph
+        self.list_gear = list_gear
 
         # Definition of default parameters
-        minimum_gear_width=10e-3
+        minimum_gear_width = 10e-3
 
-        if material==None:
-            material={list_gear[0]:hardened_alloy_steel}
+        if material == None:
+            material = {list_gear[0]:hardened_alloy_steel}
         for ne in list_gear:
             if ne not in material.keys():
-                material[ne]=hardened_alloy_steel
+                material[ne] = hardened_alloy_steel
 
-        if torque==None:
-            torque=[{list_gear[0]:100,list_gear[1]:'output'}]
+        if torque == None:
+            torque = [{list_gear[0]:100,list_gear[1]:'output'}]
 
-        if cycle==None:
-            cycle={list_gear[0]:1e6}
+        if cycle == None:
+            cycle = {list_gear[0]:1e6}
 
-        self.material=material
+        self.material = material
 
         self.DF, DB, self.connections_dfs, self.transverse_pressure_angle = self.GearGeometryParameter(Z)
 
@@ -932,35 +934,37 @@ class MeshCombination:
 
     def GearGeometryParameter(self,Z):
         # Construction of pitch and base diameter
-        DF={}
-        db={}
-        dict_transverse_pressure_angle={0:self.transverse_pressure_angle_0}
-        connections_dfs=list(nx.edge_dfs(self.gear_graph,
+        DF = {}
+        db = {}
+        dict_transverse_pressure_angle = {0:self.transverse_pressure_angle_0}
+        connections_dfs = list(nx.edge_dfs(self.gear_graph,
                             [self.connections[0][0],self.connections[0][1]]))
         for num_dfs,((engr1,engr2),cd) in enumerate(zip(connections_dfs,self.center_distance)):
             if (engr1,engr2) in self.connections:
-                num_mesh=self.connections.index((engr1,engr2))
+                num_mesh = self.connections.index((engr1,engr2))
             else:
-                num_mesh=self.connections.index((engr2,engr1))
-            Z1=Z[engr1]
-            Z2=Z[engr2]
-            DF1=2*cd*Z1/Z2/(1+Z1/Z2)
-            DF2=2*cd-DF1
-            DF[num_mesh]={}
-            DF[num_mesh][engr1]=DF1
-            DF[num_mesh][engr2]=DF2
-            if num_mesh==0:
-                db1=float(DF1*math.cos(self.transverse_pressure_angle_0))
-                db2=float(DF2*math.cos(self.transverse_pressure_angle_0))
+                num_mesh = self.connections.index((engr2,engr1))
+            Z1 = Z[engr1]
+            Z2 = Z[engr2]
+            DF1 = 2*cd*Z1/Z2/(1+Z1/Z2)
+            DF2 = 2*cd-DF1
+            DF[num_mesh] = {}
+            DF[num_mesh][engr1] = DF1
+            DF[num_mesh][engr2] = DF2
+            if num_mesh == 0:
+                db1 = float(DF1*math.cos(self.transverse_pressure_angle_0))
+                db2 = float(DF2*math.cos(self.transverse_pressure_angle_0))
             else:
-                db1=db[engr1]
-                dict_transverse_pressure_angle[num_mesh]=math.acos(db1/DF1)
-                db2=DF2*math.cos(dict_transverse_pressure_angle[num_mesh])
-            db[engr1]=db1
-            db[engr2]=db2
-        transverse_pressure_angle=[]
+                db1 = db[engr1]
+                if db1 > DF1:
+                    raise ValidGearDiameter()
+                dict_transverse_pressure_angle[num_mesh] = math.acos(db1/DF1)
+                db2 = DF2*math.cos(dict_transverse_pressure_angle[num_mesh])
+            db[engr1] = db1
+            db[engr2] = db2
+        transverse_pressure_angle = []
         for num_mesh in sorted(dict_transverse_pressure_angle.keys()):
-            tpa=dict_transverse_pressure_angle[num_mesh]
+            tpa = dict_transverse_pressure_angle[num_mesh]
             transverse_pressure_angle.append(tpa)
 
         return DF,db,connections_dfs,transverse_pressure_angle
@@ -1718,3 +1722,7 @@ def gear_graph_complex(connections,strong_link):
             gear_graph_kinematic.remove_edges_from([edge])
     connections_kinematic_dfs=list(nx.dfs_edges(gear_graph_kinematic,list_gear[0]))
     return connections_dfs,connections_kinematic_dfs,gear_graph
+
+class ValidGearDiameter(Exception):
+    def __init__(self):
+        super().__init__('Fail base diameter is greater than pitch diameter')

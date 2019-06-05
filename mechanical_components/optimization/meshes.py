@@ -98,10 +98,10 @@ class ContinuousMeshesAssemblyOptimizer:
 #            self.sub_graph_dfs.append(list(nx.dfs_edges(s_graph,node_init)))
         
         # Search of unknown parameters (borne_min different of borne_max)
-        dict_unknown={'db':[],'transverse_pressure_angle':[],
-                 'coefficient_profile_shift':[],'transverse_pressure_angle_rack':[],
-                 'coeff_gear_addendum':[],'coeff_gear_dedendum':[],
-                 'coeff_root_radius':[],'coeff_circular_tooth_thickness':[]}
+        dict_unknown = {'db':[],'transverse_pressure_angle':[],
+                        'coefficient_profile_shift':[],'transverse_pressure_angle_rack':[],
+                        'coeff_gear_addendum':[],'coeff_gear_dedendum':[],
+                        'coeff_root_radius':[],'coeff_circular_tooth_thickness':[]}
         dict_global=copy.deepcopy(dict_unknown)
         for i in list(set(list(self.rack_choice.values()))):
             for k,v in self.rack_list[i].items():
@@ -190,11 +190,11 @@ class ContinuousMeshesAssemblyOptimizer:
         optimizer_data = self._convert_X2x(self.X0)
         dic_torque,dic_cycle = self.TorqueCycleMeshAssembly()
         
-        self.general_data={'Z': Z, 'connections': connections,
+        self.general_data = {'Z': Z, 'connections': connections,
                  'material':material,'torque':dic_torque,'cycle':dic_cycle,
                  'safety_factor':safety_factor,'verbose':verbose}
-        input_dat=dict(list(optimizer_data.items())+list(self.general_data.items()))
-        self.mesh_assembly=MeshAssembly(**input_dat)
+        input_dat = dict(list(optimizer_data.items())+list(self.general_data.items()))
+        self.mesh_assembly = MeshAssembly(**input_dat)
         
         self.save=copy.deepcopy(optimizer_data)
     
@@ -457,24 +457,28 @@ class ContinuousMeshesAssemblyOptimizer:
         Numbers of teeth: {1: 59, 0: 19}
         Center distances: [0.11700000000000001]
         """
-        max_iter=1
-        i=0
-        arret=0 
-        while i<max_iter and arret==0:
-            X0=self.CondInit()
-            x_temp=self.Update(X0)
+        max_iter = 1
+        i = 0
+        arret = 0 
+        while i < max_iter and arret == 0:
+            X0 = self.CondInit()
+            x_temp = self.Update(X0)
             cons = {'type': 'ineq','fun' : self.Fineq}
-            cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons)
-            Xsol=cx.x
-            output_x=self.Update(Xsol)
+            try:
+                cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons)
+            except ValidGearDiameter:
+                i += 1
+                continue
+            Xsol = cx.x
+            output_x = self.Update(Xsol)
             if verbose:
                 print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
                       cx.status,min(self.Fineq(Xsol))))
-            if min(self.Fineq(Xsol))>-1e-5:
-                input_dat=dict(list(output_x.items())+list(self.general_data.items()))
+            if min(self.Fineq(Xsol)) > -1e-5:
+                input_dat = dict(list(output_x.items())+list(self.general_data.items()))
                 self.solutions.append(MeshAssembly(**input_dat))
-                arret=1
-            i=i+1
+                arret = 1
+            i += 1
 
 
 class MeshAssemblyOptimizer:
