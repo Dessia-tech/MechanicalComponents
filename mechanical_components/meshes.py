@@ -958,7 +958,7 @@ class MeshCombination:
                 db1 = db[engr1]
                 if db1 > DF1:
                     print('Error Diameter DB {}, DF {}, Z1 {}, Z2 {}, pa {}'.format(db1, DF1, Z1, Z2, self.transverse_pressure_angle_0))
-                    raise ValidGearDiameterError
+                    raise ValidGearDiameterError()
                 dict_transverse_pressure_angle[num_mesh] = math.acos(db1/DF1)
                 db2 = DF2*math.cos(dict_transverse_pressure_angle[num_mesh])
             db[engr1] = db1
