@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# cython: language_level=3
 """
-Created on Fri Aug 17 02:13:01 2018
 
-@author: Pierre-Emmanuel Dumouchel
 """
 
 #import itertools as it
-from mechanical_components.meshes import MeshAssembly, hardened_alloy_steel
+from mechanical_components.meshes import MeshCombination, MeshAssembly, hardened_alloy_steel,\
+        gear_graph_simple, gear_graph_complex
 import numpy as npy
 import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
-import itertools
+#import volmdlr.primitives3D as primitives3D
+#import volmdlr.primitives2D as primitives2D
+#import itertools
 import networkx as nx
 #import powertransmission.tools as tools
 import dectree
@@ -20,192 +20,6 @@ import math
 
 from scipy.optimize import minimize
 import copy
-
-class CompositeMeshAssembly:
-    def __init__(self,center_distance, connections, transverse_pressure_angle,
-                 coefficient_profile_shift,transverse_pressure_angle_rack,
-                 coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
-                 coeff_circular_tooth_thickness, Z, strong_links=None, material=None,
-                 torque=None, cycle=None,
-                 safety_factor=1,verbose=False):
-        
-        self.connections=connections
-        self.center_distance=center_distance
-        self.mesh_assembly = []
-        self.general_data = []
-        
-        # 
-        for num_graph,list_sub_graph in enumerate(self.sub_graph_dfs):
-            num_mesh=0
-            general_data={'Z': {}, 'connections': [],
-                 'material':{},'torque':{},'cycle':{},
-                 'safety_factor':safety_factor,'verbose':verbose}
-            input_data={'center_distance':[],'transverse_pressure_angle':[],
-                 'coefficient_profile_shift':{},'transverse_pressure_angle_rack':{},
-                 'coeff_gear_addendum':{},'coeff_gear_dedendum':{},
-                 'coeff_root_radius':{},'coeff_circular_tooth_thickness':{}}
-            li_connection=[]
-            for num_cd,list_connection in enumerate(connections):
-                for num_mesh_iter,gs in enumerate(list_connection):
-                    if (gs in list_sub_graph) or (gs[::-1] in list_sub_graph):
-                        li_connection.append(gs)
-                        for num_gear in gs:
-                            if num_gear in coefficient_profile_shift.keys():
-                                input_data['coefficient_profile_shift'][num_gear]=coefficient_profile_shift[num_gear]
-                            if num_gear in transverse_pressure_angle_rack.keys():
-                                input_data['transverse_pressure_angle_rack'][num_gear]=transverse_pressure_angle_rack[num_gear]
-                            if num_gear in coeff_gear_addendum.keys():
-                                input_data['coeff_gear_addendum'][num_gear]=coeff_gear_addendum[num_gear]
-                            if num_gear in coeff_gear_dedendum.keys():
-                                input_data['coeff_gear_dedendum'][num_gear]=coeff_gear_dedendum[num_gear]
-                            if num_gear in coeff_root_radius.keys():
-                                input_data['coeff_root_radius'][num_gear]=coeff_root_radius[num_gear]
-                            if num_gear in coeff_circular_tooth_thickness.keys():
-                                input_data['coeff_circular_tooth_thickness'][num_gear]=coeff_circular_tooth_thickness[num_gear]                                
-                            if num_gear in Z.keys():
-                                general_data['Z'][num_gear]=Z[num_gear]
-                            if num_gear in material.keys():
-                                general_data['material'][num_gear]=material[num_gear]
-                        input_data['transverse_pressure_angle'].append(transverse_pressure_angle[num_mesh])    
-                    num_mesh+=1
-                input_data['center_distance'].append(center_distance[num_cd])
-            general_data['connections']=li_connection
-            for (eng1,eng2) in list_sub_graph:
-                if (eng1,eng2) in torque.keys():
-                    general_data['torque'][(eng1,eng2)]=torque[(eng1,eng2)]
-                if (eng2,eng1) in torque.keys():
-                    general_data['torque'][(eng2,eng1)]=torque[(eng2,eng1)]
-                if eng1 not in general_data['cycle'].keys():
-                    general_data['cycle'][eng1]=cycle[eng1]
-                if eng2 not in general_data['cycle'].keys():
-                    general_data['cycle'][eng2]=cycle[eng2]
-                    
-            self.general_data.append(general_data)
-            xt=dict(list(input_data.items())+list(general_data.items()))
-            self.mesh_assembly.append(MeshAssembly(**xt))
-            
-    def _get_graph_dfs(self):
-        _graph_dfs,_=gear_graph_simple(self.connections)
-        return _graph_dfs
-    sub_graph_dfs=property(_get_graph_dfs)
-    
-    def _get_list_gear(self):
-        _,_list_gear=gear_graph_simple(self.connections)
-        return _list_gear
-    list_gear=property(_get_list_gear)
-    
-    def SVGExport(self,name,position):
-        
-        centers=self.PosAxis(position)
-        L=[]
-        for mesh_assembly_iter in self.mesh_assembly:
-            position_svg={}
-            for num_gear,pos in centers.items():
-                if num_gear in mesh_assembly_iter.Z.keys():
-                    position_svg[num_gear]=pos
-            L.extend(mesh_assembly_iter.SVGExport('gear',position_svg))
-        G1=vm.Contour2D(L)
-        G1.MPLPlot()        
-        
-    def FreeCADExport(self, fcstd_filepath, centers = {}, axis = (1,0,0), export_types=['fcstd'], python_path = 'python',
-                      path_lib_freecad = '/usr/lib/freecad/lib'):
-        """ Export 3D volume to FreeCAD
-        
-        :param file_path: file path for the freecad file
-        :param center: list of tuple define the final position of the gear mesh center (a translation is perform, then a rotation around this axis)
-        :param axis: direction of gear mesh rotation
-        
-        :results: export of a FreeCAD file
-        """
-        for ma in self.mesh_assembly:
-            ma.FreeCADExport(fcstd_filepath, centers, axis, python_path, path_lib_freecad, export_types)
-        
-    def Update(self,optimizer_data):
-        output_x=[]
-        for num_graph,list_sub_graph in enumerate(self.sub_graph_dfs):
-            num_mesh=0
-            input_data={'center_distance':[],'transverse_pressure_angle':[],
-                 'coefficient_profile_shift':{},'transverse_pressure_angle_rack':{},
-                 'coeff_gear_addendum':{},'coeff_gear_dedendum':{},
-                 'coeff_root_radius':{},'coeff_circular_tooth_thickness':{}}
-            li_connection=[]
-            for num_cd,list_connection in enumerate(self.connections):
-                for num_mesh_iter,(eng1,eng2) in enumerate(list_connection):
-                    if ((eng1,eng2) in list_sub_graph) or ((eng2,eng1) in list_sub_graph):
-                        li_connection.append((eng1,eng2))
-                        for key,list_value in optimizer_data.items():
-                            if key in ['coefficient_profile_shift',
-                                       'transverse_pressure_angle_rack',
-                                       'coeff_gear_addendum','coeff_gear_dedendum',
-                                       'coeff_root_radius','coeff_circular_tooth_thickness']:
-                                input_data[key][eng1]=optimizer_data[key][eng1]
-                                input_data[key][eng2]=optimizer_data[key][eng2]
-                            elif key in ['center_distance']:
-                                input_data[key].append(optimizer_data[key][num_cd])
-                            elif key in ['transverse_pressure_angle']:
-                                input_data[key].append(optimizer_data[key][num_mesh])
-                    num_mesh+=1
-            xt=dict(list(input_data.items())+list(self.general_data[num_graph].items()))
-            output_x.append(xt)
-            
-#            if self.save!=optimizer_data:
-            self.mesh_assembly[num_graph].Update(**xt)
-        return output_x
-        
-    def PosAxis(self,position):
-        # Definition of the initial center for all gear (when not given by the user)
-        
-        gear_graph=nx.Graph()
-        gear_graph.add_nodes_from(self.list_gear)
-        for num_cd,list_connections in enumerate(self.connections):
-            (eng1_m,eng2_m)=list_connections[0]
-            if len(list_connections)>1:
-                for (eng1,eng2) in list_connections[1:]:
-                    gear_graph.add_edges_from([(eng1_m,eng1),(eng2_m,eng2)])        
-                    eng1_m=eng1
-                    eng2_m=eng2
-        list_line=list(nx.connected_component_subgraphs(gear_graph))
-        dict_line={}
-        for num_line,list_num_eng in enumerate(list_line):
-            for num_eng in list_num_eng:
-                dict_line[num_eng]=num_line
-        def fun(x):
-            obj=0
-            for num_cd,list_connections in enumerate(self.connections):
-                eng1=dict_line[list_connections[0][0]]
-                eng2=dict_line[list_connections[0][1]]
-                obj+=(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-self.center_distance[num_cd])**2
-            return obj
-        def eg(x):
-            ine=[]
-            for k,val in position.items():
-                key=dict_line[k]
-                ine.append(x[2*int(key)]-val[0])
-                ine.append(x[2*int(key)+1]-val[1])
-            return ine
-        def ineg(x):
-            ine=[]
-            for num_cd,list_connections in enumerate(self.connections):
-                eng1=dict_line[list_connections[0][0]]
-                eng2=dict_line[list_connections[0][1]]
-                ine.append(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-0.999*self.center_distance[num_cd])
-                ine.append(1.001*self.center_distance[num_cd]-((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5)
-            return ine
-        cons = ({'type': 'eq','fun' : eg},{'type': 'ineq','fun' : ineg})
-        drap=1
-        while drap==1:
-            x0=tuple(npy.random.random(2*len(list_line))*1)
-            Bound=[[0,1]]*(len(list_line)*2)
-            res = minimize(fun,x0, method='SLSQP', bounds=Bound,constraints=cons)
-            if (min(ineg(res.x))>0) and (max(eg(res.x))<1e-7):
-                drap=0
-        x_opt=res.x
-        centers={}
-        for num_pos,num_eng in enumerate(self.list_gear):
-            opt_pos=dict_line[num_eng]
-            centers[num_eng]=[x_opt[2*opt_pos],x_opt[2*opt_pos+1]]
-        return centers
-
 
 class ContinuousMeshesAssemblyOptimizer:
     """
@@ -380,7 +194,7 @@ class ContinuousMeshesAssemblyOptimizer:
                  'material':material,'torque':dic_torque,'cycle':dic_cycle,
                  'safety_factor':safety_factor,'verbose':verbose}
         input_dat=dict(list(optimizer_data.items())+list(self.general_data.items()))
-        self.mesh_assembly=CompositeMeshAssembly(**input_dat)
+        self.mesh_assembly=MeshAssembly(**input_dat)
         
         self.save=copy.deepcopy(optimizer_data)
     
@@ -658,7 +472,7 @@ class ContinuousMeshesAssemblyOptimizer:
                       cx.status,min(self.Fineq(Xsol))))
             if min(self.Fineq(Xsol))>-1e-5:
                 input_dat=dict(list(output_x.items())+list(self.general_data.items()))
-                self.solutions.append(CompositeMeshAssembly(**input_dat))
+                self.solutions.append(MeshAssembly(**input_dat))
                 arret=1
             i=i+1
 
@@ -1301,66 +1115,3 @@ class MeshAssemblyOptimizer:
                     print('Center distances gear set n°{}: {}'.format(num_graph,self.solutions[-1].mesh_assembly[num_graph].center_distance))
                     print('Module gear set n°{}: {}'.format(num_graph,self.solutions[-1].mesh_assembly[num_graph].meshes[list(self.solutions[-1].mesh_assembly[num_graph].meshes.keys())[0]].rack.module))
       
-def gear_graph_simple(connections):
-    # NetworkX graph construction
-    list_gear=[] # list of all gears
-    compt_mesh=0 # number of gear mesh
-    for gs in connections:
-        for (eng1,eng2) in gs:
-            compt_mesh+=1
-            if eng1 not in list_gear:
-                list_gear.append(eng1)
-            if eng2 not in list_gear:
-                list_gear.append(eng2)
-    # Construction of one graph include all different connection type (gear_mesh, same_speed, same_shaft)
-    gear_graph=nx.Graph()
-    gear_graph.add_nodes_from(list_gear)
-    for list_edge in connections:
-        gear_graph.add_edges_from(list_edge)                  
-    sub_graph=list(nx.connected_component_subgraphs(gear_graph))
-    sub_graph_dfs=[]
-    for s_graph in sub_graph:
-        node_init=list(s_graph.nodes())[0]
-        sub_graph_dfs.append(list(nx.dfs_edges(s_graph,node_init)))
-    return sub_graph_dfs,list_gear
-
-def gear_graph_complex(connections,strong_link):
-    # Construction of one graph include all different connection type (gear_mesh, same_speed, same_shaft)
-    _,list_gear=gear_graph_simple(connections)
-    gear_graph=nx.Graph()
-    gear_graph.add_nodes_from(list_gear)
-    for list_edge in connections:
-        gear_graph.add_edges_from(list_edge,typ='gear_mesh')
-        li_shaft1=[]
-        li_shaft2=[]
-        for eng1,eng2 in list_edge:
-            li_shaft1.append(eng1)
-            li_shaft2.append(eng2)
-        if len(li_shaft1)>1:
-            for pos_gear,num_gear in enumerate(li_shaft1[1:]):
-                valid_strong_ling=False
-                for list_strong_link in strong_link:
-                    if (num_gear in list_strong_link) and (li_shaft1[pos_gear] in list_strong_link):
-                        valid_strong_ling=True
-                if valid_strong_ling:
-                    gear_graph.add_edges_from([(num_gear,li_shaft1[pos_gear])],typ='same_speed')
-                else:
-                    gear_graph.add_edges_from([(num_gear,li_shaft1[pos_gear])],typ='same_shaft')
-        if len(li_shaft2)>1:
-            for pos_gear,num_gear in enumerate(li_shaft2[1:]):
-                valid_strong_ling=False
-                for list_strong_link in strong_link:
-                    if (num_gear in list_strong_link) and (li_shaft2[pos_gear] in list_strong_link):
-                        valid_strong_ling=True
-                if valid_strong_ling:
-                    gear_graph.add_edges_from([(num_gear,li_shaft2[pos_gear])],typ='same_speed')                   
-                else:
-                    gear_graph.add_edges_from([(num_gear,li_shaft2[pos_gear])],typ='same_shaft')                   
-    connections_dfs=list(nx.dfs_edges(gear_graph,list_gear[0]))
-    # construction of a graph without same_shaft attribute
-    gear_graph_kinematic=copy.deepcopy(gear_graph)
-    for edge,typ in nx.get_edge_attributes(gear_graph_kinematic,'typ').items():
-        if typ=='same_shaft':
-            gear_graph_kinematic.remove_edges_from([edge])
-    connections_kinematic_dfs=list(nx.dfs_edges(gear_graph_kinematic,list_gear[0]))
-    return connections_dfs,connections_kinematic_dfs,gear_graph

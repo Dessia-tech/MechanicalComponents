@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# cython: language_level=3
 """
 Created on Fri Aug 17 02:14:21 2018
 
 @author: steven
 """
 
-from mechanical_components.bearings import oil_iso_vg_1500, material_iso, iso_bearings, bearing_rules, iso_rollers
+
+#from mechanical_components.catalogs.ISO_bearings import iso_bearings, bearing_rules
 
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
         SphericalBallBearing, \
@@ -771,6 +773,8 @@ class BearingAssemblyOptimizer:
                              'class':'mechanical_components.bearings.BearingCatalog',
                              'type':'object'}]
     
+    _dessia_methods = ['Optimize']
+    
     def __init__(self, loads, speeds, operating_times,
                  inner_diameters,
                  outer_diameters,
@@ -942,7 +946,7 @@ class BearingAssemblyOptimizer:
                     valid = False
                     break
                 
-                if (bearings[-1].Cr < 5) or (d > D) or (d == 0) or (D == 0):
+                if (bearings[-1].Cr < 1) or (d > D) or (d == 0) or (D == 0):
                     valid = False
                     break
                 
@@ -970,7 +974,7 @@ class BearingAssemblyOptimizer:
                                                                 N = self.speeds, 
                                                                 t = self.operating_times, Cr = bearing.Cr))
                         L10 = BearingAssembly.EstimateBaseLifeTime(list_L10)
-                        
+
                         if L10 > L10_objective:
                             best_L10 = max(best_L10, L10)
 #                            print(best_L10)
@@ -1092,10 +1096,10 @@ class BearingAssemblyOptimizer:
                     bearing = bearing_left_possibilies[node]
                     bearings.append(bearing)
                     d = bearing.d
-                    if (d == d_left_pre) and (dt.current_depth == 1):
-                        valid = False
-                        break
-                    d_left_pre = d
+#                    if (d == d_left_pre) and (dt.current_depth == 1):
+#                        valid = False
+#                        break
+#                    d_left_pre = d
                     D = bearing.D
                     B_left += bearing.B                    
                     
@@ -1109,10 +1113,10 @@ class BearingAssemblyOptimizer:
                     bearing = bearing_right_possibilies[node]
                     bearings.append(bearing)
                     d = bearing.d
-                    if (d == d_right_pre) and (dt.current_depth == 1):
-                        valid = False
-                        break
-                    d_right_pre = d
+#                    if (d == d_right_pre) and (dt.current_depth == 1):
+#                        valid = False
+#                        break
+#                    d_right_pre = d
                     D = bearing.D
                     B_right += bearing.B
 #                        if d_right < d_left:
@@ -1146,23 +1150,23 @@ class BearingAssemblyOptimizer:
 #                        break
                 
                 # a supprimer suite MAJ base rlts
-                if Cr_current_node[-1] < 20:
-                    valid = False
-                    break
+#                if Cr_current_node[-1] < 20:
+#                    valid = False
+#                    break
                 
-                if len(list_Cr) > 0:
-                    if Cr_current_node[-1] < min([cr[depth] for cr in list_Cr]):
-                        valid = False
-                        break
+#                if len(list_Cr) > 0:
+#                    if Cr_current_node[-1] < min([cr[depth] for cr in list_Cr]):
+#                        valid = False
+#                        break
                     
             if (dt.current_depth == nb_bearings) and valid:
                     
                 if (B_left > self.lengths[0]) or (B_right > self.lengths[1]):
                     valid = False
                     
-                if Cr_current_node_m == Cr_current_node:
-                    valid = False
-                Cr_current_node_m = Cr_current_node
+#                if Cr_current_node_m == Cr_current_node:
+#                    valid = False
+#                Cr_current_node_m = Cr_current_node
 
             if (dt.current_depth == nb_bearings) and valid:
                 
@@ -1183,9 +1187,11 @@ class BearingAssemblyOptimizer:
                 pos2_max = self.axial_positions[1] + self.lengths[1]
 
                 try:
-                    bearing_assembly.ShaftLoad([(pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.], 
-                                                bearing_assembly_simulation_result)
-                    L10 = bearing_assembly_simulation_result.L10
+                    L10 = 0
+                    for pos1, pos2 in product([pos1_min, pos1_max], [pos2_min, pos2_max]):
+                        bearing_assembly.ShaftLoad([pos1, pos2], 
+                                                    bearing_assembly_simulation_result)
+                        L10 = max(L10, bearing_assembly_simulation_result.L10)
                 except BearingL10Error:
                     break
                 
@@ -1225,7 +1231,7 @@ class BearingAssemblyOptimizer:
                             return False
                     
                     valid_fsolve = False
-                    for i in range(2):
+                    for i in range(5):
                         cond_init = npy.random.random(1)*3
                         sol = fsolve(funct, cond_init[0])[0]
                         if funct([sol]) < 1e-4:
@@ -1344,11 +1350,10 @@ class BearingAssemblyOptimizer:
             
             print('number bearing assemblies configurations {}'.format(len(bearing_assembly_configurations_sort)))
             for bearing_assembly_configurations in bearing_assembly_configurations_sort:
-#                print('decision tree estimation', nb_solutions_family)
+                print('decision tree estimation', 1)
                 bearing_assemblies = self.AnalyzeBearingCombinations(bearing_assembly_configurations, 
                                                                      L10_objective = L10_objective,
                                                                      max_bearing_assemblies=nb_solutions_family)
-
                 cas_bearing_assembly_simulations = []
                 for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
                     cas_bearing_assembly_simulations.append(bearing_assembly)
@@ -1357,6 +1362,7 @@ class BearingAssemblyOptimizer:
                 print('size solutions {}'.format(len(bearing_assembly_generic)))
                 
         #Cost optimization
+        #Initial sort before continuous optim
         list_cost = []
         for cas_bearing_assembly_simulations in bearing_assembly_generic:
             li_cost = [ba.cost for ba in cas_bearing_assembly_simulations]
@@ -1366,16 +1372,19 @@ class BearingAssemblyOptimizer:
         bearing_assembly_simulations = []
         sort_bearing_assembly_simulations = []
         for bearing_assemblies in bearing_assembly_simulations_sort:
+            list_cost_temp = [ba.cost for ba in bearing_assemblies]
+            bearing_assemblies_temp = [bearing_assemblies[i] for i in npy.argsort(list_cost_temp)]
             cas_bearing_assembly_simulations = []
-            for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
+            for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies_temp):
                 try:
                     bearing_assembly_simulation = self.ContinuousOptimization(bearing_assembly)
                     L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
                     mass = bearing_assembly_simulation.bearing_assembly.mass
+                    cost = bearing_assembly_simulation.bearing_assembly.cost
                     if L10 >= L10_objective:
                         cas_bearing_assembly_simulations.append(bearing_assembly_simulation)
                         sort_bearing_assembly_simulations.append(mass)
-                        print('solution with L10 {}, nb solutions {}'.format(L10, len(cas_bearing_assembly_simulations)))
+                        print('solution with L10 {}, nb solutions {}, cost {}, mass {}'.format(L10, len(cas_bearing_assembly_simulations), cost, mass))
                 except AxialPositionConvergenceError:
                     pass
                 if len(bearing_assembly_simulations) > nb_solutions_family:
@@ -1384,11 +1393,21 @@ class BearingAssemblyOptimizer:
                 bearing_assembly_simulations.append(cas_bearing_assembly_simulations)
             if len(bearing_assembly_simulations) > nb_solutions_family:
                 break
+        #Final sort after optimization
+        list_cost = []
+        for bas in bearing_assembly_simulations:
+            li_cost = [ba.bearing_assembly.cost for ba in bas]
+            list_cost.append(min(li_cost))
+        bas_sort = [bearing_assembly_simulations[i] for i in npy.argsort(list_cost)]
+        list_cost_best = []
+        for bas in bas_sort[0]:
+            list_cost_best.append(bas.bearing_assembly.cost)
             
-        self.bearing_assembly_simulations = bearing_assembly_simulations[0]
-        self.bearing_assembly_simulations.extend([bas[0] for bas in bearing_assembly_simulations[1:]])
+        self.bearing_assembly_simulations = [bas_sort[0][i] for i in npy.argsort(list_cost_best)]
+        self.bearing_assembly_simulations.extend([bas[0] for bas in bas_sort[1:]])
                 
         #Mass optimization
+        #Initial sort before continuous optim
         list_mass = []
         for cas_bearing_assembly_simulations in bearing_assembly_generic:
             li_mass = [ba.mass for ba in cas_bearing_assembly_simulations]
@@ -1398,16 +1417,19 @@ class BearingAssemblyOptimizer:
         bearing_assembly_simulations = []
         sort_bearing_assembly_simulations = []
         for bearing_assemblies in bearing_assembly_simulations_sort:
+            list_mass_temp = [ba.mass for ba in bearing_assemblies]
+            bearing_assemblies_temp = [bearing_assemblies[i] for i in npy.argsort(list_mass_temp)]
             cas_bearing_assembly_simulations = []
-            for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
+            for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies_temp):
                 try:
                     bearing_assembly_simulation = self.ContinuousOptimization(bearing_assembly)
                     L10 = bearing_assembly_simulation.bearing_assembly_simulation_result.L10
                     mass = bearing_assembly_simulation.bearing_assembly.mass
+                    cost = bearing_assembly_simulation.bearing_assembly.cost
                     if L10 >= L10_objective:
                         cas_bearing_assembly_simulations.append(bearing_assembly_simulation)
                         sort_bearing_assembly_simulations.append(mass)
-                        print('solution with L10 {}, nb solutions {}'.format(L10, len(cas_bearing_assembly_simulations)))
+                        print('solution with L10 {}, nb solutions {}, cost {}, mass {}'.format(L10, len(cas_bearing_assembly_simulations), cost, mass))
                 except AxialPositionConvergenceError:
                     pass
                 if len(bearing_assembly_simulations) > nb_solutions_family:
@@ -1416,36 +1438,18 @@ class BearingAssemblyOptimizer:
                 bearing_assembly_simulations.append(cas_bearing_assembly_simulations)
             if len(bearing_assembly_simulations) > nb_solutions_family:
                 break
+        #Final sort after optimization
+        list_mass = []
+        for bas in bearing_assembly_simulations:
+            li_mass = [ba.bearing_assembly.mass for ba in bas]
+            list_mass.append(min(li_mass))
+        bas_sort = [bearing_assembly_simulations[i] for i in npy.argsort(list_mass)]
+        list_mass_best = []
+        for bas in bas_sort[0]:
+            list_mass_best.append(bas.bearing_assembly.mass)
             
-        self.bearing_assembly_simulations.extend(bearing_assembly_simulations[0])
-        self.bearing_assembly_simulations.extend([bas[0] for bas in bearing_assembly_simulations[1:]])
-          
-        
-#        best_mass = npy.inf
-#        num_best_mass = 0
-#        add_best_mass = {}
-#        for num_family, typ_bearing_assembly_simulation in enumerate(bearing_assembly_simulations):
-#            best_mass_elem = npy.inf
-#            for num_elem, bearing_assembly_simulation in enumerate(typ_bearing_assembly_simulation):
-#                mass = bearing_assembly_simulation.bearing_assembly.mass
-#                if mass < best_mass:
-#                    best_mass = mass
-#                    num_best_mass = num_family
-#                if mass < best_mass_elem:
-#                    best_mass_elem = mass
-#                    num_best_mass_elem = num_elem
-#            add_best_mass[num_family] = num_elem
-#            
-#            
-#        self.bearing_assembly_simulations = bearing_assembly_simulations[num_best_mass]
-#        list_sort = []
-#        list_ba = []
-#        for num_family, num_elem in add_best_mass.items():
-#            if num_family != num_best_mass:
-#                list_ba.append(bearing_assembly_simulations[num_family][num_elem])
-#                list_sort.append(bearing_assembly_simulations[num_family][num_elem].bearing_assembly.mass)
-#                
-#        self.bearing_assembly_simulations.extend([list_ba[i] for i in npy.argsort(list_sort)])
+        self.bearing_assembly_simulations.extend([bas_sort[0][i] for i in npy.argsort(list_mass_best)])
+        self.bearing_assembly_simulations.extend([bas[0] for bas in bas_sort[1:]])
         
         
     def ContinuousOptimization(self, bearing_assembly):
@@ -1462,9 +1466,9 @@ class BearingAssemblyOptimizer:
         l1 = bearing_assembly.bearing_combinations[0].B
         l2 = bearing_assembly.bearing_combinations[1].B
         pos1_min = self.axial_positions[0] + l1/2.
-        pos1_max = self.axial_positions[0] + self.lengths[0] - l1/2.
+        pos1_max = max(pos1_min, self.axial_positions[0] + self.lengths[0] - l1/2.)
         pos2_min = self.axial_positions[1] + l2/2.
-        pos2_max = self.axial_positions[1] + self.lengths[1] - l2/2.
+        pos2_max = max(pos2_min, self.axial_positions[1] + self.lengths[1] - l2/2.)
         pos1_moy = (pos1_min + pos1_max)/2.
         pos2_moy = (pos2_min + pos2_max)/2.
         

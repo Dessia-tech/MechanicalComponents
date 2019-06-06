@@ -23,7 +23,7 @@ b3 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1,
                                        Z = 20, Dw = 0.005, alpha = 0.1, Cr = 1e3)
 b4 = bearings.AngularBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005, alpha = 0.1, Cr = 1e3)
-b5 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
+b5 = bearings.TaperedRollerBearing(d = 0.02, D = 0.04, B = 0.015, alpha = 0.2, i = 1, 
                                        Z = 20, Dw = 0.005, Cr = 1e3)
 list_bearing = [b1, b2, b2, b2]
 BA = bearings.BearingCombination(list_bearing, directions = [1, 1, 1, 1], radial_load_linkage = [True]*4, internal_pre_load = 0, 
