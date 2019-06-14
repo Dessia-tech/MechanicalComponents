@@ -7,6 +7,7 @@ import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 import math
+from mechanical_components import shafts_assembly 
 
 #import copy
 import json
@@ -727,7 +728,10 @@ class RadialBearing:
             print(d['class_name'])
             raise ValueError
         
-        
+    def to_shaft(self):
+        return shafts_assembly.Shaft(self.PlotContour(), name=self.name)
+    
+    
 # =============================================================
 # Object générique roulement cylindrique
 # =============================================================
