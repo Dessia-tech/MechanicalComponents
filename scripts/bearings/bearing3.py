@@ -72,16 +72,16 @@ bis = bearings_opt.BearingAssemblyOptimizer(
                     )
 
 bis2 = bearings_opt.BearingAssemblyOptimizer(
-                    loads = [[[[0.159, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
-                    speeds = [150],
-                    operating_times = [1000*3600],
+                    loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
+                    speeds = [157.07],
+                    operating_times = [3600000],
                     inner_diameters = [0.035, 0.035],
                     axial_positions = [0, 0.3], 
                     outer_diameters = [0.072, 0.072], 
-                    lengths = [0.06, 0.04],
-                    linkage_types = [['all'], ['all']],
-                    mounting_types = [['free', 'left']],
-                    number_bearings = [[1, 2], [1]],
+                    lengths = [0.03, 0.03],
+                    linkage_types = [['ball_joint', 'cylindric_joint'], ['ball_joint', 'cylindric_joint']],
+                    mounting_types = [['left', 'right']],
+                    number_bearings = [[1, 2], [1, 2]],
 
 #                    bearing_classes = [bearings.RadialBallBearing, 
 #                                       bearings.AngularBallBearing,
@@ -113,11 +113,11 @@ bis2 = bearings_opt.BearingAssemblyOptimizer(
 bis2.Optimize(10)
 
 for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
-    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
+#    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
     ba_simulation.bearing_assembly.Plot()    
-    print(ba_simulation.bearing_assembly.cost)
+    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly.cost, ba_simulation.bearing_assembly_simulation_result.L10)
 #    print(hash(ba_simulation))
-    print(ba_simulation == ba_simulation)
+    equal = (ba_simulation == ba_simulation)
     
 print(bearing_assembly_opt == bis2)
     

@@ -2643,6 +2643,13 @@ class BearingCombination:
                        and self.connection_be == other_eb.connection_be
                        and self.connection_bi == other_eb.connection_bi
                        and self.behavior_link == other_eb.behavior_link)
+        if hasattr(self, 'axial_positions') and hasattr(other_eb, 'axial_positions'):
+            equal = (equal and self.axial_positions == other_eb.axial_positions
+                           and self.internal_diameters == other_eb.internal_diameters
+                           and self.external_diameters == other_eb.external_diameters
+                           and self.length == other_eb.length)
+        elif hasattr(self, 'axial_positions') or hasattr(other_eb, 'axial_positions'):
+            equal = False
         return equal
     
     def __hash__(self):

@@ -1,0 +1,75 @@
+kind: pipeline
+name: default
+
+steps:
+- name: install
+  image: python:3
+  commands:
+  - git fetch --tags
+  - pip install Cython
+  - python setup.py install
+  - pip install sphinx sphinx_rtd_theme
+  - cd doc
+  - make html
+
+- name: develop
+  image: python:3
+  commands:
+  - git fetch --tags
+  - pip install Cython
+  - python setup.py develop
+
+- name: sdist
+  image: python:3
+  commands:
+  - git fetch --tags
+  - python setup.py sdist
+
+- name: upload sdist
+  image: appleboy/drone-scp
+  when:
+    branch: master
+  settings:
+    host: austerlitz.dessia.tech
+    target: /home/drone/autobuild/mechanical_components/sdist
+    source: dist/*
+    strip_components: 1
+    username: drone
+    password:
+      from_secret: ssh_drone_password
+
+- name: compile linux
+  image: python:3
+  commands:
+  - pip install Cython
+  - python compile.py build_ext --exp_month=7 --exp_year=2029 --macs=2234420019928
+
+- name: upload_doc_master
+  image: appleboy/drone-scp
+  when: 
+    branch: master
+  settings:
+    host: austerlitz.dessia.tech
+    target: /var/www/documentation/MechanicalComponents/
+    source: doc/build/html/*
+    strip_components: 3
+    username: drone
+    password:
+      from_secret: ssh_drone_password
+
+- name: push opensource
+  image: alpine/git
+  when:
+    branch: master
+  commands:
+    - git format-patch HEAD~1..HEAD
+    - mkdir git-opensource
+    - cd git-opensource
+    - git clone https://git.dessia.tech/OpenSource/MechanicalComponents.git
+    - cd MechanicalComponents
+    - git config --global user.email "root@dessia.tech"
+    - git config --global user.name "Steven Masfaraud" 
+    - git am $(printf -- '--exclude=%s ' $(cat .gitignore)) ../../*.patch
+    - git add -u
+    - if ! [[ -z $(git status -s -uno) ]]; then git commit -m "Automated commit"; fi
+    - git push origin master

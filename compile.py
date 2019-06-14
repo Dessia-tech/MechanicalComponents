@@ -31,7 +31,7 @@ getnode_defined = False
 args_delete = []
 for arg in sys.argv:
     if arg.startswith('--macs='):
-        macs = arg[7:].strip('[]').replace("'",'').split(',')
+        macs = arg[8:].strip('[]').replace("'",'').split(',')
         if type(macs) != list:
             raise ValueError
         macs_defined = True
@@ -100,7 +100,7 @@ addresses_determination_lines = ['import netifaces\n',
                                  ]
 
 if macs_defined:
-    protection_lines.extend(['if addrs != set({}):\n'.format(macs),
+    protection_lines.extend(['if addrs.isdisjoint(set({})):\n'.format(macs),
                              '    print("{}")\n'.format(error_msg_mac),
                              '    raise RuntimeError\n\n'])
 elif getnode_defined:
@@ -114,14 +114,14 @@ elif getnode_defined:
 
 files_to_compile = []
 for file in protected_files:
-    with open(file, 'r') as f:
+    with open(file, 'r', encoding="utf-8") as f:
         # File Parsing
         new_file_lines = []        
         lines = f.readlines()
         line_index = 0
         # Inserting imports for uuid and time
         line = lines[line_index]
-        while line.startswith('#!') or line.startswith('# -*-'):
+        while line.startswith('#!') or line.startswith('# -*-') or ('cython' in line):
             new_file_lines.append(line)
             line_index += 1
             line = lines[line_index]
@@ -209,15 +209,17 @@ for file in protected_files:
                     
         new_file_name = file[:-3]+'_protected.pyx'
         files_to_compile.append(new_file_name)
-        with open(new_file_name, 'w+') as nf:
+        with open(new_file_name, 'w+', encoding="utf-8") as nf:
             nf.writelines(new_file_lines)
+            
+#        print('\n\n',new_file_name,'\n')
+#        _ = [print(nli) for nli in new_file_lines]
                 
         
 
 ext_modules = []
 for file, file_to_compile in zip(protected_files, files_to_compile):
     module = file.replace('/','.')
-#    module. '_compiled'
     module = module[:-3]
     ext_modules.append(Extension(module,  [file_to_compile]))
 
@@ -226,7 +228,8 @@ print(ext_modules)
 setup(
     name = 'powertransmission',
     cmdclass = {'build_ext': build_ext},
-    ext_modules = ext_modules
+    ext_modules = ext_modules,
+    
 )
             
 # Remove _protected files and .c
