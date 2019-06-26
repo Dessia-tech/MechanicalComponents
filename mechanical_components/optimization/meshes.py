@@ -6,10 +6,10 @@
 """
 
 #import itertools as it
-from mechanical_components.meshes import MeshCombination, MeshAssembly, hardened_alloy_steel,\
-        gear_graph_simple, gear_graph_complex
+from mechanical_components.meshes import MeshAssembly, hardened_alloy_steel,\
+        gear_graph_simple, gear_graph_complex, ValidGearDiameterError
 import numpy as npy
-import volmdlr as vm
+#import volmdlr as vm
 #import volmdlr.primitives3D as primitives3D
 #import volmdlr.primitives2D as primitives2D
 #import itertools
@@ -98,10 +98,10 @@ class ContinuousMeshesAssemblyOptimizer:
 #            self.sub_graph_dfs.append(list(nx.dfs_edges(s_graph,node_init)))
         
         # Search of unknown parameters (borne_min different of borne_max)
-        dict_unknown={'db':[],'transverse_pressure_angle':[],
-                 'coefficient_profile_shift':[],'transverse_pressure_angle_rack':[],
-                 'coeff_gear_addendum':[],'coeff_gear_dedendum':[],
-                 'coeff_root_radius':[],'coeff_circular_tooth_thickness':[]}
+        dict_unknown = {'db':[],'transverse_pressure_angle':[],
+                        'coefficient_profile_shift':[],'transverse_pressure_angle_rack':[],
+                        'coeff_gear_addendum':[],'coeff_gear_dedendum':[],
+                        'coeff_root_radius':[],'coeff_circular_tooth_thickness':[]}
         dict_global=copy.deepcopy(dict_unknown)
         for i in list(set(list(self.rack_choice.values()))):
             for k,v in self.rack_list[i].items():
@@ -190,11 +190,11 @@ class ContinuousMeshesAssemblyOptimizer:
         optimizer_data = self._convert_X2x(self.X0)
         dic_torque,dic_cycle = self.TorqueCycleMeshAssembly()
         
-        self.general_data={'Z': Z, 'connections': connections,
+        self.general_data = {'Z': Z, 'connections': connections,
                  'material':material,'torque':dic_torque,'cycle':dic_cycle,
                  'safety_factor':safety_factor,'verbose':verbose}
-        input_dat=dict(list(optimizer_data.items())+list(self.general_data.items()))
-        self.mesh_assembly=MeshAssembly(**input_dat)
+        input_dat = dict(list(optimizer_data.items())+list(self.general_data.items()))
+        self.mesh_assembly = MeshAssembly(**input_dat)
         
         self.save=copy.deepcopy(optimizer_data)
     
@@ -271,13 +271,13 @@ class ContinuousMeshesAssemblyOptimizer:
             X0.append((interval[1]-interval[0])*float(npy.random.random(1))+interval[0])
         return X0
     
-    def _convert_X2x(self,X):
+    def _convert_X2x(self, X):
         optimizer_data={'center_distance':[],'transverse_pressure_angle':[],
                  'coefficient_profile_shift':{},'transverse_pressure_angle_rack':{},
                  'coeff_gear_addendum':{},'coeff_gear_dedendum':{},
                  'coeff_root_radius':{},'coeff_circular_tooth_thickness':{}} # dictionary of possibily/currently optimization data
         # copy and transfert data to the dictionary optimizer_data
-        liste_transverse_pressure_angle=[]
+#        liste_transverse_pressure_angle=[]
         for key,list_ind in self.dict_global.items():
             for num_elem in list_ind:
                 if key in ['coefficient_profile_shift']:
@@ -354,7 +354,9 @@ class ContinuousMeshesAssemblyOptimizer:
                 num_mesh+=1
         num_mesh=0
         for num_cd,list_connection in enumerate(self.connections):
+#            print('optimizer_data {} dict_cd {} num_cd {}'.format(optimizer_data, dict_cd, num_cd))
             optimizer_data['center_distance'].append(dict_cd[num_cd])
+
             for num_mesh_iter,(eng1,eng2) in enumerate(list_connection):
                 optimizer_data['transverse_pressure_angle'].append(dict_tpa[num_mesh])
                 num_mesh+=1
@@ -379,12 +381,12 @@ class ContinuousMeshesAssemblyOptimizer:
     def Update(self,X):
         
         optimizer_data = self._convert_X2x(X)
-        output_x = self.mesh_assembly.Update(optimizer_data)
+        _ = self.mesh_assembly.Update(optimizer_data)
         return optimizer_data
     
     def Fineq(self,X):
         
-        x=self.Update(X)
+        _ = self.Update(X)
         ineq=[]
         for mesh_assembly_iter in self.mesh_assembly.mesh_assembly:
             ineq.extend(mesh_assembly_iter.ListeIneq())
@@ -423,7 +425,7 @@ class ContinuousMeshesAssemblyOptimizer:
         return ineq
         
     def Objective(self,X):
-        x=self.Update(X)
+        _ = self.Update(X)
         fineq=self.Fineq(X)
         obj=0
         for mesh_assembly_iter in self.mesh_assembly.mesh_assembly:
@@ -457,24 +459,28 @@ class ContinuousMeshesAssemblyOptimizer:
         Numbers of teeth: {1: 59, 0: 19}
         Center distances: [0.11700000000000001]
         """
-        max_iter=1
-        i=0
-        arret=0 
-        while i<max_iter and arret==0:
-            X0=self.CondInit()
-            x_temp=self.Update(X0)
+        max_iter = 1
+        i = 0
+        arret = 0 
+        while i < max_iter and arret == 0:
+            X0 = self.CondInit()
+            _ = self.Update(X0)
             cons = {'type': 'ineq','fun' : self.Fineq}
-            cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons)
-            Xsol=cx.x
-            output_x=self.Update(Xsol)
+            try:
+                cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons)
+            except ValidGearDiameterError:
+                i += 1
+                continue
+            Xsol = cx.x
+            output_x = self.Update(Xsol)
             if verbose:
                 print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
                       cx.status,min(self.Fineq(Xsol))))
-            if min(self.Fineq(Xsol))>-1e-5:
-                input_dat=dict(list(output_x.items())+list(self.general_data.items()))
+            if min(self.Fineq(Xsol)) > -1e-5:
+                input_dat = dict(list(output_x.items())+list(self.general_data.items()))
                 self.solutions.append(MeshAssembly(**input_dat))
-                arret=1
-            i=i+1
+                arret = 1
+            i += 1
 
 
 class MeshAssemblyOptimizer:

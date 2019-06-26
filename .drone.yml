@@ -2,7 +2,7 @@ kind: pipeline
 name: default
 
 steps:
-- name: install
+- name: install, doc and script running
   image: python:3
   commands:
   - git fetch --tags
@@ -11,6 +11,9 @@ steps:
   - pip install sphinx sphinx_rtd_theme
   - cd doc
   - make html
+  - cd ../
+  - python scripts/bearings/bearing3.py
+  - python scripts/meshes/meshes_agb.py
 
 - name: develop
   image: python:3
@@ -25,18 +28,18 @@ steps:
   - git fetch --tags
   - python setup.py sdist
 
-- name: upload sdist
-  image: appleboy/drone-scp
-  when:
+- name: upload sdist to seafile
+  image: dessia/drone-seafile
+  when: 
     branch: master
   settings:
-    host: austerlitz.dessia.tech
-    target: /home/drone/autobuild/mechanical_components/sdist
-    source: dist/*
-    strip_components: 1
-    username: drone
-    password:
-      from_secret: ssh_drone_password
+    server_url: https://partage.dessia.tech
+    repo_id:
+      from_secret: seafile_repo_id
+    seafile_token:
+      from_secret: seafile_token
+    files: dist/*
+    root_directory: /mechanical_components/
 
 - name: compile linux
   image: python:3
