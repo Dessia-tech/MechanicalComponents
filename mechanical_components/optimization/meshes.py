@@ -192,7 +192,7 @@ class ContinuousMeshesAssemblyOptimizer:
         
         self.general_data = {'Z': Z, 'connections': connections,
                  'material':material,'torque':dic_torque,'cycle':dic_cycle,
-                 'safety_factor':safety_factor,'verbose':verbose}
+                 'safety_factor':safety_factor}
         input_dat = dict(list(optimizer_data.items())+list(self.general_data.items()))
         self.mesh_assembly = MeshAssembly(**input_dat)
         

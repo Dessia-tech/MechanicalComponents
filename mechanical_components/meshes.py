@@ -791,11 +791,11 @@ class MeshCombination:
                                     center_distance=center_distance,
                                     transverse_pressure_angle=transverse_pressure_angle)
     """
-    def __init__(self,Z, center_distance, connections, transverse_pressure_angle,
+    def __init__(self, Z, center_distance, connections, transverse_pressure_angle,
                  coefficient_profile_shift,transverse_pressure_angle_rack,
                  coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
                  coeff_circular_tooth_thickness, material=None, torque=None, cycle=None,
-                 safety_factor=1, verbose=False):
+                 safety_factor=1):
 
         self.center_distance = center_distance
         self.Z = Z
@@ -871,7 +871,7 @@ class MeshCombination:
                coefficient_profile_shift,
                transverse_pressure_angle_rack, coeff_gear_addendum,
                coeff_gear_dedendum, coeff_root_radius,coeff_circular_tooth_thickness,
-               material, torque,cycle, safety_factor,verbose):
+               material, torque,cycle, safety_factor):
         """ Update of the gear mesh assembly
 
         :param all: same parameters of this class initialisation
@@ -1471,18 +1471,37 @@ class MeshCombination:
         for k,v in self.meshes.items():
             d['meshes'][k] = v.Dict()
         return d
+    
+    @classmethod
+    def DictToObject(cls, d):
+        # TODO check this!
+        return cls(Z=d['Z'],
+                   center_distance=d['center_distance'],
+                   connections=d['connections'],
+                   transverse_pressure_angle=d['transverse_pressure_angle'],
+                   coefficient_profile_shift=d['coefficient_profile_shift'],
+                   transverse_pressure_angle_rack=d['transverse_pressure_angle_rack'],
+                   coeff_gear_addendum=d['coeff_gear_addendum'],
+                   coeff_gear_dedendum=d['coeff_gear_dedendum'],
+                   coeff_root_radius=d['coeff_root_radius'],
+                   coeff_circular_tooth_thickness=d['coeff_circular_tooth_thickness'],
+                   material=d['material'],
+                   torque=d['torque'],
+                   cycle=d['cycle'],
+                   safety_factor=d['safety_factor'])
 
     def JSON(self, filepath, indent = 2):
         with open(filepath+'.json', 'w') as j:
             json.dump(tools.StringifyDictKeys(self.Dict()), j, indent = indent)
 
 class MeshAssembly:
+    # TODO: rename stronglink to rigid_link
     def __init__(self, center_distance, connections, transverse_pressure_angle,
                  coefficient_profile_shift,transverse_pressure_angle_rack,
                  coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
                  coeff_circular_tooth_thickness, Z, strong_links=None, material=None,
                  torque=None, cycle=None,
-                 safety_factor=1,verbose=False):
+                 safety_factor=1):
 
         self.connections=connections
         self.center_distance=center_distance
@@ -1494,7 +1513,7 @@ class MeshAssembly:
             num_mesh=0
             general_data={'Z': {}, 'connections': [],
                  'material':{},'torque':{},'cycle':{},
-                 'safety_factor':safety_factor,'verbose':verbose}
+                 'safety_factor':safety_factor}
             input_data={'center_distance':[],'transverse_pressure_angle':[],
                  'coefficient_profile_shift':{},'transverse_pressure_angle_rack':{},
                  'coeff_gear_addendum':{},'coeff_gear_dedendum':{},
