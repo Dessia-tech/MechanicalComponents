@@ -194,7 +194,7 @@ class ContinuousMeshesAssemblyOptimizer:
                  'material':material,'torque':dic_torque,'cycle':dic_cycle,
                  'safety_factor':safety_factor,'verbose':verbose}
         input_dat = dict(list(optimizer_data.items())+list(self.general_data.items()))
-        self.mesh_assembly = MeshAssembly(**input_dat)
+        self.mesh_assembly = MeshAssembly.create(**input_dat)
         
         self.save=copy.deepcopy(optimizer_data)
     
@@ -388,7 +388,7 @@ class ContinuousMeshesAssemblyOptimizer:
         
         _ = self.Update(X)
         ineq=[]
-        for mesh_assembly_iter in self.mesh_assembly.mesh_assembly:
+        for mesh_assembly_iter in self.mesh_assembly.mesh_combinations:
             ineq.extend(mesh_assembly_iter.ListeIneq())
             #geometric constraint
             for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
@@ -428,10 +428,10 @@ class ContinuousMeshesAssemblyOptimizer:
         _ = self.Update(X)
         fineq=self.Fineq(X)
         obj=0
-        for mesh_assembly_iter in self.mesh_assembly.mesh_assembly:
+        for mesh_assembly_iter in self.mesh_assembly.mesh_combinations:
             obj+=mesh_assembly_iter.Functional()
         # maximization of the gear modulus
-        for ne,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_assembly):
+        for ne,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
             for gs in mesh_assembly_iter.connections:
                 for g in gs:
                     mo=mesh_assembly_iter.meshes[g].rack.module
@@ -478,7 +478,7 @@ class ContinuousMeshesAssemblyOptimizer:
                       cx.status,min(self.Fineq(Xsol))))
             if min(self.Fineq(Xsol)) > -1e-5:
                 input_dat = dict(list(output_x.items())+list(self.general_data.items()))
-                self.solutions.append(MeshAssembly(**input_dat))
+                self.solutions.append(MeshAssembly.create(**input_dat))
                 arret = 1
             i += 1
 
@@ -1092,8 +1092,8 @@ class MeshAssemblyOptimizer:
                     compt_nb_sol+=1
                     if verbose:
                         print('valid solution n°{}'.format(compt_nb_sol))
-                        for num_graph in range(len(solutions.mesh_assembly)):
-                            print('Module gear set n°{}: {}'.format(num_graph,solutions.mesh_assembly[num_graph].meshes[list(solutions.mesh_assembly[num_graph].meshes.keys())[0]].rack.module))
+                        for num_graph in range(len(solutions.mesh_combinations)):
+                            print('Module gear set n°{}: {}'.format(num_graph,solutions.mesh_combinations[num_graph].meshes[list(solutions.mesh_combinations[num_graph].meshes.keys())[0]].rack.module))
                     
                 else:
                     if verbose: 
@@ -1116,8 +1116,8 @@ class MeshAssemblyOptimizer:
             self.solutions.append(liste_solutions[num_plex])
             if verbose:
                 print('solution sorted n°{}'.format(indice_plex))
-                for num_graph in range(len(liste_solutions[num_plex].mesh_assembly)):
-                    print('Mesh sections gear set n°{}: {}'.format(num_graph,self.solutions[-1].mesh_assembly[num_graph].gear_width))
-                    print('Center distances gear set n°{}: {}'.format(num_graph,self.solutions[-1].mesh_assembly[num_graph].center_distance))
-                    print('Module gear set n°{}: {}'.format(num_graph,self.solutions[-1].mesh_assembly[num_graph].meshes[list(self.solutions[-1].mesh_assembly[num_graph].meshes.keys())[0]].rack.module))
+                for num_graph in range(len(liste_solutions[num_plex].mesh_combinations)):
+                    print('Mesh sections gear set n°{}: {}'.format(num_graph, self.solutions[-1].mesh_combinations[num_graph].gear_width))
+                    print('Center distances gear set n°{}: {}'.format(num_graph,self.solutions[-1].mesh_combinations[num_graph].center_distance))
+                    print('Module gear set n°{}: {}'.format(num_graph,self.solutions[-1].mesh_combinations[num_graph].meshes[list(self.solutions[-1].mesh_combinations[num_graph].meshes.keys())[0]].rack.module))
       

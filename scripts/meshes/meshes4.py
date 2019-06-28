@@ -2,7 +2,7 @@ import sys
 #del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
-#from interval import interval
+from interval import interval
 
 #3 gears meshes test
 list_cd=[[0.08,0.12],[0.08,0.1]]
@@ -24,14 +24,14 @@ list_cycle={1 : 1e12}
 
 GA = meshes_opt.MeshAssemblyOptimizer(Z={},
                                   connections = connections, 
-                                  strong_link = list_strong_link,
-                                  gear_speed = list_speed,
-                                  center_distance = list_cd,
+                                  rigid_links = list_strong_link,
+                                  gear_speeds = list_speed,
+                                  center_distances = list_cd,
                                   rack_list = list_rack,
                                   rack_choice = list_rack_choice,
                                   helix_angle = list_helix_angle,
-                                  material = list_material,torque = list_torque,
-                                  cycle = list_cycle,verbose=True,
+                                  material = list_material,torques = list_torque,
+                                  cycles = list_cycle,verbose=True,
                                   transverse_pressure_angle=list_tpa)
 
 def pgcd(a,b) :
