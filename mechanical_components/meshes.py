@@ -200,12 +200,15 @@ class Material:
     >>> material1=Material(volumic_mass, data_coeff_YB_Iso,
                            data_wholer_curve, data_gear_material)
     """
+    _standalone_in_db = False
+                
     def __init__(self, volumic_mass, data_coeff_YB_Iso, data_wholer_curve,
-                 data_gear_material):
+                 data_gear_material, metadata = dc.Metadata('')):
         self.volumic_mass = volumic_mass
         self.data_coeff_YB_Iso = data_coeff_YB_Iso
         self.data_wholer_curve = data_wholer_curve
         self.data_gear_material = data_gear_material
+        self.metadata = metadata
         
     def __eq__(self, other_eb):
         equal = (self.volumic_mass == other_eb.volumic_mass
@@ -247,38 +250,49 @@ class Material:
         d['data_coeff_YB_Iso'] = self.data_coeff_YB_Iso
         d['data_wholer_curve'] = self.data_wholer_curve
         d['data_gear_material'] = self.data_gear_material
+        d['metadata'] = self.metadata.to_dict()
         return d
 
     @classmethod
     def DictToObject(cls, d):
+        metadata = dc.Metadata.dict_to_object(d['metadata'])
         material = cls(volumic_mass = d['volumic_mass'],
                    data_coeff_YB_Iso = d['data_coeff_YB_Iso'],
                    data_wholer_curve = d['data_wholer_curve'],
-                   data_gear_material = d['data_gear_material'])
+                   data_gear_material = d['data_gear_material'],
+                   metadata = metadata)
         return material
 
 hardened_alloy_steel=Material(7850, evol_coeff_yb_iso,
                               wholer_hardened_alloy_steel,
-                              sigma_hardened_alloy_steel)
+                              sigma_hardened_alloy_steel,
+                              metadata = dc.Metadata('Hardened alloy steel'))
 
 nitrided_alloy_steel=Material(7850, evol_coeff_yb_iso, wholer_nitrided_alloy_steel,
-                              sigma_nitrided_alloy_steel)
+                              sigma_nitrided_alloy_steel,
+                              metadata = dc.Metadata('Nitrided alloy steel'))
 
 through_hardened_steel=Material(7850, evol_coeff_yb_iso,
                                 wholer_through_hardened_steel,
-                                sigma_through_hardened_steel)
+                                sigma_through_hardened_steel,
+                                metadata = dc.Metadata('Through hardened steel'))
 
 surface_hardened_steel=Material(7850, evol_coeff_yb_iso,
                                 wholer_surface_hardened_steel,
-                                sigma_surface_hardened_steel)
+                                sigma_surface_hardened_steel,
+                                metadata = dc.Metadata('Surface hardened steel'))
 
-carbon_steel=Material(7850, evol_coeff_yb_iso, wholer_carbon_steel, sigma_carbon_steel)
+carbon_steel=Material(7850, evol_coeff_yb_iso, wholer_carbon_steel, sigma_carbon_steel,
+                      metadata = dc.Metadata('Carbon steel'))
 
-cast_iron=Material(7200, evol_coeff_yb_iso, wholer_cast_iron, sigma_cast_iron)
+cast_iron=Material(7200, evol_coeff_yb_iso, wholer_cast_iron, sigma_cast_iron,
+                   metadata = dc.Metadata('Cast iron'))
 
-bronze=Material(8200, evol_coeff_yb_iso, wholer_bronze, sigma_bronze)
+bronze=Material(8200, evol_coeff_yb_iso, wholer_bronze, sigma_bronze,
+                metadata = dc.Metadata('Bronze'))
 
-grey_iron=Material(7200, evol_coeff_yb_iso, wholer_grey_iron, sigma_grey_iron)
+grey_iron=Material(7200, evol_coeff_yb_iso, wholer_grey_iron, sigma_grey_iron,
+                   metadata = dc.Metadata('Grey iron'))
 
 class Rack:
     """
@@ -1929,6 +1943,12 @@ class MeshAssembly:
                 for sl in strong_link:
                     ma_hash += hash(strong_link)
         return ma_hash
+    
+    def check(self):
+        valid = True
+        for mesh_combination in self.mesh_combinations:
+            valid = (valid and mesh_combination.check())
+        return valid
         
     @classmethod
     def create(cls, center_distance, connections, transverse_pressure_angle,
