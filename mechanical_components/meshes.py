@@ -206,6 +206,17 @@ class Material:
         self.data_coeff_YB_Iso = data_coeff_YB_Iso
         self.data_wholer_curve = data_wholer_curve
         self.data_gear_material = data_gear_material
+        
+    def __eq__(self, other_eb):
+        equal = (self.volumic_mass == other_eb.volumic_mass
+                 and self.data_coeff_YB_Iso == other_eb.data_coeff_YB_Iso
+                 and self.data_wholer_curve == other_eb.data_wholer_curve
+                 and self.data_gear_material == other_eb.data_gear_material)
+        return equal
+
+    def __hash__(self):
+        material_hash = hash(self.volumic_mass)
+        return material_hash
 
     def FunCoeff(self,x,data,type_x='Linear',type_y='Linear'):
         """ Interpolation of material data
@@ -617,7 +628,7 @@ class Mesh:
         self.GearParam(z, db, coefficient_profile_shift)
 
         # Definition of default parameters
-        if material == None:
+        if material is None:
             self.material = hardened_alloy_steel
         self.material = material
 
@@ -633,8 +644,8 @@ class Mesh:
         return equal
 
     def __hash__(self):
-        rack_hash = hash(self.z) + hash(self.db)\
-                 + hash(self.coefficient_profile_shift) + hash(self.rack)
+        rack_hash = hash(self.z) + hash(int(self.db*1e3))\
+                 + hash(int(self.coefficient_profile_shift*1e3)) + hash(self.rack)
         return rack_hash
 
     def Update(self, z, db, coefficient_profile_shift, transverse_pressure_angle_rack,
@@ -1018,6 +1029,23 @@ class MeshCombination:
                                             self.material, self.cycle, self.radial_contact_ratio, self.helix_angle,
                                             self.transverse_pressure_angle)
         print(self.check())
+        
+    def __eq__(self, other_eb):
+        equal = (self.center_distance == other_eb.center_distance
+                 and self.connections == other_eb.connections
+                 and self.meshes == other_eb.meshes
+                 and self.torque == other_eb.torque
+                 and self.cycle == other_eb.cycle
+                 and self.safety_factor == other_eb.safety_factor)
+        return equal
+
+    def __hash__(self):
+        mc_hash = 0
+        for num_mesh, mesh in self.meshes.items():
+            mc_hash += hash(mesh)
+        for center_distance in self.center_distance:
+            mc_hash += hash(int(center_distance*1e3))
+        return mc_hash
         
     def check(self):
         valid = True
@@ -1882,6 +1910,25 @@ class MeshAssembly:
                 if eng2 not in general_data['cycle'].keys():
                     general_data['cycle'][eng2]=cycle[eng2]
             self.general_data.append(general_data)
+            
+    def __eq__(self, other_eb):
+        equal = (self.connections == other_eb.connections
+                 and self.mesh_combinations == other_eb.mesh_combinations
+                 and self.torque == other_eb.torque
+                 and self.cycle == other_eb.cycle
+                 and self.strong_links == other_eb.strong_links
+                 and self.safety_factor == other_eb.safety_factor)
+        return equal
+
+    def __hash__(self):
+        ma_hash = 0
+        for mesh_combination in self.mesh_combinations:
+            ma_hash += hash(mesh_combination)
+        if self.strong_links is not None:
+            for strong_link in self.strong_links:
+                for sl in strong_link:
+                    ma_hash += hash(strong_link)
+        return ma_hash
         
     @classmethod
     def create(cls, center_distance, connections, transverse_pressure_angle,
