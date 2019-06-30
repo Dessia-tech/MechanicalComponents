@@ -21,6 +21,8 @@ protected_files = ['mechanical_components/optimization/bearings.py',
                    'mechanical_components/optimization/common.py',
                    'mechanical_components/optimization/meshes.py',
                    'mechanical_components/optimization/wires.py',
+                   'mechanical_components/shafts.py',
+                   'mechanical_components/shafts_assembly.py'
                    ]
 
 month_exp_defined = False

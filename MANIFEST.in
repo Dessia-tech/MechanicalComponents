@@ -4,6 +4,8 @@ recursive-include mechanical_components/catalogs/ *.csv
 exclude mechanical_components/optimization/bearings.py
 exclude mechanical_components/optimization/meshes.py
 exclude mechanical_components/optimization/wires.py
+exclude mechanical_components/shafts.py
+exclude mechanical_components/shafts_assembly.py
 global-exclude *_protected.pyx
 recursive-exclude catalogs/
 prune .git
