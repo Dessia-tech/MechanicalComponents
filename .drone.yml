@@ -10,6 +10,7 @@ steps:
   - python setup.py install
   - cd ..
   - git fetch --tags
+  - pip install Cython
   - python setup.py install
   - pip install sphinx sphinx_rtd_theme
   - cd doc
@@ -37,7 +38,8 @@ steps:
 - name: upload sdist to seafile
   image: dessia/drone-seafile
   when: 
-    branch: master
+    branch: 
+      - master
   settings:
     server_url: https://partage.dessia.tech
     repo_id:
@@ -56,7 +58,8 @@ steps:
 - name: upload_doc_master
   image: appleboy/drone-scp
   when: 
-    branch: master
+    branch: 
+      - master
   settings:
     host: austerlitz.dessia.tech
     target: /var/www/documentation/MechanicalComponents/
@@ -69,7 +72,8 @@ steps:
 - name: push opensource
   image: alpine/git
   when:
-    branch: master
+    branch:
+      - master
   commands:
     - git format-patch HEAD~1..HEAD
     - mkdir git-opensource
