@@ -5,8 +5,11 @@ steps:
 - name: install, doc and script running
   image: python:3
   commands:
+  - git clone https://git.dessia.tech/DessIA/dessia-common.git
+  - cd dessia-common
+  - python setup.py install
+  - cd ..
   - git fetch --tags
-  - pip install Cython
   - python setup.py install
   - pip install sphinx sphinx_rtd_theme
   - cd doc
@@ -18,6 +21,9 @@ steps:
 - name: develop
   image: python:3
   commands:
+  - cd dessia-common
+  - python setup.py develop
+  - cd ..
   - git fetch --tags
   - pip install Cython
   - python setup.py develop
