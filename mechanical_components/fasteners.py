@@ -163,7 +163,11 @@ class BoltAssembly:
         if all(tag in subobjects_id for tag in self.bolts):
                  d['bolts']=list(subobjects_id.values())
         else:
-            d['bolts'] = [s.Dict() for s in self.bolts]
+            d['bolts'] = [s.Dict() for s in self.bonuts = [Nut(1.6, 3.2, 3.4, 1.3),
+        Nut(2, 4, 4.4, 1.6),
+        Nut(2.5, 5, 5.4, 2),
+        Nut(3, 5.5, 6, 2.4),
+        Nut(4, 7, 7.6, 3.2)]lts]
         d['positions'] = self.positions
         d['axis'] = self.axis
         d['name'] = self.name
