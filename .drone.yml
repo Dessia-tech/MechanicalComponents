@@ -33,7 +33,7 @@ steps:
   image: python:3
   commands:
   - git fetch --tags
-  - python setup.py sdist
+  - python setup.py sdist --formats=gztar,zip
 
 - name: upload sdist to seafile
   image: dessia/drone-seafile
