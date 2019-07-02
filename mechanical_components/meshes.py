@@ -1785,26 +1785,24 @@ class MeshCombination:
             meshes[int(num_mesh)] = Mesh.DictToObject(mesh)
         torques = {}
         for keys, value in zip(d['keys_torque'], d['torque']):
-            ki = []
+            ki = ()
             for k in keys:
                 if k.__class__ == str:
-                    ki.append(int(k))
+                    ki = ki + (int(k),)
                 else:
-                    ki.append(k)
-            torques[tuple(ki)] = value
-#        for num_mesh, tq in d['torque'].items():
-#            if num_mesh.__class__ == str:
-#                torques[int(num_mesh)] = tq
-#            else:
-#                torques[num_mesh] = tq
+                    ki = ki + (k,)
+            torques[ki] = value
         cycle = {}
         for num_mesh, cy in d['cycle'].items():
             if num_mesh.__class__ == str:
                 cycle[int(num_mesh)] = cy
             else:
                 cycle[num_mesh] = cy
+        connections = []
+        for connection in d['connections']:
+            connections.append(tuple(connection))
         mesh_combination = cls(center_distance = d['center_distance'],
-                   connections = d['connections'],
+                   connections = connections,
                    meshes = meshes,
                    torque = torques,
                    cycle = cycle,
@@ -2177,13 +2175,13 @@ class MeshAssembly:
             mesh_combinations.append(MeshCombination.DictToObject(mesh_combination))
         torques = {}
         for keys, value in zip(d['keys_torque'], d['torque']):
-            ki = []
+            ki = ()
             for k in keys:
                 if k.__class__ == str:
-                    ki.append(int(k))
+                    ki = ki + (int(k),)
                 else:
-                    ki.append(k)
-            torques[tuple(ki)] = value
+                    ki = ki + (k,)
+            torques[ki] = value
         cycle = {}
         for num_mesh, cy in d['cycle'].items():
             if num_mesh.__class__ == str:

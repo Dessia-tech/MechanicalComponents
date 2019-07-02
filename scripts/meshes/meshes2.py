@@ -40,9 +40,10 @@ solution=GA.solutions[-1]
 #d = solution.Dict()
 #json.dumps(d)
 d = solution.Dict()
-json.dumps(d)
+dj = json.dumps(d)
+dl = json.loads(dj)
 
-obj = meshes_opt.MeshAssembly.DictToObject(d)
+obj = meshes_opt.MeshAssembly.DictToObject(dl)
 obj.SVGExport('meshes2.txt',{0 : [0,0], 2 : [0.15,0]})
 print(obj.mesh_combinations[0].meshes[0] == solution.mesh_combinations[0].meshes[0])
 print(obj == solution)
