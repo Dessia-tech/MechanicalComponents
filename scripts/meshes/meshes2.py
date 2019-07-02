@@ -40,7 +40,10 @@ solution=GA.solutions[-1]
 #d = solution.Dict()
 #json.dumps(d)
 d = solution.Dict()
-json.dumps(d)
+json_file = json.dumps(d)
+d2 = json.loads(json_file)
+obj = meshes_opt.MeshAssembly.DictToObject(d2)
+
 
 obj = meshes_opt.MeshAssembly.DictToObject(d)
 obj.SVGExport('meshes2.txt',{0 : [0,0], 2 : [0.15,0]})
