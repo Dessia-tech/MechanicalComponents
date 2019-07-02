@@ -175,7 +175,8 @@ class ContinuousMeshesAssemblyOptimizer:
                     list_order_unknown.append(key)
                     for num_rack in list_unknown:
                         Bounds.append(self.rack_list[num_rack][key])
-        self.Bounds = npy.array(Bounds)
+#        self.Bounds = npy.array(Bounds)
+        self.Bounds = Bounds
         self.list_order_unknown = list_order_unknown
         
         # Definition initial condition
@@ -277,7 +278,7 @@ class ContinuousMeshesAssemblyOptimizer:
             for num_elem in list_ind:
                 if key in ['coefficient_profile_shift']:
                     if num_elem in self.dict_unknown[key]:
-                        value=X[self._position_X(key,num_elem)]
+                        value = float(X[self._position_X(key,num_elem)])
                     else:
                         value=self.coefficient_profile_shift[num_elem][0]
                     optimizer_data[key][num_elem]=value
@@ -285,7 +286,7 @@ class ContinuousMeshesAssemblyOptimizer:
                              'coeff_gear_addendum','coeff_gear_dedendum',
                              'coeff_root_radius','coeff_circular_tooth_thickness']:
                     if num_elem in self.dict_unknown[key]:
-                        value=X[self._position_X(key,num_elem)]
+                        value = float(X[self._position_X(key,num_elem)])
                     else:
                         value=self.rack_list[num_elem][key][0]
                     for num_engr in self.list_gear:
@@ -297,9 +298,9 @@ class ContinuousMeshesAssemblyOptimizer:
         dict_cd={} # temp storage of center_distance
         dict_tpa={} # temp storage of transversale_pressure_angle
         for num_gear in self.dict_unknown['db']:
-            dict_db[num_gear]=X[self._position_X('db',num_gear)]
+            dict_db[num_gear] = float(X[self._position_X('db',num_gear)])
         for num_mesh in self.dict_unknown['transverse_pressure_angle']:
-            dict_tpa[num_mesh]=X[self._position_X('transverse_pressure_angle',num_mesh)]
+            dict_tpa[num_mesh] = float(X[self._position_X('transverse_pressure_angle',num_mesh)])
         num_mesh=0
         for num_cd,list_connection in enumerate(self.connections):
             for num_mesh_iter,(eng1,eng2) in enumerate(list_connection):
@@ -782,7 +783,8 @@ class MeshAssemblyOptimizer:
         list_Z=[]
         for engr_num in list_node:
             np.append(self.Z[engr_num][1]-self.Z[engr_num][0]+1)
-            list_Z.append(npy.arange(self.Z[engr_num][0],self.Z[engr_num][1]+1))
+#            list_Z.append(npy.arange(self.Z[engr_num][0],self.Z[engr_num][1]+1))
+            list_Z.append([self.Z[engr_num][0] + i for i in range(self.Z[engr_num][1] + 1 - self.Z[engr_num][0])])
         np.extend([self.nb_rack]*nb_gear)
 
         list_rack=list(self.rack_list.keys())

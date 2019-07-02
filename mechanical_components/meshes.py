@@ -953,7 +953,6 @@ class Mesh:
         return transversal_plot_data, axial_plot_data
     
     def Dict(self):
-        
         d = {}
         d['z'] = self.z
         d['db'] = self.db
@@ -1128,7 +1127,7 @@ class MeshCombination:
         for num_engr in list_gear:
             z = Z[num_engr]
             db = DB[num_engr]
-            cp=coefficient_profile_shift[num_engr]
+            cp = coefficient_profile_shift[num_engr]
 #            ngp=self.list_gear.index(num_engr)
             tpa = transverse_pressure_angle_rack[num_engr]
             cga = coeff_gear_addendum[num_engr]
@@ -1471,7 +1470,7 @@ class MeshCombination:
             sgl1 = material[eng1].FunCoeff(sgla,npy.array(matrice_material['data']),matrice_material['x'],matrice_material['y'])
             s_thickness_iso_1,h_height_iso_1 = meshes[eng1].GearISOSection(angle)
             coeff_ys_iso = meshes[eng1]._ISO_YS(s_thickness_iso_1)
-            sigma_lim[num_mesh][eng1] = (sgl1/(safety_factor*coeff_ys_iso))*10**7
+            sigma_lim[num_mesh][eng1] = float((sgl1/(safety_factor*coeff_ys_iso))*10**7)
 
             matrice_wholer = material[eng2].data_wholer_curve
             matrice_material = material[eng2].data_gear_material
@@ -1479,7 +1478,7 @@ class MeshCombination:
             sgl2 = material[eng2].FunCoeff(sglb, npy.array(matrice_material['data']),matrice_material['x'],matrice_material['y'])
             s_thickness_iso_2,h_height_iso_2 = meshes[eng2].GearISOSection(angle)
             coeff_ys_iso = meshes[eng2]._ISO_YS(s_thickness_iso_2)
-            sigma_lim[num_mesh][eng2] = (sgl2/(safety_factor*coeff_ys_iso))*10**7
+            sigma_lim[num_mesh][eng2] = float((sgl2/(safety_factor*coeff_ys_iso))*10**7)
         return sigma_lim
 
     @classmethod
@@ -1768,29 +1767,15 @@ class MeshCombination:
         d['meshes'] = {}
         for num_mesh, mesh in self.meshes.items():
             d['meshes'][num_mesh] = mesh.Dict()
-        d['torque'] = self.torque
+        d['keys_torque'] = []
+        d['torque'] = []
+        for keys, value in self.torque.items():
+            d['keys_torque'].append(keys)
+            d['torque'].append(value)
         d['cycle'] = self.cycle
         d['safety_factor'] = self.safety_factor
         d['metadata'] = self.metadata.to_dict()
         return d
-    
-    @classmethod
-    def DictToObject(cls, d):
-        # TODO check this!
-        return cls(Z=d['Z'],
-                   center_distance=d['center_distance'],
-                   connections=d['connections'],
-                   transverse_pressure_angle=d['transverse_pressure_angle'],
-                   coefficient_profile_shift=d['coefficient_profile_shift'],
-                   transverse_pressure_angle_rack=d['transverse_pressure_angle_rack'],
-                   coeff_gear_addendum=d['coeff_gear_addendum'],
-                   coeff_gear_dedendum=d['coeff_gear_dedendum'],
-                   coeff_root_radius=d['coeff_root_radius'],
-                   coeff_circular_tooth_thickness=d['coeff_circular_tooth_thickness'],
-                   material=d['material'],
-                   torque=d['torque'],
-                   cycle=d['cycle'],
-                   safety_factor=d['safety_factor'])
 
     @classmethod
     def DictToObject(cls, d):
@@ -1799,11 +1784,19 @@ class MeshCombination:
         for num_mesh, mesh in d['meshes'].items():
             meshes[int(num_mesh)] = Mesh.DictToObject(mesh)
         torques = {}
-        for num_mesh, tq in d['torque'].items():
-            if num_mesh.__class__ == str:
-                torques[int(num_mesh)] = tq
-            else:
-                torques[num_mesh] = tq
+        for keys, value in zip(d['keys_torque'], d['torque']):
+            ki = []
+            for k in keys:
+                if k.__class__ == str:
+                    ki.append(int(k))
+                else:
+                    ki.append(k)
+            torques[tuple(ki)] = value
+#        for num_mesh, tq in d['torque'].items():
+#            if num_mesh.__class__ == str:
+#                torques[int(num_mesh)] = tq
+#            else:
+#                torques[num_mesh] = tq
         cycle = {}
         for num_mesh, cy in d['cycle'].items():
             if num_mesh.__class__ == str:
@@ -2164,7 +2157,12 @@ class MeshAssembly:
         d['mesh_combinations'] = []
         for mesh_combination in self.mesh_combinations:
             d['mesh_combinations'].append(mesh_combination.Dict())
-        d['torque'] = self.torque
+        d['keys_torque'] = []
+        d['torque'] = []
+        for keys, value in self.torque.items():
+            d['keys_torque'].append(keys)
+            d['torque'].append(value)
+#        d['torque'] = self.torque
         d['cycle'] = self.cycle
         d['strong_links'] = self.strong_links
         d['safety_factor'] = self.safety_factor
@@ -2178,11 +2176,14 @@ class MeshAssembly:
         for mesh_combination in d['mesh_combinations']:
             mesh_combinations.append(MeshCombination.DictToObject(mesh_combination))
         torques = {}
-        for num_mesh, tq in d['torque'].items():
-            if num_mesh.__class__ == str:
-                torques[int(num_mesh)] = tq
-            else:
-                torques[num_mesh] = tq
+        for keys, value in zip(d['keys_torque'], d['torque']):
+            ki = []
+            for k in keys:
+                if k.__class__ == str:
+                    ki.append(int(k))
+                else:
+                    ki.append(k)
+            torques[tuple(ki)] = value
         cycle = {}
         for num_mesh, cy in d['cycle'].items():
             if num_mesh.__class__ == str:
