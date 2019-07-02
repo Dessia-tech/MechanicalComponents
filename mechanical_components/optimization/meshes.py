@@ -5,16 +5,11 @@
 
 """
 
-#import itertools as it
+
 from mechanical_components.meshes import MeshAssembly, hardened_alloy_steel,\
         gear_graph_simple, gear_graph_complex, ValidGearDiameterError
 import numpy as npy
-#import volmdlr as vm
-#import volmdlr.primitives3D as primitives3D
-#import volmdlr.primitives2D as primitives2D
-#import itertools
 import networkx as nx
-#import powertransmission.tools as tools
 import dectree
 import math
 
@@ -749,7 +744,7 @@ class MeshAssemblyOptimizer:
                     Z[engr2]=[max(Z2_min,Z[engr2][0]),min(Z2_max,Z[engr2][1])]
         return Z
 
-    def AnalyzeCombination(self, verbose = False):
+    def AnalyzeCombination(self, verbose=False):
         """ Analyse with decision tree all admissible configuration
         
         :results: list of all admissible solutions 
@@ -1018,7 +1013,8 @@ class MeshAssemblyOptimizer:
             try:
                 ga.Optimize(verbose)
             except ValueError:
-                print('Convergence problem')
+                if verbose:
+                    print('Convergence problem')
             if len(ga.solutions)>0:
                 sol1=ga.solutions[-1]
                 self.solutions.append(sol1)
@@ -1030,7 +1026,7 @@ class MeshAssemblyOptimizer:
                 if compt_nb_sol==nb_sol:
                     break
 
-    def OptimizeCD(self, nb_sol = 1, verbose = False,
+    def OptimizeCD(self, nb_sol = 1, verbose=False,
                         progress_callback = lambda x:x):
         """ Gear mesh assembly optimization of the nearest solution with the specifications
         
@@ -1067,7 +1063,8 @@ class MeshAssemblyOptimizer:
             try:
                 ga.Optimize(verbose)
             except ValueError:
-                print('Convergence Problem')
+                if verbose:
+                    print('Convergence Problem')
             if len(ga.solutions)>0:
                 solutions=ga.solutions[-1]
                 valid_cd=True

@@ -17,12 +17,8 @@ import volmdlr.primitives2D as primitives2D
 import math
 from scipy.linalg import norm
 from scipy.optimize import fsolve, minimize
-#import itertools
 import networkx as nx
 
-#import powertransmission.tools as tools
-#import matplotlib.pyplot as plt
-#import matplotlib.patches as patches
 import dessia_common as dc
 import mechanical_components.tools as tools
 import json
@@ -1043,7 +1039,7 @@ class MeshCombination:
                                             connections,
                                             self.material, self.cycle, self.radial_contact_ratio, self.helix_angle,
                                             self.transverse_pressure_angle)
-        print(self.check())
+        self.check()
         
     def __eq__(self, other_eb):
         equal = (self.center_distance == other_eb.center_distance

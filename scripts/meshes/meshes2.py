@@ -1,5 +1,7 @@
-import sys
-#del sys.modules['mechanical_components.optimization']
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import json
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
 
@@ -36,6 +38,7 @@ solution=GA.solutions[-1]
 #solution.FreeCADExport('meshes2')
  
 d = solution.Dict()
+json.dumps(d)
 obj = meshes_opt.MeshAssembly.DictToObject(d)
 obj.SVGExport('meshes2.txt',{0 : [0,0], 2 : [0.15,0]})
 print(obj.mesh_combinations[0].meshes[0] == solution.mesh_combinations[0].meshes[0])
