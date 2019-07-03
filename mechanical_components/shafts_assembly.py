@@ -65,14 +65,19 @@ def SommeAngle(points):
     for i in range(len(pts)-2):
         vector1 = vm.Vector2D((pts[i][0]-pts[i+1][0], pts[i][1]-pts[i+1][1]))
         vector2 = vm.Vector2D((pts[i+2][0]-pts[i+1][0], pts[i+2][1]-pts[i+1][1]))
-
-        if AngleClockwise(vector2, vector1) < math.pi:
+        angle_clockwise = AngleClockwise(vector2, vector1)
+        if angle_clockwise == math.pi:
+            pass
+        elif angle_clockwise == 2*math.pi:
+            pass
+        elif angle_clockwise < math.pi:
             somme += AngleClockwise(vector2, vector1)
             nb_vertices += 1
-        if AngleClockwise(vector2, vector1) >= math.pi:
+        elif angle_clockwise > math.pi:
             somme += AngleClockwise(vector2, vector1) - 2*math.pi
             nb_vertices -= 1
     somme_totale = (nb_vertices-2)*180
+#    somme_totale = (len(pts)-4)*180
     return somme*180/math.pi, somme_totale
 
 
@@ -216,13 +221,13 @@ def rolling_circle_in_polygon(polygon, interpoints_distance=0.001):
             pt_number += 1
         polygon_mesh.append(segment_mesh)
 
-    # prendre un point quelconque 
+    # prendre un point quelconque
     # construire le plus grand cercle possible
     min_radius = 1e+10
     for index1, segment1 in enumerate(polygon_mesh):
         for index2, segment2 in enumerate(polygon_mesh):
             if index2-index1 >= 2 and index2-index1 < len(polygon_mesh)-1:
-                
+
                 for point1 in segment1[1:]:
                     seg1 = vm.LineSegment2D(segment1[0], segment1[-1])
                     seg2 = vm.LineSegment2D(segment2[0], segment2[-1])
@@ -250,7 +255,7 @@ def rolling_circle_in_polygon(polygon, interpoints_distance=0.001):
                         min_radius = circle1.radius
                         min_segment1_index = index1
                         min_segment2_index = index2
-    
+
     # returns the diamter of the smallest circle
     return min_radius*2, min_segment1_index, min_segment2_index
 
@@ -269,14 +274,14 @@ def is_wide_enought(polygon, minimal_width):
 #        return -1
 #    else:
 #        return 1
-#    
+#
 #def ClosedRoundedLineWidth(closed_rounded_line):
 #    rounded_line_x_length = max(p[0] for p in closed_rounded_line.points)-min(p[0] for p in closed_rounded_line.points)
 #    rounded_line_y_length = max(p[1] for p in closed_rounded_line.points)-min(p[1] for p in closed_rounded_line.points)
 #    rounded_line_min_dim = min(rounded_line_x_length, rounded_line_y_length)
 #    actual_width = spy.optimize.brenth(WidthFunction, 0, rounded_line_min_dim, args=(closed_rounded_line,))
 #    return actual_width
-    
+
 # TEST
 #plt.close('all')
 #points = []
@@ -288,7 +293,7 @@ def is_wide_enought(polygon, minimal_width):
 #offset = 0.7
 #fig, axe = linesegment2D.MPLPlot()
 #LineOffset(linesegment2D, line, offset).MPLPlot(ax=axe, style='r')
-    
+
 #points = []
 #pts = [(0,0),(0.1,0),(0.1,0.1),(0.05,0.1),(0.05,0.2),(0.1,0.2),(0.1,0.3),(0,0.3)]
 #for pt in pts:
@@ -352,10 +357,13 @@ class Part:
         for i in remove_index[::-1]:
             perm.pop(i)
 
+        print('PossibleShafts : len(perm)', len(perm))
+
         # Checks the self intersection and the angles of the polygon
         shafts = []
         for i, perm_i in enumerate(list(perm)):
             perm_i = list(perm_i)
+#            print('PossibleShafts : len(perm_i)', len(perm_i))
             points = []
             for j, partsurface in enumerate(perm_i):
                 if partsurface.same_shaftline or min([p[1] for p in partsurface.points]) >= yz[1]:
@@ -364,7 +372,7 @@ class Part:
                     symm_partsurface = PartSurface([vm.Point2D((p[0], 2*yz[1]-p[1])) for p in partsurface.points], partsurface.otherpart, partsurface.part, partsurface.same_shaftline)
                     perm_i[j] = symm_partsurface
                     points = points + symm_partsurface.points
- 
+
             if points[0] != points[-1]:
                 points.append(points[0])
             line = primitives2D.RoundedLineSegments2D(points, {},
@@ -382,13 +390,14 @@ class Part:
         """
         shafts = self.PossibleShafts(yz)
         repaired_shafts = []
+        print('ViableShafts nb of shafts to repair', len(shafts))
         for shaft in shafts:
             repaired_shaft = shaft.GoodRepair()
             if repaired_shaft:
                 repaired_shafts.append(repaired_shaft)
 
         repaired_shafts = list(chain.from_iterable(repaired_shafts))
-        
+
         unique_repaired_shafts = []
         for shaft in repaired_shafts:
             boo = True
@@ -397,8 +406,50 @@ class Part:
                     boo = False
             if boo:
                 unique_repaired_shafts.append(shaft)
-            
+
         return unique_repaired_shafts
+
+    def QuickViableShaft(self, yz=(0, 0)):
+
+        print(self.name)
+        print('nombre de partsurface', len(self.surfaces))
+
+        inscreasing_x_surfaces = sorted(self.surfaces, key=lambda ps: ps.points[0][0])
+
+        points = []
+        for j, partsurface in enumerate(inscreasing_x_surfaces):
+            if partsurface.same_shaftline or min([p[1] for p in partsurface.points]) >= yz[1]:
+                points = points + partsurface.points
+            else:
+                symm_partsurface = PartSurface([vm.Point2D((p[0], 2*yz[1]-p[1])) for p in partsurface.points], partsurface.otherpart, partsurface.part, partsurface.same_shaftline)
+                inscreasing_x_surfaces[j] = symm_partsurface
+                points = points + symm_partsurface.points
+
+        if points[0] != points[-1]:
+            points.append(points[0])
+        line = primitives2D.RoundedLineSegments2D(points, {}, closed=True)
+
+        quick_shaft = Shaft(inscreasing_x_surfaces, line, yz=yz, montage=self.montage, name='{}_{}'.format(self.name, 'quick'))
+        print('QuickViableShaft : QuickRepair')
+        quick_repair_shaft = quick_shaft.QuickRepair()
+        print('------------------------------')
+
+        if quick_repair_shaft is None or not quick_repair_shaft.Viability():
+            print('QuickViableShaft : RepairInsideOut')
+            quick_repair_shafts = quick_shaft.RepairInsideOut()
+            print('----------------------------------')
+            if quick_repair_shafts is not None:
+                quick_repair_shafts.sort(key= lambda a: a.polygon.Area())
+                quick_repair_shaft = quick_repair_shafts[0]
+            if quick_repair_shafts is None or not quick_repair_shaft.Viability():
+#                print('pts', quick_shaft.polygon.points)
+                print('QuickViableShaft : ViableShafts')
+                quick_repair_shafts = self.ViableShafts(yz)
+                print('-------------------------------')
+                quick_repair_shafts.sort(key= lambda a: a.polygon.Area())
+                quick_repair_shaft = quick_repair_shafts[0]
+
+        return quick_repair_shaft
 
 ###############################################################################
 
@@ -413,7 +464,7 @@ class Surface:
         self.part_left = part_left      # Is a Part
         self.part_right = part_right    # Is a Part
         self.same_shaftline = same_shaftline
-        
+
         if self.part_right is not None:
             self.partsurface_right = PartSurface(self.points, self.part_right, self.part_left, self.same_shaftline)
         if self.part_left is not None:
@@ -426,7 +477,7 @@ class Surface:
         Points2D.
         """
         points = [vm.Point2D(p) for p in coordinate]
-        
+
         return cls(points, part_left, part_right, same_shaftline)
         # functional_surface = [(point1, point2,...), part_left, part_right]
         # left or right according to the oriented path between the points
@@ -442,9 +493,9 @@ class PartSurface:
         self.part = part            # Is a Part, it is on the right hand side
         self.otherpart = otherpart  # Is a Part
         self.same_shaftline = same_shaftline
-        
+
         self.part.surfaces.append(self)
-    
+
     @classmethod
     def Instantiate(cls, coordinate, part, otherpart=None, same_shaftline=True):
         """
@@ -452,9 +503,9 @@ class PartSurface:
         Points2D.
         """
         points = [vm.Point2D(p) for p in coordinate]
-        
+
         return cls(points, part, otherpart, same_shaftline)
-    
+
 ###############################################################################
 
 class Shaft(Part):
@@ -480,7 +531,7 @@ class Shaft(Part):
 
         self.offset = 0.005
         self.EPSILON = 1e-6
-        
+
         contour_points = []
         if self.contour is None or not self.contour:
             for partsurface in self.ordered_partsurfaces:
@@ -489,12 +540,12 @@ class Shaft(Part):
             if contour_points[0] != contour_points[-1]:
                 contour_points.append(contour_points[0])
             self.contour = vm.primitives2D.RoundedLineSegments2D(contour_points, {}, closed=True)
-        
+
         if self.ordered_partsurfaces is not None:
             self.ordered_surfaces = []
             for partsurface in self.ordered_partsurfaces:
-                self.ordered_surfaces.append(partsurface.points)    
-        
+                self.ordered_surfaces.append(partsurface.points)
+
         if self.contour is not None:
             polygon_points = self.contour.points
             index_to_del = []
@@ -504,7 +555,7 @@ class Shaft(Part):
             for index in index_to_del[::-1]:
                 del polygon_points[index]
             self.polygon = vm.Polygon2D(polygon_points)
-        
+
         if self.ordered_partsurfaces is not None:
             self.ordered_surfaces_index_in_contour = []
             for surface_points in self.ordered_surfaces:
@@ -512,8 +563,8 @@ class Shaft(Part):
                     for index, (contour_point1, contour_point2) in enumerate(zip(self.contour.points[:-1], self.contour.points[1:])):
                         if (surface_point1, surface_point2) == (contour_point1, contour_point2):
                             self.ordered_surfaces_index_in_contour.append(index)
-                        
-                        
+
+
     def __eq__(self, other_shaft):
         points1 = self.contour.points[::]
         points2 = other_shaft.contour.points[::]
@@ -526,10 +577,10 @@ class Shaft(Part):
                         boo = False
                 return boo
         return False
-    
+
     def __hash__(self):
         return len(self.contour.points)
-        
+
     def Hatch(self):
         """
         Returns a hatched patch of each PartSurface of the Shaft Object.
@@ -555,9 +606,12 @@ class Shaft(Part):
             for polygon in polygon_hatches:
                 if polygon_hatches is not None:
                     axe.add_patch(polygon)
-        
-        
-        
+
+        for surface in self.ordered_surfaces:
+            print('=>', surface)
+            red_line = vm.primitives2D.RoundedLineSegments2D(surface, {})
+            red_line.MPLPlot(ax=axe, style='r')
+
         return axe
 
     def AngleDifference(self):
@@ -577,6 +631,11 @@ class Shaft(Part):
             (nb_vertecies - 2) * 180
         """
         angle = self.AngleDifference()
+        if not abs(angle) < self.EPSILON:
+            print('Viability : inside out', angle)
+        if self.polygon.SelfIntersect()[0]:
+            print('Viability : intersection')
+
         viable = abs(angle) < self.EPSILON\
                  and not self.polygon.SelfIntersect()[0]
         return viable
@@ -587,15 +646,29 @@ class Shaft(Part):
         Repairs the polygons that are inside out.
         """
         if self.ordered_partsurfaces is not None:
-        
+
             repaired_line = None
             repaired_shafts = []
             if not self.Viability():
                 if self.AngleDifference() < self.EPSILON:
-    
+
                     perm = list(permutations(self.ordered_surfaces))
+#                    print(self.ordered_surfaces)
+
+
+#                    # !!! : PAS SUR SI LE PROBLEME EST VRAIMENT CIRCULAIRE
+#                    # Because the problem is circular, we can remove some of the permutations
+#                    remove_index = []
+#                    for index, perm_i in enumerate(perm):
+#                        if perm_i[0] != self.ordered_surfaces[0]:
+#                            remove_index.append(index)
+#                    for i in remove_index[::-1]:
+#                        perm.pop(i)
+
+                    print('RepairInsideOut : len(perm)', self.name, len(perm))
+
                     perm_repaired_line = []
-                    for perm_surfaces in perm:
+                    for print_i, perm_surfaces in enumerate(perm):
                         offset_points = []
                         repair_points = []
                         for surface in perm_surfaces:
@@ -604,20 +677,20 @@ class Shaft(Part):
                             offset_points.extend(line_surface.Offset(-self.offset).points)
                         offset_points.reverse()
                         repair_points.extend(offset_points)
-    
+
                         repair_points_line = repair_points.copy()
                         if repair_points[0] != repair_points[-1]:
                             repair_points_line.append(repair_points_line[0])
-    
+
                         repaired_line = primitives2D.RoundedLineSegments2D(repair_points_line, {}, closed=True)
                         perm_repaired_line.append(repaired_line)
                         repaired_shaft = Shaft(self.ordered_partsurfaces, repaired_line, self.yz, self.montage, self.name)
                         repaired_shafts.append(repaired_shaft)
-    
+
             if repaired_line is None:
                 print("Repair failed")
                 return None
-    
+
             return repaired_shafts
 
     def RepairIntersection(self):
@@ -627,7 +700,7 @@ class Shaft(Part):
         points.
         """
         if self.ordered_partsurfaces is not None:
-        
+
             repaired_line = None
             if not self.Viability():
                 intersection = self.polygon.SelfIntersect()
@@ -635,19 +708,19 @@ class Shaft(Part):
                 if intersection[0]:
                     intersect_line1 = intersection[1]
                     intersect_line2 = intersection[2]
-    
+
                     for j, surface in enumerate(self.ordered_surfaces):
                         for p1_surface, p2_surface in zip(surface[::], surface[1::]):
-    
+
                             # Looking for the functional surface that is intersected
                             # Possibly 4 different cases :
                             if intersect_line1.points == [p1_surface, p2_surface]\
                             or intersect_line2.points == [p2_surface, p1_surface]\
                             or intersect_line1.points == [p2_surface, p1_surface]\
                             or intersect_line2.points == [p1_surface, p2_surface]:
-    
+
                                 troncated_surfaces = self.ordered_surfaces[:j+1]
-    
+
                                 offset_points = OffsetSurface(troncated_surfaces[-1], self.offset)
                                 i_point = 1
                                 intersect0 = True
@@ -657,24 +730,57 @@ class Shaft(Part):
                                 # finally of the remaining points that have been troncated.
                                     repaired_surface = list(troncated_surfaces)
                                     repaired_surface.append(list(offset_points[-ii] for ii in range(1, i_point+1)))
-    
+
                                     if self.ordered_surfaces[j+1:]:
                                         repaired_surface.extend(self.ordered_surfaces[j+1:])
-    
+
                                     repaired_points = list(chain.from_iterable(repaired_surface))
-    
+
                                     if repaired_points[0] != repaired_points[-1]:
                                         repaired_points.append(repaired_points[0])
                                     intersect0 = vm.Polygon2D(repaired_points[:-1]).SelfIntersect()[0]
                                     i_point += 1
-    
+
                                     repaired_line = primitives2D.RoundedLineSegments2D(repaired_points, {}, closed=True)
-    
+
             if repaired_line is None:
                 print("Repair failed")
                 return None
-    
+
             return Shaft(self.ordered_partsurfaces, repaired_line, self.yz, self.montage, self.name)
+
+    def QuickRepair(self):
+
+        if self.ordered_partsurfaces is not None:
+
+            repaired_line = None
+            if not self.Viability():
+                if self.AngleDifference() < self.EPSILON:
+
+                    perm_repaired_line = []
+                    offset_points = []
+                    repair_points = []
+                    for surface in self.ordered_surfaces:
+                        line_surface = primitives2D.RoundedLineSegments2D(surface, {})
+                        repair_points.extend(surface)
+                        offset_points.extend(line_surface.Offset(-self.offset).points)
+                    offset_points.reverse()
+                    repair_points.extend(offset_points)
+
+                    repair_points_line = repair_points.copy()
+                    if repair_points[0] != repair_points[-1]:
+                        repair_points_line.append(repair_points_line[0])
+
+                    repaired_line = primitives2D.RoundedLineSegments2D(repair_points_line, {}, closed=True)
+                    perm_repaired_line.append(repaired_line)
+                    repaired_shaft = Shaft(self.ordered_partsurfaces, repaired_line, self.yz, self.montage, self.name)
+#                    repaired_shafts.append(repaired_shaft)
+
+            if repaired_line is None:
+                print("Repair failed")
+                return None
+
+            return repaired_shaft
 
     def Repair(self):
         """
@@ -694,6 +800,25 @@ class Shaft(Part):
                     shafts.extend(shaft)
         return shafts
 
+#    def Repair(self):
+#        """
+#        Repair the Shaft if it is not viable, using either the
+#        RepairIntersection or RepairInsideOut method according to the issue
+#        detected.
+#        """
+#        shafts = []
+#        if not self.Viability():
+#            if self.polygon.SelfIntersect()[0]:
+#                shaft = self.RepairIntersection()
+#                if shaft is not None:
+#                    shafts.append(shaft)
+#            if self.AngleDifference() < self.EPSILON:
+#                shaft = self.RepairInsideOut()
+#                if shaft is not None:
+#                    shafts.extend(shaft)
+#        return shafts
+
+
     def GoodRepair(self):
         """
         Repair the Shaft and returns only the viable reparations.
@@ -706,18 +831,18 @@ class Shaft(Part):
             if shaft.Viability():
                 good_shafts.append(shaft)
         return good_shafts
-    
-    
+
+
     def Wider(self, minimal_width):
         """
-        Faire attention à ce que le sens de parcours de self.contour fasse en 
+        Faire attention à ce que le sens de parcours de self.contour fasse en
         sorte de laisser la matière à droite.
         """
         new_contour = self.contour
         new_polygon = self.polygon
-        
+
         wide_enough, actual_width, edge1_index, edge2_index = is_wide_enought(new_polygon, minimal_width)
-        
+
         not_offsetable_edge_indexes = []
         for index in self.ordered_surfaces_index_in_contour:
             not_offsetable_edge_indexes.append(index)
@@ -727,10 +852,10 @@ class Shaft(Part):
                 not_offsetable_edge_indexes.append(len(self.contour.points))
             if index != len(self.contour.points):
                 not_offsetable_edge_indexes.append(index+1)
-            else:     
+            else:
                 not_offsetable_edge_indexes.append(0)
         not_offsetable_edge_indexes = list(set(not_offsetable_edge_indexes))
-        
+
         while not wide_enough:
             print('.')
             offset = minimal_width - actual_width
@@ -745,24 +870,24 @@ class Shaft(Part):
             else:
                 print("The thinest area is inbetween two functionnal surfaces, so it can't be made wider")
                 break
-            
+
 #            new_contour.MPLPlot()
 
             new_polygon = vm.Polygon2D([p for p in new_contour.points])
 
             wide_enough, actual_width, edge1_index, edge2_index = is_wide_enought(new_polygon, minimal_width)
-            
+
         print('final actual_width', actual_width)
-        
+
         new_shaft = Shaft(self.ordered_partsurfaces, new_contour, self.yz, self.montage, self.name)
 #        new_shaft.Plot()
         return new_shaft
-    
+
     def Contour(self):
         closed_contour = vm.primitives2D.RoundedLineSegments2D(self.contour.points, {}, closed=True)
         contour2D = vm.Contour2D([closed_contour])
         return contour2D
-    
+
     @classmethod
     def DictToObject(cls, dict_):
         ordered_partsurfaces = dict_['ordered_partsurfaces']
@@ -771,37 +896,29 @@ class Shaft(Part):
         name = dict_['name']
         shaft = cls(ordered_partsurfaces, contour, montage, name)
         return shaft
-         
-    
+
+
     def Dict(self):
         d = {'ordered_partsurfaces': self.ordered_partsurfaces,
              'contour': self.contour,
              'montage': self.montage,
              'name': self.name}
         return d
-    
+
     def CADVolumes(self, plane_origin=vm.o3D, center=vm.o3D, x=vm.x3D, y=vm.y3D):
         z = x.Cross(y)
         z.Normalize()
-#        print('contour', self.contour.points)
-#        for primitive in self.Contour().basis_primitives:
-#            print(primitive.points)
-#        print(self.Contour().basis_primitives)
-#        fig, axe = plt.subplots()
-#        axe = self.Plot()
-        
-#        plane_origin = vm.Point3D((0, self.yz[0], self.yz[1]))
-        
+
         profile = vm3d.RevolvedProfile(plane_origin, x, y, [self.Contour()], center, vm.x3D)
 #        profile.MPLPlot(axe)
         return profile
-       
-    def CADExport(self, fcstd_filepath, python_path='python', 
+
+    def CADExport(self, fcstd_filepath, python_path='python',
                       freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
         model = vm.VolumeModel([('shaft', self.CADVolumes())])
         model.FreeCADExport(fcstd_filepath, python_path=python_path,
                             freecad_lib_path=freecad_lib_path, export_types=export_types)
-        
+
 ###############################################################################
 
 class SurfaceRepertory:
@@ -819,7 +936,7 @@ class SurfaceRepertory:
         for part in parts:
             if part is not None:
                 shafts.append(part.ViableShafts())
-        
+
         self.shafts_product = [p for p in product(*shafts)]
 
 ###############################################################################
@@ -832,36 +949,16 @@ class ShaftLine:
         self.shafts = shafts    # A list of Shaft Objects
         self.yz = yz # The y position of the revolved axis for the Shaft Assembly
         self.name = name
-        
+
         print()
         print('shaftline => ', self.name, self.yz)
         for shaft in self.shafts:
             print(shaft.name, shaft.yz)
         print()
-#        # If a Shaft is on the other side of the symmetric axis
-#        for index, shaft in enumerate(self.shafts):
-##            one_sided_shaft = False
-#            count = 0
-#            for point in shaft.contour.points:
-#                if point[1] < self.yz[1]:
-#                    count += 1
-##                    one_sided_shaft = True
-#            if count == len(shaft.contour.points):
-#                print('count', count, shaft.name)
-#                new_contour_points = [vm.Point2D((p[0], 2*yz[1]-p[1])) for p in shaft.contour.points]
-#                new_contour = vm.primitives2D.RoundedLineSegments2D(new_contour_points, {}, closed=True)
-#                new_ordered_partsurfaces = []
-#                for ordered_partsurface in shaft.ordered_partsurfaces:
-#                    new_ordered_partsurface = PartSurface([vm.Point2D((p[0], 2*yz[1]-p[1])) for p in ordered_partsurface.points], ordered_partsurface.part, ordered_partsurface.otherpart)
-#                    new_ordered_partsurfaces.append(new_ordered_partsurface)
-#                new_shaft = Shaft(new_ordered_partsurfaces, contour=new_contour, montage=shaft.montage, name=shaft.name)
-#                self.shafts[index] = new_shaft
-#                new_contour.MPLPlot()
-                
-        
-        self.viable_assembly_orders = self.OrderedViableMountage() # An ordered list of Shaft Objects
 
-        
+        self.viable_assembly_orders = None # An ordered list of Shaft Objects
+
+
     def ShaftConntections(self, shaft):
         """
         Gives you a list of Shaft that are connected to the entry Shaft
@@ -873,7 +970,7 @@ class ShaftLine:
                     if partsurface.otherpart == shaft.ordered_partsurfaces[0].part:
                         linked_shafts.append(shafti)
         return linked_shafts
-    
+
     def ShaftMountability(self, shaft_to_mount_contour, contour):
         """
         Returns a dictionary that tells you according to the entry contour,
@@ -890,12 +987,12 @@ class ShaftLine:
         y_min = min(p[1] for p in part_functional_points)
         x_max = max(p[0] for p in part_functional_points)
         x_min = min(p[0] for p in part_functional_points)
-        
+
 #        print('y_max', y_max)
 #        print('y_min', y_min)
 #        print('x_max', x_max)
 #        print('x_min', x_min)
-        
+
         # Check if the points of the Shaft contour are not in the axial
         # assembly zone
         for i in range(len(contour.points)-1):
@@ -913,7 +1010,7 @@ class ShaftLine:
                                                                contour_point2[1])
                 if overlap:
                     mountable['right'] = False
-        
+
         return mountable
 
     def MountShaftContour(self, shaft_to_mount, contour):
@@ -923,12 +1020,12 @@ class ShaftLine:
         """
         if contour is None:
             return shaft_to_mount.contour
-        
-        # In order to mount the parts together, one should be mountable on the 
-        # other and vis versa. 
+
+        # In order to mount the parts together, one should be mountable on the
+        # other and vis versa.
         mountable1 = self.ShaftMountability(shaft_to_mount.contour, contour)
         mountable2 = self.ShaftMountability(contour, shaft_to_mount.contour)
-        
+
         mountable = {'left': mountable1['left'] and mountable2['right'],
                      'right': mountable1['right'] and mountable2['left']}
 
@@ -965,7 +1062,7 @@ class ShaftLine:
         """
 
         G = nx.Graph()
-        
+
         G.add_nodes_from(self.shafts)
 
         edges = []
@@ -974,19 +1071,22 @@ class ShaftLine:
                 linked_shafts = self.ShaftConntections(shaft)
             else:
                 linked_shafts = 'dunno'
-                
+
             for link_shaft in linked_shafts:
                 edges.append((shaft, link_shaft))
-        
+
         non_duplicated_edges = []
         for node1, node2 in edges:
             if (node1, node2) not in non_duplicated_edges and (node2, node1) not in non_duplicated_edges:
                 non_duplicated_edges.append((node1, node2))
-                
+
         G.add_edges_from(non_duplicated_edges)
+
 #        pos = nx.kamada_kawai_layout(G)
+        
         pos = nx.spectral_layout(G)
         if draw:
+            plt.figure()
             nx.draw_networkx_nodes(G, pos)
             nx.draw_networkx_edges(G, pos)
             labels = {s:s.name for s in self.shafts}
@@ -1028,7 +1128,7 @@ class ShaftLine:
                 if self.AssemblyViability(test_assembly):
                     viable_next_shafts.append(next_shaft)
             return viable_next_shafts
-        
+
         return next_shafts
 
 
@@ -1046,7 +1146,7 @@ class ShaftLine:
 
         while not dt.finished:
             valid = True
-            
+
             if dt.current_depth == 0:
                 dt.SetCurrentNodeDataPossibilities([s for s in self.shafts])
 
@@ -1072,23 +1172,26 @@ class ShaftLine:
                 ordered_assemblies.append(current_assembly)
                 dt.SetCurrentNodeNumberPossibilities(0)
                 valid = False
-                
-            
-                
+
             dt.NextNode(valid)
-            
-            
+
+        self.viable_assembly_orders = ordered_assemblies
+
         return ordered_assemblies
 
 
-    def CreateContour(self, ordered_shafts):
+    def CreateContour(self, ordered_shafts=None):
         """
         Returns the contour of the ShaftLine mounted according to the
         order of the entry Shaft list. If the ShaftLine is not mountable
         in this specific order, the method returns None.
         """
-        contour = None
         
+        if ordered_shafts is None:
+            ordered_shafts = self.OrderedViableMountage()[0]
+        
+        contour = None
+
         for shaft in ordered_shafts:
             new_contour = self.MountShaftContour(shaft, contour)
             if contour == new_contour:
@@ -1106,23 +1209,27 @@ class ShaftLine:
         return True
 
 
-    def GraphicMountability(self, ordered_assembly):
+    def GraphicMountability(self, ordered_assembly=None):
         """
         Plots a simple sequenced visualisation of the mountage following the
         entry order.
         """
+        if ordered_assembly is None:
+            ordered_assembly = self.OrderedViableMountage()[0]
+
         # TODO: It's a detail but the subplot grid can be improved
         len_ordered_assembly = len(ordered_assembly)
 #        i = int(npy.floor(len_ordered_assembly/2))
 #        j = int(npy.ceil(len_ordered_assembly/2))
-        
+
         i = int(npy.ceil(npy.sqrt(len_ordered_assembly)))
-        
+
         plt.figure()
         for index in range(len_ordered_assembly):
 
             contour = self.CreateContour(ordered_assembly[:index+1])
             axe = plt.subplot(i, i, index+1)
+            axe.set_aspect('equal')
             contour.MPLPlot(axe)
             ordered_assembly[index].contour.MPLPlot(axe, style='r')
 
@@ -1134,40 +1241,33 @@ class ShaftLine:
 #        _, axe = contour.MPLPlot()
         if axe is None:
             fig, axe = plt.subplots()
-        
+
         if symm_y_axis is None:
             symm_y_axis = self.yz[1]
         print(symm_y_axis)
+
+        translated_contours = []
         for shaft in self.shafts:
             translated_contour = shaft.contour.Translation(vm.Vector2D((0, symm_y_axis)))
             _, axe = translated_contour.MPLPlot(axe)
-            
+            translated_contours.append(translated_contour)
+
         axe.set_aspect('equal')
-        return axe
-    
+        return axe, translated_contours
+
     def SymmetricPlot(self, symm_y_axis=None, axe=None):
         """
-        Plots the whole ShaftLine with its symmetric. 
+        Plots the whole ShaftLine with its symmetric.
         """
         if symm_y_axis is None:
             symm_y_axis = self.yz[1]
-        
-        
-        
-        contour = self.CreateContour(self.viable_assembly_orders[0])
-        
-        contour = contour.Translation(vm.Vector2D((0, symm_y_axis)))
-        
-        symm_points = []
-        for point in contour.points:
-            symm_points.append(point.Translation(vm.Point2D((0,-2*(point[1]-symm_y_axis)))))
-#        symm_contour = vm.primitives2D.RoundedLineSegments2D(symm_points, {})
+
         if axe is None:
-            axe = self.Plot(None, symm_y_axis)
+            axe, contours = self.Plot(None, symm_y_axis)
         else:
-            self.Plot(axe, symm_y_axis)
+            _, contours = self.Plot(axe, symm_y_axis)
         axe.set_aspect('equal')
-#        symm_contour.MPLPlot(axe, style='b')
+
         for shaft in self.shafts:
             symm_points_shaft = []
             shaft_contour = shaft.contour.Translation(vm.Vector2D((0, symm_y_axis)))
@@ -1175,13 +1275,13 @@ class ShaftLine:
                 symm_points_shaft.append(point.Translation(vm.Point2D((0,-2*(point[1]-symm_y_axis)))))
             symm_shaft_contour = vm.primitives2D.RoundedLineSegments2D(symm_points_shaft, {}, closed=True)
             symm_shaft_contour.MPLPlot(axe)
-        
+
         symm_line = vm.LineSegment2D(vm.Point2D((min([p[0] for shaft in self.shafts for p in shaft.contour.points]), symm_y_axis)),
                                      vm.Point2D((max([p[0] for shaft in self.shafts for p in shaft.contour.points]), symm_y_axis)))
         symm_line.MPLPlot(axe, style='-.k')
-        
+
         return axe
-        
+
     def CADVolumes(self, center=None, x=vm.x3D, y=vm.y3D):
         if center is None:
             center = vm.Point3D((0, self.yz[0], self.yz[1]))
@@ -1192,13 +1292,13 @@ class ShaftLine:
             profiles.append(shaft.CADVolumes(center=center))
 #            shaft.CADVolumes()[0].MPLPlot()
         return profiles
-       
-    def CADExport(self, fcstd_filepath, python_path='python', 
+
+    def CADExport(self, fcstd_filepath, python_path='python',
                       freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
         model = vm.VolumeModel([('shaftline', self.CADVolumes())])
         model.FreeCADExport(fcstd_filepath, python_path=python_path,
                             freecad_lib_path=freecad_lib_path, export_types=export_types)
-    
+
 ###############################################################################
 
 class ShaftLinesAssembly:
@@ -1208,11 +1308,48 @@ class ShaftLinesAssembly:
         self.origin = origin
         self.name = name
         
+#    def UnfoldPlot(self):
+#        print(self.shaftlines_to_position)
+#        heights = []
+#        heights.append(0)
+#        for shaftline1, shaftline2 in zip(self.shaftlines[:-1], self.shaftlines[1:]):
+#            d = ((self.shaftlines_to_position[shaftline2][0]-self.shaftlines_to_position[shaftline1][0])**2 + (self.shaftlines_to_position[shaftline2][1]-self.shaftlines_to_position[shaftline1][1])**2)**0.5
+#            print(d)
+#            heights.append(-d + heights[-1])
+#        fig, axe = plt.subplots()
+#        for sl_index, shaftline in enumerate(self.shaftlines):
+#            shaftline.SymmetricPlot(symm_y_axis=heights[sl_index], axe=axe)
+#        
+#        return heights
+
     def Plot(self):
         fig, axe = plt.subplots()
         for shaftline in self.shaftlines:
             shaftline.SymmetricPlot(symm_y_axis=self.shaftlines_to_position[shaftline][1], axe=axe)
-    
+            
+    def ShaftLineEnvelope(self, shaftline):
+        position = self.shaftlines_to_position[shaftline]
+        
+        restricted_zones = []
+        for other_shaftline in self.shaftlines:
+            if other_shaftline is not shaftline:
+                print('ca arrive')
+                contour = other_shaftline.CreateContour()
+                print('c parti')
+                symm_contour_points = [p.Translation(vm.Point2D((0, -2*p[1]))) for p in contour.points]
+                symm_contour = vm.primitives2D.RoundedLineSegments2D(symm_contour_points, {})
+                other_position = self.shaftlines_to_position[other_shaftline]
+                d = ((position[0]-other_position[0])**2 + (position[1]-other_position[1])**2)**0.5
+                translation_vector = vm.Vector2D((position[0]-other_position[0], position[1]-other_position[0]+d))
+                translated_contour = vm.primitives2D.RoundedLineSegments2D([p.Translation(vm.Point2D(translation_vector)) for p in contour.points], {})
+                translated_symm_contour = vm.primitives2D.RoundedLineSegments2D([p.Translation(vm.Point2D(translation_vector)) for p in symm_contour.points], {})
+                restricted_zones.append(translated_symm_contour)
+                
+        fig, axe = plt.subplots()
+        shaftline.Plot(axe=axe, symm_y_axis=position[0])
+        for contour in restricted_zones:
+            contour.MPLPlot(ax=axe, style='r')
+            
     def CADVolumes(self, center=None, x=vm.x3D, y=vm.y3D):
         if center is None:
             center = self.origin
@@ -1222,11 +1359,11 @@ class ShaftLinesAssembly:
         for shaftline in self.shaftlines:
             profiles = profiles + shaftline.CADVolumes(self.shaftlines_to_position[shaftline])
         return profiles
-    
-    def CADExport(self, fcstd_filepath, python_path='python', 
+
+    def CADExport(self, fcstd_filepath, python_path='python',
                       freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
         model = vm.VolumeModel([('shaftlineassembly', self.CADVolumes())])
         model.FreeCADExport(fcstd_filepath, python_path=python_path,
                             freecad_lib_path=freecad_lib_path, export_types=export_types)
-    
+
 ###############################################################################
