@@ -45,8 +45,8 @@ d2 = json.loads(json_file)
 obj = meshes_opt.MeshAssembly.DictToObject(d2)
 
 
-obj = meshes_opt.MeshAssembly.DictToObject(dl)
-obj.SVGExport('meshes2.txt',{0 : [0,0], 2 : [0.15,0]})
+obj = meshes_opt.MeshAssembly.DictToObject(d)
+#obj.SVGExport('meshes2.txt',{0 : [0,0], 2 : [0.15,0]})
 print(obj.mesh_combinations[0].meshes[0] == solution.mesh_combinations[0].meshes[0])
 print(obj == solution)
 print(hash(obj))
