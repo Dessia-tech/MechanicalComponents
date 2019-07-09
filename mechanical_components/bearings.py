@@ -7,6 +7,7 @@ import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 import math
+import dessia_common as dc
 from mechanical_components import shafts_assembly 
 
 #import copy
@@ -286,6 +287,8 @@ class RadialBearing:
     generate_axial_load = None
     linkage = None
     
+    _standalone_in_db = True
+    
     _jsonschema = {
         "definitions": {},
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -326,10 +329,6 @@ class RadialBearing:
             "C0r": {"type": "number",  "examples": [25000],
                     "physical_quantity": 'force', "unit": "N",
                     "editable": "true", "description": "Based static load"},
-            "contact_type": {"examples": ["linear_contact"],
-                     "physical_quantity": 'contact_property',
-                     "anyOf": [{"type": "string", "enum": [ "linear_contact", "point_contact", "mixed_contact" ]}, {"type": "null"}],
-                     "editable": "true", "description": "Contact type"},
             "mass": {"type": "number",  "examples": [0.04],
                      "physical_quantity": 'mass', "unit": "kg",
                      "editable": "true", "description": "Mass"},
@@ -754,19 +753,24 @@ class RadialBallBearing(RadialBearing):
     cost_coefficient = 0.2
     cost_constant = 1
     
-    _jsonschema = {
-        "definitions": {
-                "RadialBearing": RadialBearing._jsonschema},
-        "allOf": [
-            { "$ref": "#/definitions/RadialBearing" },
-            {'type': 'object',
-             "properties": {
+#    _jsonschema = {
+#        "definitions": {
+#                "RadialBearing": RadialBearing._jsonschema},
+#        "allOf": [
+#            { "$ref": "#/definitions/RadialBearing" },
+#            {'type': 'object',
+#             "properties": {
+#                'alpha': {'const': 0},
+#              },
+##            "required": ['alpha']
+#            }
+#          ]
+#      }
+        
+    _jsonschema = dc.dict_merge(RadialBearing._jsonschema, 
+            {"properties": {
                 'alpha': {'const': 0},
-              },
-#            "required": ['alpha']
-            }
-          ]
-      }
+              }})
     
     def __init__(self, d, D, B, i=1, Z=None, Dw=None, Cr=None, C0r=None,
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
@@ -991,20 +995,11 @@ class AngularBallBearing(RadialBearing):
     class_name = 'AngularBallBearing'
     cost_coefficient = 0.4
     cost_constant = 1.5
-    
-    _jsonschema = {
-        "definitions": {
-                "RadialBearing": RadialBearing._jsonschema},
-        "allOf": [
-            { "$ref": "#/definitions/RadialBearing" },
-            {'type': 'object',
-             "properties": {
+        
+    _jsonschema = dc.dict_merge(RadialBearing._jsonschema, {
+            "properties": {
                 'i': {'const': 1},
-              },
-#            "required": ['i']
-            }
-          ]
-      }
+              }})
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None ,
                  material=material_iso, contact_type=None, mass=None, name='', metadata={}):
@@ -1254,20 +1249,11 @@ class SphericalBallBearing(RadialBearing):
     class_name = 'SphericalBallBearing'
     cost_coefficient = 0.4
     cost_constant = 2
-    
-    _jsonschema = {
-        "definitions": {
-                "RadialBearing": RadialBearing._jsonschema},
-        "allOf": [
-            { "$ref": "#/definitions/RadialBearing" },
-            {'type': 'object',
-             "properties": {
-                'alpha': {'const': 0.},
-              },
-#            "required": ['alpha']
-            }
-          ]
-      }
+        
+    _jsonschema = dc.dict_merge(RadialBearing._jsonschema, {
+        "properties": {
+            'alpha': {'const': 0},
+          }})
     
     def __init__(self, d, D, B, alpha=0, i=1, Z=None, Dw=None, Cr=None, C0r=None,
                  material=material_iso, contact_type=None, mass=None, name='',
@@ -1384,21 +1370,14 @@ class RadialRollerBearing(RadialBearing):
     coeff_baselife = 10/3.
     cost_coefficient = 0.5
     cost_constant = 2.5
-    
-    _jsonschema = {
-        "definitions": {
-                "RadialBearing": RadialBearing._jsonschema},
-        "allOf": [
-            { "$ref": "#/definitions/RadialBearing" },
-            {'type': 'object',
-             "properties": {
-                'i': {'const': 1},
-                'contact_type': {'const': 'linear_contact'},
-              },
-            "required": ['contact_type']
-            }
-          ]
-      }
+        
+#    _jsonschema = dc.dict_merge(RadialBearing._jsonschema, {
+#            "properties": {
+#                'i': {'const': 1},
+#                'contact_type': {'const': 'linear_contact'},
+#              },
+#             "required": ['contact_type']
+#             })
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None,
                  material=material_iso,
@@ -1917,21 +1896,6 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     cost_coefficient = 0.4
     cost_constant = 2
         
-        
-    _jsonschema = {
-        "definitions": {
-                "RadialBearing": RadialBearing._jsonschema},
-        "allOf": [
-            { "$ref": "#/definitions/RadialBearing" },
-            {'type': 'object',
-             "properties": {
-                'i': {'const': 1},
-                'contact_type': {'const': 'linear_contact'},
-              },
-            "required": ['contact_type']
-            }
-          ]
-      }
     
     def __init__(self, d, D, B, alpha, i=1, Z=None, Dw=None, Cr=None, C0r=None,
                  material=material_iso, contact_type='linear_contact',
@@ -2587,6 +2551,8 @@ class ConceptualBearingCombination:
 
 class BearingCombination:
     
+    _standalone_in_db = True
+    
     _jsonschema = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "definitions": {
@@ -3098,9 +3064,11 @@ class BearingCombination:
         
 class BearingAssembly:
     
-    dessia_db_attributes = [{'name':'bearing_combinations',
-                             'class':'mechanical_components.bearings.BearingCombination',
-                             'type':'list'}]
+    _standalone_in_db = True
+    
+#    dessia_db_attributes = [{'name':'bearing_combinations',
+#                             'class':'mechanical_components.bearings.BearingCombination',
+#                             'type':'list'}]
 
     def __init__(self, bearing_combinations, pre_load=0, axial_positions=None):
         
