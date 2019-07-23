@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+
+Bearings module
+
+"""
+
+__title__ = 'Bearings'
+__description__ = 'Ball and roller bearings'
+
 import numpy as npy
 npy.seterr(divide='raise', over='ignore', under='ignore')
 #import math as mt
