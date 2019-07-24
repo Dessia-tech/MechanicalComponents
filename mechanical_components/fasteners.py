@@ -9,6 +9,39 @@ import volmdlr as vm
 import volmdlr.primitives3D
 
 class HexagonNut:
+    
+    _standalone_in_db = True
+    
+    _jsonschema = {
+        "definitions": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "title": "Hexagon nut",
+        "required": [
+            "d",
+            "t",
+            "h",
+            'name'
+          ],
+          "properties": {
+            "d": {"type": "number",  "examples": [0.008],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": True, "description": "Diameter"},
+            "t": {"type": "number",  "examples": [0.012],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": True, "description": "Tool width"},
+            "h": {"type": "number",  "examples": [0.008],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": True,
+                  "description": "Height"},
+            "e": {"type": "number", "examples": [0.003],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": False},
+            "name": {'type': 'string', 'editable': True, "examples": ['M4'],
+                     }
+            }
+          }
+    
     def __init__(self, d, t, h, name=''):
         self.d = d
         self.t = t
@@ -16,14 +49,12 @@ class HexagonNut:
         self.h = h
         self.name = name
         
-#        self.face_length = self.t / math.sqrt(3)
-        
     def to_dict(self):
         d = {}
         d['d'] = self.d
         d['t'] = self.t
-#        d['e'] = self.e
         d['h'] = self.h
+        d['name'] = self.name
         return d
     
     @classmethod
