@@ -216,13 +216,43 @@ class HexagonScrew:
         model=vm.VolumeModel(groups)        
         return model   
     
-    def cad_export(self, fcstd_filepath='An unamed hexagon nut', python_path='python', 
+    def cad_export(self, fcstd_filepath='An unamed hexagon screw', python_path='python', 
                       freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
         model = self.volmdlr_model()
         model.FreeCADExport(fcstd_filepath, python_path=python_path,
                             freecad_lib_path=freecad_lib_path, export_types=export_types)
 
 class FlatWasher:
+    _standalone_in_db = True
+    
+    _jsonschema = {
+        "definitions": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "title": "Flat washer",
+        "required": [
+            "D",
+            "A",
+            "e1",
+            'name'
+          ],
+          "properties": {
+            "D": {"type": "number",  "examples": [0.008],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": True, "description": "Diameter"},
+            "A": {"type": "number",  "examples": [0.012],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": True, "description": "Tool width"},
+            "e1": {"type": "number",  "examples": [0.003],
+                  "physical_quantity": 'distance', "unit": "m",
+                  "editable": True,
+                  "description": "Height"},
+            "name": {'type': 'string', 'editable': True, "examples": ['Flat washer'],
+                     }
+            }
+          }
+    
+    
     def __init__(self, D, A, e1, name=''):
         self.D = D
         self.A = A
@@ -241,6 +271,36 @@ class FlatWasher:
     @classmethod
     def dict_to_object(cls, d):
         return cls(d['D'], d['A'], d['e1'], d['name'])
+    
+    
+    def __hash__(self):
+        return round(1000*self.A + 2123*self.D + 782*self.e1)
+
+    def __eq__(self, other_nut):
+        return self.A == other_nut.A and self.D == other_nut.D\
+            and self.e1 == other_nut.e1
+        
+    def outer_contour(self):
+        return vm.Contour2D([vm.Circle2D(vm.o2D, 0.5*self.A)])
+    
+    def inner_contour(self):
+        return vm.Contour2D([vm.Circle2D(vm.o2D, 0.5*self.D)])
+        
+    def volmdlr_model(self, center=vm.o3D, x=vm.x3D, y=vm.y3D, z=vm.z3D):
+        extrusion = volmdlr.primitives3D.ExtrudedProfile(center, x, y,
+                                                         self.outer_contour(),
+                                                         [self.inner_contour()],
+                                                         z*self.e1,
+                                                         name=self.name)
+        groups = [(self.name, [extrusion])]
+        model=vm.VolumeModel(groups)        
+        return model   
+    
+    def cad_export(self, fcstd_filepath='An unamed flat washer', python_path='python', 
+                      freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
+        model = self.volmdlr_model()
+        model.FreeCADExport(fcstd_filepath, python_path=python_path,
+                            freecad_lib_path=freecad_lib_path, export_types=export_types)
 
 class Bolt:
     

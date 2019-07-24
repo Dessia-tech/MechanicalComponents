@@ -305,7 +305,7 @@ class RadialBearing:
         "definitions": {},
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
-        "title": "mechanical_components.bearings.RadialBearing Base Schema",
+        "title": "Radial bearing",
         "required": [
             "d",
             "D",
