@@ -17,10 +17,10 @@ import calendar
 import hashlib
 import sys
 
-protected_files = ['mechanical_components/optimization/bearings.py',
+protected_files = ['mechanical_components/optimization/bearings_protected.py',
                    'mechanical_components/optimization/common.py',
-                   'mechanical_components/optimization/meshes.py',
-                   'mechanical_components/optimization/wires.py',
+                   'mechanical_components/optimization/meshes_protected.py',
+                   'mechanical_components/optimization/wires_protected.py',
                    'mechanical_components/shafts.py',
                    'mechanical_components/shafts_assembly.py'
                    ]
