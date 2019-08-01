@@ -19,8 +19,8 @@ from scipy.optimize import minimize, fsolve
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
         SphericalBallBearing, \
         BearingAssembly, \
-        BearingAssemblySimulationResult,\
-        BearingCombinationSimulationResult, BearingSimulationResult,\
+        BearingAssemblySimulationResult, BearingCombination,\
+        BearingCombinationSimulationResult, BearingCombinationSimulation, BearingSimulationResult,\
         BearingAssemblySimulation, \
         ConceptualBearingCombination, \
         strength_bearing_classes, \

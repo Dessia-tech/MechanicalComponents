@@ -26,14 +26,14 @@ import numpy as npy
 
 npy.seterr(divide='raise', over='ignore', under='ignore', invalid='ignore')
 
-from scipy.optimize import fsolve
-from copy import deepcopy
+#from scipy.optimize import fsolve
+#from copy import deepcopy
 from itertools import product
 
-from dectree import DecisionTree
+#from dectree import DecisionTree
 
-import math
-
+#import math
+#
 from mechanical_components.tools import StringifyDictKeys
 
 
