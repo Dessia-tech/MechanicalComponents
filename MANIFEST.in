@@ -8,7 +8,7 @@ exclude mechanical_components/shafts.py
 exclude mechanical_components/shafts_assembly.py
 global-exclude *_protected.pyx
 recursive-exclude catalogs/
-recursive-include assets/ *.png
+recursive-include mechanical_components/assets/ *.png *.jpg
 prune .git
 
 
