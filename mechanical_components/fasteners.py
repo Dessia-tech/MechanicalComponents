@@ -8,7 +8,9 @@ import math
 import volmdlr as vm
 import volmdlr.primitives3D
 
-class HexagonNut:
+from dessia_common.core import DessiaObject
+
+class HexagonNut(DessiaObject):
     
     _standalone_in_db = True
     
@@ -102,7 +104,7 @@ class HexagonNut:
         model.FreeCADExport(fcstd_filepath, python_path=python_path,
                             freecad_lib_path=freecad_lib_path, export_types=export_types)
 
-class HexagonScrew:
+class HexagonScrew(DessiaObject):
     _standalone_in_db = True
     
     _jsonschema = {
@@ -222,7 +224,7 @@ class HexagonScrew:
         model.FreeCADExport(fcstd_filepath, python_path=python_path,
                             freecad_lib_path=freecad_lib_path, export_types=export_types)
 
-class FlatWasher:
+class FlatWasher(DessiaObject):
     _standalone_in_db = True
     
     _jsonschema = {
@@ -302,7 +304,7 @@ class FlatWasher:
         model.FreeCADExport(fcstd_filepath, python_path=python_path,
                             freecad_lib_path=freecad_lib_path, export_types=export_types)
 
-class Bolt:
+class Bolt(DessiaObject):
     
     def __init__(self, screw, nut, nut_position, washer=None):
         self.screw = screw
@@ -321,7 +323,7 @@ class Bolt:
     
     @classmethod
     def dict_to_object(cls, d):
-        screw = Screw.dict_to_object(d['screw'])
+        screw = HexagonScrew.dict_to_object(d['screw'])
         nut = HexagonNut.dict_to_object(d['nut'])
         nut_position = d['nut_position']
         if "washer" in d:
@@ -331,7 +333,7 @@ class Bolt:
         return cls(screw, nut, nut_position)
         
     
-class ScrewAssembly:
+class ScrewAssembly(DessiaObject):
 
     def __init__(self, screws, positions, axis, name=''):
         self.screws = screws
@@ -349,13 +351,13 @@ class ScrewAssembly:
     
     @classmethod
     def dict_to_object(cls, d):
-        screws = [Screw.dict_to_object(s) for s in d['screws']]
+        screws = [HexagonScrew.dict_to_object(s) for s in d['screws']]
         positions = d['positions']
         axis = d['axis']
         name = d['name']
         return cls(screws, positions, axis, name)
     
-class BoltAssembly:
+class BoltAssembly(DessiaObject):
     
     def __init__(self, bolts, positions, axis, name=''):
         self.bolts = bolts
