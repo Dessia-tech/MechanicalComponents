@@ -67,6 +67,7 @@ setup(name='mechanical_components',
       install_requires=['scipy', 'volmdlr', 'numpy', 'pandas', 'dectree>=0.0.4',
                         'networkx', 'matplotlib', 'genmechanics>=0.0.7',
                         'dessia_common>=0.0.3'],
+      include_package_data=True,
       data_files=[('mechanical_components/catalogs',['mechanical_components/catalogs/ferroflex.csv',
                                                      'mechanical_components/catalogs/schaeffler.json'])]
       )
