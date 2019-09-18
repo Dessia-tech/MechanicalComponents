@@ -170,28 +170,18 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         self.cycles = cycles
         self.safety_factor = safety_factor
         self.rigid_links = rigid_links
+        self.safety_factor = safety_factor
             
         self.nb_rack = len(self.rack_list.keys())
         
         if self.Z == {}:
-            var_Z=self.AnalyseZ()
+            var_Z = self.AnalyseZ()
+            for num, li_z in var_Z.items():
+                if li_z[0] > li_z[1]:
+                    raise KeyError('The gear teeth area for Decision Tree is null')
             self.Z=var_Z
             
 #        print(self.Z)
-        self.plex_calcul = self.AnalyzeCombination(verbose)
-        
-        for i,plex in enumerate(self.plex_calcul):
-            plex['rack_list']=self.rack_list
-            plex['material']=self.material
-            plex['torques'] = self.torques
-            plex['cycles'] = self.cycles
-            plex['connections'] = self.connections
-            plex['rigid_links'] = self.rigid_links
-#            plex['center_distance']=self.center_distance
-            plex['transverse_pressure_angle'] = self.transverse_pressure_angle
-            plex['coefficient_profile_shift'] = self.coefficient_profile_shift
-            plex['safety_factor'] = safety_factor
-            self.plex_calcul[i] = plex
             
         self.solutions=[]
         self.solutions_search=[]
