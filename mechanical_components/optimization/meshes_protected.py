@@ -829,7 +829,7 @@ class MeshAssemblyOptimizer:
         print(self.Z)
         if list_sol==None:
             
-            liste_plex = self.AnalyzeCombination(3*nb_sol, verbose)
+            liste_plex = self.AnalyzeCombination(5*nb_sol, verbose)
             for i,plex in enumerate(liste_plex):
                 plex['rack_list']=self.rack_list
                 plex['material']=self.material
