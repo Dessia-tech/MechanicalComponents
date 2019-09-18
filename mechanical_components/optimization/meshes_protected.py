@@ -537,7 +537,7 @@ class MeshAssemblyOptimizer:
         >>> print(list_z)
         {1:[13,45], 2: [37,56]}
         """
-        Z_max = 130
+#        Z_max = 130
         
         Z=self.Z
         for i, shaft_mesh in enumerate(self.connections):
@@ -826,9 +826,7 @@ class MeshAssemblyOptimizer:
         >>> GA.Optimize(list_sol=[1,2,3,4], verbose=True)
         """
         compt_nb_sol=0
-        print(self.Z)
-        if list_sol==None:
-            
+        if self.check:
             liste_plex = self.AnalyzeCombination(5*nb_sol, verbose)
             for i,plex in enumerate(liste_plex):
                 plex['rack_list']=self.rack_list
@@ -842,40 +840,45 @@ class MeshAssemblyOptimizer:
                 plex['coefficient_profile_shift'] = self.coefficient_profile_shift
                 plex['safety_factor'] = self.safety_factor
                 liste_plex[i] = plex
-            # Using all combinatoric
-            # Sorting data, delta w max first
-            dw = [s['dw'] for s in liste_plex]
-            liste_plex2 = []
-            for i in npy.argsort(dw)[::-1]:
-#                print('dw: ', liste_plex[i]['dw'])
-                del liste_plex[i]['dw']
-                liste_plex2.append(liste_plex[i])
-            liste_plex = liste_plex2
+                
+            if list_sol==None:
+                # Using all combinatoric
+                # Sorting data, delta w max first
+                dw = [s['dw'] for s in liste_plex]
+                liste_plex2 = []
+                for i in npy.argsort(dw)[::-1]:
+    #                print('dw: ', liste_plex[i]['dw'])
+                    del liste_plex[i]['dw']
+                    liste_plex2.append(liste_plex[i])
+                liste_plex = liste_plex2
+                
+            else:
+                liste_plex=[]
+                for ind_plex in list_sol:
+                    del self.plex_calcul[ind_plex]['dw']
+                    liste_plex.append(self.plex_calcul[ind_plex])
+                nb_sol=len(liste_plex)
             
+            for plex in liste_plex:
+                ga = ContinuousMeshesAssemblyOptimizer(**plex)
+                try:
+                    ga.Optimize(verbose)
+                except ValueError:
+                    if verbose:
+                        print('Convergence problem')
+                if len(ga.solutions)>0:
+                    sol1=ga.solutions[-1]
+                    self.solutions.append(sol1)
+                    compt_nb_sol+=1
+    #                if verbose:
+    #                    print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
+    #                    print('Numbers of teeth: {}'.format(plex['Z']))
+    #                    print('Center distances: {}'.format(self.solutions[-1].center_distance))
+                    if compt_nb_sol==nb_sol:
+                        break
         else:
-            liste_plex=[]
-            for ind_plex in list_sol:
-                del self.plex_calcul[ind_plex]['dw']
-                liste_plex.append(self.plex_calcul[ind_plex])
-            nb_sol=len(liste_plex)
-        
-        for plex in liste_plex:
-            ga = ContinuousMeshesAssemblyOptimizer(**plex)
-            try:
-                ga.Optimize(verbose)
-            except ValueError:
-                if verbose:
-                    print('Convergence problem')
-            if len(ga.solutions)>0:
-                sol1=ga.solutions[-1]
-                self.solutions.append(sol1)
-                compt_nb_sol+=1
-#                if verbose:
-#                    print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
-#                    print('Numbers of teeth: {}'.format(plex['Z']))
-#                    print('Center distances: {}'.format(self.solutions[-1].center_distance))
-                if compt_nb_sol==nb_sol:
-                    break
+            if verbose:
+                print('The gear teeth area for Decision Tree is null')
 
     def OptimizeCD(self, nb_sol = 1, verbose=False,
                         progress_callback = lambda x:x):

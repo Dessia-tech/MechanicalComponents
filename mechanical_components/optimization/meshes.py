@@ -173,12 +173,13 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         self.safety_factor = safety_factor
             
         self.nb_rack = len(self.rack_list.keys())
+        self.check = True
         
         if self.Z == {}:
             var_Z = self.AnalyseZ()
             for num, li_z in var_Z.items():
                 if li_z[0] > li_z[1]:
-                    raise KeyError('The gear teeth area for Decision Tree is null')
+                    self.check = False
             self.Z=var_Z
             
 #        print(self.Z)
