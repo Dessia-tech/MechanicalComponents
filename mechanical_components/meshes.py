@@ -158,7 +158,7 @@ sigma_grey_iron={'data':[[1.354230792372041,0.7100658633470387],
                          [1.5725374677438706,0.933832025442077]
                         ], 'x':'Log','y':'Log'}
 
-class Material:
+class Material(dc.DessiaObject):
     """
     Gear material
 
@@ -290,7 +290,7 @@ bronze=Material(8200, evol_coeff_yb_iso, wholer_bronze, sigma_bronze,
 grey_iron=Material(7200, evol_coeff_yb_iso, wholer_grey_iron, sigma_grey_iron,
                    metadata = dc.Metadata('Grey iron'))
 
-class Rack:
+class Rack(dc.DessiaObject):
     """
     Gear rack definition
 
@@ -546,7 +546,7 @@ class Rack:
                    metadata = metadata)
         return rack
 
-class Mesh:
+class Mesh(dc.DessiaObject):
     """
     Gear mesh definition
 
@@ -977,7 +977,7 @@ class Mesh:
                    metadata = metadata)
         return mesh
 
-class MeshCombination:
+class MeshCombination(dc.DessiaObject):
     def __init__(self,  center_distance, connections, meshes, torque=None, cycle=None,
                  safety_factor=1, metadata = dc.Metadata('')):
 
@@ -1811,7 +1811,7 @@ class MeshCombination:
         return mesh_combination
             
 
-class MeshAssembly:
+class MeshAssembly(dc.DessiaObject):
     def __init__(self, connections, mesh_combinations, 
                  torque=None, cycle=None, strong_links=None,
                  safety_factor=1, metadata = dc.Metadata('')):

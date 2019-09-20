@@ -537,7 +537,7 @@ class MeshAssemblyOptimizer:
         >>> print(list_z)
         {1:[13,45], 2: [37,56]}
         """
-        Z_max = 95
+#        Z_max = 130
         
         Z=self.Z
         for i, shaft_mesh in enumerate(self.connections):
@@ -556,10 +556,10 @@ class MeshAssemblyOptimizer:
                 demul_max=self.gear_speeds[engr1][1]/self.gear_speeds[engr2][0]
                 DF1_max=2*cd_max/float(1+demul_min)
                 Z1_max=int(DF1_max/module1_min)+1
-                Z1_max = min(Z1_max, Z_max)
+#                Z1_max = min(Z1_max, Z_max)
                 DF2_max=2*cd_max*demul_max/(1+demul_max)
                 Z2_max=int(DF2_max/module2_min)+1
-                Z2_max = min(Z2_max, Z_max)
+#                Z2_max = min(Z2_max, Z_max)
                 DF1_min=2*cd_min/(1+demul_max)
                 Z1_min=int(DF1_min/module1_max)-1
                 DF2_min=2*cd_min*demul_min/(1+demul_min)
@@ -575,7 +575,7 @@ class MeshAssemblyOptimizer:
                     Z[engr2]=[max(Z2_min,Z[engr2][0]),min(Z2_max,Z[engr2][1])]
         return Z
 
-    def AnalyzeCombination(self, verbose=False):
+    def AnalyzeCombination(self, nb_sol=None, verbose=False):
         """ Analyse with decision tree all admissible configuration
         
         :results: list of all admissible solutions 
@@ -710,9 +710,10 @@ class MeshAssemblyOptimizer:
                 rack_pos=list_node[dt.current_depth-nb_gear]
                 if rack_num not in self.rack_choice[rack_pos]:
                     valid=False
-                    
+                
             if (dt.current_depth==(nb_gear+nb_gear-1)) and (valid==True):
                 # feasibility analysis of the modulus toward center-distance
+                
                 liste_DF_min={}
                 module_minmax={}
                 module_inf,module_sup=(0, math.inf)
@@ -802,7 +803,11 @@ class MeshAssemblyOptimizer:
                 self.fonctionnel_module.append(module_optimal)
                 plex_calcul.append(Export)
                 incr+=1
+            if nb_sol is not None:
+                if incr > nb_sol:
+                    break
             dt.NextNode(valid)
+            
         if incr>1:
             if verbose:
                 print('Number of combination found: {}'.format(incr))
@@ -821,42 +826,59 @@ class MeshAssemblyOptimizer:
         >>> GA.Optimize(list_sol=[1,2,3,4], verbose=True)
         """
         compt_nb_sol=0
-        if list_sol==None:
-            liste_plex=self.plex_calcul
-            # Using all combinatoric
-            # Sorting data, delta w max first
-            dw = [s['dw'] for s in liste_plex]
-            liste_plex2 = []
-            for i in npy.argsort(dw)[::-1]:
-#                print('dw: ', liste_plex[i]['dw'])
-                del liste_plex[i]['dw']
-                liste_plex2.append(liste_plex[i])
-            liste_plex = liste_plex2
+        if self.check:
+            liste_plex = self.AnalyzeCombination(5*nb_sol, verbose)
+            for i,plex in enumerate(liste_plex):
+                plex['rack_list']=self.rack_list
+                plex['material']=self.material
+                plex['torques'] = self.torques
+                plex['cycles'] = self.cycles
+                plex['connections'] = self.connections
+                plex['rigid_links'] = self.rigid_links
+    #            plex['center_distance']=self.center_distance
+                plex['transverse_pressure_angle'] = self.transverse_pressure_angle
+                plex['coefficient_profile_shift'] = self.coefficient_profile_shift
+                plex['safety_factor'] = self.safety_factor
+                liste_plex[i] = plex
+                
+            if list_sol==None:
+                # Using all combinatoric
+                # Sorting data, delta w max first
+                dw = [s['dw'] for s in liste_plex]
+                liste_plex2 = []
+                for i in npy.argsort(dw)[::-1]:
+    #                print('dw: ', liste_plex[i]['dw'])
+                    del liste_plex[i]['dw']
+                    liste_plex2.append(liste_plex[i])
+                liste_plex = liste_plex2
+                
+            else:
+                liste_plex=[]
+                for ind_plex in list_sol:
+                    del self.plex_calcul[ind_plex]['dw']
+                    liste_plex.append(self.plex_calcul[ind_plex])
+                nb_sol=len(liste_plex)
             
+            for plex in liste_plex:
+                ga = ContinuousMeshesAssemblyOptimizer(**plex)
+                try:
+                    ga.Optimize(verbose)
+                except ValueError:
+                    if verbose:
+                        print('Convergence problem')
+                if len(ga.solutions)>0:
+                    sol1=ga.solutions[-1]
+                    self.solutions.append(sol1)
+                    compt_nb_sol+=1
+    #                if verbose:
+    #                    print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
+    #                    print('Numbers of teeth: {}'.format(plex['Z']))
+    #                    print('Center distances: {}'.format(self.solutions[-1].center_distance))
+                    if compt_nb_sol==nb_sol:
+                        break
         else:
-            liste_plex=[]
-            for ind_plex in list_sol:
-                del self.plex_calcul[ind_plex]['dw']
-                liste_plex.append(self.plex_calcul[ind_plex])
-            nb_sol=len(liste_plex)
-        
-        for plex in liste_plex:
-            ga = ContinuousMeshesAssemblyOptimizer(**plex)
-            try:
-                ga.Optimize(verbose)
-            except ValueError:
-                if verbose:
-                    print('Convergence problem')
-            if len(ga.solutions)>0:
-                sol1=ga.solutions[-1]
-                self.solutions.append(sol1)
-                compt_nb_sol+=1
-#                if verbose:
-#                    print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
-#                    print('Numbers of teeth: {}'.format(plex['Z']))
-#                    print('Center distances: {}'.format(self.solutions[-1].center_distance))
-                if compt_nb_sol==nb_sol:
-                    break
+            if verbose:
+                print('The gear teeth area for Decision Tree is null')
 
     def OptimizeCD(self, nb_sol = 1, verbose=False,
                         progress_callback = lambda x:x):

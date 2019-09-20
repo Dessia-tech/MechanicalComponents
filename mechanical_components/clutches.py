@@ -7,13 +7,16 @@ Created on Mon Mar  5 11:20:18 2018
 
 import math
 import numpy as npy
+
+from dessia_common.core import DessiaObject
+
 import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
 
 from scipy.optimize import minimize
 
-class Clutch:
+class Clutch(DessiaObject):
     """
     Defines a wet clutch object
     """
@@ -497,7 +500,7 @@ class Clutch:
         
         return resp
     
-class HydraulicCylinder:
+class HydraulicCylinder(DessiaObject):
     """
     Defines a hydraulic cylinder object
     """
@@ -748,7 +751,7 @@ class HydraulicCylinder:
         return primitives
     
 
-class ClutchOptimizer:
+class ClutchOptimizer(DessiaObject):
     def __init__(self, clutch, specs):
         self.specs = specs
         self.clutch = clutch

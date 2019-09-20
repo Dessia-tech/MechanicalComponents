@@ -5,13 +5,14 @@ Created on Tue Sep 25 15:11:29 2018
 
 """
 
+from dessia_common.core import DessiaObject
 import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import matplotlib.pyplot as plt
 import math
 import networkx as nx
 
-class Wire:
+class Wire(DessiaObject):
     """
     :param waypoints: a list of volmdlr.Point3D waypoints
     """
@@ -81,7 +82,7 @@ class IECWire(Wire):
         diameter = 2 * math.sqrt(section/math.pi)
         Wire.__init__(self, waypoints, diameter, name)
 
-class WireHarness:
+class WireHarness(DessiaObject):
     def __init__(self, wires):
         self.wires = wires
         
@@ -108,7 +109,7 @@ class WireHarness:
             volumes.append(wire.CADVolume())
         return volumes
 
-class Wiring:
+class Wiring(DessiaObject):
     """
     Defines a combination of single wires and wire harnesses.
     

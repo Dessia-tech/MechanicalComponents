@@ -93,7 +93,7 @@ dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},
                         0.1:{math.inf:{1:1,2:0.85,3:0.7,4:0.5,5:0.3,6:0.05,7:0}}}
 
 
-class Oil:
+class Oil(dc.DessiaObject):
     
     def __init__(self, oil_data):
         self.oil_data = oil_data
@@ -161,7 +161,7 @@ oil_iso_vg_22=Oil(iso_vg_22)
 oil_iso_vg_15=Oil(iso_vg_15)
 oil_iso_vg_10=Oil(iso_vg_10)
         
-class Material:
+class Material(dc.DessiaObject):
     def __init__(self, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
                  B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05):
 
@@ -293,7 +293,7 @@ material_iso=Material()
 #            
 
             
-class RadialBearing:
+class RadialBearing(dc.DessiaObject):
     symmetric = None
     taking_loads = None
     generate_axial_load = None
@@ -2117,7 +2117,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                             name = self.name, metadata = self.metadata)
         return obj
                  
-class BearingCatalog:
+class BearingCatalog(dc.DessiaObject):
     dessia_db_attributes = [{'name':'bearings',
                              'class':'mechanical_components.bearings.RadialBearing',
                              'type':'list'}]
@@ -2343,7 +2343,7 @@ strength_bearing_classes = {str(RadialBallBearing): 1,
                         str(NU): 3,
                         str(TaperedRollerBearing): 2}
 
-class ConceptualBearingCombination:
+class ConceptualBearingCombination(dc.DessiaObject):
     def __init__(self, bearing_classes, directions, mounting):
         
         self.bearing_classes = bearing_classes
@@ -2561,7 +2561,7 @@ class ConceptualBearingCombination:
         
         return valid
 
-class BearingCombination:
+class BearingCombination(dc.DessiaObject):
     
     _standalone_in_db = True
     
@@ -3074,7 +3074,7 @@ class BearingCombination:
                   connection_be = d['connection_be'], behavior_link = d['behavior_link'])
         return obj
         
-class BearingAssembly:
+class BearingAssembly(dc.DessiaObject):
     
     _standalone_in_db = True
     
@@ -3722,7 +3722,7 @@ class BearingAssembly:
 ##                 self.sort, self.sort_arg, self.path, self.nb_sol)
 ##        return obj
 
-class BearingSimulationResult:
+class BearingSimulationResult(dc.DessiaObject):
     def __init__(self, axial_load=None, radial_load=None, L10=None):
         if axial_load is None:
             self.axial_load = []
@@ -3769,7 +3769,7 @@ class BearingSimulationResult:
                   L10 = d['L10'])
         return obj
 
-class BearingCombinationSimulationResult:
+class BearingCombinationSimulationResult(dc.DessiaObject):
     dessia_db_attributes = [{'name':'bearing_simulation_results',
                              'class':'mechanical_components.bearings.BearingSimulationResult',
                              'type':'list'}]
@@ -3850,7 +3850,7 @@ class BearingCombinationSimulationResult:
         return obj
     
     
-class BearingAssemblySimulationResult:
+class BearingAssemblySimulationResult(dc.DessiaObject):
     dessia_db_attributes = [{'name':'bearing_combination_simulation_results',
                              'class':'mechanical_components.bearings.BearingCombinationSimulationResult',
                              'type':'list'}]
@@ -3926,7 +3926,7 @@ class BearingAssemblySimulationResult:
         return obj
 
     
-class BearingAssemblySimulation:
+class BearingAssemblySimulation(dc.DessiaObject):
     dessia_db_attributes = [{'name':'bearing_assembly',
                              'class':'mechanical_components.bearings.BearingAssembly',
                              'type':'object'},
@@ -3987,7 +3987,7 @@ class BearingAssemblySimulation:
         
         return obj
 
-class BearingCombinationSimulation:
+class BearingCombinationSimulation(dc.DessiaObject):
     dessia_db_attributes = [{'name':'bearing_combination',
                              'class':'mechanical_components.bearings.BearingCombination',
                              'type':'object'},

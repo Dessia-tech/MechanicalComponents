@@ -4,12 +4,14 @@
 
 """
 
+from dessia_common.core import DessiaObject
+
 import volmdlr as vm
 import volmdlr.primitives2D as primitives2D
 import volmdlr.primitives3D as primitives3D
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
-class Section:
+class Section(DessiaObject):
     def __init__(self):
         pass
     
@@ -73,7 +75,7 @@ ipe_750_147 = ISection(0.753, 0.265, 0.0132, 0.017, 0.017)
 #ipe_120.plot()
 #ipe_140.plot()
 
-class Beam:
+class Beam(DessiaObject):
     def __init__(self, section, length, name=''):
         self.section = section
         self.length = length

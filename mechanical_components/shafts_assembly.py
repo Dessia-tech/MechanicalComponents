@@ -16,6 +16,7 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import networkx as nx
 import dectree
+from dessia_common.core import DessiaObject
 import volmdlr as vm
 from volmdlr import primitives2D
 import volmdlr.primitives3D as vm3d
@@ -305,7 +306,7 @@ def is_wide_enought(polygon, minimal_width):
 
 ###############################################################################
 
-class ShaftMaterial:
+class ShaftMaterial(DessiaObject):
     """
     A material for a Part
 
@@ -325,7 +326,7 @@ class ShaftMaterial:
 
 ###############################################################################
 
-class Part:
+class Part(DessiaObject):
     """
     :param montage: How the Part should be mounted, either 'radial', 'axial' \
     or 'inbuilt'
@@ -453,7 +454,7 @@ class Part:
 
 ###############################################################################
 
-class Surface:
+class Surface(DessiaObject):
     """
     :param points: A list of coordinates, that when connected together draws a surface.
     :param part_left: A Part Object, located on the left hand side of the surface.
@@ -484,7 +485,7 @@ class Surface:
 
 ###############################################################################
 
-class PartSurface:
+class PartSurface(DessiaObject):
     """
     A rearrangement of Surface Object.
     """
@@ -921,7 +922,7 @@ class Shaft(Part):
 
 ###############################################################################
 
-class SurfaceRepertory:
+class SurfaceRepertory(DessiaObject):
     """
     Automation of the creation of Viable Shafts.
     self.shafts_product contains the product of all the Viable Shafts, if there
@@ -941,7 +942,7 @@ class SurfaceRepertory:
 
 ###############################################################################
 
-class ShaftLine:
+class ShaftLine(DessiaObject):
     """
     An assembly of Shaft objects.
     """
@@ -1301,7 +1302,7 @@ class ShaftLine:
 
 ###############################################################################
 
-class ShaftLinesAssembly:
+class ShaftLinesAssembly(DessiaObject):
     def __init__(self, shaftlines, shaftlines_to_position, origin=(0, 0), name=''):
         self.shaftlines = shaftlines
         self.shaftlines_to_position = shaftlines_to_position  # A dictionary
