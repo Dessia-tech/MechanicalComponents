@@ -6,19 +6,24 @@ Created on Mon Mar 11 10:36:08 2019
 @author: ringhausen
 """
 
+#import pkg_resources
+
+#import math
+#import numpy as npy
+#import matplotlib.pyplot as plt
+#from scipy import interpolate
+#import json
+
+
+from dessia_common.core import DessiaObject
+
 import volmdlr as vm
 import volmdlr.primitives2D
-import volmdlr.primitives3D as vm3d
-import math
-import numpy as npy
-import matplotlib.pyplot as plt
-from scipy import interpolate
-import json
-import pkg_resources
+#import volmdlr.primitives3D as vm3d
 from itertools import chain
 
 
-class ShaftMaterial:
+class ShaftMaterial(DessiaObject):
     def __init__(self, Re, t_yield, C, name='',):
         self.Re = Re            # Ultimate tensile strength (Pa)
         self.t_yield = t_yield  # Yield stength (Pa)
@@ -27,7 +32,7 @@ class ShaftMaterial:
         
         
 
-class Accessory:
+class Accessory(DessiaObject):
     def __init__(self, functional_points, external_vector, shaft, linkage_points=None, linkage_external_vector=None, link=None, montage='axial'):
         """
         We suppose that the coordinate origin of the accessories 
@@ -53,7 +58,7 @@ class Accessory:
         
     
         
-class FunctionalAccessories:
+class FunctionalAccessories(DessiaObject):
     def __init__(self, accessories):
         self.accessories = accessories # list of Accessory
         
@@ -83,7 +88,7 @@ class FunctionalAccessories:
     
         
 
-class Shaft:
+class Shaft(DessiaObject):
     def __init__(self, functional_accessories, origin=(0,0), Dmax=None, shaft_material=None):
         self.functional_accessories = functional_accessories 
         self.origin = origin
@@ -196,7 +201,7 @@ class Shaft:
             
 
 
-class ShaftsAssembly:
+class ShaftsAssembly(DessiaObject):
     def __init__(self, shafts):
         self.shafts = shafts # A list of Shaft objects
     

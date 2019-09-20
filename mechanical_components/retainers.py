@@ -6,16 +6,18 @@ Created on Mon Mar 11 10:35:36 2019
 @author: ringhausen
 """
 
+import math
+import numpy as npy
+from scipy import interpolate
+
+import json
+import pkg_resources
+
+from dessia_common.core import DessiaObject
 
 import volmdlr as vm
 import volmdlr.primitives2D
 import volmdlr.primitives3D as vm3d
-import math
-import numpy as npy
-import matplotlib.pyplot as plt
-from scipy import interpolate
-import json
-import pkg_resources
 
 
 phi_fct_d1 = {'data':[[ 4.915, 0.09403],
@@ -117,7 +119,7 @@ def AngleTrigo(u, v):
 
 
 
-class CirclipsMaterial:
+class CirclipsMaterial(DessiaObject):
     def __init__(self, E, St, t_shear, C, T, ID='', name=''):
         self.name = name
         self.ID = ID
@@ -138,7 +140,7 @@ circlips_materials = [stainless_steel, OT_chrome_silicon_alloy_steel, OT_carbon_
 
 
 
-class GrooveMaterial:
+class GrooveMaterial(DessiaObject):
     def __init__(self, Re, t_yield, C, name='',):
         self.Re = Re            # Ultimate tensile strength (Pa)
         self.t_yield = t_yield  # Yield stength (Pa)
@@ -158,7 +160,7 @@ groove_materials = [cast_aluminium, LM_carbon_steel, H_carbon_steel, cast_steel,
 
 
 
-class Circlips:
+class Circlips(DessiaObject):
     p1 = vm.Point2D((0, 0))
     
     def RadialThickness(self, theta):
@@ -433,7 +435,7 @@ class Circlips:
     
     
     
-class Groove:
+class Groove(DessiaObject):
     
     def LoadCapacity(self, d):
         # d the nominal diameter of the circlip ie. the shaft diameter
@@ -469,7 +471,7 @@ class Groove:
 
 
 
-class ExternalCirclipsCatalog:
+class ExternalCirclipsCatalog(DessiaObject):
     def __init__(self, circlips, name=''):
          self.circlips = circlips    # List of circlips
          
@@ -515,7 +517,7 @@ class ExternalCirclipsCatalog:
 
 
 
-class InternalCirclipsCatalog:
+class InternalCirclipsCatalog(DessiaObject):
     def __init__(self, circlips, name=''):
          self.circlips = circlips    # List of circlips
          

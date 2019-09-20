@@ -8,6 +8,8 @@ Created on Thu Mar 22 17:02:33 2018
 import math
 import numpy as npy
 
+from dessia_common.core import DessiaObject
+
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
@@ -25,7 +27,7 @@ from scipy.optimize import minimize
 import pkg_resources
 
 
-class Material:
+class Material(DessiaObject):
     def __init__(self, volumic_mass, young_modulus, poisson_ratio, Rm, d_min = 0.12*10**-3, d_max = 12*10**-3, cost_index = 10, name = ''):
         self.volumic_mass = volumic_mass
         self.young_modulus = young_modulus
@@ -80,7 +82,7 @@ diameters_mm = [0.12, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
 
 diameters_m = [d*10**-3 for d in diameters_mm]
 
-class Spring:
+class Spring(DessiaObject):
     def __init__(self, D = 0.0050, d = 0.0010, n = 5, l0 = 0.010, material = steel1):
         self.D = D
         self.d = d
@@ -255,7 +257,7 @@ class Spring:
         
         return d
     
-class SpringAssembly:
+class SpringAssembly(DessiaObject):
     def __init__(self, springs, geometry):
         self.springs = springs
         self.n_springs = len(springs)
@@ -343,7 +345,7 @@ class SpringAssembly:
         d['matching_product_assemblies'] = matching_product_assemblies
         return d
         
-class SpringOptimizer:    
+class SpringOptimizer(DessiaObject):
     def __init__(self, spring, specs, F2):
         self.spring = spring
         self.specs = specs
@@ -416,7 +418,7 @@ class SpringOptimizer:
         return res
         
     
-class SpringDiscreteOptimizer:
+class SpringDiscreteOptimizer(DessiaObject):
     def __init__(self, F1, F2, stroke, d, n, material = steel1):
         self.F1 = F1
         self.F2 = F2
@@ -489,7 +491,7 @@ class SpringDiscreteOptimizer:
         
         return l
     
-class SpringAssemblyOptimizer:
+class SpringAssemblyOptimizer(DessiaObject):
     def __init__(self, F1, F2, stroke, n_springs, r1, r2, l1_max, pattern = 'circular'):
         self.F1 = F1
         self.F2 = F2
@@ -544,7 +546,7 @@ class SpringAssemblyOptimizer:
          
         return k
     
-class SpringAssemblyOptimizationResults:
+class SpringAssemblyOptimizationResults(DessiaObject):
     def __init__(self, assemblies, input_data):
         self.type='mc_spring_assembly'
         self.assemblies = assemblies
@@ -638,7 +640,7 @@ class SpringAssemblyOptimizationResults:
         return d
     
     
-class Catalog:
+class Catalog(DessiaObject):
     def __init__(self, csv_file, name = ''):
         self.csv_file = csv_file
         self.products = pd.read_csv(csv_file)
@@ -709,7 +711,7 @@ ferroflex_catalog = Catalog(ferroflex_file, 'Ferroflex')
 
 catalogs = {ferroflex_catalog.name : ferroflex_catalog}
 
-class Product:
+class Product(DessiaObject):
     def __init__(self, catalog_name, product_index):
         self.catalog_name = catalog_name
         if isinstance(product_index, npy.generic):
@@ -746,7 +748,7 @@ class Product:
         
         return d
 
-class ProductAssembly:
+class ProductAssembly(DessiaObject):
     def __init__(self, products, geometry):
         self.products = products
         self.n_products = len(products)
@@ -791,7 +793,7 @@ class ProductAssembly:
         return d
     
         
-class CatalogOptimizer:
+class CatalogOptimizer(DessiaObject):
     def __init__(self, catalog, F1, F2, stroke, target_stiffness_percentage,
                  max_l1, r1 = 0.090, r2 = 0.120, n_springs = [1], pattern = 'shaft mounted',
                  prod_volume = 50):
@@ -870,7 +872,7 @@ class CatalogOptimizer:
             
         return indices_dict
     
-class CatalogOptimizationResults:
+class CatalogOptimizationResults(DessiaObject):
     def __init__(self, indices_dicts, catalogs_names, input_data, prod_volume = 50):
         self.indices_dicts = indices_dicts
         self.catalogs_names = catalogs_names
