@@ -2,6 +2,8 @@ kind: pipeline
 name: default
 
 steps:
+
+       
 - name: install, doc and script running
   image: python:3
   commands:
@@ -104,4 +106,15 @@ steps:
     username: drone
     password:
       from_secret: ssh_drone_password
-
+- name: notify
+  when:
+    status:
+    - failure 
+  image: drillster/drone-email
+  settings:
+    host: mail.dessia.tech
+    username: software@dessia.tech
+    password:
+     from_secret: email_password
+    from: software@dessia.tech
+    recipients: [ root@dessia.tech ]
