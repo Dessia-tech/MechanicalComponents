@@ -2107,7 +2107,8 @@ class MeshAssembly(dc.DessiaObject):
                     gear_graph.add_edges_from([(eng1_m,eng1),(eng2_m,eng2)])
                     eng1_m=eng1
                     eng2_m=eng2
-        list_line=list(nx.connected_component_subgraphs(gear_graph))
+#        list_line=list(nx.connected_component_subgraphs(gear_graph))
+        list_line = [gear_graph.subgraph(c).copy() for c in nx.connected_components(gear_graph)]
         dict_line={}
         for num_line,list_num_eng in enumerate(list_line):
             for num_eng in list_num_eng:
@@ -2213,8 +2214,9 @@ def gear_graph_simple(connections):
     gear_graph.add_nodes_from(list_gear)
     for list_edge in connections:
         gear_graph.add_edges_from(list_edge)
-    sub_graph=list(nx.connected_component_subgraphs(gear_graph))
-    sub_graph_dfs=[]
+#    sub_graph=list(nx.connected_component_subgraphs(gear_graph))
+    sub_graph = [gear_graph.subgraph(c).copy() for c in nx.connected_components(gear_graph)]
+    sub_graph_dfs = []
     for s_graph in sub_graph:
         node_init=list(s_graph.nodes())[0]
         sub_graph_dfs.append(list(nx.dfs_edges(s_graph,node_init)))
