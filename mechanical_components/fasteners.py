@@ -15,6 +15,7 @@ class HexagonNut(DessiaObject):
     _standalone_in_db = True
     _editable_variables = ['d', 'h']
     _ordered_variables = ['d', 'name', 'h']
+    _titled_variables = {'d' : 'd', 'name' : 'TeSt'}
 
     def __init__(self, d:float, t:float, h:float, name:str=''):
         self.d = d
