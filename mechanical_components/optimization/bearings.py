@@ -10,7 +10,7 @@ Created on Fri Aug 17 02:14:21 2018
 try:
     _open_source = True
     import mechanical_components.optimization.bearings_protected as protected_module
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError) as _:
     _open_source = False
 
 from mechanical_components.bearings import BearingCombination, \
