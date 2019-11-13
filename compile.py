@@ -289,13 +289,13 @@ class ClientDist(Command):
         package_name = self.distribution.get_name()
         
         # Creating sdist
-        setup_result = run_setup('setup.py', script_args=['sdist', '--formats=tar', '--dist-dir=client_build'])
+        setup_result = run_setup('setup.py', script_args=['sdist', '--formats=tar', '--dist-dir=client_dist'])
         sdist_filename = setup_result.dist_files[0][2]
         folder_path = sdist_filename[:-4]
         if isdir(folder_path):
             shutil.rmtree(folder_path)
         tar = tarfile.open(sdist_filename)
-        tar.extractall(path='client_build')
+        tar.extractall(path='client_dist')
         tar.close()
         
         # Clening sdist tar
@@ -304,14 +304,16 @@ class ClientDist(Command):
         # Compiling
         self.write_pyx_files()
         print('Compiling files')
-        setup_result = run_setup('compile.py', script_args=['build_ext', '--build-lib=client_build'])
+        setup_result = run_setup('compile.py', script_args=['build_ext', '--build-lib=client_dist'])
 
         # Copying compiled files to sdist folder
-        compiled_files_dir = join('client_build', package_name)
-        for root_dir, dirs, files in walk(compiled_files_dir):
+        compiled_files_dir = join('client_dist', package_name)
+#        destination_base = join(folder_path, package_name)
+        destination_base = folder_path
+        for root_dir, _, files in walk(compiled_files_dir):
             for file in files:
-                source = join(*([root_dir]+dirs+[file]))
-                destination = join(*([folder_path, package_name]+dirs))
+                source = join(root_dir, file)
+                destination = source.replace('client_dist', destination_base)
                 print('copying file {} to {}'.format(source, destination))
                 shutil.copy(source, destination)
 
