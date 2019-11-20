@@ -20,7 +20,7 @@ except (ModuleNotFoundError, ImportError) as e:
 
 class WiringOptimizer(protected_module.WiringOptimizer if _open_source==True else RoutingOptimizer):
     def __init__(self, waypoints, routes):
-        RoutingOptimizer.__init__(self, waypoints, routes)
+        WiringOptimizer.__init__(self, waypoints, routes)
     
 
             

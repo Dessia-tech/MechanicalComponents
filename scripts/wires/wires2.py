@@ -4,7 +4,7 @@
 
 """
 
-import mechanical_components.optimization.wires as wires_opt
+import mechanical_components.optimization.wires_protected as wires_opt
 
 import volmdlr as vm
 
@@ -28,4 +28,4 @@ wiring = wo.Route(wires_specs)
 
 wiring.Draw()
 
-#wiring.CADExport()
+wiring.CADExport()
