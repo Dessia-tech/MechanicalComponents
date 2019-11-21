@@ -19,7 +19,7 @@ from scipy.linalg import norm
 from scipy.optimize import fsolve, minimize
 import networkx as nx
 
-import dessia_common as dc
+from dessia_common import DessiaObject
 import mechanical_components.tools as tools
 import json
 import copy
@@ -158,7 +158,7 @@ sigma_grey_iron={'data':[[1.354230792372041,0.7100658633470387],
                          [1.5725374677438706,0.933832025442077]
                         ], 'x':'Log','y':'Log'}
 
-class Material(dc.DessiaObject):
+class Material(DessiaObject):
     """
     Gear material
 
@@ -197,15 +197,16 @@ class Material(dc.DessiaObject):
                            data_wholer_curve, data_gear_material)
     """
     _standalone_in_db = False
-                
+
     def __init__(self, volumic_mass, data_coeff_YB_Iso, data_wholer_curve,
-                 data_gear_material, metadata = dc.Metadata('')):
+                 data_gear_material, name=''):
         self.volumic_mass = volumic_mass
         self.data_coeff_YB_Iso = data_coeff_YB_Iso
         self.data_wholer_curve = data_wholer_curve
         self.data_gear_material = data_gear_material
-        self.metadata = metadata
-        
+
+        DessiaObject.__init__(self, name=name)
+
     def __eq__(self, other_eb):
         equal = (self.volumic_mass == other_eb.volumic_mass
                  and self.data_coeff_YB_Iso == other_eb.data_coeff_YB_Iso
@@ -240,57 +241,55 @@ class Material(dc.DessiaObject):
         return sol
 
     def Dict(self):
-        
-        d = {}
+
+        d = {'name' : self.name} # TODO Change this to DessiaObject.__init__
         d['volumic_mass'] = self.volumic_mass
         d['data_coeff_YB_Iso'] = self.data_coeff_YB_Iso
         d['data_wholer_curve'] = self.data_wholer_curve
         d['data_gear_material'] = self.data_gear_material
-        d['metadata'] = self.metadata.to_dict()
         return d
 
     @classmethod
     def DictToObject(cls, d):
-        metadata = dc.Metadata.dict_to_object(d['metadata'])
         material = cls(volumic_mass = d['volumic_mass'],
                    data_coeff_YB_Iso = d['data_coeff_YB_Iso'],
                    data_wholer_curve = d['data_wholer_curve'],
                    data_gear_material = d['data_gear_material'],
-                   metadata = metadata)
+                   name=d['name'])
         return material
 
 hardened_alloy_steel=Material(7850, evol_coeff_yb_iso,
                               wholer_hardened_alloy_steel,
                               sigma_hardened_alloy_steel,
-                              metadata = dc.Metadata('Hardened alloy steel'))
+                              name='Hardened alloy steel')
 
 nitrided_alloy_steel=Material(7850, evol_coeff_yb_iso, wholer_nitrided_alloy_steel,
                               sigma_nitrided_alloy_steel,
-                              metadata = dc.Metadata('Nitrided alloy steel'))
+                              name='Nitrided alloy steel')
 
 through_hardened_steel=Material(7850, evol_coeff_yb_iso,
                                 wholer_through_hardened_steel,
                                 sigma_through_hardened_steel,
-                                metadata = dc.Metadata('Through hardened steel'))
+                                name='Through hardened steel')
 
 surface_hardened_steel=Material(7850, evol_coeff_yb_iso,
                                 wholer_surface_hardened_steel,
                                 sigma_surface_hardened_steel,
-                                metadata = dc.Metadata('Surface hardened steel'))
+                                name='Surface hardened steel')
 
 carbon_steel=Material(7850, evol_coeff_yb_iso, wholer_carbon_steel, sigma_carbon_steel,
-                      metadata = dc.Metadata('Carbon steel'))
+                      name='Carbon steel')
 
 cast_iron=Material(7200, evol_coeff_yb_iso, wholer_cast_iron, sigma_cast_iron,
-                   metadata = dc.Metadata('Cast iron'))
+                   name='Cast iron')
 
 bronze=Material(8200, evol_coeff_yb_iso, wholer_bronze, sigma_bronze,
-                metadata = dc.Metadata('Bronze'))
+                name='Bronze')
 
 grey_iron=Material(7200, evol_coeff_yb_iso, wholer_grey_iron, sigma_grey_iron,
-                   metadata = dc.Metadata('Grey iron'))
+                   name='Grey iron')
 
-class Rack(dc.DessiaObject):
+class Rack(DessiaObject):
     """
     Gear rack definition
 
@@ -307,13 +306,6 @@ class Rack(dc.DessiaObject):
         "title": "mechanical_components.meshes.Rack Base Schema",
         "required": ['transverse_pressure_angle'],
         "properties": {
-            "metadata" : {
-                "type" : "object",
-                "classes" : ["dessia_common.core.Metadata"],
-                "order" : 0,
-                "editable" : True,
-                "Description" : "Rack metadata"
-                },
             'transverse_pressure_angle': {
                 "type": "number",
                 "step" : 0.01,
@@ -367,24 +359,25 @@ class Rack(dc.DessiaObject):
          }
 
     _display_angular = []
-            
+
     def __init__(self, transverse_pressure_angle, module=None,
-                 coeff_gear_addendum=1, coeff_gear_dedendum=1.25, 
-                 coeff_root_radius=0.38, coeff_circular_tooth_thickness=0.5,
-                 metadata = dc.Metadata('')):
+                 coeff_gear_addendum=1, coeff_gear_dedendum=1.25,
+                 coeff_root_radius=0.38, coeff_circular_tooth_thickness=0.5, name=''):
         self.transverse_pressure_angle = transverse_pressure_angle
         self.module = module
         self.coeff_gear_addendum = coeff_gear_addendum
         self.coeff_gear_dedendum = coeff_gear_dedendum
         self.coeff_root_radius = coeff_root_radius
         self.coeff_circular_tooth_thickness = coeff_circular_tooth_thickness
-        self.metadata = metadata
-        
+
+
+        DessiaObject.__init__(self, name=name)
+
         if module is not None:
             self.Update(module, transverse_pressure_angle, coeff_gear_addendum,
-                        coeff_gear_dedendum, coeff_root_radius, 
+                        coeff_gear_dedendum, coeff_root_radius,
                         coeff_circular_tooth_thickness)
-            
+
     def __eq__(self, other_eb):
         equal = (self.transverse_pressure_angle == other_eb.transverse_pressure_angle
                  and self.coeff_gear_addendum == other_eb.coeff_gear_addendum
@@ -399,7 +392,7 @@ class Rack(dc.DessiaObject):
                  + hash(self.coeff_circular_tooth_thickness)
         return rack_hash
 
-    def RackParam(self, transverse_pressure_angle, coeff_gear_addendum, 
+    def RackParam(self, transverse_pressure_angle, coeff_gear_addendum,
                   coeff_gear_dedendum, coeff_root_radius, coeff_circular_tooth_thickness):
 
         self.transverse_pressure_angle = transverse_pressure_angle
@@ -422,7 +415,7 @@ class Rack(dc.DessiaObject):
         self.b = self.gear_dedendum - self.root_radius
 
     def Update(self, module, transverse_pressure_angle=None, coeff_gear_addendum=None,
-               coeff_gear_dedendum=None, coeff_root_radius=None, 
+               coeff_gear_dedendum=None, coeff_root_radius=None,
                coeff_circular_tooth_thickness=None):
         """
         Update of the gear rack
@@ -450,8 +443,8 @@ class Rack(dc.DessiaObject):
         if coeff_circular_tooth_thickness == None:
             coeff_circular_tooth_thickness = self.coeff_circular_tooth_thickness
         self.module = module
-        
-        self.RackParam(transverse_pressure_angle, coeff_gear_addendum, 
+
+        self.RackParam(transverse_pressure_angle, coeff_gear_addendum,
                        coeff_gear_dedendum, coeff_root_radius, coeff_circular_tooth_thickness)
 
     ### Optimization Method
@@ -522,31 +515,29 @@ class Rack(dc.DessiaObject):
         """
         d=self.__dict__.copy()
         return list(d.keys()),list(d.values())
-    
+
     def Dict(self):
-        d = {}
+        d = {'name' : self.name} # TODO Change this to DessiaObject.__init__
         d['transverse_pressure_angle'] = self.transverse_pressure_angle
         d['module'] = self.module
         d['coeff_gear_addendum'] = self.coeff_gear_addendum
         d['coeff_gear_dedendum'] = self.coeff_gear_dedendum
         d['coeff_root_radius'] = self.coeff_root_radius
         d['coeff_circular_tooth_thickness'] = self.coeff_circular_tooth_thickness
-        d['metadata'] = self.metadata.to_dict()
         return d
 
     @classmethod
     def DictToObject(cls, d):
-        metadata = dc.Metadata.dict_to_object(d['metadata'])
         rack = cls(transverse_pressure_angle = d['transverse_pressure_angle'],
                    module = d['module'],
                    coeff_gear_addendum = d['coeff_gear_addendum'],
                    coeff_gear_dedendum = d['coeff_gear_dedendum'],
                    coeff_root_radius = d['coeff_root_radius'],
                    coeff_circular_tooth_thickness = d['coeff_circular_tooth_thickness'],
-                   metadata = metadata)
+                   name=d['name'])
         return rack
 
-class Mesh(dc.DessiaObject):
+class Mesh(DessiaObject):
     """
     Gear mesh definition
 
@@ -576,13 +567,6 @@ class Mesh(dc.DessiaObject):
         "title": "mechanical_components.meshes.Mesh Base Schema",
         "required": ['z', 'db', 'coefficient_profile_shift', 'rack'],
         "properties": {
-            "metadata" : {
-                "type" : "object",
-                "classes" : ["dessia_common.core.Metadata"],
-                "order" : 0,
-                "editable" : True,
-                "Description" : "Mesh metadata"
-                },
             'z': {
                 "type": "number",
                 "step" : 1,
@@ -628,11 +612,11 @@ class Mesh(dc.DessiaObject):
          }
 
     _display_angular = []
-    
+
     # TODO: rename variables in init accordingly to their attribute name
     # Ex: cp -> coefficient_profile_shift
-    def __init__(self, z, db, coefficient_profile_shift, rack, material=None, gear_width=1,
-                 metadata = dc.Metadata('')):
+    def __init__(self, z, db, coefficient_profile_shift, rack, material=None,
+                 gear_width=1, name=''):
 
         self.rack = rack
         self.GearParam(z, db, coefficient_profile_shift)
@@ -643,8 +627,9 @@ class Mesh(dc.DessiaObject):
         self.material = material
 
         self.gear_width = gear_width
-        self.metadata = metadata
-        
+
+        DessiaObject.__init__(self, name=name)
+
     def __eq__(self, other_eb):
         equal = (self.z == other_eb.z
                  and self.db == other_eb.db
@@ -670,9 +655,9 @@ class Mesh(dc.DessiaObject):
         """
         self.GearParam(z, db, coefficient_profile_shift)
         self.rack.Update(self.rack.module, transverse_pressure_angle_rack, coeff_gear_addendum,
-                         coeff_gear_dedendum, coeff_root_radius, 
+                         coeff_gear_dedendum, coeff_root_radius,
                          coeff_circular_tooth_thickness)
-        
+
         self.gear_width = gear_width
 
     ### geometry definition
@@ -951,21 +936,19 @@ class Mesh(dc.DessiaObject):
                           'dash' : 'none',})
 
         return transversal_plot_data, axial_plot_data
-    
+
     def Dict(self):
-        d = {}
+        d = {'name' : self.name} # TODO Change this to DessiaObject.__init__
         d['z'] = self.z
         d['db'] = self.db
         d['coefficient_profile_shift'] = self.coefficient_profile_shift
         d['gear_width'] = self.gear_width
         d['rack'] = self.rack.Dict()
         d['material'] = self.material.Dict()
-        d['metadata'] = self.metadata.to_dict()
         return d
 
     @classmethod
     def DictToObject(cls, d):
-        metadata = dc.Metadata.dict_to_object(d['metadata'])
         material = Material.DictToObject(d['material'])
         rack = Rack.DictToObject(d['rack'])
         mesh = cls(z = d['z'],
@@ -974,12 +957,12 @@ class Mesh(dc.DessiaObject):
                    rack = rack,
                    gear_width = d['gear_width'],
                    material = material,
-                   metadata = metadata)
+                   name=d['name'])
         return mesh
 
-class MeshCombination(dc.DessiaObject):
-    def __init__(self,  center_distance, connections, meshes, torque=None, cycle=None,
-                 safety_factor=1, metadata = dc.Metadata('')):
+class MeshCombination(DessiaObject):
+    def __init__(self,  center_distance, connections, meshes,
+                 torque=None, cycle=None, safety_factor=1, name=''):
 
         self.center_distance = center_distance
         self.connections = connections
@@ -987,11 +970,10 @@ class MeshCombination(dc.DessiaObject):
         self.torque = torque
         self.cycle = cycle
         self.safety_factor = safety_factor
-        self.metadata = metadata
-        
+
         self.minimum_gear_width = 10e-3
         self.helix_angle = 0
-        
+
         # NetworkX graph construction
         list_gear = []
         for gs in self.connections:
@@ -1003,7 +985,7 @@ class MeshCombination(dc.DessiaObject):
         gear_graph.add_edges_from(self.connections)
         self.gear_graph = gear_graph
         self.list_gear = list_gear
-        
+
         self.transverse_pressure_angle = []
         for num_gear, (num1, num2) in enumerate(self.connections):
             mesh_first = self.meshes[num1]
@@ -1011,7 +993,7 @@ class MeshCombination(dc.DessiaObject):
             df_first = 2*self.center_distance[num_gear]*mesh_first.z/mesh_second.z/(1+mesh_first.z/mesh_second.z)
             self.transverse_pressure_angle.append(math.acos(mesh_first.db/df_first))
         transverse_pressure_angle_0 = self.transverse_pressure_angle[0]
-        
+
         self.Z = {i: mesh.z for i, mesh in meshes.items()}
         self.material = {i: mesh.material for i, mesh in meshes.items()}
         self.gear_width = {}
@@ -1019,9 +1001,9 @@ class MeshCombination(dc.DessiaObject):
         for num_mesh, mesh in self.meshes.items():
             self.gear_width[num_mesh] = mesh.gear_width
             self.DB[num_mesh] = mesh.db
-            
+
         self.DF, DB_new, self.connections_dfs, transverse_pressure_angle_new\
-            = MeshCombination.GearGeometryParameter(self.Z, transverse_pressure_angle_0, center_distance, 
+            = MeshCombination.GearGeometryParameter(self.Z, transverse_pressure_angle_0, center_distance,
                                                     connections, gear_graph)
         if len(cycle.keys())<len(list_gear): # the gear mesh optimizer calculate this dictionary
             self.cycle = MeshCombination.CycleParameter(cycle, self.Z, list_gear)
@@ -1032,14 +1014,16 @@ class MeshCombination(dc.DessiaObject):
                                                       center_distance,
                                                       meshes, self.connections_dfs, connections)
 
-        gear_width_new, self.sigma_iso, self.sigma_lim = MeshCombination.GearWidthDefinition(self.safety_factor, 
+        gear_width_new, self.sigma_iso, self.sigma_lim = MeshCombination.GearWidthDefinition(self.safety_factor,
                                             self.minimum_gear_width,
                                             list_gear, self.tangential_load, meshes,
                                             connections,
                                             self.material, self.cycle, self.radial_contact_ratio, self.helix_angle,
                                             self.transverse_pressure_angle)
         self.check()
-        
+
+        DessiaObject.__init__(self, name=name)
+
     def __eq__(self, other_eb):
         equal = (self.center_distance == other_eb.center_distance
                  and self.connections == other_eb.connections
@@ -1056,21 +1040,21 @@ class MeshCombination(dc.DessiaObject):
         for center_distance in self.center_distance:
             mc_hash += hash(int(center_distance*1e3))
         return mc_hash
-        
+
     def check(self):
         valid = True
-        gear_width, _, _ = MeshCombination.GearWidthDefinition(self.safety_factor, 
+        gear_width, _, _ = MeshCombination.GearWidthDefinition(self.safety_factor,
                                             self.minimum_gear_width,
                                             self.list_gear, self.tangential_load, self.meshes,
                                             self.connections,
-                                            self.material, self.cycle, self.radial_contact_ratio, 
+                                            self.material, self.cycle, self.radial_contact_ratio,
                                             self.helix_angle,
                                             self.transverse_pressure_angle)
         for num_mesh, mesh in self.meshes.items():
             if abs(gear_width[num_mesh] - mesh.gear_width) > 1e-6:
                 valid = False
         self.DF, DB_new, self.connections_dfs, transverse_pressure_angle_new\
-            = MeshCombination.GearGeometryParameter(self.Z, self.transverse_pressure_angle[0], self.center_distance, 
+            = MeshCombination.GearGeometryParameter(self.Z, self.transverse_pressure_angle[0], self.center_distance,
                                                     self.connections, self.gear_graph)
         for num_mesh, mesh in self.meshes.items():
             if abs(DB_new[num_mesh] - mesh.db) > 1e-6:
@@ -1079,14 +1063,14 @@ class MeshCombination(dc.DessiaObject):
             if abs(transverse_pressure_angle_new[num_gear] - self.transverse_pressure_angle[num_gear]) > 1e-6:
                 valid = False
         return valid
-                
+
     @classmethod
     def create(cls, Z, center_distance, connections, transverse_pressure_angle_0,
-              coefficient_profile_shift, transverse_pressure_angle_rack,
-              coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
-              coeff_circular_tooth_thickness, material=None, torque=None, cycle=None,
-              safety_factor=1, metadata = dc.Metadata('')):
-        
+               coefficient_profile_shift, transverse_pressure_angle_rack,
+               coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
+               coeff_circular_tooth_thickness, material=None, torque=None, cycle=None,
+               safety_factor=1):
+
         # NetworkX graph construction
         list_gear = []
         for gs in connections:
@@ -1114,12 +1098,12 @@ class MeshCombination(dc.DessiaObject):
             cycle = {list_gear[0]:1e6}
 
         DF, DB, connections_dfs, transverse_pressure_angle\
-            = cls.GearGeometryParameter(Z, transverse_pressure_angle_0, center_distance, 
+            = cls.GearGeometryParameter(Z, transverse_pressure_angle_0, center_distance,
                                          connections, gear_graph)
 
         if len(cycle.keys())<len(list_gear): # the gear mesh optimizer calculate this dictionary
             cycle = cls.CycleParameter(cycle, Z, list_gear)
-            
+
         torque, normal_load, tangential_load, radial_load = cls.GearTorque(Z, torque, DB,
                     gear_graph, list_gear, connections, DF, transverse_pressure_angle)
 
@@ -1136,7 +1120,7 @@ class MeshCombination(dc.DessiaObject):
             cct = coeff_circular_tooth_thickness[num_engr]
             mat = material[num_engr]
             rack = Rack(transverse_pressure_angle = tpa,
-                        coeff_gear_addendum = cga, coeff_gear_dedendum = cgd, 
+                        coeff_gear_addendum = cga, coeff_gear_dedendum = cgd,
                         coeff_root_radius = crr, coeff_circular_tooth_thickness = cct)
             meshes[num_engr] = Mesh(z, db, cp, rack, mat)
 
@@ -1145,7 +1129,7 @@ class MeshCombination(dc.DessiaObject):
                                           center_distance,
                                           meshes, connections_dfs, connections)
 
-        gear_width, sigma_iso, sigma_lim = cls.GearWidthDefinition(safety_factor, 
+        gear_width, sigma_iso, sigma_lim = cls.GearWidthDefinition(safety_factor,
                                             minimum_gear_width,
                                             list_gear, tangential_load, meshes,
                                             connections,
@@ -1156,7 +1140,7 @@ class MeshCombination(dc.DessiaObject):
             meshes[num_gear].gear_width = gear_width[num_gear]
         mesh_combination = cls(center_distance, connections, meshes, torque, cycle)
         return mesh_combination
-        
+
     def Update(self, Z, center_distance, connections, transverse_pressure_angle_0,
                coefficient_profile_shift,
                transverse_pressure_angle_rack, coeff_gear_addendum,
@@ -1173,7 +1157,7 @@ class MeshCombination(dc.DessiaObject):
         self.center_distance = center_distance
         self.transverse_pressure_angle_0 = transverse_pressure_angle_0
         self.DF, self.DB, self.connections_dfs, self.transverse_pressure_angle\
-            = MeshCombination.GearGeometryParameter(Z, transverse_pressure_angle_0, center_distance, 
+            = MeshCombination.GearGeometryParameter(Z, transverse_pressure_angle_0, center_distance,
                                          connections, self.gear_graph)
         for num_engr in self.list_gear:
             z = Z[num_engr]
@@ -1191,7 +1175,7 @@ class MeshCombination(dc.DessiaObject):
             MeshCombination.GearContactRatioParameter(Z, self.DF, self.transverse_pressure_angle,
                                                       center_distance,
                                                       self.meshes, self.connections_dfs, connections)
-        
+
     ### Optimization Method
     def CheckMinimumBacklash(self,backlash_min=2*1e-4):
         """ Define constraint and functional for the optimizer on backlash
@@ -1420,7 +1404,7 @@ class MeshCombination(dc.DessiaObject):
         coeff_ye_iso = cls._CoeffYEIso(connections, radial_contact_ratio)
         coeff_yb_iso = cls._CoeffYBIso(connections, material, helix_angle)
 
-        sigma_lim = cls.SigmaMaterialISO(safety_factor, connections, 
+        sigma_lim = cls.SigmaMaterialISO(safety_factor, connections,
                                           material, cycle, meshes)
         gear_width = {}
         for eng in list_gear:
@@ -1759,9 +1743,9 @@ class MeshCombination(dc.DessiaObject):
     def JSON(self, filepath, indent = 2):
         with open(filepath+'.json', 'w') as j:
             json.dump(tools.StringifyDictKeys(self.Dict()), j, indent = indent)
-            
+
     def Dict(self):
-        d = {}
+        d = {'name' : self.name} # TODO Change this to DessiaObject.__init__
         d['center_distance'] = self.center_distance
         d['connections'] = self.connections
         d['meshes'] = {}
@@ -1774,12 +1758,10 @@ class MeshCombination(dc.DessiaObject):
             d['torque'].append(value)
         d['cycle'] = self.cycle
         d['safety_factor'] = self.safety_factor
-        d['metadata'] = self.metadata.to_dict()
         return d
 
     @classmethod
     def DictToObject(cls, d):
-        metadata = dc.Metadata.dict_to_object(d['metadata'])
         meshes = {}
         for num_mesh, mesh in d['meshes'].items():
             meshes[int(num_mesh)] = Mesh.DictToObject(mesh)
@@ -1807,23 +1789,21 @@ class MeshCombination(dc.DessiaObject):
                    torque = torques,
                    cycle = cycle,
                    safety_factor = d['safety_factor'],
-                   metadata = metadata)
+                   name=d['name'])
         return mesh_combination
-            
 
-class MeshAssembly(dc.DessiaObject):
-    def __init__(self, connections, mesh_combinations, 
-                 torque=None, cycle=None, strong_links=None,
-                 safety_factor=1, metadata = dc.Metadata('')):
-        
+
+class MeshAssembly(DessiaObject):
+    def __init__(self, connections, mesh_combinations, torque=None,
+                 cycle=None, strong_links=None, safety_factor=1, name=''):
+
         self.connections = connections
         self.mesh_combinations = mesh_combinations
         self.torque = torque
         self.cycle = cycle
         self.strong_links = strong_links
         self.safety_factor = safety_factor
-        self.metadata = metadata
-        
+
         self.center_distance = []
         for num_cd, list_connection in enumerate(self.connections):
             for num_mesh_iter, gs in enumerate(list_connection):
@@ -1839,7 +1819,7 @@ class MeshAssembly(dc.DessiaObject):
                         break
                 if valid:
                     break
-                
+
         transverse_pressure_angle = []
         for num_cd, list_connection in enumerate(self.connections):
             for num_mesh_iter, gs in enumerate(list_connection):
@@ -1853,7 +1833,7 @@ class MeshAssembly(dc.DessiaObject):
                             break
                     if valid:
                         break
-                    
+
         list_gear = {}
         for mesh_combination in self.mesh_combinations:
             for num_mesh, mesh in mesh_combination.meshes.items():
@@ -1882,7 +1862,7 @@ class MeshAssembly(dc.DessiaObject):
         coeff_circular_tooth_thickness = {}
         for num_mesh, mesh in list_gear.items():
             coeff_circular_tooth_thickness[num_mesh] = mesh.rack.coeff_circular_tooth_thickness
-        
+
         self.general_data = []
         for num_graph,list_sub_graph in enumerate(self.sub_graph_dfs):
             num_mesh=0
@@ -1930,7 +1910,9 @@ class MeshAssembly(dc.DessiaObject):
                 if eng2 not in general_data['cycle'].keys():
                     general_data['cycle'][eng2]=cycle[eng2]
             self.general_data.append(general_data)
-            
+
+        DessiaObject.__init__(self, name=name)
+
     def __eq__(self, other_eb):
         equal = (self.connections == other_eb.connections
                  and self.mesh_combinations == other_eb.mesh_combinations
@@ -1949,13 +1931,13 @@ class MeshAssembly(dc.DessiaObject):
                 for sl in strong_link:
                     ma_hash += hash(strong_link)
         return ma_hash
-    
+
     def check(self):
         valid = True
         for mesh_combination in self.mesh_combinations:
             valid = (valid and mesh_combination.check())
         return valid
-        
+
     @classmethod
     def create(cls, center_distance, connections, transverse_pressure_angle,
                  coefficient_profile_shift, transverse_pressure_angle_rack,
@@ -1969,10 +1951,10 @@ class MeshAssembly(dc.DessiaObject):
 #        self.center_distance = center_distance
 #        self.mesh_combinations = []
 #        self.general_data = []
-        
+
         mesh_combinations = []
         output_data = []
-        
+
         graph_dfs,_ = gear_graph_simple(connections)
         for num_graph,list_sub_graph in enumerate(graph_dfs):
             num_mesh=0
@@ -2107,7 +2089,8 @@ class MeshAssembly(dc.DessiaObject):
                     gear_graph.add_edges_from([(eng1_m,eng1),(eng2_m,eng2)])
                     eng1_m=eng1
                     eng2_m=eng2
-        list_line=list(nx.connected_component_subgraphs(gear_graph))
+#        list_line=list(nx.connected_component_subgraphs(gear_graph))
+        list_line = [gear_graph.subgraph(c).copy() for c in nx.connected_components(gear_graph)]
         dict_line={}
         for num_line,list_num_eng in enumerate(list_line):
             for num_eng in list_num_eng:
@@ -2148,9 +2131,9 @@ class MeshAssembly(dc.DessiaObject):
             opt_pos=dict_line[num_eng]
             centers[num_eng]=[x_opt[2*opt_pos],x_opt[2*opt_pos+1]]
         return centers
-    
+
     def Dict(self):
-        d = {}
+        d = {'name' : self.name} # TODO Change this to DessiaObject.__init__
         d['connections'] = self.connections
         d['mesh_combinations'] = []
         for mesh_combination in self.mesh_combinations:
@@ -2164,12 +2147,10 @@ class MeshAssembly(dc.DessiaObject):
         d['cycle'] = self.cycle
         d['strong_links'] = self.strong_links
         d['safety_factor'] = self.safety_factor
-        d['metadata'] = self.metadata.to_dict()
         return d
 
     @classmethod
     def DictToObject(cls, d):
-        metadata = dc.Metadata.dict_to_object(d['metadata'])
         mesh_combinations = []
         for mesh_combination in d['mesh_combinations']:
             mesh_combinations.append(MeshCombination.DictToObject(mesh_combination))
@@ -2194,7 +2175,7 @@ class MeshAssembly(dc.DessiaObject):
                    cycle = cycle,
                    strong_links = d['strong_links'],
                    safety_factor = d['safety_factor'],
-                   metadata = metadata)
+                   name=d['name'])
         return mesh_assembly
 
 def gear_graph_simple(connections):
@@ -2213,8 +2194,9 @@ def gear_graph_simple(connections):
     gear_graph.add_nodes_from(list_gear)
     for list_edge in connections:
         gear_graph.add_edges_from(list_edge)
-    sub_graph=list(nx.connected_component_subgraphs(gear_graph))
-    sub_graph_dfs=[]
+#    sub_graph=list(nx.connected_component_subgraphs(gear_graph))
+    sub_graph = [gear_graph.subgraph(c).copy() for c in nx.connected_components(gear_graph)]
+    sub_graph_dfs = []
     for s_graph in sub_graph:
         node_init=list(s_graph.nodes())[0]
         sub_graph_dfs.append(list(nx.dfs_edges(s_graph,node_init)))

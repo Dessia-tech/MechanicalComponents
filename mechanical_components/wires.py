@@ -46,7 +46,7 @@ class Wire(DessiaObject):
         if estimate:
             length_estimate = 0.
             for wpt1, wpt2 in zip(self.waypoints[:-1], self.waypoints[1:]):
-                length_estimate += wpt2.PointDistance(wpt1)
+                length_estimate += wpt2.point_distance(wpt1)
             return length_estimate
         else:
             return self.path.Length()
@@ -188,7 +188,7 @@ class Wiring(DessiaObject):
         for wire in self.wires:
             waypoint0_2D = wire.waypoints[0].PlaneProjection2D(x3D, y3D)
             line = wire_lines[wire][frozenset((wire.waypoints[0], wire.waypoints[1]))]
-            if line.points[0].PointDistance(waypoint0_2D) < line.points[1].PointDistance(waypoint0_2D):
+            if line.points[0].point_distance(waypoint0_2D) < line.points[1].point_distance(waypoint0_2D):
                 waypoints_draw = [line.points[0]]
             else:
                 waypoints_draw = [line.points[1]]
@@ -221,7 +221,7 @@ class Wiring(DessiaObject):
                         i2 = vm.Point2D.LinesIntersection(bl, line2_draw)
 #                        i1.MPLPlot(ax, style='xb')
 #                        i2.MPLPlot(ax, style='or')
-                        if waypoint2_2D.PointDistance(i1) < waypoint2_2D.PointDistance(i2):
+                        if waypoint2_2D.point_distance(i1) < waypoint2_2D.point_distance(i2):
                             waypoints_draw.append(i2)
                         else:
                             waypoints_draw.append(i1)
@@ -236,7 +236,7 @@ class Wiring(DessiaObject):
 
             waypointn_2D = wire.waypoints[-1].PlaneProjection2D(x3D, y3D)
             line = wire_lines[wire][frozenset((wire.waypoints[-2], wire.waypoints[-1]))]
-            if line.points[0].PointDistance(waypointn_2D) < line.points[1].PointDistance(waypointn_2D):
+            if line.points[0].point_distance(waypointn_2D) < line.points[1].point_distance(waypointn_2D):
                 waypoints_draw.append(line.points[0])
             else:
                 waypoints_draw.append(line.points[1])

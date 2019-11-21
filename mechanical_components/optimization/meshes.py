@@ -16,7 +16,7 @@ import copy
 try:
     _open_source = True
     import mechanical_components.optimization.meshes_protected as protected_module
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ImportError) as _:
     _open_source = False
 
 #class ContinuousMeshesAssemblyOptimizer(protected_module.ProtectedContinuousMeshesAssemblyOptimizer if _open_source==True else object):

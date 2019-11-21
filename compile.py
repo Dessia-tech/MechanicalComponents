@@ -6,16 +6,24 @@ Created on Fri Aug 17 00:44:13 2018
 @author: steven
 """
 
-from distutils.core import setup
-from distutils.extension import Extension
+from os import walk, remove
+from os.path import isdir, join, exists
+
+from setuptools import setup
+
 from Cython.Distutils import build_ext
-import os
+
+from distutils.core import run_setup
+from distutils.cmd import Command
+from distutils.extension import Extension
 import time
+from datetime import timedelta
 import calendar
-#from shutil import copyfile
+import shutil
+import tarfile
 
 import hashlib
-import sys
+import netifaces
 
 protected_files = ['mechanical_components/optimization/bearings_protected.py',
                    'mechanical_components/optimization/common.py',
@@ -25,217 +33,315 @@ protected_files = ['mechanical_components/optimization/bearings_protected.py',
                    'mechanical_components/shafts_assembly.py'
                    ]
 
-month_exp_defined = False
-year_exp_defined = False
-macs_defined = False
-getnode_defined = False
-
-args_delete = []
-for arg in sys.argv:
-    if arg.startswith('--macs='):
-        macs = arg[8:].strip('[]').replace("'",'').split(',')
-        if type(macs) != list:
-            raise ValueError
-        macs_defined = True
-        print('Compiling for MACs adresses: {}'.format(macs))
-        args_delete.append(arg)
-    if arg.startswith('--exp_year='):
-        year = int(arg[11:])
-        year_exp_defined = True
-        args_delete.append(arg)
-    if arg.startswith('--exp_month='):
-        month = int(arg[12:])
-        month_exp_defined = True
-        args_delete.append(arg)
-    if arg.startswith('--getnodes='):
-        getnodes = int(arg[11:])
-        if type(getnodes) != list:
-            raise ValueError
-        print('Compiling for getnodes: {}'.format(getnodes))
-        args_delete.append(arg)
-        
-for arg in args_delete:
-    sys.argv.remove(arg)        
-
-if not month_exp_defined:
-    print('Month of expiration undefined: pass with --exp_month= option')
-    raise NameError
-
-if not year_exp_defined:
-    print('Year of expiration undefined: pass with --exp_year= option')
-    raise NameError
+class ClientDist(Command):
+    description = 'Creating client distribution with compiled packages and license'
+    user_options = [
+        # The format is (long option, short option, description).
+        ('exp-year=', None, 'Year of license expiration'),
+        ('exp-month=', None, 'Month of year of license expiration'),
+        ('exp-day=', None, 'Day of month of license expiration'),
+        ('formats=', None,
+         "formats for source distribution (comma-separated list)"),
+        ('getnodes=', None, 'UUID given by getnode (comma-separated list)'),
+        ('macs=', None, 'MACS of machine (comma-separated list)'),
+        ('detect-macs', None, 'using this machine macs')
+        ]
     
-if (not macs_defined) and (not getnode_defined):
-    print('MAC addresses undefined: pass with --macs= option or --getnodes=')
-    raise NameError
+    addresses_determination_lines = ['import netifaces\n',
+                                     'addrs = []\n',
+                                     'for i in netifaces.interfaces():\n',
+                                     "    if i != 'lo':\n",
+                                     "        for k, v in netifaces.ifaddresses(i).items():\n",
+                                     "            for v2 in v:\n",
+                                     "                if 'addr' in v2:\n",
+                                     "                    a = v2['addr']\n",
+                                     "                    if len(a) == 17:\n",
+                                     "                        addrs.append(a.replace(':',''))\n",
+                                     "addrs = set(addrs)\n\n"
+                                     ]
+    
+    def get_machine_macs(self):
+        addrs = []
+        for i in netifaces.interfaces():
+            if i != 'lo':
+                for k, v in netifaces.ifaddresses(i).items():
+                    for v2 in v:
+                        if 'addr' in v2:
+                            a = v2['addr']
+                            if len(a) == 17:
+                                addrs.append(a.replace(':',''))
+        return list(set(addrs))
 
-expiration = int(calendar.timegm(time.struct_time((year, month, 1, 0, 0, 0 ,0, 0, 0))))
-print('Expiration date: {}/{}: {}'.format(month, year, expiration))
-not_before = int(time.time())
+    def initialize_options(self):
+        """Set default values for options."""
+        # Each user option must be listed here with their default value.
+        self.exp_year = 2000
+        self.exp_month = 1
+        self.exp_day = 1
+        self.formats = 'zip'  
+        self.getnodes = None
+        self.macs = None
+        self.detect_macs = None
 
+    def finalize_options(self):
+        """Post-process options."""
 
-
-physical_token = hashlib.sha256(str(macs[0]).encode()).hexdigest()
-error_msg_time_before = 'Invalid licence Please report this error to DessIA support with this traceback token: TB{}'.format(physical_token)
-error_msg_time_after = 'Invalid licence Please report this error to DessIA support with this traceback token: TA{}'.format(physical_token)
-error_msg_mac = 'Invalid licence. Please report this error to DessIA support with this traceback token: M{}'.format(physical_token)
-protection_lines = ['valid_license = True\n',
-                    't_execution = time_package.time()\n',
-                    'if t_execution > {}:\n'.format(expiration), 
-                    '    print("{}")\n'.format(error_msg_time_after),
-                    '    raise RuntimeError\n\n',
-                    'if t_execution < {}:\n'.format(not_before),
-                    '    print("{}")\n'.format(error_msg_time_before),
-                    '    raise RuntimeError\n\n']
-
-addresses_determination_lines = ['import netifaces\n',
-                                 'addrs = []\n',
-                                 'for i in netifaces.interfaces():\n',
-                                 "    if i != 'lo':\n",
-                                 "        for k, v in netifaces.ifaddresses(i).items():\n",
-                                 "            for v2 in v:\n",
-                                 "                if 'addr' in v2:\n",
-                                 "                    a = v2['addr']\n",
-                                 "                    if len(a) == 17:\n",
-                                 "                        addrs.append(a.replace(':',''))\n",
-                                 "addrs = set(addrs)\n\n"
-                                 ]
-
-if macs_defined:
-    protection_lines.extend(['if addrs.isdisjoint(set({})):\n'.format(macs),
-                             '    print("{}")\n'.format(error_msg_mac),
-                             '    raise RuntimeError\n\n'])
-elif getnode_defined:
-    protection_lines.extend(['if getnode() not in {}:\n'.format(getnodes),
-                             '    print("{}")\n'.format(error_msg_mac),
-                             '    raise RuntimeError\n\n'])
-
-
-
-
-
-files_to_compile = []
-for file in protected_files:
-    with open(file, 'r', encoding="utf-8") as f:
-        # File Parsing
-        new_file_lines = []        
-        lines = f.readlines()
-        line_index = 0
-        # Inserting imports for uuid and time
-        line = lines[line_index]
-        while line.startswith('#!') or line.startswith('# -*-') or ('cython' in line):
-            new_file_lines.append(line)
-            line_index += 1
-            line = lines[line_index]
+        self.detect_macs = self.detect_macs is not None
+        if not self.detect_macs:
             
-            
-        new_file_lines.append('import time as time_package\n')
-        if getnode_defined:
-            new_file_lines.append('from uuid import getnode\n')
-        if macs_defined:
-            new_file_lines.extend(addresses_determination_lines)
-
-        while line_index < len(lines):
-            line = lines[line_index]
-            new_file_lines.append(line)
-            if line.startswith('def '):# Function
-                # counting parenthesis
-                op = line.count('(')
-                cp = line.count(')')
-                while op != cp:
-                    line_index += 1
-                    line = lines[line_index]
-                    new_file_lines.append(line)
-                    op += line.count('(')
-                    cp += line.count(')')
-                # list of args is finished.
-                # Now trying to see if lines are docstrings
-                line_index += 1
-                line = lines[line_index]
-
-                if line.startswith('    """'):
-                    new_file_lines.append(line)
-                    line_index += 1
-                    line = lines[line_index]
-                    
-                    while not line.startswith('    """'):
-                        new_file_lines.append(line)
-                        line_index += 1
-                        line = lines[line_index]
-                    new_file_lines.append(line)
-                    line_index += 1
-                    line = lines[line_index]
-                    
-
-                for protection_line in protection_lines:
-                    new_file_lines.append('    {}'.format(protection_line))
-
-                new_file_lines.append(line)
-
-
-            elif line.startswith('    def ') and not line.startswith('    def __init__('):# Method of class, not init
-                # counting parenthesis
-                op = line.count('(')
-                cp = line.count(')')
-                while op != cp:
-                    line_index += 1
-                    line = lines[line_index]
-                    op += line.count('(')
-                    cp += line.count(')')
-                    new_file_lines.append(line)
-                # list of args is finished.
-                # Now trying to see if lines are docstrings
-                line_index += 1
-                line = lines[line_index]
-
-                if line.startswith('        """'):
-                    new_file_lines.append(line)    
-                    line_index += 1
-                    line = lines[line_index]
-                    while not line.startswith('        """'):
-                        new_file_lines.append(line)
-                        line_index += 1
-                        line = lines[line_index]
-                    new_file_lines.append(line)
-                    line_index += 1
-                    line = lines[line_index]
-                                
-
-                for protection_line in protection_lines:
-                    new_file_lines.append('        {}'.format(protection_line))
-                    
-                new_file_lines.append(line)
-               
-            line_index+=1
-
-                    
-        new_file_name = file[:-3]+'_protected.pyx'
-        files_to_compile.append(new_file_name)
-        with open(new_file_name, 'w+', encoding="utf-8") as nf:
-            nf.writelines(new_file_lines)
-            
-#        print('\n\n',new_file_name,'\n')
-#        _ = [print(nli) for nli in new_file_lines]
+            macs = []
+            if self.macs is not None:
+                for mac in self.macs.split(','):
+                    macs.append(mac)
+                self.macs = macs        
+                print('\nCompiling for macs: {}'.format(self.macs))
                 
-        
+            getnodes = []
+            if self.getnodes is not None:
+                for getnode in self.getnodes.split(','):
+                    getnodes.append(getnode)
+                self.getnodes = getnodes        
+                print('\nCompiling for getnodes: {}'.format([str(g for g in self.getnodes)]))
 
-ext_modules = []
-for file, file_to_compile in zip(protected_files, files_to_compile):
-    module = file.replace('/','.')
-    module = module[:-3]
-    ext_modules.append(Extension(module,  [file_to_compile]))
+        else:
+            self.macs = self.get_machine_macs()
+            print('Detecting mac, using: {}'.format(self.macs))
 
-print(ext_modules)
+        if not self.detect_macs and self.getnodes is None and self.macs is None:
+            raise ValueError('Define either a mac or a getnode to protect the code or use detect-macs option')
 
-setup(
-    name = 'powertransmission',
-    cmdclass = {'build_ext': build_ext},
-    ext_modules = ext_modules,
-    
-)
+        if self.exp_year is not None:
+            self.exp_year = int(self.exp_year)
+        if self.exp_month is not None:
+            self.exp_month = int(self.exp_month)
+        if self.exp_day is not None:
+            self.exp_day = int(self.exp_day)
             
-# Remove _protected files and .c
-for file in files_to_compile:
-    os.remove(file)
-    file = file[:-3]+'c'
-    os.remove(file)
+        self.expiration = int(calendar.timegm(time.struct_time((self.exp_year,
+                                                                self.exp_month,
+                                                                self.exp_day,
+                                                                0, 0, 0 ,0, 0, 0))))
+        self.not_before = int(time.time())
+
+        print('\nExpiration date: {}/{}/{}: duration of {} days'.format(self.exp_day,
+                                                  self.exp_month,
+                                                  self.exp_year,
+                                                  timedelta(seconds=self.expiration-self.not_before).days))
+        
+            
+        formats = [] 
+        for s in self.formats.split(','):
+            if not s in ['zip', 'tar', 'gztar', 'bztar']:
+                raise NotImplementedError('Unsupported file type: {}'.format(s))
+            formats.append(s)
+        self.formats = formats
+
+        
+    def protection_lines(self):
+        protection_lines = []
+        if self.getnodes is not None:
+            physical_token = hashlib.sha256(str(self.getnodes[0]).encode()).hexdigest()
+        if self.macs is not None:
+            physical_token = hashlib.sha256(str(self.macs[0]).encode()).hexdigest()
+
+        error_msg_time_before = 'Invalid license Please report this error to DessIA support with this traceback token: TB{}'.format(physical_token)
+        error_msg_time_after = 'Invalid license Please report this error to DessIA support with this traceback token: TA{}'.format(physical_token)
+        error_msg_mac = 'Invalid license. Please report this error to DessIA support with this traceback token: M{}'.format(physical_token)
+        protection_lines = ['valid_license = True\n',
+                            't_execution = time_package.time()\n',
+                            'if t_execution > {}:\n'.format(self.expiration), 
+                            '    print("{}")\n'.format(error_msg_time_after),
+                            '    raise RuntimeError\n\n',
+                            'if t_execution < {}:\n'.format(self.not_before),
+                            '    print("{}")\n'.format(error_msg_time_before),
+                            '    raise RuntimeError\n\n']
+        
+        
+        if self.macs is not None:
+            protection_lines.extend(['if addrs.isdisjoint(set({})):\n'.format(self.macs),
+                                     '    print("{}")\n'.format(error_msg_mac),
+                                     '    raise RuntimeError\n\n'])
+        elif self.getnodes is not None:
+            protection_lines.extend(['if getnode() not in {}:\n'.format(self.getnodes),
+                                     '    print("{}")\n'.format(error_msg_mac),
+                                     '    raise RuntimeError\n\n'])
+            
+        return protection_lines
+
+    def write_pyx_files(self):
+        self.files_to_compile = []
+        for file in protected_files:
+            with open(file, 'r', encoding="utf-8") as f:
+                # File Parsing
+                new_file_lines = []        
+                lines = f.readlines()
+                line_index = 0
+                # Inserting imports for uuid and time
+                line = lines[line_index]
+                while line.startswith('#!') or line.startswith('# -*-') or ('cython' in line):
+                    new_file_lines.append(line)
+                    line_index += 1
+                    line = lines[line_index]
+                    
+                    
+                new_file_lines.append('import time as time_package\n')
+                if self.getnodes is not None:
+                    new_file_lines.append('from uuid import getnode\n')
+                if self.macs is not None:
+                    new_file_lines.extend(self.addresses_determination_lines)
+        
+                while line_index < len(lines):
+                    line = lines[line_index]
+                    new_file_lines.append(line)
+                    if line.startswith('def '):# Function
+                        # counting parenthesis
+                        op = line.count('(')
+                        cp = line.count(')')
+                        while op != cp:
+                            line_index += 1
+                            line = lines[line_index]
+                            new_file_lines.append(line)
+                            op += line.count('(')
+                            cp += line.count(')')
+                        # list of args is finished.
+                        # Now trying to see if lines are docstrings
+                        line_index += 1
+                        line = lines[line_index]
+        
+                        if line.startswith('    """'):
+                            new_file_lines.append(line)
+                            line_index += 1
+                            line = lines[line_index]
+                            
+                            while not line.startswith('    """'):
+                                new_file_lines.append(line)
+                                line_index += 1
+                                line = lines[line_index]
+                            new_file_lines.append(line)
+                            line_index += 1
+                            line = lines[line_index]
+                            
+        
+                        for protection_line in self.protection_lines():
+                            new_file_lines.append('    {}'.format(protection_line))
+        
+                        new_file_lines.append(line)
+        
+        
+                    elif line.startswith('    def ') and not line.startswith('    def __init__('):# Method of class, not init
+                        # counting parenthesis
+                        op = line.count('(')
+                        cp = line.count(')')
+                        while op != cp:
+                            line_index += 1
+                            line = lines[line_index]
+                            op += line.count('(')
+                            cp += line.count(')')
+                            new_file_lines.append(line)
+                        # list of args is finished.
+                        # Now trying to see if lines are docstrings
+                        line_index += 1
+                        line = lines[line_index]
+        
+                        if line.startswith('        """'):
+                            new_file_lines.append(line)    
+                            line_index += 1
+                            line = lines[line_index]
+                            while not line.startswith('        """'):
+                                new_file_lines.append(line)
+                                line_index += 1
+                                line = lines[line_index]
+                            new_file_lines.append(line)
+                            line_index += 1
+                            line = lines[line_index]
+                                        
+        
+                        for protection_line in self.protection_lines():
+                            new_file_lines.append('        {}'.format(protection_line))
+                            
+                        new_file_lines.append(line)
+                       
+                    line_index+=1
+        
+                            
+                new_file_name = file[:-3]+'_protected.pyx'
+                self.files_to_compile.append(new_file_name)
+                with open(new_file_name, 'w+', encoding="utf-8") as nf:
+                    nf.writelines(new_file_lines)
+                    
+                        
+                
+    def delete_compilation_files(self):
+        # Remove _protected files and .c
+        for file in self.files_to_compile:
+            if exists(file):
+                remove(file)
+
+            file = file[:-3] + 'c'
+            if exists(file):
+                remove(file)
+
+    
+
+    def run(self):
+        print('\n\nBeginning build')
+        
+        package_name = self.distribution.get_name()
+        
+        # Creating sdist
+        setup_result = run_setup('setup.py', script_args=['sdist', '--formats=tar', '--dist-dir=client_dist'])
+        sdist_filename = setup_result.dist_files[0][2]
+        folder_path = sdist_filename[:-4]
+        if isdir(folder_path):
+            shutil.rmtree(folder_path)
+        tar = tarfile.open(sdist_filename)
+        tar.extractall(path='client_dist')
+        tar.close()
+        
+        # Clening sdist tar
+        remove(sdist_filename)
+        
+        # Compiling
+        self.write_pyx_files()
+        print('Compiling files')
+        setup_result = run_setup('compile.py', script_args=['build_ext', '--build-lib=client_dist'])
+
+        # Copying compiled files to sdist folder
+        compiled_files_dir = join('client_dist', package_name)
+#        destination_base = join(folder_path, package_name)
+        destination_base = folder_path
+        for root_dir, _, files in walk(compiled_files_dir):
+            for file in files:
+                source = join(root_dir, file)
+                destination = source.replace('client_dist', destination_base)
+                print('copying file {} to {}'.format(source, destination))
+                shutil.copy(source, destination)
+
+
+        # Packaging
+        print('Packaging')
+        for packaging_format in self.formats:
+            shutil.make_archive(folder_path, packaging_format, folder_path)
+            
+        # Cleaning
+        print('Cleaning')
+        self.delete_compilation_files()
+        shutil.rmtree(folder_path)
+        shutil.rmtree(compiled_files_dir)
+
+        
+        print('Client build finished, output is {} + {}'.format(folder_path, self.formats))
+        
+ext_modules = []
+for file in protected_files:
+    module = file.replace('/', '.')
+    module = module[:-3]
+    file_to_compile = file[:-3] + '_protected.pyx'
+    ext_modules.append(Extension(module,  [file_to_compile]))
+    
+setup(
+    name = 'mechanical_components',
+    cmdclass = {'build_ext': build_ext, 'cdist': ClientDist},
+    install_requires = ['netifaces'],
+    ext_modules = ext_modules
+)
