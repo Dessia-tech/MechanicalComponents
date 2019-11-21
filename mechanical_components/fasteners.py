@@ -13,8 +13,9 @@ from dessia_common.core import DessiaObject
 
 class HexagonNut(DessiaObject):
     _standalone_in_db = True
-    _editable_variables = ['d', 'h']
+    _editable_variables = ['d', 't', 'h', 'e', 'name']
     _ordered_variables = ['d', 'name', 'h']
+    _titled_variables = {'d' : 'd', 'name' : 'Name'}
 
     def __init__(self, d:float, t:float, h:float, name:str=''):
         self.d = d
@@ -270,6 +271,3 @@ class BoltAssembly(DessiaObject):
         bolts = [Bolt.dict_to_object(s) for s in dict_['bolts']]
         return cls(bolts=bolts, positions=dict_['positions'],
                    axis=dict_['axis'], name=dict_['name'])
-
-iso_nuts = [HexagonNut(0.0016, 0.0032, 0.0013)]
-iso_hexscrews = [HexagonScrew(0.008, 0.025, 0.008, 0.005, 0.012)]
