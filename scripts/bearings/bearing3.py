@@ -9,6 +9,8 @@ Created on Fri Oct  5 09:53:05 2018
 import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
 
+import pkg_resources
+
 #import numpy as npy
 
 #bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
@@ -71,6 +73,10 @@ bis = bearings_opt.BearingAssemblyOptimizer(
 #                                       ]
                     )
 
+with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                           'mechanical_components/catalogs/schaeffler_v2.json') as schaeffler_json:
+    schaeffler_catalog = bearings.BearingCatalog.LoadFromFile(schaeffler_json)
+
 bis2 = bearings_opt.BearingAssemblyOptimizer(
                     loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
                     speeds = [157.07],
@@ -82,7 +88,7 @@ bis2 = bearings_opt.BearingAssemblyOptimizer(
                     linkage_types = [['ball_joint', 'cylindric_joint'], ['ball_joint', 'cylindric_joint']],
                     mounting_types = [['free', 'left']],
                     number_bearings = [[1], [1]],
-
+                    catalog = schaeffler_catalog,
 #                    bearing_classes = [bearings.RadialBallBearing, 
 #                                       bearings.AngularBallBearing,
 #                                       bearings.TaperedRollerBearing,

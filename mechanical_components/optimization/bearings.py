@@ -18,7 +18,6 @@ from mechanical_components.bearings import BearingCombination, \
         BearingCombinationSimulationResult, BearingSimulationResult,\
         BearingAssemblySimulation, BearingCombinationSimulation, \
         bearing_classes, dict_bearing_classes, \
-        ConceptualBearingCombination, schaeffler_catalog, \
         strength_bearing_classes, \
         BearingL10Error, CatalogSearchError
         
@@ -48,7 +47,7 @@ class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer i
                  number_bearings=[1, 2],
                  bearing_classes=bearing_classes,
                  bearing_combination_simulations=None,
-                 catalog=schaeffler_catalog):
+                 catalog=None):
         
         if linkage_types == ['all']:
             linkage_types = ['ball_joint', 'cylindric_joint']
@@ -109,7 +108,7 @@ class BearingAssemblyOptimizer(protected_module.BearingAssemblyOptimizer if _ope
                  number_bearings=[[1, 2], [1, 2]],
                  bearing_classes=bearing_classes,
                  bearing_assembly_simulations=None,
-                 catalog=schaeffler_catalog):
+                 catalog=None):
                      
         self.linkage_types = linkage_types
         for i_linkage, linkage_type in enumerate(linkage_types):
