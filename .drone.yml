@@ -7,10 +7,6 @@ steps:
 - name: install, doc and script running
   image: python:3
   commands:
-  - git clone https://git.dessia.tech/DessIA/dessia-common.git
-  - cd dessia-common
-  - python setup.py install
-  - cd ..
   - git fetch --tags
   - pip install Cython
   - python setup.py install
@@ -25,9 +21,6 @@ steps:
 - name: develop
   image: python:3
   commands:
-  - cd dessia-common
-  - python setup.py develop
-  - cd ..
   - git fetch --tags
   - pip install Cython
   - python setup.py develop
@@ -43,6 +36,7 @@ steps:
   when:
     branch: 
       - master
+    event: push
   commands:
     - git clone https://git.dessia.tech/OpenSource/MechanicalComponents.git git-opensource
     - tar -vxf dist/*.tar.gz --strip-components=1 -C git-opensource
@@ -59,6 +53,7 @@ steps:
   when: 
     branch: 
       - master
+    event: push
   settings:
     server_url: https://partage.dessia.tech
     repo_id:
@@ -94,6 +89,7 @@ steps:
   when: 
     branch: 
       - master
+    event: push
   settings:
     host: austerlitz.dessia.tech
     target: /var/www/documentation/MechanicalComponents/
@@ -102,6 +98,7 @@ steps:
     username: drone
     password:
       from_secret: ssh_drone_password
+
 - name: notify
   when:
     status:
