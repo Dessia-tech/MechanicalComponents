@@ -405,11 +405,11 @@ class RadialBearing(DessiaObject):
 
         #Internal Ring
         IRC = self.InternalRingContour()
-        irc = primitives3D.RevolvedProfile(center, axis, z, [IRC], center,
+        irc = primitives3D.RevolvedProfile(center, axis, z, IRC, center,
                                          axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
         ERC=self.ExternalRingContour()
-        erc=primitives3D.RevolvedProfile(center, axis, z, [ERC], center,
+        erc=primitives3D.RevolvedProfile(center, axis, z, ERC, center,
                                          axis, angle=2*math.pi,name='External Ring')
         #roller
         ROL=self.RollingContourCAD()
@@ -420,7 +420,7 @@ class RadialBearing(DessiaObject):
 
         for zi in range(int(self.Z)):
             center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
-            rollers.append(primitives3D.RevolvedProfile(center_roller, axis, z, [ROL],
+            rollers.append(primitives3D.RevolvedProfile(center_roller, axis, z, ROL,
                                                     center_roller, axis,
                                                     angle=2*math.pi,name='Roller {}'.format(zi+1)))
 
@@ -524,7 +524,7 @@ class RadialBearing(DessiaObject):
             self.PlotLoad(a)
 
     def VolumeModel(self, center = vm.o3D, axis = vm.x3D):
-        model=vm.VolumeModel([(self.name, self.CADVolumes(center, axis))])
+        model=vm.VolumeModel(self.CADVolumes(center, axis), self.name)
         return model
 
 #    mass = property(Mass)
@@ -1502,7 +1502,7 @@ class NUP(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
-        return vm.Contour2D([irc])
+        return irc
 
 
 
@@ -1521,8 +1521,8 @@ class NUP(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
-        erc = vm.Contour2D([be1])
-        return erc
+        # erc = vm.Contour2D([be1])
+        return be1
 
     @classmethod
     def Graph(cls, list_node, direction=1):
@@ -1579,7 +1579,7 @@ class N(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
-        return vm.Contour2D([irc])
+        return irc
 
 
 
@@ -1595,8 +1595,8 @@ class N(RadialRollerBearing):
         be1 = primitives2D.ClosedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius,
                            2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
 
-        erc = vm.Contour2D([be1])
-        return erc
+        # erc = vm.Contour2D([be1])
+        return be1
 
     @classmethod
     def Graph(cls, list_node, direction=1):
@@ -1649,8 +1649,7 @@ class NF(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
-        return vm.Contour2D([irc])
-
+        return irc
 
 
     def ExternalRingContour(self, direction=1, sign_V=1):
@@ -1668,9 +1667,9 @@ class NF(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius}, adapt_radius = True)
 
-        erc = vm.Contour2D([be1])
+        # erc = vm.Contour2D([be1])
 
-        return erc
+        return be1
 
     @classmethod
     def Graph(cls, list_node, direction=1):
@@ -1725,7 +1724,7 @@ class NU(RadialRollerBearing):
                            2: self.radius, 3: self.radius, 4: self.radius},
                            adapt_radius = True)
 
-        return vm.Contour2D([irc])
+        return irc
 
 
     def ExternalRingContour(self, direction=1, sign_V=1):
@@ -1741,9 +1740,9 @@ class NU(RadialRollerBearing):
         be1 = primitives2D.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius=True)
-        erc = vm.Contour2D([be1])
+        # erc = vm.Contour2D([be1])
 
-        return erc
+        return be1
 
     @classmethod
     def Graph(cls, list_node, direction=1):
@@ -1824,9 +1823,9 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                                                   4: self.radius, 5: self.radius,
                                                   6: self.radius}, adapt_radius=True)
 
-        irc = vm.Contour2D([bi1])
-
-        return irc
+        # irc = vm.Contour2D([bi1])
+# 
+        return bi1
 
     def ExternalRingContour(self, direction=1, sign_V=1):
 
@@ -1852,9 +1851,9 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                                                         2: self.radius,
                                                         3: self.radius},
                                                         adapt_radius=True)
-        erc = vm.Contour2D([be1])
+        # erc = vm.Contour2D([be1])
 
-        return erc
+        return be1
 
     def CADVolumes(self, center = vm.o3D, axis = vm.x3D):
         axis.Normalize()
@@ -1868,11 +1867,11 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 
         #Internal Ring
         IRC=self.InternalRingContour()
-        irc=primitives3D.RevolvedProfile(center, axis, y, [IRC], center,
+        irc=primitives3D.RevolvedProfile(center, axis, y, IRC, center,
                                          axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
         ERC=self.ExternalRingContour()
-        erc=primitives3D.RevolvedProfile(center, axis, y, [ERC], center,
+        erc=primitives3D.RevolvedProfile(center, axis, y, ERC, center,
                                          axis, angle=2*math.pi,name='External Ring')
 
         volumes = [irc, erc]
@@ -2472,6 +2471,8 @@ class BearingCombination(DessiaObject):
         self.d = math.inf
         for bg in bearings:
             self.d = min(self.d, bg.d)
+            
+        self.name = name
 
     def __eq__(self, other_eb):
 
@@ -2896,9 +2897,9 @@ class BearingCombination(DessiaObject):
 #        position = self.axial_positions
         center_bearing = center+0.5*(self.bearings[0].B -self.B)*axis
         for bearing in self.bearings:
-            groups.append((bearing.name, bearing.CADVolumes(center=center_bearing)))
+            groups.extend(bearing.CADVolumes(center=center_bearing))
             center_bearing += bearing.B*axis
-        model=vm.VolumeModel(groups)
+        model=vm.VolumeModel(groups, self.name)
         return model
 
     def Dict(self, subobjects_id={}, stringify_keys=True):
@@ -2945,7 +2946,7 @@ class BearingAssembly(DessiaObject):
 #                             'class':'mechanical_components.bearings.BearingCombination',
 #                             'type':'list'}]
 
-    def __init__(self, bearing_combinations, pre_load=0, axial_positions=None):
+    def __init__(self, bearing_combinations, pre_load=0, axial_positions=None, name=''):
 
         self.bearing_combinations = bearing_combinations
         self.mass = self.Mass()
@@ -2966,6 +2967,8 @@ class BearingAssembly(DessiaObject):
         self.cost = 0
         for bc in bearing_combinations:
             self.cost += bc.cost
+            
+        self.name = name
 
     def __eq__(self, other_eb):
         equal = True
@@ -3251,9 +3254,9 @@ class BearingAssembly(DessiaObject):
             position = combination_position
 
             for bearing in combination.bearings:
-                groups.append((bearing.name, bearing.CADVolumes(center=vm.Point3D((position, 0, 0)))))
+                groups.extend(bearing.CADVolumes(center=vm.Point3D((position, 0, 0))))
                 position += bearing.B
-        model=vm.VolumeModel(groups)
+        model=vm.VolumeModel(groups, self.name)
         return model
 
     def FreeCADExport(self, fcstd_filepath='An unamed bearing assembly', python_path='python',
