@@ -396,7 +396,7 @@ class RadialBearing(DessiaObject):
         # TODO: enhance this but without querying CAD volumes!
         return 7800 * math.pi*self.B*(self.D-self.d) * (self.d+self.D)
 
-    def CADVolumes(self, center = vm.o3D, axis = vm.x3D):
+    def CADVolumes(self, center = vm.O3D, axis = vm.X3D):
         # TODO: mutualization of this in parent class?
         axis.Normalize()
 
@@ -523,7 +523,7 @@ class RadialBearing(DessiaObject):
         elif typ == 'Load':
             self.PlotLoad(a)
 
-    def VolumeModel(self, center = vm.o3D, axis = vm.x3D):
+    def VolumeModel(self, center = vm.O3D, axis = vm.X3D):
         model=vm.VolumeModel(self.CADVolumes(center, axis), self.name)
         return model
 
@@ -1347,15 +1347,15 @@ class RadialRollerBearing(RadialBearing):
         p4 = vm.Point2D((self.Lw/2.,-self.Dw/2.))
         rol = primitives2D.ClosedRoundedLineSegments2D([p1, p2, p3, p4], {0: self.radius,
                                              1: self.radius, 2: self.radius, 3: self.radius})
-        return vm.Contour2D([rol])
+        return rol
 
     def RollingContourCAD(self):
         p1 = vm.Point2D((-self.Lw/2., 0))
         p2 = vm.Point2D((-self.Lw/2., self.Dw/2.))
         p3 = vm.Point2D((self.Lw/2., self.Dw/2.))
         p4 = vm.Point2D((self.Lw/2., 0))
-        rol = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4], {1: self.radius, 2: self.radius}, True)
-        return vm.Contour2D([rol])
+        rol = primitives2D.ClosedRoundedLineSegments2D([p1, p2, p3, p4], {1: self.radius, 2: self.radius}, True)
+        return rol
 
     def plot_data(self, pos=0, quote=True, constructor=True, direction=1):
 
@@ -1855,7 +1855,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 
         return be1
 
-    def CADVolumes(self, center = vm.o3D, axis = vm.x3D):
+    def CADVolumes(self, center = vm.O3D, axis = vm.X3D):
         axis.Normalize()
 
         y = axis.RandomUnitNormalVector()
