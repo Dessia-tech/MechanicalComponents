@@ -75,7 +75,7 @@ steps:
 - name: compile linux
   image: python:3
   commands:
-  - pip install Cython
+  - pip install Cython netifaces
   - python compile.py build_ext --exp_month=7 --exp_year=2029 --macs=2234420019928
 
 - name: upload_doc_master
