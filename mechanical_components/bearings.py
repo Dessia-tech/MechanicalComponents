@@ -1886,7 +1886,7 @@ class NU(RadialRollerBearing):
         pbe7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
         be1 = primitives2D.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius, 6: self.radius})
+                            5: self.radius, 6: self.radius}, adapt_radius=True)
         erc = vm.Contour2D([be1])
 
         return erc
@@ -1985,8 +1985,12 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         l4 = vm.Line2D(pbe4, pbe4T)
         pbe2 = vm.Point2D.LinesIntersection(l0, l3)
         pbe5 = vm.Point2D.LinesIntersection(l0, l4)
-        be1 = primitives2D.ClosedRoundedLineSegments2D([pbe2, pbe3, pbe4, pbe5], {0: self.radius,
-                                             1: self.radius, 2: self.radius, 3: self.radius}, adapt_radius=True)
+        be1 = primitives2D.ClosedRoundedLineSegments2D([pbe2, pbe3, pbe4, pbe5],
+                                                       {0: self.radius,
+                                                        1: self.radius,
+                                                        2: self.radius,
+                                                        3: self.radius},
+                                                        adapt_radius=True)
         erc = vm.Contour2D([be1])
 
         return erc
@@ -2989,10 +2993,10 @@ class BearingCombination(DessiaObject):
         if a is None:
             f, a = linkage_area.MPLPlot(color = 'g')
         else:
-            linkage_area.MPLPlot(a,'g')
+            linkage_area.MPLPlot(a, color='g')
 
+        assembly_bg.MPLPlot(a)
 
-        assembly_bg.MPLPlot(a,'k')
 
         if typ == 'Graph':
             list_graph = []
@@ -3029,7 +3033,8 @@ class BearingCombination(DessiaObject):
             cont_box = [box_sup, box_inf]
             contour_box = vm.Contour2D(cont_box)
             contour_box = contour_box.Translation(vm.Vector2D((pos, 0)), True)
-            contour_box.MPLPlot(a, 'r')
+            contour_box.MPLPlot(a, color='r')
+
 
 
     def VolumeModel(self, center = vm.Point3D((0,0,0)), axis = vm.Vector3D((1,0,0))):
