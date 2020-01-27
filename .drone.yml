@@ -15,8 +15,6 @@ steps:
   - make html
   - cd ../
   - python scripts/bearings/bearing3.py
-  - python scripts/meshes/meshes_agb.py
-  - python scripts/meshes/meshes2.py
 
 - name: develop
   image: python:3
