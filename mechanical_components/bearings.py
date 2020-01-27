@@ -550,7 +550,7 @@ class RadialBearing(DessiaObject):
         # TODO: enhance this but without querying CAD volumes!
         return 7800 * math.pi*self.B*(self.D-self.d) * (self.d+self.D)
 
-    def CADVolumes(self, center = vm.o3D, axis = vm.x3D):
+    def CADVolumes(self, center = vm.O3D, axis = vm.X3D):
         # TODO: mutualization of this in parent class?
         axis.Normalize()
 
@@ -677,7 +677,7 @@ class RadialBearing(DessiaObject):
         elif typ == 'Load':
             self.PlotLoad(a)
 
-    def VolumeModel(self, center = vm.o3D, axis = vm.x3D):
+    def VolumeModel(self, center = vm.O3D, axis = vm.X3D):
         model=vm.VolumeModel([(self.name, self.CADVolumes(center, axis))])
         return model
 
@@ -1987,7 +1987,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 
         return erc
 
-    def CADVolumes(self, center = vm.o3D, axis = vm.x3D):
+    def CADVolumes(self, center = vm.O3D, axis = vm.X3D):
         axis.Normalize()
 
         y = axis.RandomUnitNormalVector()
@@ -2983,7 +2983,7 @@ class BearingCombination(DessiaObject):
         linkage_area, assembly_bg = self.PlotContour2D(pos, a, box, typ)
 
         if a is None:
-            f, a = linkage_area.MPLPlot(style = '-g')
+            f, a = linkage_area.MPLPlot(color = 'g')
         else:
             linkage_area.MPLPlot(a,'-g')
 
@@ -3178,7 +3178,7 @@ class BearingAssembly(DessiaObject):
 
         shaft = self.Shaft()
         contour_shaft = vm.Contour2D([shaft])
-        f, a = contour_shaft.MPLPlot(style = '-k')
+        f, a = contour_shaft.MPLPlot()
 
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
             assembly_bg.Plot(pos, a, box, typ, ind_load_case)
