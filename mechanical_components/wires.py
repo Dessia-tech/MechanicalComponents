@@ -146,7 +146,7 @@ class Wiring(DessiaObject):
             length += wire.Length(estimate)
         return length
     
-    def Draw(self, x3D=vm.x3D, y3D=vm.y3D, ax=None):
+    def Draw(self, x3D=vm.X3D, y3D=vm.Y3D, ax=None):
         wire_sep = 0.005
 #        lines = []
         if ax is None:
