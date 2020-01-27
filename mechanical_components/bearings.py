@@ -666,13 +666,13 @@ class RadialBearing(DessiaObject):
     def Plot(self, direction=1, a=None, typ=None):
         bg = self.PlotContour(direction)
         if a is None:
-            f, a = bg.MPLPlot(style = '-k')
+            f, a = bg.MPLPlot(style = 'k')
         else:
             bg.MPLPlot(a,'-k')
 
         if typ == 'Graph':
             graph = self.PlotGraph()
-            graph.MPLPlot(a, '--b', True)
+            graph.MPLPlot(a, 'b', True)
 
         elif typ == 'Load':
             self.PlotLoad(a)
@@ -2653,7 +2653,7 @@ class BearingCombination(DessiaObject):
                 list_graph.append(graph)
             list_graph = vm.Contour2D(list_graph)
     #        list_graph = list_graph.Translation((pos, 0), True)
-            f,a = list_graph.MPLPlot(style='--b',arrow= True)
+            f,a = list_graph.MPLPlot(color='b',arrow= True)
 
     def Update(self, axial_positions, internal_diameters, external_diameters, length):
         # TODO Why axial position is not in init?
@@ -2989,10 +2989,10 @@ class BearingCombination(DessiaObject):
         if a is None:
             f, a = linkage_area.MPLPlot(color = 'g')
         else:
-            linkage_area.MPLPlot(a,'-g')
+            linkage_area.MPLPlot(a,'g')
 
 
-        assembly_bg.MPLPlot(a,'-k')
+        assembly_bg.MPLPlot(a,'k')
 
         if typ == 'Graph':
             list_graph = []
@@ -3005,7 +3005,7 @@ class BearingCombination(DessiaObject):
                 list_graph.append(graph)
             list_graph = vm.Contour2D(list_graph)
             list_graph = list_graph.Translation(vm.Vector2D((pos, 0)), True)
-            list_graph.MPLPlot(a, '--b', True)
+            list_graph.MPLPlot(a, 'b', True)
 
         elif typ == 'Load':
             pos_m = -self.B/2.
@@ -3029,7 +3029,7 @@ class BearingCombination(DessiaObject):
             cont_box = [box_sup, box_inf]
             contour_box = vm.Contour2D(cont_box)
             contour_box = contour_box.Translation(vm.Vector2D((pos, 0)), True)
-            contour_box.MPLPlot(a,'-r')
+            contour_box.MPLPlot(a, 'r')
 
 
     def VolumeModel(self, center = vm.Point3D((0,0,0)), axis = vm.Vector3D((1,0,0))):
