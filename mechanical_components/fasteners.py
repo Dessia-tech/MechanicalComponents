@@ -58,7 +58,7 @@ class HexagonNut(DessiaObject):
     def inner_contour(self):
         return vm.Contour2D([vm.Circle2D(vm.o2D, 0.5*self.d)])
 
-    def volmdlr_model(self, center=vm.o3D, x=vm.x3D, y=vm.y3D, z=vm.z3D):
+    def volmdlr_model(self, center=vm.O3D, x=vm.X3D, y=vm.Y3D, z=vm.Z3D):
         extrusion = volmdlr.primitives3D.ExtrudedProfile(center, x, y,
                                                          self.outer_contour(),
                                                          [self.inner_contour()],
@@ -124,7 +124,7 @@ class HexagonScrew(DessiaObject):
     def body_outer_contour(self):
         return vm.Contour2D([vm.Circle2D(vm.o2D, 0.5*self.d)])
 
-    def volmdlr_model(self, center=vm.o3D, x=vm.x3D, y=vm.y3D, z=vm.z3D):
+    def volmdlr_model(self, center=vm.O3D, x=vm.X3D, y=vm.Y3D, z=vm.Z3D):
         head = volmdlr.primitives3D.ExtrudedProfile(center, x, y,
                                                     self.head_outer_contour(),
                                                     [],
@@ -186,7 +186,7 @@ class FlatWasher(DessiaObject):
     def inner_contour(self):
         return vm.Contour2D([vm.Circle2D(vm.o2D, 0.5*self.D)])
 
-    def volmdlr_model(self, center=vm.o3D, x=vm.x3D, y=vm.y3D, z=vm.z3D):
+    def volmdlr_model(self, center=vm.O3D, x=vm.X3D, y=vm.Y3D, z=vm.Z3D):
         extrusion = volmdlr.primitives3D.ExtrudedProfile(center, x, y,
                                                          self.outer_contour(),
                                                          [self.inner_contour()],
