@@ -907,11 +907,11 @@ class Shaft(Part):
              'name': self.name}
         return d
 
-    def CADVolumes(self, plane_origin=vm.o3D, center=vm.o3D, x=vm.x3D, y=vm.y3D):
+    def CADVolumes(self, plane_origin=vm.O3D, center=vm.O3D, x=vm.X3D, y=vm.Y3D):
         z = x.Cross(y)
         z.Normalize()
 
-        profile = vm3d.RevolvedProfile(plane_origin, x, y, [self.Contour()], center, vm.x3D)
+        profile = vm3d.RevolvedProfile(plane_origin, x, y, [self.Contour()], center, vm.X3D)
 #        profile.MPLPlot(axe)
         return profile
 
@@ -1284,7 +1284,7 @@ class ShaftLine(DessiaObject):
 
         return axe
 
-    def CADVolumes(self, center=None, x=vm.x3D, y=vm.y3D):
+    def CADVolumes(self, center=None, x=vm.X3D, y=vm.Y3D):
         if center is None:
             center = vm.Point3D((0, self.yz[0], self.yz[1]))
         z = x.Cross(y)
@@ -1352,7 +1352,7 @@ class ShaftLinesAssembly(DessiaObject):
         for contour in restricted_zones:
             contour.MPLPlot(ax=axe, style='r')
             
-    def CADVolumes(self, center=None, x=vm.x3D, y=vm.y3D):
+    def CADVolumes(self, center=None, x=vm.X3D, y=vm.Y3D):
         if center is None:
             center = self.origin
         z = x.Cross(y)

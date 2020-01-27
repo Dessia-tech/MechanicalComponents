@@ -24,14 +24,14 @@ class HexagonNut(DessiaObject):
         self.h = h
         DessiaObject.__init__(self, name=name)
 
-    def to_dict(self):
-        dict_ = DessiaObject.to_dict(self)
-        dict_.update({'d' : self.d, 't' : self.t, 'h' : self.h})
-        return dict_
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        return cls(d=dict_['d'], t=dict_['t'], h=dict_['h'], name=dict_['name'])
+#    def to_dict(self):
+#        dict_ = DessiaObject.to_dict(self)
+#        dict_.update({'d' : self.d, 't' : self.t, 'h' : self.h})
+#        return dict_
+#
+#    @classmethod
+#    def dict_to_object(cls, dict_):
+#        return cls(d=dict_['d'], t=dict_['t'], h=dict_['h'], name=dict_['name'])
 
     def __hash__(self):
         return round(1000*self.d + 2123*self.t + 782*self.h)
@@ -58,7 +58,7 @@ class HexagonNut(DessiaObject):
     def inner_contour(self):
         return vm.Contour2D([vm.Circle2D(vm.o2D, 0.5*self.d)])
 
-    def volmdlr_model(self, center=vm.o3D, x=vm.x3D, y=vm.y3D, z=vm.z3D):
+    def volmdlr_model(self, center=vm.O3D, x=vm.X3D, y=vm.Y3D, z=vm.Z3D):
         extrusion = volmdlr.primitives3D.ExtrudedProfile(center, x, y,
                                                          self.outer_contour(),
                                                          [self.inner_contour()],
@@ -94,16 +94,16 @@ class HexagonScrew(DessiaObject):
             and self.a == other_screw.a and self.s == other_screw.s\
             and self.t == other_screw.t
 
-    def to_dict(self):
-        dict_ = {}
-        dict_.update({'d' : self.d, 'L' : self.L, 'a' : self.a,
-                      's' : self.s, 't' : self.t, 'name' : self.name})
-        return dict_
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        return cls(dict_['d'], dict_['L'], dict_['a'],
-                   dict_['s'], dict_['t'], dict_['name'])
+#    def to_dict(self):
+#        dict_ = {}
+#        dict_.update({'d' : self.d, 'L' : self.L, 'a' : self.a,
+#                      's' : self.s, 't' : self.t, 'name' : self.name})
+#        return dict_
+#
+#    @classmethod
+#    def dict_to_object(cls, dict_):
+#        return cls(dict_['d'], dict_['L'], dict_['a'],
+#                   dict_['s'], dict_['t'], dict_['name'])
 
 
     def head_outer_contour(self):
@@ -124,7 +124,7 @@ class HexagonScrew(DessiaObject):
     def body_outer_contour(self):
         return vm.Contour2D([vm.Circle2D(vm.o2D, 0.5*self.d)])
 
-    def volmdlr_model(self, center=vm.o3D, x=vm.x3D, y=vm.y3D, z=vm.z3D):
+    def volmdlr_model(self, center=vm.O3D, x=vm.X3D, y=vm.Y3D, z=vm.Z3D):
         head = volmdlr.primitives3D.ExtrudedProfile(center, x, y,
                                                     self.head_outer_contour(),
                                                     [],
@@ -159,14 +159,18 @@ class FlatWasher(DessiaObject):
         self.e1 = e1
         DessiaObject.__init__(self, name=name)
 
-    def to_dict(self):
-        dict_ = DessiaObject.to_dict(self)
-        dict_.update({'D' : self.D, 'A' : self.A, 'e1' : self.e1})
-        return dict_
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        return cls(dict_['D'], dict_['A'], dict_['e1'], dict_['name'])
+#    def to_dict(self):
+#        dict_ = DessiaObject.to_dict(self)
+#        dict_.update({'D' : self.D, 'A' : self.A, 'e1' : self.e1})
+#        return dict_
+#
+#    @classmethod
+#    def dict_to_object(cls, dict_):
+#        if 'name' in dict_:
+#            name = dict_['name']
+#        else:
+#            name=''
+#        return cls(dict_['D'], dict_['A'], dict_['e1'], name=name)
 
 
     def __hash__(self):
@@ -182,7 +186,7 @@ class FlatWasher(DessiaObject):
     def inner_contour(self):
         return vm.Contour2D([vm.Circle2D(vm.o2D, 0.5*self.D)])
 
-    def volmdlr_model(self, center=vm.o3D, x=vm.x3D, y=vm.y3D, z=vm.z3D):
+    def volmdlr_model(self, center=vm.O3D, x=vm.X3D, y=vm.Y3D, z=vm.Z3D):
         extrusion = volmdlr.primitives3D.ExtrudedProfile(center, x, y,
                                                          self.outer_contour(),
                                                          [self.inner_contour()],
@@ -208,25 +212,30 @@ class Bolt(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-    def to_dict(self):
-        dict_ = DessiaObject.to_dict(self)
-        dict_.update({'screw' : self.screw.to_dict(),
-                      'nut' : self.nut.to_dict(),
-                      'nut_position' : self.nut_position})
-        if self.washer is not None:
-            dict_['washer'] = self.washer.to_dict()
-        return dict_
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        screw = HexagonScrew.dict_to_object(dict_['screw'])
-        nut = HexagonNut.dict_to_object(dict_['nut'])
-        if "washer" in dict_:
-            if dict_['washer'] is not None:
-                washer = FlatWasher.dict_to_object(dict_['washer'])
-                return cls(screw=screw, nut=nut, nut_position=dict_['nut_position'],
-                           washer=washer, name=dict_['name'])
-        return cls(screw=screw, nut=nut, nut_position=dict_['nut_position'], name=dict_['name'])
+#    def to_dict(self):
+#        dict_ = DessiaObject.to_dict(self)
+#        dict_.update({'screw' : self.screw.to_dict(),
+#                      'nut' : self.nut.to_dict(),
+#                      'nut_position' : self.nut_position})
+#        if self.washer is not None:
+#            dict_['washer'] = self.washer.to_dict()
+#        return dict_
+#
+#    @classmethod
+#    def dict_to_object(cls, dict_):
+#        screw = HexagonScrew.dict_to_object(dict_['screw'])
+#        nut = HexagonNut.dict_to_object(dict_['nut'])
+#        if 'name' in dict_:
+#            name = dict_['name']
+#        else:
+#            name=''
+#            
+#        if "washer" in dict_:
+#            if dict_['washer'] is not None:
+#                washer = FlatWasher.dict_to_object(dict_['washer'])
+#                return cls(screw=screw, nut=nut, nut_position=dict_['nut_position'],
+#                           washer=washer, name=dict_['name'])
+#        return cls(screw=screw, nut=nut, nut_position=dict_['nut_position'], name=name)
 
 
 class ScrewAssembly(DessiaObject):
@@ -237,18 +246,18 @@ class ScrewAssembly(DessiaObject):
         self.axis = axis
         DessiaObject.__init__(self, name=name)
 
-    def to_dict(self):
-        dict_ = DessiaObject.to_dict(self)
-        dict_.update({'screws' : [s.to_dict() for s in self.screws],
-                      'positions' : self.positions,
-                      'axis' : self.axis})
-        return dict_
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        screws = [HexagonScrew.dict_to_object(s) for s in dict_['screws']]
-        return cls(screws=screws, positions=dict_['positions'],
-                   axis=dict_['axis'], name=dict_['name'])
+#    def to_dict(self):
+#        dict_ = DessiaObject.to_dict(self)
+#        dict_.update({'screws' : [s.to_dict() for s in self.screws],
+#                      'positions' : self.positions,
+#                      'axis' : self.axis})
+#        return dict_
+#
+#    @classmethod
+#    def dict_to_object(cls, dict_):
+#        screws = [HexagonScrew.dict_to_object(s) for s in dict_['screws']]
+#        return cls(screws=screws, positions=dict_['positions'],
+#                   axis=dict_['axis'], name=dict_['name'])
 
 class BoltAssembly(DessiaObject):
     def __init__(self, bolts:List[Bolt], positions:List[float],
@@ -259,15 +268,19 @@ class BoltAssembly(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
 
-    def to_dict(self):
-        dict_ = DessiaObject.to_dict(self)
-        dict_.update({'bolts' : [bolt.to_dict() for bolt in self.bolts],
-                      'positions' : self.positions,
-                      'axis' : self.axis})
-        return dict_
-
-    @classmethod
-    def dict_to_object(cls, dict_):
-        bolts = [Bolt.dict_to_object(s) for s in dict_['bolts']]
-        return cls(bolts=bolts, positions=dict_['positions'],
-                   axis=dict_['axis'], name=dict_['name'])
+#    def to_dict(self):
+#        dict_ = DessiaObject.to_dict(self)
+#        dict_.update({'bolts' : [bolt.to_dict() for bolt in self.bolts],
+#                      'positions' : self.positions,
+#                      'axis' : self.axis})
+#        return dict_
+#
+#    @classmethod
+#    def dict_to_object(cls, dict_):
+#        if 'name' in dict_:
+#            name = dict_['name']
+#        else:
+#            name=''
+#        bolts = [Bolt.dict_to_object(s) for s in dict_['bolts']]
+#        return cls(bolts=bolts, positions=dict_['positions'],
+#                   axis=dict_['axis'], name=name)
