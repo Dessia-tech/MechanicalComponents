@@ -26,7 +26,7 @@ class RoutingOptimizer:
             self.graph.add_edge(waypoint1, waypoint2, distance=(waypoint2-waypoint1).Norm())
         self.line_graph = nx.line_graph(self.graph)
         
-    def DrawNetwork(self, x=vm.x3D, y=vm.y3D):
+    def DrawNetwork(self, x=vm.X3D, y=vm.Y3D):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         
