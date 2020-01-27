@@ -76,7 +76,7 @@ steps:
   image: python:3
   commands:
   - pip install Cython netifaces
-  - python compile.py build_ext --exp-month=7 --exp-year=2029 --macs=2234420019928
+  - python compile.py cdist --exp-month=7 --exp-year=2029 --macs=2234420019928
 
 - name: upload_doc_master
   image: appleboy/drone-scp
