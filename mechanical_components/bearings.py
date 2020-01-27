@@ -2021,8 +2021,8 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         r2 = vm.Point2D((-direction*self.Lw/2., self.Dw/2. + self.Lw/2.*math.tan(self.beta)))
         r3 = vm.Point2D((-direction*self.Lw/2., -self.Dw/2. - self.Lw/2.*math.tan(self.beta)))
         r4 = vm.Point2D((--direction*self.Lw/2., -self.Dw/2. + self.Lw/2.*math.tan(self.beta)))
-        rol = primitives2D.RoundedLineSegments2D([r1, r2, r3, r4], {0: self.radius,
-                                             1: self.radius, 2: self.radius, 3: self.radius}, True)
+        rol = primitives2D.ClosedRoundedLineSegments2D([r1, r2, r3, r4], {0: self.radius,
+                                             1: self.radius, 2: self.radius, 3: self.radius})
 
         bg = vm.Contour2D([rol])
         return bg
