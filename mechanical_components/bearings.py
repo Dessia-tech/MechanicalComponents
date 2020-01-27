@@ -550,7 +550,7 @@ class RadialBearing(DessiaObject):
         # TODO: enhance this but without querying CAD volumes!
         return 7800 * math.pi*self.B*(self.D-self.d) * (self.d+self.D)
 
-    def CADVolumes(self, center = vm.o3D, axis = vm.x3D):
+    def CADVolumes(self, center = vm.O3D, axis = vm.X3D):
         # TODO: mutualization of this in parent class?
         axis.Normalize()
 
@@ -666,18 +666,18 @@ class RadialBearing(DessiaObject):
     def Plot(self, direction=1, a=None, typ=None):
         bg = self.PlotContour(direction)
         if a is None:
-            f, a = bg.MPLPlot(style = '-k')
+            f, a = bg.MPLPlot(style = 'k')
         else:
             bg.MPLPlot(a,'-k')
 
         if typ == 'Graph':
             graph = self.PlotGraph()
-            graph.MPLPlot(a, '--b', True)
+            graph.MPLPlot(a, 'b', True)
 
         elif typ == 'Load':
             self.PlotLoad(a)
 
-    def VolumeModel(self, center = vm.o3D, axis = vm.x3D):
+    def VolumeModel(self, center = vm.O3D, axis = vm.X3D):
         model=vm.VolumeModel([(self.name, self.CADVolumes(center, axis))])
         return model
 
@@ -853,12 +853,11 @@ class RadialBallBearing(RadialBearing):
         pbi4 = vm.Point2D((self.B/2., self.d/2.))
         pbi5 = vm.Point2D((self.B/2., self.d1/2.))
         pbi6 = pbi5.Translation(vm.Vector2D((-self.h, 0)))
-        bi1 = primitives2D.RoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1],
+        bi1 = primitives2D.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1],
                                                  {1: self.radius,
                                                   2: self.radius,
                                                   3: self.radius,
                                                   4: self.radius},
-                                                  False,
                                                   adapt_radius=True)
         cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, self.F/2)), pbi6)
         return vm.Contour2D([bi1, cbi1])
@@ -874,12 +873,11 @@ class RadialBallBearing(RadialBearing):
 #        betest = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],{}, False)
 #        betest.MPLPlot()
 
-        be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
+        be1 = primitives2D.OpenedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
                                                  {1: self.radius,
                                                   2: self.radius,
                                                   3: self.radius,
                                                   4: self.radius},
-                                                  False,
                                                   adapt_radius=True)
         cbe1 = vm.Arc2D(pbe6, vm.Point2D((0, self.E/2)), pbe1)
         return vm.Contour2D([be1, cbe1])
@@ -1114,8 +1112,10 @@ class AngularBallBearing(RadialBearing):
         pbi4 = vm.Point2D((-direction*self.B/2., sign_V*self.d/2.))
         pbi5 = vm.Point2D((-direction*self.B/2., sign_V*self.d1/2.))
         pbi6 = pbi5.Translation(vm.Vector2D((direction*self.h1, 0)))
-        bi1 = primitives2D.RoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1], {1: self.radius,
-                                             2: self.radius, 3: self.radius, 4: self.radius}, False, adapt_radius = True)
+        bi1 = primitives2D.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1],
+                                                 {1: self.radius,
+                                                  2: self.radius, 3: self.radius, 4: self.radius},
+                                                 adapt_radius = True)
         cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, sign_V*self.F/2)), pbi6)
         irc = vm.Contour2D([bi1, cbi1])
 
@@ -1129,7 +1129,10 @@ class AngularBallBearing(RadialBearing):
         pbe4 = vm.Point2D((-direction*self.B/2., sign_V*self.D/2.))
         pbe5 = vm.Point2D((-direction*self.B/2., sign_V*self.D2/2.))
         pbe6 = vm.Point2D((-direction*(self.B/2. - self.h2), sign_V*(self.Dpw/2. + self.Dw/2.*0.95)))
-        be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius}, False, adapt_radius = True)
+        be1 = primitives2D.OpenedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
+                                                 {1: self.radius, 2: self.radius,
+                                                  3: self.radius, 4: self.radius},
+                                                 adapt_radius = True)
         cbe1 = vm.Arc2D(pbe6, vm.Point2D((0, sign_V*self.E/2)), pbe1)
         erc = vm.Contour2D([be1, cbe1])
         return erc
@@ -1515,8 +1518,8 @@ class RadialRollerBearing(RadialBearing):
         p2 = vm.Point2D((-self.Lw/2.,self.Dw/2.))
         p3 = vm.Point2D((self.Lw/2.,self.Dw/2.))
         p4 = vm.Point2D((self.Lw/2.,-self.Dw/2.))
-        rol = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4], {0: self.radius,
-                                             1: self.radius, 2: self.radius, 3: self.radius}, True)
+        rol = primitives2D.ClosedRoundedLineSegments2D([p1, p2, p3, p4], {0: self.radius,
+                                             1: self.radius, 2: self.radius, 3: self.radius})
         return vm.Contour2D([rol])
 
     def RollingContourCAD(self):
@@ -1524,7 +1527,8 @@ class RadialRollerBearing(RadialBearing):
         p2 = vm.Point2D((-self.Lw/2., self.Dw/2.))
         p3 = vm.Point2D((self.Lw/2., self.Dw/2.))
         p4 = vm.Point2D((self.Lw/2., 0))
-        rol = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4], {1: self.radius, 2: self.radius}, True)
+        rol = primitives2D.ClosedRoundedLineSegments2D([p1, p2, p3, p4],
+                                                       {1: self.radius, 2: self.radius})
         return vm.Contour2D([rol])
 
     def PlotData(self, pos=0, quote=True, constructor=True, direction=1):
@@ -1661,9 +1665,9 @@ class NUP(RadialRollerBearing):
         pbi5 = vm.Point2D((direction*self.B/2., sign_V*d1/2.))
         pbi6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*d1/2.))
         pbi7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-        irc = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
+        irc = primitives2D.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius, 6: self.radius}, True, adapt_radius = True)
+                            5: self.radius, 6: self.radius}, adapt_radius = True)
 
         return vm.Contour2D([irc])
 
@@ -1680,9 +1684,9 @@ class NUP(RadialRollerBearing):
         pbe5 = vm.Point2D((direction*self.B/2., sign_V*D1/2.))
         pbe6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*D1/2.))
         pbe7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-        be1 = primitives2D.RoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
+        be1 = primitives2D.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius, 6: self.radius}, True)
+                            5: self.radius, 6: self.radius})
 
         erc = vm.Contour2D([be1])
         return erc
@@ -1731,9 +1735,9 @@ class N(RadialRollerBearing):
         pbi5 = vm.Point2D((direction*self.B/2., sign_V*d1/2.))
         pbi6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*d1/2.))
         pbi7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-        irc = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
+        irc = primitives2D.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius, 6: self.radius}, True, adapt_radius = True)
+                            5: self.radius, 6: self.radius}, adapt_radius = True)
 
         return vm.Contour2D([irc])
 
@@ -1748,8 +1752,8 @@ class N(RadialRollerBearing):
         pbe4 = vm.Point2D((direction*self.B/2., sign_V*self.D/2.))
         pbe5 = vm.Point2D((direction*self.B/2., sign_V*D1/2.))
         pbe6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-        be1 = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius,
-                           2: self.radius, 3: self.radius, 4: self.radius}, True)
+        be1 = primitives2D.ClosedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius,
+                           2: self.radius, 3: self.radius, 4: self.radius})
 
         erc = vm.Contour2D([be1])
         return erc
@@ -1794,9 +1798,9 @@ class NF(RadialRollerBearing):
         pbi5 = vm.Point2D((direction*self.B/2., sign_V*d1/2.))
         pbi6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*d1/2.))
         pbi7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-        irc = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
+        irc = primitives2D.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius, 6: self.radius}, True, adapt_radius = True)
+                            5: self.radius, 6: self.radius}, adapt_radius = True)
 
         return vm.Contour2D([irc])
 
@@ -1813,9 +1817,9 @@ class NF(RadialRollerBearing):
         pbe4 = vm.Point2D((direction*self.B/2., sign_V*self.D/2.))
         pbe5 = vm.Point2D((direction*self.B/2., sign_V*D2/2.))
         pbe6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-        be1 = primitives2D.RoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
+        be1 = primitives2D.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius}, True)
+                            5: self.radius})
 
         erc = vm.Contour2D([be1])
 
@@ -1863,9 +1867,9 @@ class NU(RadialRollerBearing):
         pbi4 = vm.Point2D((direction*self.B/2., sign_V*self.d/2.))
         pbi5 = vm.Point2D((direction*self.B/2., sign_V*d1/2.))
         pbi6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-        irc = primitives2D.RoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius,
+        irc = primitives2D.ClosedRoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius,
                            2: self.radius, 3: self.radius, 4: self.radius},
-                           True, adapt_radius = True)
+                           adapt_radius = True)
 
         return vm.Contour2D([irc])
 
@@ -1880,9 +1884,9 @@ class NU(RadialRollerBearing):
         pbe5 = vm.Point2D((direction*self.B/2., sign_V*D1/2.))
         pbe6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*D1/2.))
         pbe7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-        be1 = primitives2D.RoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
+        be1 = primitives2D.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius, 6: self.radius}, True)
+                            5: self.radius, 6: self.radius})
         erc = vm.Contour2D([be1])
 
         return erc
@@ -1954,10 +1958,10 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         pbi6 = vm.Point2D.LinesIntersection(l1, l6)
         pbi7 = vm.Point2D.LinesIntersection(l2, l6)
 
-        bi1 = primitives2D.RoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
+        bi1 = primitives2D.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                                                  {1: self.radius, 2: self.radius, 3: self.radius,
                                                   4: self.radius, 5: self.radius,
-                                                  6: self.radius}, True, adapt_radius=True)
+                                                  6: self.radius}, adapt_radius=True)
 
         irc = vm.Contour2D([bi1])
 
@@ -1981,13 +1985,13 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         l4 = vm.Line2D(pbe4, pbe4T)
         pbe2 = vm.Point2D.LinesIntersection(l0, l3)
         pbe5 = vm.Point2D.LinesIntersection(l0, l4)
-        be1 = primitives2D.RoundedLineSegments2D([pbe2, pbe3, pbe4, pbe5], {0: self.radius,
-                                             1: self.radius, 2: self.radius, 3: self.radius}, True, adapt_radius=True)
+        be1 = primitives2D.ClosedRoundedLineSegments2D([pbe2, pbe3, pbe4, pbe5], {0: self.radius,
+                                             1: self.radius, 2: self.radius, 3: self.radius}, adapt_radius=True)
         erc = vm.Contour2D([be1])
 
         return erc
 
-    def CADVolumes(self, center = vm.o3D, axis = vm.x3D):
+    def CADVolumes(self, center = vm.O3D, axis = vm.X3D):
         axis.Normalize()
 
         y = axis.RandomUnitNormalVector()
@@ -2017,8 +2021,8 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         r2 = vm.Point2D((-direction*self.Lw/2., self.Dw/2. + self.Lw/2.*math.tan(self.beta)))
         r3 = vm.Point2D((-direction*self.Lw/2., -self.Dw/2. - self.Lw/2.*math.tan(self.beta)))
         r4 = vm.Point2D((--direction*self.Lw/2., -self.Dw/2. + self.Lw/2.*math.tan(self.beta)))
-        rol = primitives2D.RoundedLineSegments2D([r1, r2, r3, r4], {0: self.radius,
-                                             1: self.radius, 2: self.radius, 3: self.radius}, True)
+        rol = primitives2D.ClosedRoundedLineSegments2D([r1, r2, r3, r4], {0: self.radius,
+                                             1: self.radius, 2: self.radius, 3: self.radius})
 
         bg = vm.Contour2D([rol])
         return bg
@@ -2649,7 +2653,7 @@ class BearingCombination(DessiaObject):
                 list_graph.append(graph)
             list_graph = vm.Contour2D(list_graph)
     #        list_graph = list_graph.Translation((pos, 0), True)
-            f,a = list_graph.MPLPlot(style='--b',arrow= True)
+            f,a = list_graph.MPLPlot(color='b',arrow= True)
 
     def Update(self, axial_positions, internal_diameters, external_diameters, length):
         # TODO Why axial position is not in init?
@@ -2983,12 +2987,12 @@ class BearingCombination(DessiaObject):
         linkage_area, assembly_bg = self.PlotContour2D(pos, a, box, typ)
 
         if a is None:
-            f, a = linkage_area.MPLPlot(style = '-g')
+            f, a = linkage_area.MPLPlot(color = 'g')
         else:
-            linkage_area.MPLPlot(a,'-g')
+            linkage_area.MPLPlot(a,'g')
 
 
-        assembly_bg.MPLPlot(a,'-k')
+        assembly_bg.MPLPlot(a,'k')
 
         if typ == 'Graph':
             list_graph = []
@@ -3001,7 +3005,7 @@ class BearingCombination(DessiaObject):
                 list_graph.append(graph)
             list_graph = vm.Contour2D(list_graph)
             list_graph = list_graph.Translation(vm.Vector2D((pos, 0)), True)
-            list_graph.MPLPlot(a, '--b', True)
+            list_graph.MPLPlot(a, 'b', True)
 
         elif typ == 'Load':
             pos_m = -self.B/2.
@@ -3025,7 +3029,7 @@ class BearingCombination(DessiaObject):
             cont_box = [box_sup, box_inf]
             contour_box = vm.Contour2D(cont_box)
             contour_box = contour_box.Translation(vm.Vector2D((pos, 0)), True)
-            contour_box.MPLPlot(a,'-r')
+            contour_box.MPLPlot(a, 'r')
 
 
     def VolumeModel(self, center = vm.Point3D((0,0,0)), axis = vm.Vector3D((1,0,0))):
@@ -3178,7 +3182,7 @@ class BearingAssembly(DessiaObject):
 
         shaft = self.Shaft()
         contour_shaft = vm.Contour2D([shaft])
-        f, a = contour_shaft.MPLPlot(style = '-k')
+        f, a = contour_shaft.MPLPlot()
 
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
             assembly_bg.Plot(pos, a, box, typ, ind_load_case)
