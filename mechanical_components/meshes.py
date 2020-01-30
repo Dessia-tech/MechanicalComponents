@@ -486,6 +486,7 @@ class Rack(DessiaObject):
         p7=p4.Translation((self.tooth_space,0))
         p6=p7.Translation((-self.gear_dedendum*math.tan(self.transverse_pressure_angle),-self.gear_dedendum))
         L=primitives2D.OpenedRoundedLineSegments2D([p1,p2,p3,p4,p5,p6,p7],{4:self.root_radius,5:self.root_radius},False)
+
         Rack_Elem=[]
         for i in range(number_pattern):
             Rack_Elem.append(L.Translation(((i)*(p7.vector-p1.vector))))
@@ -496,6 +497,7 @@ class Rack(DessiaObject):
         p14=p15.Translation((self.circular_tooth_thickness,0))
         p13=p14.Translation((0,2*self.whole_depth))
         Rack_Elem.append(primitives2D.OpenedRoundedLineSegments2D([p10,p11,p12,p13,p14,p15],{},False))
+
         return Rack_Elem
 
     def Plot(self,number_pattern):
@@ -783,6 +785,7 @@ class Mesh(DessiaObject):
         for i in range(1,discret):
             p.append(vm.Point2D((x[i],y[i])))
         ref=primitives2D.OpenedRoundedLineSegments2D(p,{},False)
+
         if ind=='T':
             L=ref.Rotation(vm.Point2D((0,0)),-number*2*math.pi/self.z)
             self.rac=L.points[-1]
@@ -811,6 +814,7 @@ class Mesh(DessiaObject):
         for t in theta:
             list_2D.append(vm.Point2D((self._Trochoide(t,type_flank))))
         list_2D=primitives2D.OpenedRoundedLineSegments2D(list_2D,{},False)
+
         list_2D=list_2D.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
 
         if type_flank=='T':
@@ -839,6 +843,7 @@ class Mesh(DessiaObject):
         p2=p2.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
 
         list_2D=primitives2D.OpenedRoundedLineSegments2D([p1,p2],{},False)
+
         export_2D=list_2D.Rotation(vm.Point2D((0,0)),-number*2*math.pi/self.z)
         return export_2D
 
@@ -849,6 +854,7 @@ class Mesh(DessiaObject):
         p2=p1.Rotation(vm.Point2D((0,0)),self.outside_active_angle/2)
         p3=p2.Rotation(vm.Point2D((0,0)),self.outside_active_angle/2)
         list_2D=primitives2D.OpenedRoundedLineSegments2D([p3,p2,p1],{},False)
+
         export_2D=list_2D.Rotation(vm.Point2D((0,0)),-number*2*math.pi/self.z)
         return export_2D
 

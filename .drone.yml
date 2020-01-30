@@ -7,10 +7,6 @@ steps:
 - name: install, doc and script running
   image: python:3
   commands:
-  - git clone https://git.dessia.tech/DessIA/dessia-common.git
-  - cd dessia-common
-  - python setup.py install
-  - cd ..
   - git fetch --tags
   - pip install Cython
   - python setup.py install
@@ -19,15 +15,10 @@ steps:
   - make html
   - cd ../
   - python scripts/bearings/bearing3.py
-  - python scripts/meshes/meshes_agb.py
-  - python scripts/meshes/meshes2.py
 
 - name: develop
   image: python:3
   commands:
-  - cd dessia-common
-  - python setup.py develop
-  - cd ..
   - git fetch --tags
   - pip install Cython
   - python setup.py develop
@@ -43,6 +34,7 @@ steps:
   when:
     branch: 
       - master
+    event: push
   commands:
     - git clone https://git.dessia.tech/OpenSource/MechanicalComponents.git git-opensource
     - tar -vxf dist/*.tar.gz --strip-components=1 -C git-opensource
@@ -59,6 +51,7 @@ steps:
   when: 
     branch: 
       - master
+    event: push
   settings:
     server_url: https://partage.dessia.tech
     repo_id:
@@ -72,10 +65,6 @@ steps:
 - name: install from sdist and run test scripts
   image: python:3
   commands:
-  - pip install Cython
-  - cd dessia-common
-  - python setup.py install
-  - cd ..
   - mkdir install_from_sdist
   - tar -xf dist/*.tar.gz -C install_from_sdist/
   - cd install_from_sdist
@@ -86,14 +75,15 @@ steps:
 - name: compile linux
   image: python:3
   commands:
-  - pip install Cython
-  - python compile.py build_ext --exp_month=7 --exp_year=2029 --macs=2234420019928
+  - pip install Cython netifaces
+  - python compile.py cdist --exp-month=7 --exp-year=2029 --macs=2234420019928
 
 - name: upload_doc_master
   image: appleboy/drone-scp
   when: 
     branch: 
       - master
+    event: push
   settings:
     host: austerlitz.dessia.tech
     target: /var/www/documentation/MechanicalComponents/
@@ -102,6 +92,7 @@ steps:
     username: drone
     password:
       from_secret: ssh_drone_password
+
 - name: notify
   when:
     status:
@@ -109,8 +100,8 @@ steps:
   image: drillster/drone-email
   settings:
     host: mail.dessia.tech
-    username: software@dessia.tech
+    username: technical@dessia.tech
     password:
      from_secret: email_password
-    from: software@dessia.tech
+    from: technical@dessia.tech
     recipients: [ root@dessia.tech ]

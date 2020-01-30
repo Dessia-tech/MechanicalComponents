@@ -512,19 +512,20 @@ class RadialBearing(DessiaObject):
     def Plot(self, direction=1, a=None, typ=None):
         bg = self.PlotContour(direction)
         if a is None:
-            f, a = bg.MPLPlot(style = '-k')
+            f, a = bg.MPLPlot(style = 'k')
         else:
             bg.MPLPlot(a,'-k')
 
         if typ == 'Graph':
             graph = self.PlotGraph()
-            graph.MPLPlot(a, '--b', True)
+            graph.MPLPlot(a, 'b', True)
 
         elif typ == 'Load':
             self.PlotLoad(a)
 
     def VolumeModel(self, center = vm.O3D, axis = vm.X3D):
         model=vm.VolumeModel(self.CADVolumes(center, axis), self.name)
+
         return model
 
 #    mass = property(Mass)
@@ -948,6 +949,7 @@ class AngularBallBearing(RadialBearing):
         pbi6 = pbi5.Translation(vm.Vector2D((direction*self.h1, 0)))
         bi1 = primitives2D.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1], {1: self.radius,
                                              2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
+
         cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, sign_V*self.F/2)), pbi6)
         irc = vm.Contour2D([bi1, cbi1])
 
@@ -961,7 +963,10 @@ class AngularBallBearing(RadialBearing):
         pbe4 = vm.Point2D((-direction*self.B/2., sign_V*self.D/2.))
         pbe5 = vm.Point2D((-direction*self.B/2., sign_V*self.D2/2.))
         pbe6 = vm.Point2D((-direction*(self.B/2. - self.h2), sign_V*(self.Dpw/2. + self.Dw/2.*0.95)))
-        be1 = primitives2D.OpenedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
+        be1 = primitives2D.OpenedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], 
+                                                       {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius}, 
+                                                       adapt_radius = True)
+
         cbe1 = vm.Arc2D(pbe6, vm.Point2D((0, sign_V*self.E/2)), pbe1)
         erc = vm.Contour2D([be1, cbe1])
         return erc
@@ -1357,6 +1362,7 @@ class RadialRollerBearing(RadialBearing):
         rol = primitives2D.ClosedRoundedLineSegments2D([p1, p2, p3, p4], {1: self.radius, 2: self.radius}, True)
         return rol
 
+
     def plot_data(self, pos=0, quote=True, constructor=True, direction=1):
 
         plot_datas = []
@@ -1521,6 +1527,7 @@ class NUP(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
+
         # erc = vm.Contour2D([be1])
         return be1
 
@@ -1595,6 +1602,7 @@ class N(RadialRollerBearing):
         be1 = primitives2D.ClosedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius,
                            2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
 
+
         # erc = vm.Contour2D([be1])
         return be1
 
@@ -1666,6 +1674,7 @@ class NF(RadialRollerBearing):
         be1 = primitives2D.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius}, adapt_radius = True)
+
 
         # erc = vm.Contour2D([be1])
 
@@ -2513,7 +2522,7 @@ class BearingCombination(DessiaObject):
                 list_graph.append(graph)
             list_graph = vm.Contour2D(list_graph)
     #        list_graph = list_graph.Translation((pos, 0), True)
-            f,a = list_graph.MPLPlot(style='--b',arrow= True)
+            f,a = list_graph.MPLPlot(color='b',arrow= True)
 
     def Update(self, axial_positions, internal_diameters, external_diameters, length):
         # TODO Why axial position is not in init?
@@ -2851,8 +2860,8 @@ class BearingCombination(DessiaObject):
         else:
             linkage_area.MPLPlot(a, color='g')
 
-
         assembly_bg.MPLPlot(a)
+
 
         if typ == 'Graph':
             list_graph = []
@@ -2865,7 +2874,7 @@ class BearingCombination(DessiaObject):
                 list_graph.append(graph)
             list_graph = vm.Contour2D(list_graph)
             list_graph = list_graph.Translation(vm.Vector2D((pos, 0)), True)
-            list_graph.MPLPlot(a, '--b', True)
+            list_graph.MPLPlot(a, 'b', True)
 
         elif typ == 'Load':
             pos_m = -self.B/2.
@@ -2890,6 +2899,7 @@ class BearingCombination(DessiaObject):
             contour_box = vm.Contour2D(cont_box)
             contour_box = contour_box.Translation(vm.Vector2D((pos, 0)), True)
             contour_box.MPLPlot(a, color='r')
+
 
 
     def VolumeModel(self, center = vm.Point3D((0,0,0)), axis = vm.Vector3D((1,0,0))):
