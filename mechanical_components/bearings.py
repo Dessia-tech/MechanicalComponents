@@ -2930,19 +2930,22 @@ class BearingCombination(DessiaObject):
             if bearing in subobjects_id:
                 bearings.append(subobjects_id[bearing])
             else:
-                bearings.append(bearing.Dict())
+                bearings.append(bearing.to_dict())
         d['bearings'] = bearings
 
         if stringify_keys:
             return StringifyDictKeys(d)
         return d
-
+            
     @classmethod
-    def DictToObject(cls, d):
+    def dict_to_object(cls, d):
         bearings = []
         for bearing_s in d['bearings']:
-            bearing = RadialBearing.DictToObject(bearing_s)
-            bearings.append(bearing)
+            object_class = bearing_s['object_class']
+            module = object_class.rsplit('.', 1)[0]
+            exec('import ' + module)
+            class_ = eval(object_class)
+            bearings.append(class_.dict_to_object(bearing_s))
         obj = cls(bearings = bearings, directions = d['directions'], radial_load_linkage = d['radial_load_linkage'],
                   internal_pre_load = 0, connection_bi = d['connection_bi'],
                   connection_be = d['connection_be'], behavior_link = d['behavior_link'])
