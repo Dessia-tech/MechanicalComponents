@@ -74,7 +74,7 @@ bis = bearings_opt.BearingAssemblyOptimizer(
                     )
 
 with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                           'mechanical_components/catalogs/schaeffler_v2.json') as schaeffler_json:
+                           'mechanical_components/catalogs/schaeffler.json') as schaeffler_json:
     schaeffler_catalog = bearings.BearingCatalog.LoadFromFile(schaeffler_json)
 
 bis2 = bearings_opt.BearingAssemblyOptimizer(
