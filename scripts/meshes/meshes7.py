@@ -43,12 +43,12 @@ for cd_min in npy.arange(0.07, 0.25, 0.01):
                 list_torque={0: tq, 1: 'output'}
                 GA=meshes_opt.MeshAssemblyOptimizer(Z={},
                                    connections=list_gear_set,
-                                   gear_speed=list_speed,
-                                   center_distance=list_cd,
+                                   gear_speeds=list_speed,
+                                   center_distances=list_cd,
                                    rack_list=list_rack,
                                    rack_choice=list_rack_choice,
-                                   torque=list_torque,
-                                   cycle=list_cycle)
+                                   torques=list_torque,
+                                   cycles=list_cycle)
                 GA.OptimizeCD(nb_sol=1,verbose=False)
     #            print('Nombre de solutions convergés:',len(GA.solutions))
                 if len(GA.solutions) > 0:

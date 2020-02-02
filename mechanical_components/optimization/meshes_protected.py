@@ -892,6 +892,22 @@ class MeshAssemblyOptimizer:
         
         >>> GA.SearchOptimumCD(nb_sol=1, verbose=True)
         """
+        if self.check:
+            liste_plex = self.AnalyzeCombination(5*nb_sol, verbose)
+            for i,plex in enumerate(liste_plex):
+                plex['rack_list']=self.rack_list
+                plex['material']=self.material
+                plex['torques'] = self.torques
+                plex['cycles'] = self.cycles
+                plex['connections'] = self.connections
+                plex['rigid_links'] = self.rigid_links
+    #            plex['center_distance']=self.center_distance
+                plex['transverse_pressure_angle'] = self.transverse_pressure_angle
+                plex['coefficient_profile_shift'] = self.coefficient_profile_shift
+                plex['safety_factor'] = self.safety_factor
+                liste_plex[i] = plex
+        self.plex_calcul = liste_plex
+                
         list_fonctionnel=npy.array(self.fonctionnel)
         
         list_fonctionnel_module=npy.array(self.fonctionnel_module)
