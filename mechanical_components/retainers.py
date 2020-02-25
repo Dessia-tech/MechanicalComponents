@@ -365,7 +365,7 @@ class Circlips(DessiaObject):
             c1.MPLPlot(ax=a)
             c2.MPLPlot(ax=a)
     
-    def CADVolumes(self, center = vm.o3D, x = vm.x3D, y = vm.y3D):        
+    def CADVolumes(self, center = vm.O3D, x = vm.X3D, y = vm.Y3D):        
         z = x.Cross(y)
         z.Normalize()
         profile = vm3d.ExtrudedProfile(center, x, y, self.ExternalContour(), self.InternalContour(), self.e*z)    

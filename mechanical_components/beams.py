@@ -24,7 +24,7 @@ class ISection(Section):
         self.tf = tf# Thickness flange
         self.r = r
         
-    def contour(self, x=vm.x2D, z=vm.y2D):
+    def contour(self, x=vm.X2D, z=vm.Y2D):
         p1 = vm.Point2D((-0.5*self.b, -0.5*self.h))
         p2 = vm.Point2D((0.5*self.b, -0.5*self.h))
         p3 = vm.Point2D((0.5*self.b, -0.5*self.h+self.tf))
@@ -81,7 +81,7 @@ class Beam(DessiaObject):
         self.length = length
         self.name = name
         
-    def cad_volumes(self, position=vm.o3D, x=vm.x3D, y=vm.y3D):
+    def cad_volumes(self, position=vm.O3D, x=vm.X3D, y=vm.Y3D):
         """
         x and y define the plane of section in the beam axis
         """
