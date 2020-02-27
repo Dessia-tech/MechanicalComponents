@@ -1,6 +1,6 @@
 exclude compile.py
 recursive-include scripts/ *.py
-recursive-include mechanical_components/catalogs/ *.csv
+recursive-include mechanical_components/catalogs/ *.csv *.json
 recursive-exclude mechanical_components/ *protected.py
 exclude mechanical_components/shafts.py
 exclude mechanical_components/shafts_assembly.py
