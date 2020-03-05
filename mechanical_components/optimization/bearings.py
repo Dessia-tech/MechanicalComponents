@@ -18,10 +18,13 @@ from mechanical_components.bearings import BearingCombination, \
         BearingCombinationSimulationResult, BearingSimulationResult,\
         BearingAssemblySimulation, BearingCombinationSimulation, \
         bearing_classes, dict_bearing_classes, \
-        strength_bearing_classes, \
-        BearingL10Error, CatalogSearchError
+        strength_bearing_classes, RadialBearing, \
+        BearingL10Error, CatalogSearchError, Linkage, Mounting
         
 import numpy as npy
+
+from dessia_common import DessiaObject, dict_merge, Evolution
+from typing import TypeVar, List
 
 npy.seterr(divide='raise', over='ignore', under='ignore', invalid='ignore')
 
@@ -36,18 +39,18 @@ from itertools import product
 from mechanical_components.tools import StringifyDictKeys
 
 
-class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer if _open_source==True else object):
+class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer if _open_source==True else DessiaObject):
     
-    def __init__(self, radial_loads, axial_loads, speeds, operating_times,
-                 inner_diameter,
-                 outer_diameter,
-                 length,
-                 linkage_types=['ball_joint', 'cylindric_joint'],
-                 mounting_types=['both', 'right', 'left', 'free'],
-                 number_bearings=[1, 2],
-                 bearing_classes=bearing_classes,
-                 bearing_combination_simulations=None,
-                 catalog=None):
+    def __init__(self, radial_loads:List[float], axial_loads:List[float], 
+                 speeds:List[float], operating_times:List[float],
+                 inner_diameter:float, outer_diameter:float,
+                 length:float,
+                 linkage_types:List[str]=['ball_joint', 'cylindric_joint'],
+                 mounting_types:List[str]=['both', 'right', 'left', 'free'],
+                 number_bearings:List[int]=[1, 2],
+                 bearing_classes:List[RadialBearing]=bearing_classes,
+                 bearing_combination_simulations:List[BearingCombinationSimulation]=None,
+                 catalog:BearingCatalog=None, name:str=''):
         
         if linkage_types == ['all']:
             linkage_types = ['ball_joint', 'cylindric_joint']
@@ -66,41 +69,54 @@ class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer i
         self.bearing_combination_simulations = bearing_combination_simulations
         self.catalog = catalog
         
-    def __eq__(self, other_eb):
-        equal = (self.radial_loads == other_eb.radial_loads
-                 and self.axial_loads == other_eb.axial_loads
-                 and self.speeds == other_eb.speeds
-                 and self.operating_times == other_eb.operating_times
-                 and self.inner_diameter == other_eb.inner_diameter
-                 and self.outer_diameter == other_eb.outer_diameter
-                 and self.length == other_eb.length
-                 and self.linkage_types == other_eb.linkage_types
-                 and self.mounting_types == other_eb.mounting_types
-                 and self.number_bearings == other_eb.number_bearings
-                 and self.bearing_classes == other_eb.bearing_classes
-                 and self.catalog == other_eb.catalog)
-        return equal
-    
-    def __hash__(self):
-        h = int(sum(self.operating_times) % 230080000)
-        return h
+        DessiaObject.__init__(self, name=name)
+        
+#    def __eq__(self, other_eb):
+#        equal = (self.radial_loads == other_eb.radial_loads
+#                 and self.axial_loads == other_eb.axial_loads
+#                 and self.speeds == other_eb.speeds
+#                 and self.operating_times == other_eb.operating_times
+#                 and self.inner_diameter == other_eb.inner_diameter
+#                 and self.outer_diameter == other_eb.outer_diameter
+#                 and self.length == other_eb.length
+#                 and self.linkage_types == other_eb.linkage_types
+#                 and self.mounting_types == other_eb.mounting_types
+#                 and self.number_bearings == other_eb.number_bearings
+#                 and self.bearing_classes == other_eb.bearing_classes
+#                 and self.catalog == other_eb.catalog)
+#        return equal
+#    
+#    def __hash__(self):
+#        h = int(sum(self.operating_times) % 230080000)
+#        return h
         
 
 
 #class ConceptualBearingCombinationOptimizer(protected_module.ConceptualBearingCombinationOptimizer if _open_source==True else object):
 
+class ConceptualBearingCombinationOptimizer(protected_module.ConceptualBearingCombinationOptimizer if _open_source==True else DessiaObject):
+        
+    def __init__(self, linkage, mounting, d, D, length,
+                 bearing_classes):
+        
+        self.bearing_classes = bearing_classes
+        self.linkage = linkage
+        self.mounting = mounting
+        self.d = d
+        self.D = D
+        self.length = length
         
 
     
-class BearingAssemblyOptimizer(protected_module.BearingAssemblyOptimizer if _open_source==True else object):
+class BearingAssemblyOptimizer(protected_module.BearingAssemblyOptimizer if _open_source==True else DessiaObject):
     
-    _dessia_methods = ['Optimize']
+    _dessia_methods = ['optimize']
     
-    def __init__(self, loads, speeds, operating_times,
-                 inner_diameters,
-                 outer_diameters,
-                 axial_positions,
-                 lengths,
+    def __init__(self, loads:List[float], speeds:List[float], operating_times:List[float],
+                 inner_diameters:List[float],
+                 outer_diameters:List[float],
+                 axial_positions:List[float],
+                 lengths:List[float],
                  linkage_types=[['ball_joint', 'cylindric_joint'],
                                 ['ball_joint', 'cylindric_joint']],
                  mounting_types=list(product(['both', 'right', 'left', 'free'],

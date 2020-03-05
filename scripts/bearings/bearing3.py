@@ -75,7 +75,7 @@ bis = bearings_opt.BearingAssemblyOptimizer(
 
 with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
                            'mechanical_components/catalogs/schaeffler.json') as schaeffler_json:
-    schaeffler_catalog = bearings.BearingCatalog.LoadFromFile(schaeffler_json)
+    schaeffler_catalog = bearings.BearingCatalog.load_from_file(schaeffler_json)
 
 bis2 = bearings_opt.BearingAssemblyOptimizer(
                     loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
@@ -128,10 +128,14 @@ bis2.Optimize(max_solutions = 10)
 #0 0.396 4.6776 97.80460440116983
 for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
 #    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
-    ba_simulation.bearing_assembly.Plot()    
-    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly.cost, ba_simulation.bearing_assembly_simulation_result.L10)
-#    print(hash(ba_simulation))
-    equal = (ba_simulation == ba_simulation)
+#    ba_simulation.bearing_assembly.plot()    
+#    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly.cost, ba_simulation.bearing_assembly_simulation_result.L10)
+    print(hash(ba_simulation))
+    equak = ba_simulation.bearing_assembly == ba_simulation.bearing_assembly
+    d = ba_simulation.to_dict()
+    obj = bearings.BearingAssemblySimulation.dict_to_object(d)
+    equal = (ba_simulation == obj)
+    print(equal)
 #    
 #print(bearing_assembly_opt == bis2)
     

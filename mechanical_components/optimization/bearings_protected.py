@@ -17,6 +17,9 @@ npy.seterr(divide='raise', over='ignore', under='ignore', invalid='ignore')
 
 from scipy.optimize import minimize, fsolve
 
+from dessia_common import DessiaObject, dict_merge, Evolution
+from typing import TypeVar, List
+
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
         SphericalBallBearing, \
         BearingAssembly, \
@@ -25,7 +28,7 @@ from mechanical_components.bearings import RadialBallBearing, AngularBallBearing
         BearingAssemblySimulation, \
         ConceptualBearingCombination, \
         strength_bearing_classes, \
-        BearingL10Error, CatalogSearchError
+        BearingL10Error, CatalogSearchError, Linkage, Mounting
         
 
 #import pandas
@@ -40,7 +43,7 @@ class AxialPositionConvergenceError(Exception):
         super().__init__('Fail in axial position optimization')
 
 
-class BearingCombinationOptimizer:
+class BearingCombinationOptimizer(DessiaObject):
     def Configurations(self):
         
         configurations = []
@@ -137,10 +140,10 @@ class BearingCombinationOptimizer:
                 elif dt.current_depth == nb_bearings:
                     list_L10 = []
                     for bearing in bearings:
-                        list_L10.append(bearing.EstimateBaseLifeTime(Fr = self.radial_loads,
+                        list_L10.append(bearing.estimate_base_life_time(Fr = self.radial_loads,
                                                                 N = self.speeds, 
                                                                 t = self.operating_times, Cr = bearing.Cr))
-                    L10 = BearingCombination.EstimateBaseLifeTime(list_L10)
+                    L10 = BearingCombination.estimate_base_life_time(list_L10)
                     if L10 > L10_objective:
                         if bearings[0] not in bearing_possibilies:
                             bearing_possibilies.append(bearings[0])
@@ -169,7 +172,7 @@ class BearingCombinationOptimizer:
         for conceptual_bearing_combination in [bearing_combinations[i] for i in npy.argsort(li_quote)]:
                     
             first_bearing_possibilies = self.catalog\
-                .SearchBearingCatalog(conceptual_bearing_combination.bearing_classes[0],
+                .search_bearing_catalog(conceptual_bearing_combination.bearing_classes[0],
                                         self.inner_diameter, self.outer_diameter)
             
             if len(first_bearing_possibilies) == 0:
@@ -416,17 +419,7 @@ class BearingCombinationOptimizer:
 #        print('Number of solutions: {}'.format(len(self.bearing_combination_simulations)))
         
 
-class ConceptualBearingCombinationOptimizer:
-        
-    def __init__(self, linkage, mounting, d, D, length,
-                 bearing_classes):
-        
-        self.bearing_classes = bearing_classes
-        self.linkage = linkage
-        self.mounting = mounting
-        self.d = d
-        self.D = D
-        self.length = length
+class ConceptualBearingCombinationOptimizer(DessiaObject):
     
     def CheckLinkage(self, bearings):
         check = False
@@ -466,7 +459,7 @@ class ConceptualBearingCombinationOptimizer:
                 valid = self.CheckLinkage(bearings)
                 if valid:
                     cbc = ConceptualBearingCombination(bearings, directions, self.mounting)
-                    valid = cbc.CheckKinematic()  
+                    valid = cbc.check_kinematic()  
             
             # Testing
             if valid:
@@ -489,7 +482,7 @@ class ConceptualBearingCombinationOptimizer:
             dt.NextNode(valid)
         return configurations
 
-class BearingAssemblyOptimizer:
+class BearingAssemblyOptimizer(DessiaObject):
 
     def Configurations(self):
         configurations = []
@@ -610,10 +603,10 @@ class BearingAssemblyOptimizer:
                 elif dt.current_depth == nb_bearings:
                     list_L10 = []
                     for bearing in bearings:
-                        list_L10.append(bearing.EstimateBaseLifeTime(Fr = radial_elementary_load,
+                        list_L10.append(bearing.estimate_base_life_time(Fr = radial_elementary_load,
                                                                 N = self.speeds, 
                                                                 t = self.operating_times, Cr = bearing.Cr))
-                        L10 = BearingAssembly.EstimateBaseLifeTime(list_L10)
+                        L10 = BearingAssembly.estimate_base_life_time(list_L10)
     
                         if L10 > L10_objective:
                             best_L10 = max(best_L10, L10)
@@ -656,10 +649,10 @@ class BearingAssemblyOptimizer:
                 [bearing_combinations[i] for i in npy.argsort(li_quote)]:
                     
             first_bearing_left_possibilies = self.catalog\
-                .SearchBearingCatalog(conceptual_bearing_combination_left.bearing_classes[0],
+                .search_bearing_catalog(conceptual_bearing_combination_left.bearing_classes[0],
                                         self.inner_diameters[0], self.outer_diameters[0])
             first_bearing_right_possibilies = self.catalog\
-                .SearchBearingCatalog(conceptual_bearing_combination_right.bearing_classes[0],
+                .search_bearing_catalog(conceptual_bearing_combination_right.bearing_classes[0],
                                         self.inner_diameters[1], self.outer_diameters[1])
             nb_bearings_left = len(conceptual_bearing_combination_left.bearing_classes)
             nb_bearings_right = len(conceptual_bearing_combination_right.bearing_classes)
@@ -682,7 +675,7 @@ class BearingAssemblyOptimizer:
                                                L10_objective, self.lengths[1])
             
             if (best_L10_left != 0) and (best_L10_right != 0):
-                L10 = BearingAssembly.EstimateBaseLifeTime([best_L10_left, best_L10_right])
+                L10 = BearingAssembly.estimate_base_life_time([best_L10_left, best_L10_right])
             else:
                 L10 = 0
 
@@ -810,8 +803,8 @@ class BearingAssemblyOptimizer:
 
             if (dt.current_depth == nb_bearings) and valid:
                 
-                bc_left = conceptual_bearing_combination_left.BearingCombination(bearings[0: nb_bearings_left])
-                bc_right = conceptual_bearing_combination_right.BearingCombination(bearings[nb_bearings_left:])
+                bc_left = conceptual_bearing_combination_left.bearing_combination(bearings[0: nb_bearings_left])
+                bc_right = conceptual_bearing_combination_right.bearing_combination(bearings[nb_bearings_left:])
                 bearing_assembly = BearingAssembly([bc_left, bc_right])
                 bc_results = []
                 for bearing_combination in bearing_assembly.bearing_combinations:
@@ -836,7 +829,7 @@ class BearingAssemblyOptimizer:
                 L10 = 0
                 for pos1, pos2 in product([pos1_min, pos1_moy, pos1_max], [pos2_min, pos2_moy, pos2_max]):
                     try:
-                        bearing_assembly.ShaftLoad([pos1, pos2], 
+                        bearing_assembly.shaft_load([pos1, pos2], 
                                                     bearing_assembly_simulation_result)
                         L10 = max(L10, bearing_assembly_simulation_result.L10)
                     except BearingL10Error:
@@ -857,8 +850,8 @@ class BearingAssemblyOptimizer:
                         bgs = [deepcopy(bg) for bg in bearings]
                         for bg in bgs:
                             bg.Cr = bg.Cr*alpha[0]
-                        bc_left = conceptual_bearing_combination_left.BearingCombination(bgs[0: nb_bearings_left])
-                        bc_right = conceptual_bearing_combination_right.BearingCombination(bgs[nb_bearings_left:])
+                        bc_left = conceptual_bearing_combination_left.bearing_combination(bgs[0: nb_bearings_left])
+                        bc_right = conceptual_bearing_combination_right.bearing_combination(bgs[nb_bearings_left:])
                         bearing_assembly = BearingAssembly([bc_left, bc_right])
                         bc_results = []
                         for bearing_combination in bearing_assembly.bearing_combinations:
@@ -873,7 +866,7 @@ class BearingAssemblyOptimizer:
                         pos2_min = self.axial_positions[1]
                         pos2_max = self.axial_positions[1] + self.lengths[1]
                         try:
-                            bearing_assembly.ShaftLoad([(pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.], 
+                            bearing_assembly.shaft_load([(pos1_min + pos1_max)/2., (pos2_min + pos2_max)/2.], 
                                                         bearing_assembly_simulation_result)
                             L10 = bearing_assembly_simulation_result.L10
                             return (L10 - L10_objective)**2
@@ -937,8 +930,8 @@ class BearingAssemblyOptimizer:
                         dt.SetCurrentNodeNumberPossibilities(0)
                 elif dt.current_depth == nb_bearings:
                     dt.SetCurrentNodeNumberPossibilities(0) 
-                    bc_left = conceptual_bearing_combination_left.BearingCombination(bearings[0: nb_bearings_left])
-                    bc_right = conceptual_bearing_combination_right.BearingCombination(bearings[nb_bearings_left:])
+                    bc_left = conceptual_bearing_combination_left.bearing_combination(bearings[0: nb_bearings_left])
+                    bc_right = conceptual_bearing_combination_right.bearing_combination(bearings[nb_bearings_left:])
                     ba = BearingAssembly([bc_left, bc_right])
                     compt_same_configuration += 1
                     yield ba
@@ -976,7 +969,7 @@ class BearingAssemblyOptimizer:
             radial_load_left_temp = []
             radial_load_right_temp = []
             for pos1, pos2 in product([pos1_min, pos1_moy, pos1_max], [pos2_min, pos2_moy, pos2_max]):
-                load_simul = BearingAssembly.QuickShaftLoad((pos1, pos2), [load])
+                load_simul = BearingAssembly.quick_shaft_load((pos1, pos2), [load])
                 for rl in load_simul:
                     radial_load_left_temp.append((rl[0]**2 + (0)**2)**0.5)
                     radial_load_right_temp.append((rl[1]**2 + (0)**2)**0.5)
@@ -1154,7 +1147,7 @@ class BearingAssemblyOptimizer:
         def fun(x):
             obj = 0
             try:
-                bearing_assembly.ShaftLoad([x[0], x[1]], bearing_assembly_simulation_result)
+                bearing_assembly.shaft_load([x[0], x[1]], bearing_assembly_simulation_result)
                 L10 = bearing_assembly_simulation_result.L10
                 obj += 1/(L10)**2
                 return obj
@@ -1172,7 +1165,7 @@ class BearingAssemblyOptimizer:
             res = minimize(fun, [p1, p2], method='SLSQP', bounds=Bound)
             if fun(res.x) < sol_fun:
                 sol_fun = fun(res.x)
-                sol_x = res.x
+                sol_x = [float(x) for x in res.x]
                 status = res.status
         for itera in range(0, 5):
             x0 = (npy.array(Bound)[:,1]-npy.array(Bound)[:,0])*npy.random.random(2)+npy.array(Bound)[:,0]
@@ -1180,13 +1173,13 @@ class BearingAssemblyOptimizer:
             res = minimize(fun, x0, method='SLSQP', bounds=Bound)
             if fun(res.x) < sol_fun:
                 sol_fun = fun(res.x)
-                sol_x = res.x
+                sol_x = [float(x) for x in res.x]
                 status = res.status
            
         if status >= 0:
-            bearing_assembly.Update(sol_x, self.inner_diameters, self.axial_positions, 
+            bearing_assembly.update(sol_x, self.inner_diameters, self.axial_positions, 
                                 self.outer_diameters, self.lengths)
-            bearing_assembly.ShaftLoad(sol_x, bearing_assembly_simulation_result)
+            bearing_assembly.shaft_load(sol_x, bearing_assembly_simulation_result)
             
             bearing_assembly_simulation = BearingAssemblySimulation(bearing_assembly, bearing_assembly_simulation_result)
             return bearing_assembly_simulation
