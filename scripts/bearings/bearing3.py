@@ -8,6 +8,7 @@ Created on Fri Oct  5 09:53:05 2018
 #import sys
 import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
+from dessia_api_client import Client
 
 import pkg_resources
 
@@ -33,45 +34,45 @@ import pkg_resources
 #                                       ])
 
 
-bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
-                    loads = [[[[0.15, 0, 0], [0, 2055, 0], [0, 0, 0]]]], 
-                    speeds = [500],
-                    operating_times = [100000000],
-                    inner_diameters = [0.02, 0.025],
-                    axial_positions = [0, 0.3], 
-                    outer_diameters = [0.1, 0.1], 
-                    lengths = [0.1, 0.1],
-                    linkage_types = [['cylindric_joint'], ['ball_joint']],
-                    mounting_types = [['left', 'right']],
-                    number_bearings = [[1, 2], [1]],
+# bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
+#                     loads = [[[[0.15, 0, 0], [0, 2055, 0], [0, 0, 0]]]], 
+#                     speeds = [500],
+#                     operating_times = [100000000],
+#                     inner_diameters = [0.02, 0.025],
+#                     axial_positions = [0, 0.3], 
+#                     outer_diameters = [0.1, 0.1], 
+#                     lengths = [0.1, 0.1],
+#                     linkage_types = [['cylindric_joint'], ['ball_joint']],
+#                     mounting_types = [['left', 'right']],
+#                     number_bearings = [[1, 2], [1]],
 
-#                    bearing_classes = [bearings.RadialBallBearing, 
-#                                       bearings.AngularBallBearing,
-#                                       bearings.TaperedRollerBearing,
-#                                       bearings.NUP, bearings.N, bearings.NU,
-##                                       bearings_opt.NF
-#                                       ]
-                    )
+# #                    bearing_classes = [bearings.RadialBallBearing, 
+# #                                       bearings.AngularBallBearing,
+# #                                       bearings.TaperedRollerBearing,
+# #                                       bearings.NUP, bearings.N, bearings.NU,
+# ##                                       bearings_opt.NF
+# #                                       ]
+#                     )
 
-bis = bearings_opt.BearingAssemblyOptimizer(
-                    loads = [[[[0.15, 0, 0], [0, 2000, 0], [0, 0, 0]]]], 
-                    speeds = [500],
-                    operating_times = [10000000],
-                    inner_diameters = [0.03, 0.03],
-                    axial_positions = [0, 0.3], 
-                    outer_diameters = [0.065, 0.065], 
-                    lengths = [0.015, 0.015],
-                    linkage_types = [['all'], ['all']],
-                    mounting_types = [['left', 'right']],
-                    number_bearings = [[1, 2], [1, 2]],
+# bis = bearings_opt.BearingAssemblyOptimizer(
+#                     loads = [[[[0.15, 0, 0], [0, 2000, 0], [0, 0, 0]]]], 
+#                     speeds = [500],
+#                     operating_times = [10000000],
+#                     inner_diameters = [0.03, 0.03],
+#                     axial_positions = [0, 0.3], 
+#                     outer_diameters = [0.065, 0.065], 
+#                     lengths = [0.015, 0.015],
+#                     linkage_types = [['all'], ['all']],
+#                     mounting_types = [['left', 'right']],
+#                     number_bearings = [[1, 2], [1, 2]],
 
-#                    bearing_classes = [bearings.RadialBallBearing, 
-#                                       bearings.AngularBallBearing,
-#                                       bearings.TaperedRollerBearing,
-#                                       bearings.NUP, bearings.N, bearings.NU,
-##                                       bearings_opt.NF
-#                                       ]
-                    )
+# #                    bearing_classes = [bearings.RadialBallBearing, 
+# #                                       bearings.AngularBallBearing,
+# #                                       bearings.TaperedRollerBearing,
+# #                                       bearings.NUP, bearings.N, bearings.NU,
+# ##                                       bearings_opt.NF
+# #                                       ]
+#                     )
 
 with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
                            'mechanical_components/catalogs/schaeffler.json') as schaeffler_json:
@@ -85,8 +86,9 @@ bis2 = bearings_opt.BearingAssemblyOptimizer(
                     axial_positions = [0, 0.3], 
                     outer_diameters = [0.072, 0.072], 
                     lengths = [0.03, 0.03],
-                    linkage_types = [['ball_joint', 'cylindric_joint'], ['ball_joint', 'cylindric_joint']],
-                    mounting_types = [['free', 'left']],
+                    linkage_types = [bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)]),
+                                     bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)])],
+                    mounting_types = [bearings.CombinationMounting([bearings.Mounting(), bearings.Mounting(left=True)])],
                     number_bearings = [[1], [1]],
                     catalog = schaeffler_catalog,
 #                    bearing_classes = [bearings.RadialBallBearing, 
@@ -128,7 +130,7 @@ bis2.Optimize(max_solutions = 10)
 #0 0.396 4.6776 97.80460440116983
 for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
 #    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
-#    ba_simulation.bearing_assembly.plot()    
+    # ba_simulation.bearing_assembly.plot()    
 #    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly.cost, ba_simulation.bearing_assembly_simulation_result.L10)
     print(hash(ba_simulation))
     equak = ba_simulation.bearing_assembly == ba_simulation.bearing_assembly
@@ -136,6 +138,11 @@ for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
     obj = bearings.BearingAssemblySimulation.dict_to_object(d)
     equal = (ba_simulation == obj)
     print(equal)
+    
+c = Client()
+c.api_url = 'http://localhost:5000'
+# c.api_url = 'https://api.platform.dessia.tech'
+r = c.CreateObject(bis2)
 #    
 #print(bearing_assembly_opt == bis2)
     

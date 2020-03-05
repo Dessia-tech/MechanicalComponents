@@ -61,6 +61,19 @@ class Mounting(DessiaObject):
         self.right = right
         DessiaObject.__init__(self, name=name)
         
+class CombinationMounting(DessiaObject):
+    _standalone_in_db = True
+    _non_serializable_attributes = []
+    _non_eq_attributes = ['name']
+    _non_hash_attributes = ['name']
+    _generic_eq = True
+
+    def __init__(self, mountings:List[Mounting],
+                 name:str=''):
+        
+        self.mountings = mountings
+        DessiaObject.__init__(self, name=name)
+        
 class Linkage(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes = []
@@ -73,6 +86,19 @@ class Linkage(DessiaObject):
         
         self.ball_joint = ball_joint
         self.cylindric_joint = cylindric_joint
+        DessiaObject.__init__(self, name=name)
+        
+class SelectionLinkage(DessiaObject):
+    _standalone_in_db = True
+    _non_serializable_attributes = []
+    _non_eq_attributes = ['name']
+    _non_hash_attributes = ['name']
+    _generic_eq = True
+
+    def __init__(self, linkages:List[Linkage],
+                 name:str=''):
+        
+        self.linkages = linkages
         DessiaObject.__init__(self, name=name)
     
 #oil_kinematic_viscosity
@@ -2262,7 +2288,7 @@ class ConceptualBearingCombination(DessiaObject):
     _non_hash_attributes = ['name']
     _generic_eq = True
     
-    def __init__(self, bearing_classes:List[RadialBearing], directions:List[int], mounting,
+    def __init__(self, bearing_classes:List[RadialBearing], directions:List[int], mounting:Mounting,
                  name:str=''):
 
         self.bearing_classes = bearing_classes
@@ -2340,11 +2366,13 @@ class ConceptualBearingCombination(DessiaObject):
                 bg0_load = 'right'
             elif self.bearing_classes[0].taking_loads == 'right':
                 bg0_load = 'left'
-        if (self.mounting == 'left') or (self.mounting == 'both'):
+        # if (self.mounting.left) or (self.mounting == 'both'):
+        if self.mounting.left:
             if bg0_load in ['left', 'both']:
                 nx_graph.add_edges_from([(list_node_output[1], list_left_bearing[1])])
                 nx_graph.add_edges_from([(list_left_bearing[0], list_node_output[0])])
-        if (self.mounting == 'right') or (self.mounting == 'both'):
+        # if (self.mounting == 'right') or (self.mounting == 'both'):
+        if self.mounting.right:
             if bg0_load in ['right', 'both']:
                 nx_graph.add_edges_from([(list_node_output[3], list_left_bearing[3])])
                 nx_graph.add_edges_from([(list_left_bearing[2], list_node_output[2])])
@@ -2388,11 +2416,13 @@ class ConceptualBearingCombination(DessiaObject):
                 bg_end_load = 'right'
             elif self.bearing_classes[-1].taking_loads == 'right':
                 bg_end_load = 'left'
-        if (self.mounting == 'left') or (self.mounting == 'both'):
+        # if (self.mounting == 'left') or (self.mounting == 'both'):
+        if self.mounting.left:
             if bg_end_load in ['left', 'both']:
                 nx_graph.add_edges_from([(list_node_output[6], list_right_bearing[6])])
                 nx_graph.add_edges_from([(list_right_bearing[7], list_node_output[7])])
-        if (self.mounting == 'right') or (self.mounting == 'both'):
+        # if (self.mounting == 'right') or (self.mounting == 'both'):
+        if self.mounting.right:
             if bg_end_load in ['right', 'both']:
                 nx_graph.add_edges_from([(list_node_output[4], list_right_bearing[4])])
                 nx_graph.add_edges_from([(list_right_bearing[5], list_node_output[5])])
@@ -2402,10 +2432,12 @@ class ConceptualBearingCombination(DessiaObject):
     def check_viability_angular_bearing(self, nx_graph, list_node_bearings, li_node_output):
         # axial load generate by angular_bearing
         node_axial_ring = []
-        if self.mounting in ['left', 'both']:
+        # if self.mounting in ['left', 'both']:
+        if self.mounting.left:
             node_axial_ring.append(li_node_output[0])
             node_axial_ring.append(li_node_output[7])
-        if self.mounting in ['right', 'both']:
+        # if self.mounting in ['right', 'both']:
+        if self.mounting.right:
             node_axial_ring.append(li_node_output[5])
             node_axial_ring.append(li_node_output[2])
 
@@ -2433,7 +2465,8 @@ class ConceptualBearingCombination(DessiaObject):
                 valid = False
 
         #check axial mounting load
-        if self.mounting in ['right', 'both']:
+        # if self.mounting in ['right', 'both']:
+        if self.mounting.right:
             node_input = li_node_output[3]
             node_output = li_node_output[5]
             try:
@@ -2445,7 +2478,8 @@ class ConceptualBearingCombination(DessiaObject):
             except nx.NetworkXNoPath:
                 valid = False
                 pass
-        if self.mounting in ['left', 'both']:
+        # if self.mounting in ['left', 'both']:
+        if self.mounting.left:
             node_input = li_node_output[6]
             node_output = li_node_output[0]
             try:
@@ -2480,13 +2514,15 @@ class ConceptualBearingCombination(DessiaObject):
 #            else:
 #                valid = False
 
-        if self.mounting == 'right':
+        # if self.mounting == 'right':
+        if self.mounting.right:
             if valid:
                 valid = AnalyseConnection(list_node_bearings[0][4], li_node_output[2])
             if valid:
                 valid = AnalyseConnection(list_node_bearings[-1][3], li_node_output[5])
 
-        if self.mounting == 'left':
+        # if self.mounting == 'left':
+        if self.mounting.left:
             if valid:
                 valid = AnalyseConnection(list_node_bearings[0][6], li_node_output[0])
             if valid:
@@ -2598,9 +2634,9 @@ class BearingCombination(DessiaObject):
         ep = min(0.1*D, 0.1*d)
         De = D + ep
         Dg, Dd = D, D
-        if 'left' in self.connection_be:
+        if self.connection_be.left:
             Dg = Dg - ep
-        if 'right' in self.connection_be:
+        if self.connection_be.right:
             Dd = Dd -ep
         be = vm.Polygon2D([vm.Point2D((-B/2., sign*D/2.)), vm.Point2D((-B/2., sign*Dg/2.)),
                            vm.Point2D((-B/2. - ep, sign*Dg/2.)), vm.Point2D((-B/2. - ep, sign*De/2.)),

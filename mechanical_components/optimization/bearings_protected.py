@@ -28,7 +28,10 @@ from mechanical_components.bearings import RadialBallBearing, AngularBallBearing
         BearingAssemblySimulation, \
         ConceptualBearingCombination, \
         strength_bearing_classes, \
-        BearingL10Error, CatalogSearchError, Linkage, Mounting
+        BearingL10Error, CatalogSearchError, Linkage, Mounting, \
+        CombinationMounting, SelectionLinkage
+        
+import mechanical_components
         
 
 #import pandas
@@ -423,14 +426,14 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
     
     def CheckLinkage(self, bearings):
         check = False
-        if (len(bearings) > 1) and (self.linkage == 'cylindric_joint'):
+        if (len(bearings) > 1) and (self.linkage.cylindric_joint):
             check = True
-        if (len(bearings) == 1) and (self.linkage == 'cylindric_joint'):
+        if (len(bearings) == 1) and (self.linkage.cylindric_joint):
             if bearings[0] not in [RadialBallBearing, 
                                    AngularBallBearing,
                                    SphericalBallBearing]:
                 check = True
-        if (len(bearings) == 1) and (self.linkage == 'ball_joint'):
+        if (len(bearings) == 1) and (self.linkage.ball_joint):
             if bearings[0] in [RadialBallBearing, 
                                AngularBallBearing,
                                SphericalBallBearing]:
@@ -499,7 +502,8 @@ class BearingAssemblyOptimizer(DessiaObject):
                 list_load_cases.append('left')
         
 #        print(self.mounting_types)
-        for mounting_type_left, mounting_type_right in self.mounting_types:
+        for mounting_type in self.mounting_types:
+            mounting_type_left, mounting_type_right = mounting_type.mountings
             valid_load_case = True
             if 'both' not in set((mounting_type_left, mounting_type_right)):
                 for load_case in list_load_cases:
@@ -511,24 +515,24 @@ class BearingAssemblyOptimizer(DessiaObject):
                 if 'free' not in set((mounting_type_left, mounting_type_right)):
                     valid_load_case = False
             if valid_load_case:
-                for linkage_left, linkage_right in product(*self.linkage_types):
+                for linkage_left, linkage_right in product(*[lt.linkages for lt in self.linkage_types]):
                     configurations.append(((mounting_type_left, linkage_left),
                                            (mounting_type_right, linkage_right)))
         return configurations
-
 
     def ConceptualBearingCombinations(self, max_bearings=[2, 2]):
         bearing_combinations_possibilities = {}
         for left, right in self.Configurations():
             if not (left, right) in bearing_combinations_possibilities:
-                DBC_l = ConceptualBearingCombinationOptimizer(left[1], 
+                print(ConceptualBearingCombinationOptimizer.__init__)
+                DBC_l = mechanical_components.optimization.bearings.ConceptualBearingCombinationOptimizer(left[1], 
                                                     left[0], 
                                                     self.inner_diameters[0],
                                                     self.outer_diameters[0], 
                                                     self.lengths[0], 
                                                     bearing_classes = self.bearing_classes
                                                     )
-                DBC_r = ConceptualBearingCombinationOptimizer(right[1], 
+                DBC_r =  mechanical_components.optimization.bearings.ConceptualBearingCombinationOptimizer(right[1], 
                                                       right[0], 
                                                       self.inner_diameters[1],
                                                       self.outer_diameters[1], 
@@ -542,7 +546,6 @@ class BearingAssemblyOptimizer(DessiaObject):
                     bearing_combinations_possibilities[(left, right)] = (combination_left, combination_right)
 #        print(len(DBC_l.ConceptualBearingCombinations(max_bearings[0])))
         return bearing_combinations_possibilities
-
         
     def SelectBestBearingCombinations(self, first_bearing_possibilies, conceptual_bearing_combination, 
                                       radial_elementary_load, L10_objective, length):
@@ -1018,9 +1021,9 @@ class BearingAssemblyOptimizer(DessiaObject):
                     print('size solutions {}'.format(len(bearing_assembly_generic)))
         return bearing_assembly_generic
                 
-    def Optimize(self, max_solutions=10, bearing_assembly_generic=None,
-                 nb_solutions_family=10, progress_callback=lambda x:0,
-                 verbose=False):
+    def Optimize(self, max_solutions:int=10, bearing_assembly_generic=None,
+                 nb_solutions_family:int=10, progress_callback=lambda x:0,
+                 verbose=False)->None:
         
         if bearing_assembly_generic is None:
             bearing_assembly_generic = self.OptimizeGeneric(max_solutions)
