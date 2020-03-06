@@ -17,7 +17,7 @@ from mechanical_components.bearings import BearingCombination, \
         BearingCatalog,\
         BearingCombinationSimulationResult, BearingSimulationResult,\
         BearingAssemblySimulation, BearingCombinationSimulation, \
-        bearing_classes, dict_bearing_classes, \
+        bearing_classes_, dict_bearing_classes, \
         strength_bearing_classes, RadialBearing, \
         BearingL10Error, CatalogSearchError, Linkage, Mounting, \
         CombinationMounting, SelectionLinkage
@@ -32,6 +32,7 @@ npy.seterr(divide='raise', over='ignore', under='ignore', invalid='ignore')
 #from scipy.optimize import fsolve
 #from copy import deepcopy
 from itertools import product
+from importlib import import_module
 
 #from dectree import DecisionTree
 
@@ -41,15 +42,20 @@ from mechanical_components.tools import StringifyDictKeys
 
 
 class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer if _open_source==True else DessiaObject):
+    _standalone_in_db = True
+    _non_serializable_attributes = []
+    _non_eq_attributes = ['name']
+    _non_hash_attributes = ['name']
+    _generic_eq = True
     
     def __init__(self, radial_loads:List[float], axial_loads:List[float], 
                  speeds:List[float], operating_times:List[float],
                  inner_diameter:float, outer_diameter:float,
                  length:float,
-                 linkage_types:List[Linkage]=[Linkage(ball_joint=True), Linkage(cylindric_joint=True)],
-                 mounting_types:List[Mounting]=[Mounting(left=True), Mounting(right=True), Mounting(left=True, right=True), Mounting()],
-                 number_bearings:List[int]=[1, 2],
-                 bearing_classes:List[RadialBearing]=bearing_classes,
+                 linkage_types:List[Linkage]=None,
+                 mounting_types:List[Mounting]=None,
+                 number_bearings:List[int]=None,
+                 bearing_classes:List[RadialBearing]=None,
                  bearing_combination_simulations:List[BearingCombinationSimulation]=None,
                  catalog:BearingCatalog=None, name:str=''):
         
@@ -63,10 +69,22 @@ class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer i
         self.inner_diameter = inner_diameter
         self.outer_diameter = outer_diameter
         self.length = length
-        self.linkage_types = linkage_types
-        self.mounting_types = mounting_types
-        self.number_bearings = number_bearings
-        self.bearing_classes = bearing_classes
+        if linkage_types is None:
+            self.linkage_types = [Linkage(ball_joint=True), Linkage(cylindric_joint=True)]
+        else:
+            self.linkage_types = linkage_types
+        if mounting_types is None:
+            self.mounting_types = [Mounting(left=True), Mounting(right=True), Mounting(left=True, right=True), Mounting()]
+        else:
+            self.mounting_types = mounting_types
+        if number_bearings is None:
+            self.number_bearings = [1, 2]
+        else:
+            self.number_bearings = number_bearings
+        if bearing_classes is None:
+            self.bearing_classes = bearing_classes_
+        else:
+            self.bearing_classes = bearing_classes
         self.bearing_combination_simulations = bearing_combination_simulations
         self.catalog = catalog
         
@@ -96,7 +114,12 @@ class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer i
 #class ConceptualBearingCombinationOptimizer(protected_module.ConceptualBearingCombinationOptimizer if _open_source==True else object):
 
 class ConceptualBearingCombinationOptimizer(protected_module.ConceptualBearingCombinationOptimizer if _open_source==True else DessiaObject):
-        
+    _standalone_in_db = True
+    _non_serializable_attributes = []
+    _non_eq_attributes = ['name']
+    _non_hash_attributes = ['name']
+    _generic_eq = True
+    
     def __init__(self, linkage:Linkage, mounting:Mounting, d:float, D:float, length:float,
                  bearing_classes:List[RadialBearing], name:str=''):
         
@@ -110,6 +133,11 @@ class ConceptualBearingCombinationOptimizer(protected_module.ConceptualBearingCo
         DessiaObject.__init__(self, name=name)
         
 class BearingAssemblyOptimizer(protected_module.BearingAssemblyOptimizer if _open_source==True else DessiaObject):
+    _standalone_in_db = True
+    _non_serializable_attributes = []
+    _non_eq_attributes = ['name']
+    _non_hash_attributes = ['name']
+    _generic_eq = True
     
     _dessia_methods = ['optimize']
     
@@ -118,15 +146,18 @@ class BearingAssemblyOptimizer(protected_module.BearingAssemblyOptimizer if _ope
                  outer_diameters:List[float],
                  axial_positions:List[float],
                  lengths:List[float],
-                 linkage_types:List[SelectionLinkage]=[SelectionLinkage([Linkage(ball_joint=True), Linkage(cylindric_joint=True)]),
-                                                       SelectionLinkage([Linkage(ball_joint=True), Linkage(cylindric_joint=True)])],
+                 linkage_types:List[SelectionLinkage]=None,
                  mounting_types:List[CombinationMounting]=None,
-                 number_bearings:List[List[int]]=[[1, 2], [1, 2]],
-                 bearing_classes:List[RadialBearing]=bearing_classes,
+                 number_bearings:List[List[int]]=None,
+                 bearing_classes:List[str]=None,
                  bearing_assembly_simulations:List[BearingAssemblySimulation]=None,
                  catalog:BearingCatalog=None, name:str=''):
-                     
-        self.linkage_types = linkage_types
+               
+        if linkage_types is None:
+            self.linkage_types = [SelectionLinkage([Linkage(ball_joint=True), Linkage(cylindric_joint=True)]),
+                                  SelectionLinkage([Linkage(ball_joint=True), Linkage(cylindric_joint=True)])]
+        else:
+            self.linkage_types = linkage_types
         # for i_linkage, linkage_type in enumerate(linkage_types):
         #     if linkage_type == ['all']:
         #         self.linkage_types[i_linkage] = ['ball_joint', 'cylindric_joint']
@@ -145,8 +176,14 @@ class BearingAssemblyOptimizer(protected_module.BearingAssemblyOptimizer if _ope
         else:
             self.mounting_types = mounting_types
         self.mounting_types = mounting_types
-        self.number_bearings = number_bearings
-        self.bearing_classes = bearing_classes
+        if number_bearings is None:
+            self.number_bearings = [[1, 2], [1, 2]]
+        else:
+            self.number_bearings = number_bearings
+        if bearing_classes is None:
+            self.bearing_classes = bearing_classes_
+        else:
+            self.bearing_classes = bearing_classes
         self.bearing_assembly_simulations = bearing_assembly_simulations
         self.catalog = catalog
         
@@ -197,87 +234,89 @@ class BearingAssemblyOptimizer(protected_module.BearingAssemblyOptimizer if _ope
 #         return br_hash
 
         
-#     def Dict(self, subobjects_id = {}, stringify_keys=True):
-#         """
-#         Export dictionary
-#         """
-#         d = {}
-#         d['loads'] = self.loads
-#         d['speeds'] = self.speeds
-#         d['operating_times'] = self.operating_times
-#         d['inner_diameters'] = self.inner_diameters
-#         d['axial_positions'] = self.axial_positions
-#         d['outer_diameters'] = self.outer_diameters
-#         d['lengths'] = self.lengths
-#         d['linkage_types'] = self.linkage_types
-#         d['mounting_types'] = self.mounting_types
-#         d['number_bearings'] = self.number_bearings
+    def to_dict(self, subobjects_id = {}, stringify_keys=True):
+        """
+        Export dictionary
+        """
+        d = {}
+        d['loads'] = self.loads
+        d['speeds'] = self.speeds
+        d['operating_times'] = self.operating_times
+        d['inner_diameters'] = self.inner_diameters
+        d['axial_positions'] = self.axial_positions
+        d['outer_diameters'] = self.outer_diameters
+        d['lengths'] = self.lengths
+        d['linkage_types'] = [lt.to_dict() for lt in self.linkage_types]
+        d['mounting_types'] = [mt.to_dict() for mt in self.mounting_types]
+        d['number_bearings'] = self.number_bearings
+        d['bearing_classes'] = [bc.__module__ + '.' + bc.__name__ for bc in self.bearing_classes]
                 
-                
-#         if self.bearing_assembly_simulations is not None:
-#             bar_dict = []
-#             for bar in self.bearing_assembly_simulations:
-#                 if bar in subobjects_id:
-#                     bar_dict.append(subobjects_id[bar])
-#                 else:                
-#                     bar_dict.append(bar.Dict())
-#         else:
-#             bar_dict = None
-#         d['bearing_assembly_simulations'] = bar_dict
+        if self.bearing_assembly_simulations is not None:
+            bar_dict = []
+            for bar in self.bearing_assembly_simulations:
+                if bar in subobjects_id:
+                    bar_dict.append(subobjects_id[bar])
+                else:                
+                    bar_dict.append(bar.to_dict())
+        else:
+            bar_dict = None
+        d['bearing_assembly_simulations'] = bar_dict
+        d['catalog'] = self.catalog.to_dict()
+        d['name'] = self.name
+        d['object_class'] = 'mechanical_components.optimization.bearings.BearingAssemblyOptimizer'
         
-#         # TODO: serialize classes as string -> see another todo in dict to object
-# #        bc = []
-# #        for bearing_classe in self.bearing_classes:
-# #            bc.append(str(bearing_classe))
-# #        d['bearing_classes'] = bc
-        
-#         d['catalog'] = self.catalog.Dict()
-        
-#         if stringify_keys:
-#             return StringifyDictKeys(d)
+        if stringify_keys:
+            return StringifyDictKeys(d)
         
 
-#         return d
+        return d
     
-#     @classmethod
-#     def DictToObject(cls, d):
+    @classmethod
+    def dict_to_object(cls, d):
         
-#         if 'bearing_assembly_simulations' in d:
-#             if d['bearing_assembly_simulations'] is None:
-#                 li_bar = None
-#             else:
-#                 li_bar = []
-#                 for bar in d['bearing_assembly_simulations']:
-#                     li_bar.append(BearingAssemblySimulation.DictToObject(bar))
-#         else:
-#             li_bar = None
+        if 'bearing_assembly_simulations' in d:
+            if d['bearing_assembly_simulations'] is None:
+                li_bar = None
+            else:
+                li_bar = []
+                for bar in d['bearing_assembly_simulations']:
+                    li_bar.append(BearingAssemblySimulation.dict_to_object(bar))
+        else:
+            li_bar = None
             
-#         if 'bearing_classes' in d:
-#             bearing_classes_ = []
-#             for bearing_classe in d['bearing_classes']:
-#                 bearing_classes_.append(dict_bearing_classes[bearing_classe])
-#         else:
-#             bearing_classes_ = bearing_classes
+        # if 'bearing_classes' in d:
+        #     bearing_classes_ = []
+        #     for bearing_classe in d['bearing_classes']:
+        #         bearing_classes_.append(dict_bearing_classes[bearing_classe])
+        # else:
+        #     bearing_classes_ = bearing_classes
             
-#         if not 'catalog' in d:
-#             catalog = schaeffler_catalog# TODO: change this??
-#         else:
-#             catalog = BearingCatalog.DictToObject(d['catalog'])
+        if not 'catalog' in d:
+            catalog = schaeffler_catalog# TODO: change this??
+        else:
+            catalog = BearingCatalog.dict_to_object(d['catalog'])
             
-#         obj = cls(loads = d['loads'], 
-#                   speeds = d['speeds'], 
-#                   operating_times = d['operating_times'],
-#                  inner_diameters = d['inner_diameters'],
-#                  axial_positions = d['axial_positions'],
-#                  outer_diameters = d['outer_diameters'],
-#                  lengths = d['lengths'],
-#                  linkage_types = d['linkage_types'],
-#                  mounting_types = d['mounting_types'],
-#                  number_bearings = d['number_bearings'],
-#                  bearing_classes = bearing_classes_,
-#                  bearing_assembly_simulations = li_bar,
-#                  catalog = catalog)
-#         return obj
-
+        bearing_classes = []
+        for bearing_classe in d['bearing_classes']:
+            module = bearing_classe.split('.')
+            mod = ''
+            for m in module[0:-1]:
+                mod += m + '.'
+            bearing_classes.append(getattr(import_module(mod[0:-1]), module[-1]))
+        
+        obj = cls(loads = d['loads'], 
+                  speeds = d['speeds'], 
+                  operating_times = d['operating_times'],
+                  inner_diameters = d['inner_diameters'],
+                  axial_positions = d['axial_positions'],
+                  outer_diameters = d['outer_diameters'],
+                  lengths = d['lengths'],
+                  linkage_types = [SelectionLinkage.dict_to_object(lt) for lt in d['linkage_types']],
+                  mounting_types = [CombinationMounting.dict_to_object(mt) for mt in d['mounting_types']],
+                  number_bearings = d['number_bearings'],
+                  bearing_classes = bearing_classes,
+                  bearing_assembly_simulations = li_bar,
+                  catalog = catalog, name = d['name'])
+        return obj
 
         

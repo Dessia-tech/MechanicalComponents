@@ -10,6 +10,8 @@ import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
 from dessia_api_client import Client
 
+from volmdlr import plot_data
+
 import pkg_resources
 
 #import numpy as npy
@@ -107,7 +109,6 @@ bis2 = bearings_opt.BearingAssemblyOptimizer(
 # 'loads': ,
 # 'mounting_types': ,
 # 'number_bearings': ,
-# 'operating_times': ,
 # 'outer_diameters': ,
 # 'speeds': 
 
@@ -126,7 +127,7 @@ bis2 = bearings_opt.BearingAssemblyOptimizer(
 ##        ba.Plot()    
 #        print(num_sol, ba.mass, ba.cost)
 
-bis2.Optimize(max_solutions = 10)
+bis2.optimize(max_solutions = 10)
 #0 0.396 4.6776 97.80460440116983
 for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
 #    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
@@ -138,6 +139,12 @@ for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
     obj = bearings.BearingAssemblySimulation.dict_to_object(d)
     equal = (ba_simulation == obj)
     print(equal)
+    
+plots = ba_simulation.bearing_assembly.plot_data()
+pdg = plot_data.plot_d3(plots)
+
+d = bis2.to_dict()
+obj = bearings_opt.BearingAssemblyOptimizer.dict_to_object(d)
     
 c = Client()
 c.api_url = 'http://localhost:5000'

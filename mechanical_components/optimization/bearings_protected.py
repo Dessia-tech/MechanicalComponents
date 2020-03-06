@@ -505,14 +505,16 @@ class BearingAssemblyOptimizer(DessiaObject):
         for mounting_type in self.mounting_types:
             mounting_type_left, mounting_type_right = mounting_type.mountings
             valid_load_case = True
-            if 'both' not in set((mounting_type_left, mounting_type_right)):
+            if not mounting_type_left.both and not mounting_type_right.both:
                 for load_case in list_load_cases:
                     if load_case not in (mounting_type_left, mounting_type_right):
                         valid_load_case = False
-            if ('free' == mounting_type_left) and ('free' == mounting_type_right):
+            if mounting_type_left.free and mounting_type_right.free:
                 valid_load_case = False
-            if 'both' in set((mounting_type_left, mounting_type_right)):
-                if 'free' not in set((mounting_type_left, mounting_type_right)):
+            # if 'both' in set((mounting_type_left, mounting_type_right)):
+            if mounting_type_left.both or mounting_type_right.both:
+                if not mounting_type_left.free and not mounting_type_right.free:
+                # if 'free' not in set((mounting_type_left, mounting_type_right)):
                     valid_load_case = False
             if valid_load_case:
                 for linkage_left, linkage_right in product(*[lt.linkages for lt in self.linkage_types]):
@@ -524,7 +526,6 @@ class BearingAssemblyOptimizer(DessiaObject):
         bearing_combinations_possibilities = {}
         for left, right in self.Configurations():
             if not (left, right) in bearing_combinations_possibilities:
-                print(ConceptualBearingCombinationOptimizer.__init__)
                 DBC_l = mechanical_components.optimization.bearings.ConceptualBearingCombinationOptimizer(left[1], 
                                                     left[0], 
                                                     self.inner_diameters[0],
@@ -1021,7 +1022,7 @@ class BearingAssemblyOptimizer(DessiaObject):
                     print('size solutions {}'.format(len(bearing_assembly_generic)))
         return bearing_assembly_generic
                 
-    def Optimize(self, max_solutions:int=10, bearing_assembly_generic=None,
+    def optimize(self, max_solutions:int=10, bearing_assembly_generic=None,
                  nb_solutions_family:int=10, progress_callback=lambda x:0,
                  verbose=False)->None:
         

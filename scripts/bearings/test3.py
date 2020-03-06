@@ -9,6 +9,7 @@ import sys as sys
 #del sys.modules['mechanical_components.optimization']
 import mechanical_components.bearings as bearings
 from volmdlr import plot_data
+import dessia_common as dc
 
 import numpy as npy
 import volmdlr as vm
@@ -33,34 +34,38 @@ pdg = plot_data.plot_d3(plots)
 #schaeffler_catalog.SaveToFile('essai')
 
 #%%
-b0_bis = bearings.RadialBearing.DictToObject(d)
-b0_bis.Plot(typ=None)
-b0_bis.Graph()
-b0_bis.Plot(typ=None)
+b0_bis = dc.dict_to_object(b0.to_dict())
+# b0_bis.plot(typ=None)
+# b0_bis.Graph()
+# b0_bis.Plot(typ=None)
 
 b1 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
-                                       Z = 20, Dw = 0.005, alpha = 0)
-d = b1.Dict()
-jd = json.dumps(d)
-b1_bis = bearings.RadialBallBearing.DictToObject(d)
-b1_bis = bearings.RadialBearing.DictToObject(d)
-b1_bis.Plot()
-export = b1_bis.PlotData(quote = True)
-print(json.dumps(export))
-
-b2 = bearings.RadialRollerBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005)
-d = b2.Dict()
-jd = json.dumps(d)
-b2_bis = bearings.AngularBallBearing.DictToObject(d)
-b2_bis = bearings.RadialBearing.DictToObject(d)
-b2_bis.Plot()
-b2_bis.PlotData()
+plots = b1.plot_data(pos=0, direction=-1, quote=False, constructor=False)
+pdg = plot_data.plot_d3(plots)
+b0_bis = dc.dict_to_object(b1.to_dict())
 
-b3 = bearings.TaperedRollerBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
-                                       Z = 20, Dw = 0.004, alpha = 0.2)
-d = b3.Dict()
-jd = json.dumps(d)
-b3_bis = bearings.AngularBallBearing.DictToObject(d)
-b3_bis = bearings.RadialBearing.DictToObject(d)
-b3_bis.Plot()
+# d = b1.Dict()
+# jd = json.dumps(d)
+# b1_bis = bearings.RadialBallBearing.dict_to_object(d)
+# b1_bis = bearings.RadialBearing.dict_to_object(d)
+# b1_bis.Plot()
+# export = b1_bis.PlotData(quote = True)
+# print(json.dumps(export))
+
+# b2 = bearings.RadialRollerBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
+#                                        Z = 20, Dw = 0.005)
+# d = b2.Dict()
+# jd = json.dumps(d)
+# b2_bis = bearings.AngularBallBearing.dict_to_object(d)
+# b2_bis = bearings.RadialBearing.dict_to_object(d)
+# b2_bis.Plot()
+# b2_bis.PlotData()
+
+# b3 = bearings.TaperedRollerBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
+#                                        Z = 20, Dw = 0.004, alpha = 0.2)
+# d = b3.Dict()
+# jd = json.dumps(d)
+# b3_bis = bearings.AngularBallBearing.dict_to_object(d)
+# b3_bis = bearings.RadialBearing.dict_to_object(d)
+# b3_bis.Plot()

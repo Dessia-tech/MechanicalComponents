@@ -61,6 +61,20 @@ class Mounting(DessiaObject):
         self.right = right
         DessiaObject.__init__(self, name=name)
         
+    @property
+    def both(self):
+        if self.left and self.right:
+            return True
+        else:
+            return False
+    
+    @property
+    def free(self):
+        if not self.left and not self.right:
+            return True
+        else:
+            return False
+        
 class CombinationMounting(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes = []
@@ -302,7 +316,7 @@ class RadialBearing(DessiaObject):
         self.slack = (self.E-self.F-2*self.Dw)/4.
         self.name = name
         if mass is None:
-            self.mass = self.Mass()
+            self.mass = self.mass()
         else:
             self.mass = mass
         self.cost = self.mass*self.cost_coefficient + self.cost_constant
@@ -1081,10 +1095,10 @@ class AngularBallBearing(RadialBearing):
         if constructor:
             line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
             line1.Translation(vm.Vector2D((pos, 0)))
-            li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
+            li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
             line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
             line2.Translation(vm.Vector2D((pos, 0)))
-            li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
+            li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
             pt_data = {}
             pt_data['name'] = 'constructor line'
             pt_data['type'] = 'line'
@@ -1448,10 +1462,10 @@ class RadialRollerBearing(RadialBearing):
         if constructor:
             line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
             line1.Translation(vm.Vector2D((pos, 0)))
-            li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
+            li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
             line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
             line2.Translation(vm.Vector2D((pos, 0)))
-            li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
+            li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
             pt_data = {}
             pt_data['name'] = 'constructor line'
             pt_data['type'] = 'line'
@@ -1988,10 +2002,10 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         if constructor:
             line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
             line1.Translation(vm.Vector2D((pos, 0)))
-            li_data = [line1.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
+            li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
             line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
             line2.Translation(vm.Vector2D((pos, 0)))
-            li_data.append(line2.PlotData(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
+            li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
             pt_data = {}
             pt_data['name'] = 'constructor line'
             pt_data['type'] = 'line'
@@ -2183,7 +2197,6 @@ class BearingCatalog(DessiaObject):
 #        return cls(bearings, dict_['name'])
 
     def save_to_file(self, filepath, indent = 0):
-        print(self.to_dict().keys())
         with open(filepath+'.json', 'w') as file:
             json.dump(self.to_dict(), file, indent = indent)
 
@@ -2260,7 +2273,7 @@ class BearingCatalog(DessiaObject):
 #
 ##schaeffler_catalog.save_to_file('essai')
 
-bearing_classes = [RadialBallBearing, AngularBallBearing,
+bearing_classes_ = [RadialBallBearing, AngularBallBearing,
                    NUP, N,
                    NF, NU,
                    TaperedRollerBearing]
@@ -2670,19 +2683,19 @@ class BearingCombination(DessiaObject):
 
     def plot_data(self, pos=0, box=False, typ=None, bearing_combination_result=None, quote=False, constructor=True):
 
-        be_sup = vm.Contour2D([self.ExternalBearing(sign = 1)]).Translation(vm.Vector2D((pos, 0)), True)
-        export_data = [be_sup.PlotData('be_sup', fill = 'url(#diagonal-stripe-1)')]
-        be_inf = vm.Contour2D([self.ExternalBearing(sign = -1)]).Translation(vm.Vector2D((pos, 0)), True)
-        export_data.append(be_inf.PlotData('be_inf', fill = 'url(#diagonal-stripe-1)'))
-        bi_sup = vm.Contour2D([self.InternalBearing(sign = 1)]).Translation(vm.Vector2D((pos, 0)), True)
-        export_data.append(bi_sup.PlotData('bi_sup', fill = 'url(#diagonal-stripe-1)'))
-        bi_inf = vm.Contour2D([self.InternalBearing(sign = -1)]).Translation(vm.Vector2D((pos, 0)), True)
-        export_data.append(bi_inf.PlotData('bi_inf', fill = 'url(#diagonal-stripe-1)'))
+        be_sup = vm.Contour2D([self.external_bearing(sign = 1)]).Translation(vm.Vector2D((pos, 0)), True)
+        export_data = [be_sup.plot_data('be_sup', fill = 'url(#diagonal-stripe-1)')]
+        be_inf = vm.Contour2D([self.external_bearing(sign = -1)]).Translation(vm.Vector2D((pos, 0)), True)
+        export_data.append(be_inf.plot_data('be_inf', fill = 'url(#diagonal-stripe-1)'))
+        bi_sup = vm.Contour2D([self.internal_bearing(sign = 1)]).Translation(vm.Vector2D((pos, 0)), True)
+        export_data.append(bi_sup.plot_data('bi_sup', fill = 'url(#diagonal-stripe-1)'))
+        bi_inf = vm.Contour2D([self.internal_bearing(sign = -1)]).Translation(vm.Vector2D((pos, 0)), True)
+        export_data.append(bi_inf.plot_data('bi_inf', fill = 'url(#diagonal-stripe-1)'))
 
 #        contour = []
         pos_m = -self.B/2.
         for bg, di in zip(self.bearings, self.directions):
-            cont = bg.PlotData(pos = pos_m + bg.B/2. + pos, constructor = constructor,
+            cont = bg.plot_data(pos = pos_m + bg.B/2. + pos, constructor = constructor,
                                quote = False, direction = di)
 #            cont1 = cont.Translation(vm.Vector2D((pos_m + bg.B/2. + pos, 0)), True)
 #            cont_bg = vm.Contour2D([cont1])
@@ -2705,10 +2718,10 @@ class BearingCombination(DessiaObject):
 #                pos_m += bg_ref.B
 
         if box:
-            box_sup = vm.Contour2D([self.BearingBox(1)]).Translation(vm.Vector2D((pos, 0)), True)
-            export_data.append(box_sup.PlotData('box_sup', fill = 'none', color='red', stroke_width = 0.3, opacity = 0.3))
-            box_inf = vm.Contour2D([self.BearingBox(-1)]).Translation(vm.Vector2D((pos, 0)), True)
-            export_data.append(box_inf.PlotData('box_inf', fill = 'none', color = 'red', stroke_width = 0.3, opacity = 0.3))
+            box_sup = vm.Contour2D([self.bearing_box(1)]).Translation(vm.Vector2D((pos, 0)), True)
+            export_data.append(box_sup.plot_data('box_sup', fill = 'none', color='red', stroke_width = 0.3, opacity = 0.3))
+            box_inf = vm.Contour2D([self.bearing_box(-1)]).Translation(vm.Vector2D((pos, 0)), True)
+            export_data.append(box_inf.plot_data('box_inf', fill = 'none', color = 'red', stroke_width = 0.3, opacity = 0.3))
 
         return export_data
 
@@ -3148,12 +3161,12 @@ class BearingAssembly(DessiaObject):
 
     def plot_data(self, box=True, typ=None, constructor=False):
 
-        shaft = self.Shaft()
+        shaft = self.shaft()
         contour_shaft = vm.Contour2D([shaft])
-        export_data = [contour_shaft.PlotData('contour_shaft', fill = 'none')]
+        export_data = [contour_shaft.plot_data('contour_shaft', fill = 'none')]
 
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
-            export_data.extend(assembly_bg.PlotData(pos, box, quote = False, constructor = constructor))
+            export_data.extend(assembly_bg.plot_data(pos, box, quote = False, constructor = constructor))
         return export_data
 
     def plot(self, box=True, typ=None, ind_load_case=0):
