@@ -18,14 +18,12 @@ import pkg_resources
                  
 b0 = bearings.TaperedRollerBearing(d = 0.02, D = 0.05, B = 0.02, i = 1, 
                                        Z = 20, alpha=0.2)
-print(b0.Dw)
-#d = b0.to_dict()
-#jd = json.dumps(d)
-#b0_bis = bearings.RadialBallBearing.dict_to_object(d)
-#b0_bis = DessiaObject.dict_to_object(d)
 
-plots = b0.plot_data(pos=0, direction=-1, quote=False, constructor=False)
-pdg = plot_data.plot_d3(plots)
+#plots = b0.plot_data(pos=0, direction=-1, quote=False, constructor=False)
+#pdg = plot_data.plot_d3(plots)
+
+
+#raise KeyError
 
 #with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
 #                           'mechanical_components/catalogs/schaeffler_v2.json') as schaeffler_json:
@@ -41,9 +39,14 @@ b0_bis = dc.dict_to_object(b0.to_dict())
 
 b1 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005)
-plots = b1.plot_data(pos=0, direction=-1, quote=False, constructor=False)
-pdg = plot_data.plot_d3(plots)
-b0_bis = dc.dict_to_object(b1.to_dict())
+
+d = b1.plot_data()
+#c1.MPLPlot()
+plot_data.plot_d3(d)
+
+#plots = b1.plot_data(pos=0, direction=-1, quote=False, constructor=False)
+#pdg = plot_data.plot_d3(plots)
+#b0_bis = dc.dict_to_object(b1.to_dict())
 
 # d = b1.Dict()
 # jd = json.dumps(d)

@@ -580,9 +580,9 @@ class RadialBearing(DessiaObject):
     def plot(self, direction=1, a=None, typ=None):
         bg = self.plot_contour(direction)
         if a is None:
-            f, a = bg.MPLPlot(style = 'k')
+            f, a = bg.MPLPlot(color = 'k')
         else:
-            bg.MPLPlot(a,'-k')
+            bg.MPLPlot(a,color = '-k')
 
         if typ == 'Graph':
             graph = self.PlotGraph()
@@ -594,6 +594,10 @@ class RadialBearing(DessiaObject):
     def volume_model(self, center = vm.O3D, axis = vm.X3D):
         model=vm.VolumeModel(self.cad_volumes(center, axis), self.name)
 
+        return model
+    
+    def volmdlr_volume_model(self):
+        model = self.volume_model()
         return model
 
 #    mass = property(Mass)
@@ -762,7 +766,7 @@ class RadialBallBearing(RadialBearing):
                                                   4: self.radius},
                                                   adapt_radius=True)
         cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, self.F/2)), pbi6)
-        return vm.Contour2D([bi1, cbi1])
+        return vm.Contour2D([cbi1] + bi1.primitives)
 
     def external_ring_contour(self):
 
@@ -782,7 +786,7 @@ class RadialBallBearing(RadialBearing):
                                                   4: self.radius},
                                                   adapt_radius=True)
         cbe1 = vm.Arc2D(pbe6, vm.Point2D((0, self.E/2)), pbe1)
-        return vm.Contour2D([be1, cbe1])
+        return vm.Contour2D([cbe1] + be1.primitives)
 
     def rolling_contour(self):
 
@@ -1019,9 +1023,8 @@ class AngularBallBearing(RadialBearing):
                                              2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
 
         cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, sign_V*self.F/2)), pbi6)
-        irc = vm.Contour2D([bi1, cbi1])
 
-        return irc
+        return vm.Contour2D([cbi1] + bi1.primitives)
 
     def external_ring_contour(self, direction=1, sign_V=1):
 
@@ -1036,8 +1039,7 @@ class AngularBallBearing(RadialBearing):
                                                        adapt_radius = True)
 
         cbe1 = vm.Arc2D(pbe6, vm.Point2D((0, sign_V*self.E/2)), pbe1)
-        erc = vm.Contour2D([be1, cbe1])
-        return erc
+        return vm.Contour2D([cbe1] + be1.primitives)
 
 
     def rolling_contour(self):
@@ -1092,21 +1094,21 @@ class AngularBallBearing(RadialBearing):
         ball_inf1 = ball_inf.Translation((pos, 0), True)
         plot_datas.append(ball_inf1.plot_data('ball_inf', fill = None))
 
-        if constructor:
-            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
-            line1.Translation(vm.Vector2D((pos, 0)))
-            li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
-            line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
-            line2.Translation(vm.Vector2D((pos, 0)))
-            li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
-            pt_data = {}
-            pt_data['name'] = 'constructor line'
-            pt_data['type'] = 'line'
-            pt_data['plot_data'] = li_data
-            plot_datas.append(pt_data)
-
-        if quote:
-            plot_datas.extend(self.PlotDataQuote(pos))
+#        if constructor:
+#            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
+#            line1.Translation(vm.Vector2D((pos, 0)))
+#            li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
+#            line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
+#            line2.Translation(vm.Vector2D((pos, 0)))
+#            li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
+#            pt_data = {}
+#            pt_data['name'] = 'constructor line'
+#            pt_data['type'] = 'line'
+#            pt_data['plot_data'] = li_data
+#            plot_datas.append(pt_data)
+#
+#        if quote:
+#            plot_datas.extend(self.PlotDataQuote(pos))
 
         return plot_datas
 
@@ -1459,21 +1461,21 @@ class RadialRollerBearing(RadialBearing):
         roller_inf1 = roller_inf.Translation((pos, 0), True)
         plot_datas.append(roller_inf1.plot_data('roller_inf', fill = 'none'))
 
-        if constructor:
-            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
-            line1.Translation(vm.Vector2D((pos, 0)))
-            li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
-            line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
-            line2.Translation(vm.Vector2D((pos, 0)))
-            li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
-            pt_data = {}
-            pt_data['name'] = 'constructor line'
-            pt_data['type'] = 'line'
-            pt_data['plot_data'] = li_data
-            plot_datas.append(pt_data)
-
-        if quote:
-            plot_datas.extend(self.PlotDataQuote(pos))
+#        if constructor:
+#            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
+#            line1.Translation(vm.Vector2D((pos, 0)))
+#            li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
+#            line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
+#            line2.Translation(vm.Vector2D((pos, 0)))
+#            li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
+#            pt_data = {}
+#            pt_data['name'] = 'constructor line'
+#            pt_data['type'] = 'line'
+#            pt_data['plot_data'] = li_data
+#            plot_datas.append(pt_data)
+#
+#        if quote:
+#            plot_datas.extend(self.PlotDataQuote(pos))
 
         return plot_datas
 
@@ -1898,7 +1900,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         bi1 = primitives2D.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                                                  {1: self.radius, 2: self.radius, 3: self.radius,
                                                   4: self.radius, 5: self.radius,
-                                                  6: self.radius}, adapt_radius=True)
+                                                  6: self.radius}, adapt_radius=False)
 
         # irc = vm.Contour2D([bi1])
 # 
@@ -1928,7 +1930,6 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                                                         2: self.radius,
                                                         3: self.radius},
                                                         adapt_radius=True)
-        # erc = vm.Contour2D([be1])
 
         return be1
 
@@ -1965,8 +1966,8 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         rol = primitives2D.ClosedRoundedLineSegments2D([r1, r2, r3, r4], {0: self.radius,
                                              1: self.radius, 2: self.radius, 3: self.radius})
 
-        bg = vm.Contour2D([rol])
-        return bg
+#        bg = vm.Contour2D([rol])
+        return rol
 
     def plot_data(self, pos=0, direction=1, quote=True, constructor=True):
 
@@ -1999,22 +2000,22 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         roller_inf1 = roller_inf.Translation((pos, 0), True)
         plot_datas.append(roller_inf1.plot_data('roller_inf', fill = 'none'))
         
-        if constructor:
-            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
-            line1.Translation(vm.Vector2D((pos, 0)))
-            li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
-            line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
-            line2.Translation(vm.Vector2D((pos, 0)))
-            li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
-            pt_data = {}
-            pt_data['name'] = 'constructor line'
-            pt_data['type'] = 'line'
-            pt_data['plot_data'] = li_data
-            plot_datas.append(pt_data)
-
-        
-        if quote:
-            plot_datas.extend(self.PlotDataQuote(pos))
+#        if constructor:
+#            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
+#            line1.Translation(vm.Vector2D((pos, 0)))
+#            li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
+#            line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
+#            line2.Translation(vm.Vector2D((pos, 0)))
+#            li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
+#            pt_data = {}
+#            pt_data['name'] = 'constructor line'
+#            pt_data['type'] = 'line'
+#            pt_data['plot_data'] = li_data
+#            plot_datas.append(pt_data)
+#
+#        
+#        if quote:
+#            plot_datas.extend(self.PlotDataQuote(pos))
 
         return plot_datas
 
@@ -2654,7 +2655,8 @@ class BearingCombination(DessiaObject):
         be = vm.Polygon2D([vm.Point2D((-B/2., sign*D/2.)), vm.Point2D((-B/2., sign*Dg/2.)),
                            vm.Point2D((-B/2. - ep, sign*Dg/2.)), vm.Point2D((-B/2. - ep, sign*De/2.)),
                            vm.Point2D((B/2. + ep, sign*De/2.)), vm.Point2D((B/2. + ep, sign*Dd/2.)),
-                           vm.Point2D((B/2., sign*Dd/2.)), vm.Point2D((B/2., sign*D/2.))])
+                           vm.Point2D((B/2., sign*Dd/2.)), vm.Point2D((B/2., sign*D/2.)),
+                           vm.Point2D((-B/2., sign*D/2.))])
         return be
 
     def internal_bearing(self, sign=1):
@@ -2671,14 +2673,16 @@ class BearingCombination(DessiaObject):
         bi = vm.Polygon2D([vm.Point2D((-B/2., sign*d/2.)), vm.Point2D((-B/2., sign*dg/2.)),
                            vm.Point2D((-B/2. - ep, sign*dg/2.)), vm.Point2D((-B/2. - ep, sign*di/2.)),
                            vm.Point2D((B/2. + ep, sign*di/2.)), vm.Point2D((B/2. + ep, sign*dd/2.)),
-                           vm.Point2D((B/2., sign*dd/2.)), vm.Point2D((B/2., sign*d/2.))])
+                           vm.Point2D((B/2., sign*dd/2.)), vm.Point2D((B/2., sign*d/2.)),
+                           vm.Point2D((-B/2., sign*d/2.))])
         return bi
 
     def bearing_box(self, sign=1):
         box = vm.Polygon2D([vm.Point2D((self.axial_positions, sign*self.internal_diameters/2.)),
                       vm.Point2D((self.axial_positions, sign*self.external_diameters/2.)),
                       vm.Point2D((self.axial_positions + self.length, sign*self.external_diameters/2.)),
-                      vm.Point2D((self.axial_positions + self.length, sign*self.internal_diameters/2.))])
+                      vm.Point2D((self.axial_positions + self.length, sign*self.internal_diameters/2.)),
+                      vm.Point2D((self.axial_positions, sign*self.internal_diameters/2.))])
         return box
 
     def plot_data(self, pos=0, box=False, typ=None, bearing_combination_result=None, quote=False, constructor=True):
@@ -3020,6 +3024,10 @@ class BearingCombination(DessiaObject):
             center_bearing += bearing.B*axis
         model=vm.VolumeModel(groups, self.name)
         return model
+    
+    def volmdlr_volume_model(self):
+        model = self.volume_model()
+        return model
 
 #    def Dict(self, subobjects_id={}, stringify_keys=True):
 #        """
@@ -3072,10 +3080,11 @@ class BearingAssembly(DessiaObject):
                  axial_positions:List[float]=None, 
                  internal_diameters:List[float]=None, axial_pos:List[float]=None,
                  external_diameters:List[float]=None, length:float=None,
+                 overall_length:float=None, mass:float=None,
+                 cost:float=None,
                  name:str=''):
 
         self.bearing_combinations = bearing_combinations
-        self.mass = self.mass()
         self.cr_equ = self.cr_equ()
         self.pre_load = pre_load
         self.load_bearing_assembly_results = None
@@ -3093,9 +3102,12 @@ class BearingAssembly(DessiaObject):
         self.d = 0
         for bc in bearing_combinations:
             self.d = max(bc.d, self.d)
-        self.cost = 0
-        for bc in bearing_combinations:
-            self.cost += bc.cost
+        if overall_length is None:
+            self.overall_length = self.B
+            if axial_positions is not None:
+                self.overall_length += axial_positions[1] - axial_positions[0]
+        else:
+            self.overall_length = overall_length
             
         DessiaObject.__init__(self, name=name)
 
@@ -3129,6 +3141,7 @@ class BearingAssembly(DessiaObject):
             pos = self.axial_pos[num_linkage] - self.axial_positions[num_linkage]
             assembly_bg.update(pos, self.internal_diameters[num_linkage], self.external_diameters[num_linkage],
                                self.length[num_linkage])
+        self.overall_length = self.B + axial_positions[1] - axial_positions[0]
 
     def cr_equ(self):
         Cr_equ = 0
@@ -3137,11 +3150,22 @@ class BearingAssembly(DessiaObject):
                 Cr_equ += (bg.Cr)
         return (Cr_equ)
 
+    @property
     def mass(self):
         mass = 0
         for li_bg in self.bearing_combinations:
             mass += li_bg.mass
+        if self.axial_positions is not None:
+            poly2d = self.shaft()
+            mass += poly2d.Area()
         return mass
+    
+    @property
+    def cost(self):
+        cost = 0
+        for bc in self.bearing_combinations:
+            cost += bc.cost
+        return cost
 
     def shaft(self):
         d1 = self.bearing_combinations[0].d
@@ -3156,8 +3180,48 @@ class BearingAssembly(DessiaObject):
                       vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, d2/2.)),
                       vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, -d2/2.)),
                       vm.Point2D((pos_mid, -d2/2.)),
-                      vm.Point2D((pos_mid, -d1/2.)),])
+                      vm.Point2D((pos_mid, -d1/2.)),
+                      vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.))])
         return shaft
+    
+    def cad_shaft(self, center = vm.O3D, axis = vm.X3D):
+        # TODO: mutualization of this in parent class?
+        axis.Normalize()
+
+        y = axis.RandomUnitNormalVector()
+        z = axis.Cross(y)
+
+        #Internal Ring
+        d1 = self.bearing_combinations[0].d
+        d2 = self.bearing_combinations[1].d
+        B1 = self.bearing_combinations[0].B
+        B2 = self.bearing_combinations[1].B
+        pos_mid = (self.axial_positions[0] + self.axial_positions[1])/2.
+#        shaft = vm.Polygon2D([vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.)),
+#                      vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.)),
+#                      vm.Point2D((pos_mid, d1/2.)),
+#                      vm.Point2D((pos_mid, d2/2.)),
+#                      vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, d2/2.)),
+#                      vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, -d2/2.)),
+#                      vm.Point2D((pos_mid, -d2/2.)),
+#                      vm.Point2D((pos_mid, -d1/2.)),
+#                      vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.))])
+        p1 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, 0))
+        p2 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.))
+        p3 = vm.Point2D((pos_mid, d1/2.))
+        p4 = vm.Point2D((pos_mid, d2/2.))
+        p5 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, d2/2.))
+        p6 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, 0))
+        shaft = primitives2D.OpenedRoundedLineSegments2D([p1, p2, p3, p4, p5, p6],
+                                                 {},
+                                                  adapt_radius=False)
+        l1 = vm.LineSegment2D(p6,p1)
+        shaft_cont = vm.Contour2D(shaft.primitives + [l1])
+    
+        irc = primitives3D.RevolvedProfile(center, axis, z, shaft_cont, center,
+                                         axis, angle=2*math.pi, name='Shaft')
+        
+        return [irc]
 
     def plot_data(self, box=True, typ=None, constructor=False):
 
@@ -3376,7 +3440,7 @@ class BearingAssembly(DessiaObject):
 #            raise unidimensional.ModelConvergenceError()
 
 
-    def VolumeModel(self, center = (0,0,0), axis = (1,0,0)):
+    def volume_model(self, center = (0,0,0), axis = (1,0,0)):
         groups = []
 
         for combination, combination_position in zip(self.bearing_combinations, self.axial_positions):
@@ -3385,7 +3449,12 @@ class BearingAssembly(DessiaObject):
             for bearing in combination.bearings:
                 groups.extend(bearing.cad_volumes(center=vm.Point3D((position, 0, 0))))
                 position += bearing.B
+        groups.extend(self.cad_shaft())
         model=vm.VolumeModel(groups, self.name)
+        return model
+    
+    def volmdlr_volume_model(self):
+        model = self.volume_model()
         return model
 
     def FreeCADExport(self, fcstd_filepath='An unamed bearing assembly', python_path='python',
@@ -3782,7 +3851,7 @@ class BearingCombinationSimulationResult(DessiaObject):
     def __init__(self, bearing_simulation_results:List[BearingSimulationResult],
                  axial_loads:List[float]=None, radial_loads:List[float]=None,
                  speeds:List[float]=None, operating_times:List[float]=None, 
-#                 axial_load_model=None,
+                 max_axial_load:float=None, max_radial_load:float=None,
                  name:str=''):
         if axial_loads is None:
             self.axial_loads = []
@@ -3802,6 +3871,20 @@ class BearingCombinationSimulationResult(DessiaObject):
 #            self.axial_load_model = axial_load_model
             
         DessiaObject.__init__(self, name=name)
+        
+    @property
+    def max_axial_load(self):
+        max_axial_load = 0
+        for bearing_simulation_result in self.bearing_simulation_results:
+            max_axial_load = max(max_axial_load, max(bearing_simulation_result.axial_load))
+        return max_axial_load
+    
+    @property
+    def max_radial_load(self):
+        max_radial_load = 0
+        for bearing_simulation_result in self.bearing_simulation_results:
+            max_radial_load = max(max_radial_load, max(bearing_simulation_result.radial_load))
+        return max_radial_load
 
 #    def __eq__(self, other_eb):
 #        equal = (self.axial_loads == other_eb.axial_loads
@@ -3869,14 +3952,17 @@ class BearingAssemblySimulationResult(DessiaObject):
 
     def __init__(self, bearing_combination_simulation_results:List[BearingCombinationSimulationResult],
                  loads:List[float], speeds, operating_times,
-#                 axial_load_model=None, 
-                 L10=None, name:str=''):
+                 bearing_combination_first:BearingCombinationSimulationResult=None,
+                 bearing_combination_second:BearingCombinationSimulationResult=None,
+                 L10:float=None, name:str=''):
         self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
 #        self.axial_load_model = axial_load_model
         self.L10 = L10
         self.bearing_combination_simulation_results = bearing_combination_simulation_results
+        self.bearing_combination_first = self.bearing_combination_simulation_results[0]
+        self.bearing_combination_second = self.bearing_combination_simulation_results[1]
         
         DessiaObject.__init__(self, name=name)
 
@@ -3955,6 +4041,10 @@ class BearingAssemblySimulation(DessiaObject):
         self.bearing_assembly_simulation_result = bearing_assembly_simulation_result
         
         DessiaObject.__init__(self, name=name)
+        
+    def volmdlr_volume_model(self):
+        model = self.bearing_assembly.volume_model()
+        return model
 
 #    def __eq__(self, other_eb):
 #        equal = (self.bearing_assembly == other_eb.bearing_assembly

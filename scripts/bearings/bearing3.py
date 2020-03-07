@@ -14,68 +14,6 @@ from volmdlr import plot_data
 
 import pkg_resources
 
-#import numpy as npy
-
-#bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
-#                    loads = [[[(0.1, 0, 0), (2000, 10000, 0), (0, 0, 0)], 
-#                              [(0.3, 0, 0), (1000, 3000, 0), (0, 0, 0)]]], 
-#                    speeds = [1000],
-#                    operating_times = [10000*3600],
-#                    inner_diameters = [0.02, 0.02],
-#                    axial_positions = [0, 0.2], 
-#                    outer_diameters = [0.1, 0.1], 
-#                    lengths = [0.08, 0.08],
-#                    linkage_types = [['cylindric_joint'], ['cylindric_joint']],
-#                    mounting_types = [['free', 'both'], ['right', 'left']],
-#                    number_bearings = [[2], [2]],
-#                    bearing_classes = [bearings.RadialBallBearing, 
-#                                       bearings.AngularBallBearing,
-#                                       bearings.TaperedRollerBearing,
-#                                       bearings.NUP, bearings.N, bearings.NU,
-##                                       bearings_opt.NF
-#                                       ])
-
-
-# bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer(
-#                     loads = [[[[0.15, 0, 0], [0, 2055, 0], [0, 0, 0]]]], 
-#                     speeds = [500],
-#                     operating_times = [100000000],
-#                     inner_diameters = [0.02, 0.025],
-#                     axial_positions = [0, 0.3], 
-#                     outer_diameters = [0.1, 0.1], 
-#                     lengths = [0.1, 0.1],
-#                     linkage_types = [['cylindric_joint'], ['ball_joint']],
-#                     mounting_types = [['left', 'right']],
-#                     number_bearings = [[1, 2], [1]],
-
-# #                    bearing_classes = [bearings.RadialBallBearing, 
-# #                                       bearings.AngularBallBearing,
-# #                                       bearings.TaperedRollerBearing,
-# #                                       bearings.NUP, bearings.N, bearings.NU,
-# ##                                       bearings_opt.NF
-# #                                       ]
-#                     )
-
-# bis = bearings_opt.BearingAssemblyOptimizer(
-#                     loads = [[[[0.15, 0, 0], [0, 2000, 0], [0, 0, 0]]]], 
-#                     speeds = [500],
-#                     operating_times = [10000000],
-#                     inner_diameters = [0.03, 0.03],
-#                     axial_positions = [0, 0.3], 
-#                     outer_diameters = [0.065, 0.065], 
-#                     lengths = [0.015, 0.015],
-#                     linkage_types = [['all'], ['all']],
-#                     mounting_types = [['left', 'right']],
-#                     number_bearings = [[1, 2], [1, 2]],
-
-# #                    bearing_classes = [bearings.RadialBallBearing, 
-# #                                       bearings.AngularBallBearing,
-# #                                       bearings.TaperedRollerBearing,
-# #                                       bearings.NUP, bearings.N, bearings.NU,
-# ##                                       bearings_opt.NF
-# #                                       ]
-#                     )
-
 with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
                            'mechanical_components/catalogs/schaeffler.json') as schaeffler_json:
     schaeffler_catalog = bearings.BearingCatalog.load_from_file(schaeffler_json)
@@ -101,73 +39,25 @@ bis2 = bearings_opt.BearingAssemblyOptimizer(
 #                                       ]
                     )
 
-#'axial_positions': ,
-# 'bearing_assembly_simulations': [],
-# 'inner_diameters': ,
-# 'lengths': ,
-# 'linkage_types': ,
-# 'loads': ,
-# 'mounting_types': ,
-# 'number_bearings': ,
-# 'outer_diameters': ,
-# 'speeds': 
-
-#print(hash(bearing_assembly_opt))
-#print(bearing_assembly_opt == bis)
-
-#d = bearing_assembly_opt.Dict()
-#del bearing_assembly_opt
-#bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
-
-#bag = bis2.OptimizeGeneric(10)
-
-#for num_sol, bas in enumerate(bag):
-#    for ba in bas:
-#    #    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
-##        ba.Plot()    
-#        print(num_sol, ba.mass, ba.cost)
-
 bis2.optimize(max_solutions = 10)
-#0 0.396 4.6776 97.80460440116983
 for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
-#    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
-    # ba_simulation.bearing_assembly.plot()    
-#    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly.cost, ba_simulation.bearing_assembly_simulation_result.L10)
-    print(hash(ba_simulation))
+    hash_ = hash(ba_simulation)
     equak = ba_simulation.bearing_assembly == ba_simulation.bearing_assembly
     d = ba_simulation.to_dict()
     obj = bearings.BearingAssemblySimulation.dict_to_object(d)
     equal = (ba_simulation == obj)
-    print(equal)
     
+#ba_simulation.bearing_assembly.bearing_combinations[0].plot()
 plots = ba_simulation.bearing_assembly.plot_data()
-pdg = plot_data.plot_d3(plots)
+#pdg = plot_data.plot_d3(plots)
 
 d = bis2.to_dict()
 obj = bearings_opt.BearingAssemblyOptimizer.dict_to_object(d)
-    
-c = Client()
-c.api_url = 'http://localhost:5000'
-# c.api_url = 'https://api.platform.dessia.tech'
-r = c.CreateObject(bis2)
-#    
-#print(bearing_assembly_opt == bis2)
-    
-#for num_sol, ba_simulation in enumerate(r.bearing_assembly_simulations):
-#    print(num_sol, ba_simulation.bearing_assembly.mass, ba_simulation.bearing_assembly_simulation_result.L10)
-#    ba_simulation.bearing_assembly.Plot()    
-#    print(hash(ba_simulation))
-#    print(ba_simulation == ba_simulation)
-#    
-#from dessia_api_client import Client
-#c=Client()
-#c.api_url='https://api-dev.software.dessia.tech'
-#r=c.CreateObject(bearing_assembly_opt)
-#r=c.GetAllClassObjects('mechanical_components.optimization.bearings.BearingAssemblyOptimizer')
-#print(r)
 
+if not obj == bis2:
+    raise KeyError('Non esqual object BearingAssemblyOptimizer with dict_to_object')
     
-#d = bearing_assembly_opt.Dict()
-#del bearing_assembly_opt
-#bearing_assembly_opt = bearings_opt.BearingAssemblyOptimizer.DictToObject(d)
-#bearing_assembly_opt.Optimize(3)
+#c = Client()
+#c.api_url = 'http://localhost:5000'
+## c.api_url = 'https://api.platform.dessia.tech'
+#r = c.CreateObject(bis2)

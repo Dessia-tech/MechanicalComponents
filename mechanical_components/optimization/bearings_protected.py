@@ -1022,12 +1022,12 @@ class BearingAssemblyOptimizer(DessiaObject):
                     print('size solutions {}'.format(len(bearing_assembly_generic)))
         return bearing_assembly_generic
                 
-    def optimize(self, max_solutions:int=10, bearing_assembly_generic=None,
-                 nb_solutions_family:int=10, progress_callback=lambda x:0,
-                 verbose=False)->None:
+    def optimize(self, max_solutions:int=10, 
+                 nb_solutions_family:int=10,
+                 verbose:bool=False)->None:
+#        progress_callback=lambda x:0,
         
-        if bearing_assembly_generic is None:
-            bearing_assembly_generic = self.OptimizeGeneric(max_solutions)
+        bearing_assembly_generic = self.OptimizeGeneric(max_solutions)
             
         L10_objective = 0
         for speed, time in zip(self.speeds, self.operating_times):
