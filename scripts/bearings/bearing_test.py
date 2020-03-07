@@ -19,30 +19,21 @@ import pkg_resources
 b0 = bearings.TaperedRollerBearing(d = 0.02, D = 0.05, B = 0.02, i = 1, 
                                        Z = 20, alpha=0.2)
 
-#plots = b0.plot_data(pos=0, direction=-1, quote=False, constructor=False)
+plots = b0.plot_data(pos=0, direction=-1, quote=False, constructor=False)
 #pdg = plot_data.plot_d3(plots)
 
-
-#raise KeyError
-
-#with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-#                           'mechanical_components/catalogs/schaeffler_v2.json') as schaeffler_json:
-#    schaeffler_catalog = bearings.BearingCatalog.LoadFromFile(schaeffler_json)
-
-#schaeffler_catalog.SaveToFile('essai')
-
-#%%
 b0_bis = dc.dict_to_object(b0.to_dict())
-# b0_bis.plot(typ=None)
-# b0_bis.Graph()
-# b0_bis.Plot(typ=None)
+if not b0_bis == b0:
+    raise KeyError('Non equal bearing object with dict_to_object')
 
 b1 = bearings.RadialBallBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
                                        Z = 20, Dw = 0.005)
-
+b1_bis = dc.dict_to_object(b1.to_dict())
+if not b1_bis == b1:
+    raise KeyError('Non equal bearing object with dict_to_object')
+    
 d = b1.plot_data()
-#c1.MPLPlot()
-plot_data.plot_d3(d)
+#plot_data.plot_d3(d)
 
 #plots = b1.plot_data(pos=0, direction=-1, quote=False, constructor=False)
 #pdg = plot_data.plot_d3(plots)
