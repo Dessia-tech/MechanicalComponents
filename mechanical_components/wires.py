@@ -31,7 +31,7 @@ class Wire(DessiaObject):
             # if lines are not colinear
             if vm.Line2D(self.waypoints[i],self.waypoints[i+1]).DirectionVector(unit=True).Dot(vm.Line2D(self.waypoints[i+1], self.waypoints[i+2]).DirectionVector(unit=True))!=1:                
                 radii[i+1] = 4*self.diameter
-        return  primitives3D.RoundedLineSegments3D(self.waypoints, radii, adapt_radius = True)        
+        return  primitives3D.OpenedRoundedLineSegments3D(self.waypoints, radii, adapt_radius = True)        
 #        return  primitives3D.RoundedLineSegments3D(self.waypoints, {}, adapt_radius = True)        
     
     def _get_path(self):
@@ -60,10 +60,16 @@ class Wire(DessiaObject):
         ax.plot(x, y, '-k')
         ax.plot([x[0], x[-1]], [y[0], y[-1]], 'ok')
     
-    def CADVolume(self):
+    def volume_model(self):
         first_dir = self.waypoints[1] - self.waypoints[0]
         section = vm.Contour3D([vm.Circle3D(self.waypoints[0], 0.5 * self.diameter, first_dir)])
-        return primitives3D.Sweep(section, self.path, name=self.name)
+        li_box = primitives3D.Sweep(section, self.path, name=self.name)
+        model = vm.VolumeModel(primitives=[li_box])
+        return model
+    
+    def volmdlr_volume_model(self):
+        model = self.volume_model()
+        return model
 
 class AWGWire(Wire):
     def __init__(self, waypoints, n, name=''):
@@ -321,20 +327,30 @@ class Wiring(DessiaObject):
                 
 #        nx.draw_kamada_kawai(G)
         return G
+    
+    def volume_model(self):
+        groups = []
+        wire_volumes = []
+        for wire in self.wires:
+            wire_vol = wire.volume_model()
+            wire_volumes.extend(wire_vol.primitives)
+        groups.extend(wire_volumes)
+        
+##        harnesses_volumes = []
+#        for harness in self.wire_harnesses:
+#            groups.append(harness.CADVolumes())
+            
+        model = vm.VolumeModel(groups)
+        return model
+    
+    def volmdlr_volume_model(self):
+        model = self.volume_model()
+        return model
         
     def CADExport(self, name='An_unnamed_wiring',
                   python_path='python',
                   path_lib_freecad='/usr/lib/freecad/lib/',
                   export_types=['fcstd']):
-        groups = []
-        wire_volumes = []
-        for wire in self.wires:
-            wire_volumes.append(wire.CADVolume())
-        groups.append(('Wires', wire_volumes))
         
-#        harnesses_volumes = []
-        for harness in self.wire_harnesses:
-            groups.append(('harness', harness.CADVolumes()))
-            
-        m = vm.VolumeModel(groups)
+        m = self.volume_model()
         m.FreeCADExport(name, python_path, path_lib_freecad, export_types)
