@@ -13,12 +13,12 @@ steps:
   - cd ../
   - python scripts/bearings/bearing_test.py
   - python scripts/meshes/optimizer_bearing_test.py
-  - python scripts/meshes/workflow_bearing_test.py
-
+  - python scripts/meshes/workflow_assembly_bearing_test.py
+  - python scripts/meshes/workflow_combination_bearing_test.py
 
 - name: develop
   image: python:3
-  commands:
+  commands:cd ../front
   - git fetch --tags
   - python setup.py develop
 
