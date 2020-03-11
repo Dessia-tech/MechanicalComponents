@@ -15,7 +15,8 @@ from volmdlr import plot_data
 
 import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
-from mechanical_components.models.catalogs import schaeffler_catalog
+import mechanical_components.models as models
+schaeffler_catalog = models.catalogs.schaeffler_catalog
 
 from itertools import product
 import networkx as nx
