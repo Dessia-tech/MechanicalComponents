@@ -8,7 +8,7 @@ Created on Fri Oct  5 09:53:05 2018
 #import sys
 import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
-from dessia_api_client import Client
+# from dessia_api_client import Client
 
 from volmdlr import plot_data
 
@@ -64,7 +64,8 @@ vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].volmdlr_volume_mod
 #vol1.babylonjs()   
 
 vol1 = ba_simulation.bearing_assembly.volmdlr_volume_model()
-vol1.babylonjs()   
+# vol1.babylonjs()   
+
 #c = Client()
 #c.api_url = 'http://localhost:5000'
 ## c.api_url = 'https://api.platform.dessia.tech'

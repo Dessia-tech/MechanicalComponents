@@ -8,7 +8,7 @@ Created on Fri Oct  5 09:53:05 2018
 from dessia_common import DessiaObject, dict_merge
 from dessia_common import Evolution, CombinationEvolution
 import dectree
-from dessia_api_client import Client
+# from dessia_api_client import Client
 from dessia_common import workflow as wf
 import dessia_common as dc
 from volmdlr import plot_data
@@ -107,7 +107,7 @@ workflow_run = workflow.run(input_values)
 a = workflow_run.to_dict()
 obj = wf.WorkflowRun.dict_to_object(a)
     
-c = Client()
-c.api_url = 'http://localhost:5000'
-# c.api_url = 'https://api.platform.dessia.tech'
-r = c.CreateObject(workflow_run)
+# c = Client()
+# c.api_url = 'http://localhost:5000'
+# # c.api_url = 'https://api.platform.dessia.tech'
+# r = c.CreateObject(workflow_run)

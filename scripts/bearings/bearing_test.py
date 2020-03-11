@@ -34,32 +34,3 @@ if not b1_bis == b1:
     
 d = b1.plot_data()
 #plot_data.plot_d3(d)
-
-#plots = b1.plot_data(pos=0, direction=-1, quote=False, constructor=False)
-#pdg = plot_data.plot_d3(plots)
-#b0_bis = dc.dict_to_object(b1.to_dict())
-
-# d = b1.Dict()
-# jd = json.dumps(d)
-# b1_bis = bearings.RadialBallBearing.dict_to_object(d)
-# b1_bis = bearings.RadialBearing.dict_to_object(d)
-# b1_bis.Plot()
-# export = b1_bis.PlotData(quote = True)
-# print(json.dumps(export))
-
-# b2 = bearings.RadialRollerBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
-#                                        Z = 20, Dw = 0.005)
-# d = b2.Dict()
-# jd = json.dumps(d)
-# b2_bis = bearings.AngularBallBearing.dict_to_object(d)
-# b2_bis = bearings.RadialBearing.dict_to_object(d)
-# b2_bis.Plot()
-# b2_bis.PlotData()
-
-# b3 = bearings.TaperedRollerBearing(d = 0.02, D = 0.04, B = 0.015, i = 1, 
-#                                        Z = 20, Dw = 0.004, alpha = 0.2)
-# d = b3.Dict()
-# jd = json.dumps(d)
-# b3_bis = bearings.AngularBallBearing.dict_to_object(d)
-# b3_bis = bearings.RadialBearing.dict_to_object(d)
-# b3_bis.Plot()
