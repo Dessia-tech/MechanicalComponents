@@ -8,7 +8,6 @@ Created on Tue Mar 10 14:16:58 2020
 
 import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
-from dessia_api_client import Client
 
 from volmdlr import plot_data
 
