@@ -21,7 +21,10 @@ from mechanical_components.bearings import BearingCombination, \
         strength_bearing_classes, RadialBearing, \
         BearingL10Error, CatalogSearchError, Linkage, Mounting, \
         CombinationMounting, SelectionLinkage
-        
+
+from mechanical_components.models.catalogs import schaeffler_catalog
+# schaeffler_catalog = models.schaeffler_catalog
+
 import numpy as npy
 
 from dessia_common import DessiaObject, dict_merge, Evolution
@@ -88,7 +91,10 @@ class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer i
         else:
             self.bearing_classes = bearing_classes
         self.bearing_combination_simulations = bearing_combination_simulations
-        self.catalog = catalog
+        if catalog is None:
+            self.catalog = schaeffler_catalog
+        else:
+            self.catalog = catalog
         
         DessiaObject.__init__(self, name=name)
         
@@ -187,7 +193,10 @@ class BearingAssemblyOptimizer(protected_module.BearingAssemblyOptimizer if _ope
         else:
             self.bearing_classes = bearing_classes
         self.bearing_assembly_simulations = bearing_assembly_simulations
-        self.catalog = catalog
+        if catalog is None:
+            self.catalog = schaeffler_catalog
+        else:
+            self.catalog = catalog
         
         DessiaObject.__init__(self, name=name)
         

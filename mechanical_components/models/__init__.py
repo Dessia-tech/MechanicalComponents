@@ -4,5 +4,5 @@
 
 """
 
-from .optimizer_bearing import bearing_assembly_optimizer
+# from .optimizer_bearing import bearing_assembly_optimizer
 from .catalogs import schaeffler_catalog

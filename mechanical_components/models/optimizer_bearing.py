@@ -7,14 +7,14 @@ Created on Fri Oct  5 09:53:05 2018
 """
 #import sys
 import mechanical_components.bearings as bearings
-import mechanical_components.optimization.bearings as bearings_opt
-
+from mechanical_components.optimization.bearings import BearingAssemblyOptimizer
+from mechanical_components.models.catalogs import schaeffler_catalog
 from volmdlr import plot_data
 
 import pkg_resources
-from .catalogs import schaeffler_catalog
+# from .catalogs import schaeffler_catalog
 
-bearing_assembly_optimizer = bearings_opt.BearingAssemblyOptimizer(
+bearing_assembly_optimizer = BearingAssemblyOptimizer(
                     loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
                     speeds = [157.07],
                     operating_times = [3600000],
@@ -29,4 +29,4 @@ bearing_assembly_optimizer = bearings_opt.BearingAssemblyOptimizer(
                     catalog = schaeffler_catalog,
                     )
 
-bearing_assembly_optimizer.optimize(max_solutions = 10)
+# bearing_assembly_optimizer.optimize(max_solutions = 10)
