@@ -598,7 +598,7 @@ class BearingAssemblyOptimizer(DessiaObject):
                     dt.SetCurrentNodeNumberPossibilities(len(first_bearing_possibilies))
                 elif dt.current_depth < nb_bearings:
                     conceptual_bearing = conceptual_bearing_combination.bearing_classes[dt.current_depth]
-                    list_next_bearings[dt.current_depth] = self.catalog.NextBearingCatalog(conceptual_bearing, d , D)
+                    list_next_bearings[dt.current_depth] = self.catalog.next_bearing_catalog(conceptual_bearing, d , D)
                     if list_next_bearings[dt.current_depth] is not False: 
                         dt.SetCurrentNodeNumberPossibilities(len(list_next_bearings[dt.current_depth]))
                     else:
@@ -910,7 +910,7 @@ class BearingAssemblyOptimizer(DessiaObject):
                     d = bearing.d
                     D = bearing.D
                     try:
-                        bearing_possibilities = self.catalog.NextBearingCatalog(bearing_classe, d , D)
+                        bearing_possibilities = self.catalog.next_bearing_catalog(bearing_classe, d , D)
                         dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
                         list_bearing_possibilities[dt.current_depth] = bearing_possibilities
                     except CatalogSearchError:
@@ -925,7 +925,7 @@ class BearingAssemblyOptimizer(DessiaObject):
                     d = bearing.d
                     D = bearing.D
                     try:
-                        bearing_possibilities = self.catalog.NextBearingCatalog(bearing_classe, d , D)
+                        bearing_possibilities = self.catalog.next_bearing_catalog(bearing_classe, d , D)
                         dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
                         list_bearing_possibilities[dt.current_depth] = bearing_possibilities
                     except CatalogSearchError:

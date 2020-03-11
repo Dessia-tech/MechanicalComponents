@@ -3145,6 +3145,10 @@ class BearingAssembly(DessiaObject):
         else:
             self.overall_length = overall_length
             
+        self.number_bearing = sum([bc.number_bearing for bc in self.bearing_combinations])
+        self.number_bearing_first_bc = self.bearing_combinations[0].number_bearing
+        self.number_bearing_second_bc = self.bearing_combinations[1].number_bearing
+        
         DessiaObject.__init__(self, name=name)
 
 #    def __eq__(self, other_eb):
