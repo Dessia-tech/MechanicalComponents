@@ -18,14 +18,12 @@ steps:
 
 - name: develop
   image: python:3
-  commands:cd ../front
-  - git fetch --tags
+  commands:
   - python setup.py develop
 
 - name: sdist
   image: python:3
   commands:
-  - git fetch --tags
   - python setup.py sdist
 
 
