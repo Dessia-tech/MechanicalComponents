@@ -13,8 +13,8 @@ steps:
   - cd ../
   - python scripts/bearings/bearing_test.py
   - python scripts/bearings/optimizer_bearing_test.py
-  - python scripts/bearings/workflow_assembly_bearing_test.py
-  - python scripts/bearings/workflow_combination_bearing_test.py
+  # - python scripts/bearings/workflow_assembly_bearing_test.py
+  # - python scripts/bearings/workflow_combination_bearing_test.py
 
 - name: develop
   image: python:3

@@ -75,7 +75,7 @@ input_values = {workflow.index(blockA.inputs[0]): [500],
                                                     bearings.TaperedRollerBearing,
                                                     bearings.NUP],
                 workflow.index(blockA.inputs[12]): schaeffler_catalog,
-                workflow.index(optimizeA.inputs[1]): 1000,
+                workflow.index(optimizeA.inputs[1]): 10,
                 }
 
 
