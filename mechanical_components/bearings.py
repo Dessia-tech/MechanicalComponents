@@ -270,8 +270,8 @@ material_iso=Material(9/8., 31/3., 7/3., 551.13373/0.483, 0.83, 0.05)
 class RadialBearing(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_eq_attributes = ['E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
+    _non_hash_attributes = ['E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
     
     symmetric = None
@@ -280,7 +280,8 @@ class RadialBearing(DessiaObject):
     linkage = None
 
     def __init__(self, d:float, D:float, B:float, alpha:float, i:int, Z:int, Dw:float, Cr:float=None, 
-                 C0r:float=None, material:Material=material_iso, contact_type:str=None, 
+                 C0r:float=None, material:Material=material_iso, 
+                 contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
                  mass:float=None, name:str=''):
 
         self.d = d
@@ -300,7 +301,9 @@ class RadialBearing(DessiaObject):
 
         self.alpha = alpha
         self.material = material
-        self.contact_type = contact_type
+        self.contact_type_point = contact_type_point
+        self.contact_type_linear = contact_type_linear
+        self.contact_type_mixed = contact_type_mixed
         
         if Cr is not None:
             self.Cr = Cr
@@ -676,8 +679,8 @@ class RadialBearing(DessiaObject):
 class RadialBallBearing(RadialBearing):
     _standalone_in_db = True
     _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_eq_attributes = ['h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
+    _non_hash_attributes = ['h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
     
     symmetric = True
@@ -691,10 +694,13 @@ class RadialBallBearing(RadialBearing):
 
     def __init__(self, d:float, D:float, B:float, i:int=1, Z:int=None, Dw:float=None, 
                  Cr:float=None, C0r:float=None,
-                 material:Material=material_iso, contact_type:str=None, mass:float=None, name:str=''):
+                 material:Material=material_iso, 
+                 contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
+                 mass:float=None, name:str=''):
         RadialBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
-                               contact_type=contact_type, mass=mass,
+                               contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
+                               mass=mass,
                                name=name)
 
         # estimation for the graph 2D description
@@ -904,8 +910,8 @@ class RadialBallBearing(RadialBearing):
 class AngularBallBearing(RadialBearing):
     _standalone_in_db = True
     _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_eq_attributes = ['h1', 'h2', 'D2', 'd2', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
+    _non_hash_attributes = ['h1', 'h2', 'D2', 'd2', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
     
     symmetric = False
@@ -919,10 +925,13 @@ class AngularBallBearing(RadialBearing):
 
     def __init__(self, d:float, D:float, B:float, alpha:float, i:int=1, Z:int=None, 
                  Dw:float=None, Cr:float=None, C0r:float=None ,
-                 material:Material=material_iso, contact_type:str=None, mass:float=None, name:str=''):
+                 material:Material=material_iso, 
+                 contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
+                 mass:float=None, name:str=''):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
-                               contact_type=contact_type, mass=mass, name=name)
+                               contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
+                               mass=mass, name=name)
 
 
         # estimation for the graph 2D description
@@ -1163,8 +1172,8 @@ class AngularBallBearing(RadialBearing):
 class SphericalBallBearing(RadialBearing):
     _standalone_in_db = True
     _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_eq_attributes = ['E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
+    _non_hash_attributes = ['E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
     
     symmetric = True
@@ -1178,9 +1187,13 @@ class SphericalBallBearing(RadialBearing):
 
     def __init__(self, d:float, D:float, B:float, alpha:float=0, i:int=1, Z:int=None, 
                  Dw:float=None, Cr:float=None, C0r:float=None,
-                 material:Material=material_iso, contact_type:str=None, mass:float=None, name:str=''):
+                 material:Material=material_iso, 
+                 contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
+                 mass:float=None, name:str=''):
         RadialBearing.__init__(self, d, D, B, alpha, i, Z, Dw, Cr, C0r,
-                               material, contact_type, mass, name)
+                               material, 
+                               contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
+                               mass=mass, name=name)
 
 
     def equivalent_static_load(self, fr, fa=None):
@@ -1285,8 +1298,8 @@ class SphericalBallBearing(RadialBearing):
 class RadialRollerBearing(RadialBearing):
     _standalone_in_db = True
     _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_eq_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
+    _non_hash_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
     
     symmetric = True
@@ -1298,11 +1311,12 @@ class RadialRollerBearing(RadialBearing):
     def __init__(self, d:float, D:float, B:float, alpha:float, i:int=1, Z:int=None, 
                  Dw:float=None, Cr:float=None, C0r:float=None,
                  material:Material=material_iso,
-                 contact_type:str='linear_contact',
+                 contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
                  mass:float=None, name:str=''):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw,
                                Cr=Cr, C0r=C0r,
-                               material=material, contact_type=contact_type,
+                               material=material, contact_type_point=contact_type_point,
+                               contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
                                mass=mass, name=name)
 #        self.typ = typ
 
@@ -1334,7 +1348,7 @@ class RadialRollerBearing(RadialBearing):
         nu = 1-0.15*math.sin(self.alpha)
         w = self.material.weibull_e*self.coeff_baselife
 
-        if self.contact_type == 'point_contact':
+        if self.contact_type_point:
             if self.i == 1:
                 Jr0p5 = 0.2288
 #                Ja0p5 = 0.2782
@@ -1345,7 +1359,7 @@ class RadialRollerBearing(RadialBearing):
 #                Ja0p5 = 0.
                 J10p5 = 0.6925
                 J20p5 = 0.7233
-        elif self.contact_type == 'linear_contact':
+        elif self.contact_type_linear:
             if self.i == 1:
                 Jr0p5 = 0.2453
 #                Ja0p5 = 0.3090
@@ -1356,7 +1370,7 @@ class RadialRollerBearing(RadialBearing):
 #                Ja0p5 = 0
                 J10p5 = 0.7577
                 J20p5 = 0.7867
-        elif self.contact_type == 'mixed_contact':
+        elif self.contact_type_mixed:
             if self.i == 1:
                 Jr0p5 = 0.2369
                 # TODO: check why next variable is unused
@@ -1518,32 +1532,32 @@ class RadialRollerBearing(RadialBearing):
             return N(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z,
                      Dw = self.Dw, Cr = Cr, C0r = C0r,
                      oil = self.oil, material = self.material,
-                     contact_type = self.contact_type,
+                     contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
                      name = self.name)
         elif self.class_name == 'NU':
             return NU(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z,
                      Dw = self.Dw, Cr = Cr, C0r = C0r,
                      oil = self.oil, material = self.material,
-                     contact_type = self.contact_type,
+                     contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
                      name = self.name)
         elif self.class_name == 'NF':
             return NF(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z,
                      Dw = self.Dw, Cr = Cr, C0r = C0r,
                      oil = self.oil, material = self.material,
-                     contact_type = self.contact_type,
+                     contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
                      name = self.name)
         elif self.class_name == 'NUP':
             return NUP(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z,
                      Dw = self.Dw, Cr = Cr, C0r = C0r,
                      oil = self.oil, material = self.material,
-                     contact_type = self.contact_type,
+                     contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
                      name = self.name)
 
 class NUP(RadialRollerBearing):
     _standalone_in_db = True
     _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_eq_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
+    _non_hash_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
     
     symmetric = True
@@ -1556,11 +1570,13 @@ class NUP(RadialRollerBearing):
     # TODO: remove alpha?
     def __init__(self, d:float, D:float, B:float, i:int=1, Z:int=None, Dw:float=None, 
                  Cr:float=None, C0r:float=None ,
-                 material:Material=material_iso, contact_type:str='linear_contact',
+                 material:Material=material_iso, 
+                 contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
                  mass:float=None, name:str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
-                                     material=material, contact_type=contact_type,
+                                     material=material, 
+                                     contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
                                      mass=mass, name=name)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
@@ -1621,8 +1637,8 @@ class NUP(RadialRollerBearing):
 class N(RadialRollerBearing):
     _standalone_in_db = True
     _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_eq_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
+    _non_hash_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
     
     symmetric = True
@@ -1634,11 +1650,13 @@ class N(RadialRollerBearing):
 
     def __init__(self, d:float, D:float, B:float, i:int=1, Z:int=None, Dw:float=None, 
                  Cr:float=None, C0r:float=None ,
-                 material:Material=material_iso, contact_type:str='linear_contact',
+                 material:Material=material_iso, 
+                 contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
                  mass:float=None, name:str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
-                                     material=material, contact_type=contact_type,
+                                     material=material, 
+                                     contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
                                      mass=mass, name=name)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
@@ -1691,8 +1709,8 @@ class N(RadialRollerBearing):
 class NF(RadialRollerBearing):
     _standalone_in_db = True
     _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_eq_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
+    _non_hash_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
     
     symmetric = True
@@ -1705,11 +1723,13 @@ class NF(RadialRollerBearing):
 
     def __init__(self, d:float, D:float, B:float, i:int=1, Z:int=None, 
                  Dw:float=None, Cr:float=None, C0r:float=None,
-                 material:Material=material_iso, contact_type:str='linear_contact',
+                 material:Material=material_iso, 
+                 contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
                  mass:float=None, name:str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
-                                     material=material, contact_type=contact_type,
+                                     material=material, 
+                                     contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
                                      mass=mass, name=name)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
@@ -1771,8 +1791,8 @@ class NF(RadialRollerBearing):
 class NU(RadialRollerBearing):
     _standalone_in_db = True
     _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_eq_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
+    _non_hash_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
     
     symmetric = True
@@ -1784,11 +1804,13 @@ class NU(RadialRollerBearing):
 
     def __init__(self, d:float, D:float, B:float, i:int=1, Z:int=None, Dw:float=None, 
                  Cr:float=None, C0r:float=None,
-                 material:Material=material_iso, contact_type:str='linear_contact',
+                 material:Material=material_iso, 
+                 contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
                  mass:float=None, name:str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
-                                     material=material, contact_type=contact_type,
+                                     material=material, 
+                                     contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
                                      mass=mass, name=name)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
@@ -1837,8 +1859,8 @@ class NU(RadialRollerBearing):
 class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     _standalone_in_db = True
     _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_eq_attributes = ['beta', 'Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
+    _non_hash_attributes = ['beta', 'Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
     
     symmetric = False
@@ -1853,7 +1875,8 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 
     def __init__(self, d:float, D:float, B:float, alpha:float, i:int=1, Z:int=None, 
                  Dw:float=None, Cr:float=None, C0r:float=None,
-                 material:Material=material_iso, contact_type:str='linear_contact',
+                 material:Material=material_iso, 
+                 contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
                  mass:float=None, name:str=''):
 
         if Dw is None:
@@ -1861,7 +1884,8 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 
         RadialRollerBearing.__init__(self, d, D, B, alpha=alpha, i = i, Z = Z,
                                      Dw = Dw, Cr=Cr, C0r=C0r,
-                                     material=material, contact_type=contact_type,
+                                     material=material, 
+                                     contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
                                      mass=mass, name=name)
 
         # estimation for the graph 2D description
@@ -2061,7 +2085,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                             i = self.i, Z = self.Z,
                             Dw = self.Dw, Cr = Cr, C0r = C0r,
                             oil = self.oil, material = self.material,
-                            contact_type = self.contact_type,
+                            contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
                             name = self.name)
         return obj
 
@@ -2395,7 +2419,7 @@ class ConceptualBearingCombination(DessiaObject):
                     self.bearing_classes[0: -1], self.bearing_classes[1:])):
             list_nd1 = list_node_bearings[num_bg]
             list_nd2 = list_node_bearings[num_bg + 1]
-            nx_graph = nx.compose(bg2.Graph(list_nd2, dir2), nx_graph)
+            nx_graph = nx.compose(bg2.graph(list_nd2, dir2), nx_graph)
 
             bg1_load = bg1.taking_loads
             bg2_load = bg2.taking_loads
@@ -2553,20 +2577,31 @@ class BearingCombination(DessiaObject):
 
     def __init__(self, bearings:List[RadialBearing], directions:List[int], 
                  radial_load_linkage, internal_pre_load=0,
-                 connection_bi:Mounting=Mounting(left=True, right=True), 
-                 connection_be:Mounting=Mounting(left=True, right=True), 
-                 behavior_link='both',
+                 connection_bi:Mounting=None, 
+                 connection_be:Mounting=None, 
+                 behavior_link:Mounting=None,
                  axial_positions:List[float]=None,
                  internal_diameters:List[float]=None, 
                  external_diameters:List[float]=None, 
-                 length:float=None,
+                 length:float=None, 
                  name:str=''):
         self.bearings = bearings
         self.radial_load_linkage = radial_load_linkage
         self.internal_pre_load = internal_pre_load
         self.connection_be = connection_be
         self.connection_bi = connection_bi
-        self.behavior_link = behavior_link
+        if connection_bi is None:
+            self.connection_bi = Mounting(left=True, right=True)
+        else:
+            self.connection_bi = connection_bi
+        if connection_be is None:
+            self.connection_be = Mounting(left=True, right=True)
+        else:
+            self.connection_be = connection_be
+        if behavior_link is None:
+            self.behavior_link = Mounting(left=True, right=True)
+        else:
+            self.behavior_link = behavior_link
         self.mass = 0
         self.cost = 0
         self.directions = directions
@@ -2589,6 +2624,7 @@ class BearingCombination(DessiaObject):
         self.d = math.inf
         for bg in bearings:
             self.d = min(self.d, bg.d)
+        self.number_bearing = len(self.bearings)
             
         DessiaObject.__init__(self, name=name)
         
@@ -2882,7 +2918,7 @@ class BearingCombination(DessiaObject):
         for radial_load, axial_load in zip(bearing_combination_simulation_result.radial_loads,
                                bearing_combination_simulation_result.axial_loads):
 
-            if (self.behavior_link != 'free') and (abs(axial_load) >= 1e-4):
+            if (not self.behavior_link.free) and (abs(axial_load) >= 1e-4):
                 check_axial_load = self.axial_load(axial_load, radial_load, bearing_combination_simulation_result)
                 if check_axial_load == False:
                     return False
@@ -3197,29 +3233,30 @@ class BearingAssembly(DessiaObject):
         B1 = self.bearing_combinations[0].B
         B2 = self.bearing_combinations[1].B
         pos_mid = (self.axial_positions[0] + self.axial_positions[1])/2.
-#        shaft = vm.Polygon2D([vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.)),
-#                      vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.)),
-#                      vm.Point2D((pos_mid, d1/2.)),
-#                      vm.Point2D((pos_mid, d2/2.)),
-#                      vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, d2/2.)),
-#                      vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, -d2/2.)),
-#                      vm.Point2D((pos_mid, -d2/2.)),
-#                      vm.Point2D((pos_mid, -d1/2.)),
-#                      vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.))])
-        p1 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, 0))
-        p2 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.))
-        p3 = vm.Point2D((pos_mid, d1/2.))
-        p4 = vm.Point2D((pos_mid, d2/2.))
-        p5 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, d2/2.))
-        p6 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, 0))
-        shaft = primitives2D.OpenedRoundedLineSegments2D([p1, p2, p3, p4, p5, p6],
-                                                 {},
-                                                  adapt_radius=False)
-        l1 = vm.LineSegment2D(p6,p1)
+        if d1 == d2:
+            p1 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, 0))
+            p2 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.))
+            p3 = vm.Point2D((pos_mid, d1/2.))
+            p5 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, d2/2.))
+            p6 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, 0))
+            shaft = primitives2D.OpenedRoundedLineSegments2D([p6, p5, p3, p2, p1],
+                                                     {},
+                                                      adapt_radius=True)
+        else:
+            p1 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, 0))
+            p2 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.))
+            p3 = vm.Point2D((pos_mid, d1/2.))
+            p4 = vm.Point2D((pos_mid, d2/2.))
+            p5 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, d2/2.))
+            p6 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, 0))
+            shaft = primitives2D.OpenedRoundedLineSegments2D([p6, p5, p4, p3, p2, p1],
+                                                     {},
+                                                      adapt_radius=True)
+        l1 = vm.LineSegment2D(p1,p6)
         shaft_cont = vm.Contour2D(shaft.primitives + [l1])
-    
+        
         irc = primitives3D.RevolvedProfile(center, axis, z, shaft_cont, center,
-                                         axis, angle=2*math.pi, name='Shaft')
+                                         axis, angle=2*math.pi, color=[204/255, 12/255, 12/255], name='Shaft')
         
         return [irc]
 
@@ -3404,7 +3441,7 @@ class BearingAssembly(DessiaObject):
             component, nonlinear_linkages_iter, loads_iter, axial_bearings, __\
                 = bearing_combination.elementary_axial_load(ground, shaft, pos, \
                                                           radial_load, bearing_result)
-            if (bearing_combination.behavior_link != 'free') and (axial_load != 0):
+            if (not bearing_combination.behavior_link.free) and (axial_load != 0):
                 bc_axial_bearings.append(axial_bearings)
                 loads = loads + loads_iter
 
@@ -4045,6 +4082,10 @@ class BearingAssemblySimulation(DessiaObject):
     def volmdlr_volume_model(self):
         model = self.bearing_assembly.volume_model()
         return model
+    
+    def plot_data(self, box=True, typ=None, constructor=False):
+        plot_data = self.bearing_assembly.plot_data()
+        return plot_data
 
 #    def __eq__(self, other_eb):
 #        equal = (self.bearing_assembly == other_eb.bearing_assembly
@@ -4109,6 +4150,14 @@ class BearingCombinationSimulation(DessiaObject):
         self.bearing_combination_simulation_result = bearing_combination_simulation_result
         
         DessiaObject.__init__(self, name=name)
+        
+    def volmdlr_volume_model(self):
+        model = self.bearing_combination.volume_model()
+        return model
+    
+    def plot_data(self, box=True, typ=None, constructor=False):
+        plot_data = self.bearing_combination.plot_data(box=box)
+        return plot_data
 
 #    def __eq__(self, other_eb):
 #        equal = (self.bearing_combination == other_eb.bearing_combination

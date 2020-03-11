@@ -69,18 +69,17 @@ class BearingCombinationOptimizer(DessiaObject):
                 for linkage in self.linkage_types:
                     configurations.append((mounting_type, linkage))
         return configurations
-
+    
     def ConceptualBearingCombinations(self, max_bearings=2):
         bearing_combinations_possibilities = {}
         for mounting_type, linkage in self.Configurations():
             if not (mounting_type, linkage) in bearing_combinations_possibilities:
-                DBC = ConceptualBearingCombinationOptimizer(linkage, 
+                DBC = mechanical_components.optimization.bearings.ConceptualBearingCombinationOptimizer(linkage, 
                                                     mounting_type, 
                                                     self.inner_diameter,
                                                     self.outer_diameter, 
                                                     self.length, 
-                                                    bearing_classes = self.bearing_classes
-                                                    )
+                                                    bearing_classes = self.bearing_classes)
                 bearing_combinations_possibilities[(mounting_type, linkage)] = \
                     DBC.ConceptualBearingCombinations(max_bearings)
         self.bearing_combinations_possibilities = bearing_combinations_possibilities
@@ -135,7 +134,7 @@ class BearingCombinationOptimizer(DessiaObject):
                     dt.SetCurrentNodeNumberPossibilities(len(first_bearing_possibilies))
                 elif dt.current_depth < nb_bearings:
                     conceptual_bearing = conceptual_bearing_combination.bearing_classes[dt.current_depth]
-                    list_next_bearings[dt.current_depth] = self.catalog.NextBearingCatalog(conceptual_bearing, d , D)
+                    list_next_bearings[dt.current_depth] = self.catalog.next_bearing_catalog(conceptual_bearing, d , D)
                     if list_next_bearings[dt.current_depth] is not False: 
                         dt.SetCurrentNodeNumberPossibilities(len(list_next_bearings[dt.current_depth]))
                     else:
@@ -270,14 +269,14 @@ class BearingCombinationOptimizer(DessiaObject):
                 Cr_current_node_m = Cr_current_node
 
             if (dt.current_depth == nb_bearings) and valid:
-                bc = conceptual_bearing_combination.BearingCombination(bearings)
+                bc = conceptual_bearing_combination.bearing_combination(bearings)
                 li_bg_results = []
                 for bearing in bearings:
                     li_bg_results.append(BearingSimulationResult())
                 bearing_combination_simulation_result = BearingCombinationSimulationResult(li_bg_results, self.axial_loads,
                                                                 self.radial_loads, self.speeds, self.operating_times)
 
-                check = bc.BaseLifeTime(bearing_combination_simulation_result)
+                check = bc.base_life_time(bearing_combination_simulation_result)
                 if check == False:
                     break
                 
@@ -295,7 +294,7 @@ class BearingCombinationOptimizer(DessiaObject):
                         bgs = [deepcopy(bg) for bg in bearings]
                         for bg in bgs:
                             bg.Cr = bg.Cr*alpha[0]
-                        bc = conceptual_bearing_combination.BearingCombination(bgs)
+                        bc = conceptual_bearing_combination.bearing_combination(bgs)
                         li_bg_results = []
                         for bearing in bearings:
                             li_bg_results.append(BearingSimulationResult())
@@ -346,7 +345,7 @@ class BearingCombinationOptimizer(DessiaObject):
                     d = bearing.d
                     D = bearing.D
                     try:
-                        bearing_possibilities = self.catalog.NextBearingCatalog(bearing_classe, d , D)
+                        bearing_possibilities = self.catalog.next_bearing_catalog(bearing_classe, d , D)
                         dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
                         list_bearing_possibilities[dt.current_depth] = bearing_possibilities
                     except CatalogSearchError:
@@ -354,7 +353,7 @@ class BearingCombinationOptimizer(DessiaObject):
                         dt.SetCurrentNodeNumberPossibilities(0)
                 elif dt.current_depth == nb_bearings:
                     dt.SetCurrentNodeNumberPossibilities(0) 
-                    bc = conceptual_bearing_combination.BearingCombination(bearings)
+                    bc = conceptual_bearing_combination.bearing_combination(bearings)
                     compt_same_configuration += 1
                     
                     yield bc
@@ -368,7 +367,7 @@ class BearingCombinationOptimizer(DessiaObject):
             
             dt.NextNode(valid)
         
-    def Optimize(self, max_solutions=10):
+    def optimize(self, max_solutions:int=10)->None:
         
         L10_objective = 0
         for speed, time in zip(self.speeds, self.operating_times):
@@ -401,9 +400,9 @@ class BearingCombinationOptimizer(DessiaObject):
                         li_bg_results.append(BearingSimulationResult())
                     bearing_combination_simulation_result = BearingCombinationSimulationResult(li_bg_results, self.axial_loads,
                                                                     self.radial_loads, self.speeds, self.operating_times)
-                    check = bearing_combination.BaseLifeTime(bearing_combination_simulation_result)
+                    check = bearing_combination.base_life_time(bearing_combination_simulation_result)
                     if check != False:
-                        bearing_combination.Update(-self.length/2., self.inner_diameter, self.outer_diameter, self.length)
+                        bearing_combination.update(-self.length/2., self.inner_diameter, self.outer_diameter, self.length)
                         bearing_combination_simulation = BearingCombinationSimulation(bearing_combination, bearing_combination_simulation_result)
                         L10 = bearing_combination_simulation_result.L10
                         if L10 >= L10_objective:

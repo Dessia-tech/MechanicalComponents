@@ -48,6 +48,8 @@ class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer i
     _non_hash_attributes = ['name']
     _generic_eq = True
     
+    _dessia_methods = ['optimize']
+    
     def __init__(self, radial_loads:List[float], axial_loads:List[float], 
                  speeds:List[float], operating_times:List[float],
                  inner_diameter:float, outer_diameter:float,
@@ -55,7 +57,7 @@ class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer i
                  linkage_types:List[Linkage]=None,
                  mounting_types:List[Mounting]=None,
                  number_bearings:List[int]=None,
-                 bearing_classes:List[RadialBearing]=None,
+                 bearing_classes:List[str]=None,
                  bearing_combination_simulations:List[BearingCombinationSimulation]=None,
                  catalog:BearingCatalog=None, name:str=''):
         
@@ -267,7 +269,6 @@ class BearingAssemblyOptimizer(protected_module.BearingAssemblyOptimizer if _ope
         
         if stringify_keys:
             return StringifyDictKeys(d)
-        
 
         return d
     

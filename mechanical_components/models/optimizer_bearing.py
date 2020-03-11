@@ -13,10 +13,7 @@ from dessia_api_client import Client
 from volmdlr import plot_data
 
 import pkg_resources
-
-with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                           'mechanical_components/catalogs/schaeffler.json') as schaeffler_json:
-    schaeffler_catalog = bearings.BearingCatalog.load_from_file(schaeffler_json)
+from .catalogs import schaeffler_catalog
 
 bearing_assembly_optimizer = bearings_opt.BearingAssemblyOptimizer(
                     loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 

@@ -15,6 +15,7 @@ from volmdlr import plot_data
 
 import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
+from mechanical_components.models.catalogs import schaeffler_catalog
 
 from itertools import product
 import networkx as nx
@@ -28,19 +29,19 @@ import math
 import json
 import pkg_resources
 
-blockA = wf.InstanciateModel(bearings_opt.BearingAssemblyOptimizer,  name='BearingAssemblyOptimizer')
-optimizeA = wf.ModelMethod(bearings_opt.BearingAssemblyOptimizer, 'optimize', name='BearingAssemblyOptimizer-optimize')
-attribute_selection1 = wf.ModelAttribute('bearing_assembly_simulations')
+blockA = wf.InstanciateModel(bearings_opt.BearingCombinationOptimizer,  name='BearingCombinationOptimizer')
+optimizeA = wf.ModelMethod(bearings_opt.BearingCombinationOptimizer, 'optimize', name='BearingCombinationOptimizer-optimize')
+attribute_selection1 = wf.ModelAttribute('bearing_combination_simulations')
 
 filters = [
-          {'attribute' : 'bearing_assembly.overall_length', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly.mass', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly.cost', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly_simulation_result.L10', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly_simulation_result.bearing_combination_first.max_axial_load', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly_simulation_result.bearing_combination_first.max_radial_load', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly_simulation_result.bearing_combination_second.max_axial_load', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly_simulation_result.bearing_combination_second.max_radial_load', 'operator' : 'gt', 'bound' : -100},
+          {'attribute' : 'bearing_combination.B', 'operator' : 'gt', 'bound' : -100},
+          {'attribute' : 'bearing_combination.d', 'operator' : 'gt', 'bound' : -100},
+          {'attribute' : 'bearing_combination.D', 'operator' : 'gt', 'bound' : -100},
+          {'attribute' : 'bearing_combination.number_bearing', 'operator' : 'gt', 'bound' : -100},
+          {'attribute' : 'bearing_combination.mass', 'operator' : 'gt', 'bound' : -100},
+          {'attribute' : 'bearing_combination.cost', 'operator' : 'gt', 'bound' : -100},
+          {'attribute' : 'bearing_combination_simulation_result.max_axial_load', 'operator' : 'gt', 'bound' : -100},
+          {'attribute' : 'bearing_combination_simulation_result.max_radial_load', 'operator' : 'gt', 'bound' : -100},
            ]
 
 filter_analyze= wf.Filter(filters)
@@ -58,11 +59,6 @@ pipes = [wf.Pipe(blockA.outputs[0], optimizeA.inputs[0]),
          ]
 
 workflow = wf.Workflow(blocks, pipes, filter_analyze.outputs[0])
-
-
-with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                           'mechanical_components/catalogs/schaeffler.json') as schaeffler_json:
-    schaeffler_catalog = bearings.BearingCatalog.load_from_file(schaeffler_json)
 
 #bis2 = bearings_opt.BearingAssemblyOptimizer(
 #                    loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
@@ -85,29 +81,32 @@ with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_compone
 ##                                       ]
 #                    )
 
-    
-input_values = {workflow.index(blockA.inputs[0]): [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]],
-                workflow.index(blockA.inputs[1]): [157.07],
-                workflow.index(blockA.inputs[2]): [3600000],
-                workflow.index(blockA.inputs[3]): [0.035, 0.035],
-                workflow.index(blockA.inputs[4]): [0.072, 0.072],
-                workflow.index(blockA.inputs[5]): [0, 0.3], 
-                workflow.index(blockA.inputs[6]): [0.03, 0.03],
-                workflow.index(blockA.inputs[7]): [bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)]),
-                                                   bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)])],
-                workflow.index(blockA.inputs[8]): [bearings.CombinationMounting([bearings.Mounting(), bearings.Mounting(left=True)])],
-                workflow.index(blockA.inputs[9]): [[1], [1]],
+input_values = {workflow.index(blockA.inputs[0]): [500],
+                workflow.index(blockA.inputs[1]): [0],
+                workflow.index(blockA.inputs[2]): [1000],
+                workflow.index(blockA.inputs[3]): [1e6],
+                workflow.index(blockA.inputs[4]): 0.15,
+                workflow.index(blockA.inputs[5]): 0.4,
+                workflow.index(blockA.inputs[6]): 0.2,
+                workflow.index(blockA.inputs[7]): [bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)],
+                workflow.index(blockA.inputs[8]): [bearings.Mounting(left=True), bearings.Mounting(right=True), bearings.Mounting(left=True, right=True), bearings.Mounting()],
+                workflow.index(blockA.inputs[9]): [1, 2, 3],
+                workflow.index(blockA.inputs[10]): [bearings.RadialBallBearing,
+                                                    bearings.AngularBallBearing,
+                                                    bearings.TaperedRollerBearing,
+                                                    bearings.NUP],
                 workflow.index(blockA.inputs[12]): schaeffler_catalog,
-                workflow.index(optimizeA.inputs[1]): 10,
+                workflow.index(optimizeA.inputs[1]): 1000,
                 }
 
-a = workflow.to_dict()
-obj = wf.Workflow.dict_to_object(a)
+
 ##
 workflow_run = workflow.run(input_values)
 
+a = workflow_run.to_dict()
+obj = wf.WorkflowRun.dict_to_object(a)
     
-#c = Client()
-#c.api_url = 'http://localhost:5000'
-## c.api_url = 'https://api.platform.dessia.tech'
-#r = c.CreateObject(bis2)
+c = Client()
+c.api_url = 'http://localhost:5000'
+# c.api_url = 'https://api.platform.dessia.tech'
+r = c.CreateObject(workflow_run)

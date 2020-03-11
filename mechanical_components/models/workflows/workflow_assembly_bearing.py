@@ -15,6 +15,7 @@ from volmdlr import plot_data
 
 import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
+from mechanical_components.models.catalogs import schaeffler_catalog
 
 from itertools import product
 import networkx as nx
@@ -58,33 +59,6 @@ pipes = [wf.Pipe(blockA.outputs[0], optimizeA.inputs[0]),
          ]
 
 workflow = wf.Workflow(blocks, pipes, filter_analyze.outputs[0])
-
-
-with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                           'mechanical_components/catalogs/schaeffler.json') as schaeffler_json:
-    schaeffler_catalog = bearings.BearingCatalog.load_from_file(schaeffler_json)
-
-#bis2 = bearings_opt.BearingAssemblyOptimizer(
-#                    loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
-#                    speeds = [157.07],
-#                    operating_times = [3600000],
-#                    inner_diameters = [0.035, 0.035],
-#                    axial_positions = [0, 0.3], 
-#                    outer_diameters = [0.072, 0.072], 
-#                    lengths = [0.03, 0.03],
-#                    linkage_types = [bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)]),
-#                                     bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)])],
-#                    mounting_types = [bearings.CombinationMounting([bearings.Mounting(), bearings.Mounting(left=True)])],
-#                    number_bearings = [[1], [1]],
-#                    catalog = schaeffler_catalog,
-##                    bearing_classes = [bearings.RadialBallBearing, 
-##                                       bearings.AngularBallBearing,
-##                                       bearings.TaperedRollerBearing,
-##                                       bearings.NUP, bearings.N, bearings.NU,
-###                                       bearings_opt.NF
-##                                       ]
-#                    )
-
     
 input_values = {workflow.index(blockA.inputs[0]): [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]],
                 workflow.index(blockA.inputs[1]): [157.07],
@@ -104,10 +78,6 @@ input_values = {workflow.index(blockA.inputs[0]): [[[[0.1595, 0, 0], [0, -14000,
 a = workflow.to_dict()
 obj = wf.Workflow.dict_to_object(a)
 ##
-workflow_run = workflow.run(input_values)
+workflow_assembly_bearing = workflow.run(input_values)
 
     
-#c = Client()
-#c.api_url = 'http://localhost:5000'
-## c.api_url = 'https://api.platform.dessia.tech'
-#r = c.CreateObject(bis2)
