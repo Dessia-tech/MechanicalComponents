@@ -1756,13 +1756,13 @@ class MeshCombination(DessiaObject):
         d['connections'] = self.connections
         d['meshes'] = {}
         for num_mesh, mesh in self.meshes.items():
-            d['meshes'][num_mesh] = mesh.Dict()
+            d['meshes'][str(num_mesh)] = mesh.Dict()
         d['keys_torque'] = []
         d['torque'] = []
         for keys, value in self.torque.items():
             d['keys_torque'].append(keys)
             d['torque'].append(value)
-        d['cycle'] = self.cycle
+        d['cycle'] = {str(k):v for k,v in self.cycle.items()}
         d['safety_factor'] = self.safety_factor
         return d
 
@@ -2150,7 +2150,7 @@ class MeshAssembly(DessiaObject):
             d['keys_torque'].append(keys)
             d['torque'].append(value)
 #        d['torque'] = self.torque
-        d['cycle'] = self.cycle
+        d['cycle'] = {str(k):v for k,v in self.cycle.items()}
         d['strong_links'] = self.strong_links
         d['safety_factor'] = self.safety_factor
         return d
