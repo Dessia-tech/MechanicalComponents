@@ -53,15 +53,15 @@ class BearingCombinationOptimizer(DessiaObject):
         list_load_cases = []
         for axial_load in self.axial_loads:
             if axial_load > 0:
-                list_load_cases.append('right')
+                list_load_cases.append(Mounting(right=True))
             elif axial_load < 0:
-                list_load_cases.append('left')
+                list_load_cases.append(Mounting(left=True))
         
         for mounting_type in self.mounting_types:
             valid_load_case = True
             if len(list_load_cases) > 0:
                 if mounting_type not in list_load_cases:
-                    if mounting_type != 'both':
+                    if not mounting_type.both:
                         valid_load_case = False
                 elif len(list_load_cases) > 1:
                     valid_load_case = False
