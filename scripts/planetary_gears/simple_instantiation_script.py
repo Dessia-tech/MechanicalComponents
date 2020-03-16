@@ -34,7 +34,8 @@ assembly_planetary_gear=pg.AssemblyPlanetaryGears('assembly_planetary_gear',
 # planetary_gears_1.solve(500, ring,planet_3)
 assembly_planetary_gear.plot()
 # print(assembly_planetary_gear.system_equations()[0])
-print(assembly_planetary_gear.solve(500,planet_carrier,planetary_gears_2,[ring,sun],[planetary_gears_3,planetary_gears_2]))
+solution,system_matrix=assembly_planetary_gear.solve(500,planet_carrier,planetary_gears_2,[ring,sun],[planetary_gears_3,planetary_gears_2])
+# print(assembly_planetary_gear.solve(500,planet_carrier,planetary_gears_2,[ring,sun],[planetary_gears_3,planetary_gears_2]))
 
 
 

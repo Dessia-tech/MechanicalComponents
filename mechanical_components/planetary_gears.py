@@ -18,14 +18,14 @@ class Relation:
         
     def _get_system_matrix(self):
         if not self._utd_system_equations:
-            self._system_matrix, self._system_rhs = self.SystemEquations()
+            self._system_matrix, self._system_rhs = self.system_equations()
             self._utd_system_equations = True
         return self._system_matrix    
     system_matrix = property(_get_system_matrix)
     
     def _get_system_rhs(self):
         if not self._utd_system_equations:
-            self._system_matrix, self._system_rhs = self.SystemEquations()
+            self._system_matrix, self._system_rhs = self.system_equations()
             self._utd_system_equations = True
         return self._system_rhs
     
@@ -71,27 +71,31 @@ class Gearing(Relation):
     def __init__(self,name,nodes):
         
         Relation.__init__(self,name)
-        self.flag_planet=0
         self.Z_planets=[]
-        for node in nodes:
-            if type(node)== Planet:
-                self.flag_planet+=1
-                self.Z_planets.append(node.Z)
-            else:
-                self.Z_planetary= node.p*node.Z
+        # for node in nodes:
+        #     if isinstance(node,Planet):
+        #         self.flag_planet+=1
+        #         self.Z_planets.append(node.Z)
+        #     else:
+        #         self.Z_planetary= node.p*node.Z
                 
     def system_equations(self):
         
-        if self.flag_planet == 2:
-            matrix=npy.array([ self.Z_planets[0], self.Z_planets[1]])
-            rhs= npy.array([0])
+        # if self.flag_planet == 2:
+        #     matrix=npy.array([ self.Z_planets[0], self.Z_planets[1]])
+        #     rhs= npy.array([0])
             
-        else:
-            matrix=npy.array([self.Z_planetary ,self.Z_planets[0],-self.Z_planetary])
-            rhs= npy.array([0])
-            
+        matrix=npy.array([self.Z_planetary ,self.Z_planets[0],-self.Z_planetary])
+        rhs= npy.array([0]) 
         return matrix,rhs
     
+class Gearing_Planet(Gearing):
+        def system_equations(self):
+                 matrix=npy.array([ self.Z_planets[0], self.Z_planets[1]])
+                 rhs= npy.array([0])
+                 return matrix,rhs
+             
+
 class Pivot(Relation):
     
     def __init__(self,name,nodes):
@@ -186,8 +190,10 @@ class PlanetaryGears():
         
         graph_planetary_gear= nx.Graph()
         
-        for k in range((len(self.list_nodes)-1)): 
-            graph_planetary_gear.add_edge(self.list_nodes[k].name,self.list_nodes[k+1].name)
+        for node, next_node in zip(self.list_nodes[:-1], self.list_nodes[1:]):
+            graph_planetary_gear.add_edge(node.name, next_node.name)
+        # for k in range((len(self.list_nodes)-1)): 
+            # graph_planetary_gear.add_edge(self.list_nodes[k].name,self.list_nodes[k+1].name)
             
         graph_planetary_gear.add_edge(self.clutch_3.name,self.planet_carrier.name)
         for k in range(len(self.planets)):
@@ -238,8 +244,10 @@ class PlanetaryGears():
     
     def solve(self,input_speed,input_composant,fixed_composant):
         system_matrix, vector_b = self.system_equations()
+        
         system_matrix_solve_0=npy.zeros((2, self.n_variables))
         vector_b_solve_0=npy.zeros(2)
+        
         system_matrix=npy.concatenate((system_matrix,system_matrix_solve_0),axis=0)
         vector_b=npy.concatenate((vector_b,vector_b_solve_0),axis=0)
         list_elements_speed=[self.planetary_1,self.planetary_2]+self.planets+[self.planet_carrier]
@@ -396,5 +404,5 @@ class AssemblyPlanetaryGears():
         solution = solve(system_matrix_assembly, vector_b)
         for i in range(len(self.list_elements_speed)):
             self.list_elements_speed[i].speed=solution[i]
-        return solution
+        return solution, system_matrix_assembly
             
