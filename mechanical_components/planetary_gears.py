@@ -8,6 +8,7 @@ Created on Mon Mar  9 12:25:05 2020
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as npy
+import dectree as dt
 from scipy.linalg import solve
 
 
@@ -138,9 +139,21 @@ class Clutch (Relation):
         matrix= npy.array([1, -1])
         rhs= npy.array([0])
         return matrix,rhs
-        
+
+class ImposeSpeed(Relation):
+
+    def __init__(self,name , node, input_speed):
+              Relation.__init__(self,name)  
+              self.input_speed=input_speed
+              
+    def system_equations(self):
+        matrix= npy.array([1])
+        rhs= npy.array([self.input_speed])
+        return matrix,rhs          
+              
+              
 class PlanetaryGears():
-    
+        
     def __init__(self,name,planetary_1,planetary_2,planets,planet_carrier):
         
         #Initialize Planetarygears elements
@@ -151,11 +164,9 @@ class PlanetaryGears():
         self.planet_carrier=planet_carrier
         self.planetaries= [planetary_1,planetary_2]
         self.list_elements=[self.planetary_1]+self.planets+[self.planetary_2,self.planet_carrier]
-        
+        self.list_elements_speed=[self.planetary_1,self.planetary_2]+self.planets+[self.planet_carrier]
         #Initialize relations
-        self.clutch_1=Clutch('Cl1',self.planetary_1)
-        self.clutch_2=Clutch('Cl2',self.planetary_2)
-        self.clutch_3=Clutch('Cl3',self.planet_carrier)
+        
         self.gearings=[]
         self.pivots=[]
         
@@ -164,7 +175,7 @@ class PlanetaryGears():
         flag_gearing=0
         
         self.list_relations=[]
-        self.list_nodes=[self.clutch_1,self.planetary_1] #list node is use for graph
+        self.list_nodes=[self.planetary_1] #list node is use for graph
         for i,planet in enumerate(self.planets):           
             
             if planet.planet_type == 'Double':
@@ -186,19 +197,24 @@ class PlanetaryGears():
             self.list_nodes.append(planet)
             
         self.gearings.append(GearingPlanetary('Ge_'+str(i+2),[self.list_elements[i+1], self.list_elements[i+2]]))
-        self.list_nodes.extend([self.gearings[flag_gearing],self.planetary_2,self.clutch_2])
+        self.list_nodes.extend([self.gearings[flag_gearing],self.planetary_2])
         self.list_relations.append(self.gearings[flag_gearing])
-        
+     
+    def matrix_position(self,element):
+        for k,element_speed in enumerate(self.list_elements_speed):
+            if element_speed==element:
+                return k
+            
+            
     def plot(self):
         
         graph_planetary_gear= nx.Graph()
         
         for node, next_node in zip(self.list_nodes[:-1], self.list_nodes[1:]):
             graph_planetary_gear.add_edge(node.name, next_node.name)
-        # for k in range((len(self.list_nodes)-1)): 
-            # graph_planetary_gear.add_edge(self.list_nodes[k].name,self.list_nodes[k+1].name)
             
-        graph_planetary_gear.add_edge(self.clutch_3.name,self.planet_carrier.name)
+            
+        
         for k,planet in enumerate(self.planets):
             graph_planetary_gear.add_edge(self.planet_carrier.name,self.pivots[k].name)
             graph_planetary_gear.add_edge(self.pivots[k].name,planet.name)
@@ -209,10 +225,10 @@ class PlanetaryGears():
     
     def system_equations(self):
         #initialize system matrix
-        self.n_equations = len(self.list_relations)
-        self.n_variables= len(self.list_elements)
-        system_matrix = npy.zeros((self.n_equations, self.n_variables))
-        rhs = npy.zeros(self.n_equations)
+        n_equations = len(self.list_relations)
+        n_variables= len(self.list_elements)
+        system_matrix = npy.zeros((n_equations, n_variables))
+        rhs = npy.zeros(n_equations)
         num_satelite=0
         num_planetary=0
         for i,relation in enumerate(self.list_relations):
@@ -220,7 +236,7 @@ class PlanetaryGears():
             if isinstance(relation,GearingPlanetary) :
                 system_matrix[i][num_planetary]=   matrix_relation[0]         
                 system_matrix[i][num_satelite+2]=   matrix_relation[1]
-                system_matrix[i][self.n_variables-1]=   matrix_relation[2]
+                system_matrix[i][n_variables-1]=   matrix_relation[2]
                     
                 rhs[i]=rhs_relation[0]
                 num_planetary+=1
@@ -239,27 +255,30 @@ class PlanetaryGears():
     
     def solve(self,input_speed,input_composant,fixed_composant):
         system_matrix, vector_b = self.system_equations()
+        n_equations = len(self.list_relations)
+        n_variables= len(self.list_elements)
         
-        system_matrix_solve_0=npy.zeros((2, self.n_variables))
+        system_matrix_solve_0=npy.zeros((2, n_variables))
         vector_b_solve_0=npy.zeros(2)
         
         system_matrix=npy.concatenate((system_matrix,system_matrix_solve_0),axis=0)
         vector_b=npy.concatenate((vector_b,vector_b_solve_0),axis=0)
-        list_elements_speed=[self.planetary_1,self.planetary_2]+self.planets+[self.planet_carrier]
         
-        for i,element in enumerate(list_elements_speed):
+        impose_speed=ImposeSpeed('ImposeSpeed',input_composant,input_speed)
+        impose_fixed_composant= ImposeSpeed('fixed_composant',fixed_composant,0)
+        for i,element in enumerate(self.list_elements_speed):
             if element==input_composant:
-                system_matrix[self.n_equations][i]=1
-                vector_b[self.n_equations]=input_speed
+                system_matrix[n_equations][i]=impose_speed.system_equations()[0]
+                vector_b[n_equations]=impose_speed.system_equations()[1]
                 
             if element==fixed_composant:
-                system_matrix[self.n_equations+1][i]=1
-                vector_b[self.n_equations+1]=0
+                system_matrix[n_equations+1][i]=impose_fixed_composant.system_equations()[0]
+                vector_b[n_equations+1]=impose_fixed_composant.system_equations()[1]
         
-        print(system_matrix)          
+                 
         solution = solve(system_matrix, vector_b)
-        for i in range(len(list_elements_speed)):
-            list_elements_speed[i].speed=solution[i]
+        for i in range(len(self.list_elements_speed)):
+            self.list_elements_speed[i].speed=solution[i]
         return solution
         
 
@@ -314,7 +333,7 @@ class AssemblyPlanetaryGears():
             'font_size' : 11,
             'font_weight':'bold'
         }
-        plt.figure(figsize=(10, 10))
+        
         nx.draw_kamada_kawai(graph_planetary_assembly, with_labels=True,**option)
         
         
@@ -323,15 +342,15 @@ class AssemblyPlanetaryGears():
     def system_equations(self):
         
         system_matrix_assembly,rhs_assembly=self.planetary_gears[0].system_equations()
-        n_equations_assembly=self.planetary_gears[0].n_equations
-        n_variables_assembly=self.planetary_gears[0].n_variables
+        n_equations_assembly=system_matrix_assembly.shape[0]
+        n_variables_assembly=system_matrix_assembly.shape[1]
       
 
         for planetary_gear in self.planetary_gears[1:]:
             matrix_planetary_gears=planetary_gear.system_equations()[0]
             
-            matrix_0_assembly=npy.zeros((n_equations_assembly,planetary_gear.n_variables))
-            matrix_0_planetary_gears=npy.zeros((planetary_gear.n_equations,n_variables_assembly))
+            matrix_0_assembly=npy.zeros((n_equations_assembly,len(planetary_gear.list_elements)))
+            matrix_0_planetary_gears=npy.zeros((len(planetary_gear.list_relations),n_variables_assembly))
             
             matrix_concatenate_assembly=npy.concatenate((system_matrix_assembly,matrix_0_assembly), axis=1)
             matrix_concatenate_planetary_gears=npy.concatenate((matrix_0_planetary_gears,matrix_planetary_gears), axis=1)
@@ -347,15 +366,19 @@ class AssemblyPlanetaryGears():
             
         return system_matrix_assembly,rhs_assembly
 
-    def solve(self,input_speed,input_composant,list_fixed_composant):
+    def solve(self,input_speed,input_composant,list_composant_speed_0):
         
         system_matrix_assembly, vector_b = self.system_equations()
+        impose_speed=ImposeSpeed('impose_speed',input_composant,input_speed)
+        impose_composants_speed_0= []
         
-        for fixed_composant in list_fixed_composant:
-             matrix_fixed_composant=npy.zeros((1,system_matrix_assembly.shape[1]))
-             matrix_fixed_composant[0][self.matrix_position(fixed_composant)]=1           
-             system_matrix_assembly=npy.concatenate((system_matrix_assembly,matrix_fixed_composant),axis=0)
-             vector_b=npy.concatenate((vector_b,[0]))
+        for i,composant_speed_0 in enumerate(list_composant_speed_0):
+             impose_composants_speed_0.append(ImposeSpeed('composant_speed_0',composant_speed_0,0))
+             matrix_composant_speed_0=npy.zeros((1,system_matrix_assembly.shape[1]))
+            
+             matrix_composant_speed_0[0][self.matrix_position(composant_speed_0)]=impose_composants_speed_0[i].system_equations()[0]          
+             system_matrix_assembly=npy.concatenate((system_matrix_assembly,matrix_composant_speed_0),axis=0)
+             vector_b=npy.concatenate((vector_b,impose_composants_speed_0[i].system_equations()[1]))
              
         for i,fixed_element in enumerate(self.list_fixed_elements):
             matrix_fixed_elements=npy.zeros((1,system_matrix_assembly.shape[1]))
@@ -365,9 +388,9 @@ class AssemblyPlanetaryGears():
             vector_b=npy.concatenate((vector_b,self.list_fixed[i].system_equations()[1]))
         
         matrix_fixed_composant=npy.zeros((1,system_matrix_assembly.shape[1]))
-        matrix_fixed_composant[0][self.matrix_position(input_composant)]=1           
+        matrix_fixed_composant[0][self.matrix_position(input_composant)]=impose_speed.system_equations()[0]          
         system_matrix_assembly=npy.concatenate((system_matrix_assembly,matrix_fixed_composant),axis=0)
-        vector_b=npy.concatenate((vector_b,[input_speed]))
+        vector_b=npy.concatenate((vector_b,impose_speed.system_equations()[1]))
 
                                
             
@@ -379,3 +402,32 @@ class AssemblyPlanetaryGears():
             self.list_elements_speed[i].speed=solution[i]
         return solution, system_matrix_assembly
             
+def cas_vitesse_1planetary(input_composant,fixed_composant,speed_input,output_composant,speed_output,numbers_planet_planetary_gears):
+        list_tree=[]
+        for i in range(numbers_planet_planetary_gears+2):
+            list_tree.append(74)
+        print(list_tree)
+        tree=dt.RegularDecisionTree(list_tree)
+        Planets=[]
+        Planet_Carrier=PlanetCarrier('PlanetCarrier')
+        
+        while not tree.finished:
+            if len(tree.current_node)==3:
+                Planetary_1=Planetary('Planetary_1',tree.current_node[0]+7,'Sun')
+                Planetary_2=Planetary('Planetary_2',tree.current_node[1]+7,'Ring')
+                list_element={'Planet_Carrier': Planet_Carrier, 'Planetary_1' : Planetary_1,'Planetary_2':Planetary_2}
+                for i in range(numbers_planet_planetary_gears):
+                    Planets.append(Planet('Planet'+str(i),'Simple',tree.current_node[i+1]+7))
+                    PlanetaryGears1=PlanetaryGears('PlanetaryGears1',Planetary_1,Planetary_2,Planets,Planet_Carrier)
+                if PlanetaryGears1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[PlanetaryGears1.matrix_position(list_element[output_composant])]== speed_output:
+                        print(tree.current_node)
+            tree.NextNode(True)
+        
+    
+    
+    
+    
+    
+    
+    
+    
