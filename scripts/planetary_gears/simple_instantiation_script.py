@@ -43,6 +43,6 @@ assembly_planetary_gear=pg.AssemblyPlanetaryGears('assembly_planetary_gear',
 
 # print(assembly_planetary_gear.solve(500,planet_carrier,planetary_gears_2,[ring,sun],[planetary_gears_3,planetary_gears_2]))
 
-pg.cas_vitesse_1planetary('Planetary_1','Planet_Carrier',500,'Planetary_2',+200,2)
+pg.cas_vitesse_1planetary('Planetary_1','Planet_Carrier',500,'Planetary_2',-200,2)
 
 

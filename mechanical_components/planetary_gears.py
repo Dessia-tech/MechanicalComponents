@@ -418,36 +418,41 @@ class AssemblyPlanetaryGears():
         return solution, system_matrix_assembly
             
 def cas_vitesse_1planetary(input_composant,fixed_composant,speed_input,output_composant,speed_output,numbers_planet_planetary_gears):
-        list_tree=[]
+        list_tree=[4]
         for i in range(numbers_planet_planetary_gears+2):
             list_tree.append(74)
         
         tree=dt.RegularDecisionTree(list_tree)
         Planets=[]
         Planet_Carrier=PlanetCarrier('PlanetCarrier')
-        
+        Z_ring=0
         while not tree.finished:
-            if len(tree.current_node)==numbers_planet_planetary_gears+2:
-                Planetary_1=Planetary('Planetary_1',tree.current_node[0]+7,'Sun')
-                Planetary_2=Planetary('Planetary_2',tree.current_node[1]+7,'Ring')
-                list_element={'Planet_Carrier': Planet_Carrier, 'Planetary_1' : Planetary_1,'Planetary_2':Planetary_2}
-                Planets=[]
-                
-                for i in range(numbers_planet_planetary_gears):
-                    Planets.append(Planet('Planet'+str(i),'Double',tree.current_node[i+2]+7))
+            if tree.current_node[0] == 0:
+                if len(tree.current_node)==3:
+                    if tree.current_node[2]>tree.current_node[1] and tree.current_node[2]>(Z_ring-7):
+                      Planetary_1=Planetary('Planetary_1',tree.current_node[1]+7,'Sun')
+                      Planetary_2=Planetary('Planetary_2',tree.current_node[2]+7,'Ring')
+                      list_element={'Planet_Carrier': Planet_Carrier, 'Planetary_1' : Planetary_1,'Planetary_2':Planetary_2}
+                      
+                      Planets=[]
+                      
+                      for i in range(numbers_planet_planetary_gears):
+                          Planets.append(Planet('Planet'+str(i),'simple',10))
                     
-                PlanetaryGears1=PlanetaryGears('PlanetaryGears1',Planetary_1,Planetary_2,Planets,Planet_Carrier)
-                speed_output_PlanetaryGears1=PlanetaryGears1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[PlanetaryGears1.matrix_position(list_element[output_composant])]
-            
-                if (speed_output_PlanetaryGears1<speed_output*1.00001) and (speed_output_PlanetaryGears1>speed_output*0.99999):
-                        
-                        print(tree.current_node)
+                      PlanetaryGears1=PlanetaryGears('PlanetaryGears1',Planetary_1,Planetary_2,Planets,Planet_Carrier)
+                      speed_output_PlanetaryGears1=PlanetaryGears1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[PlanetaryGears1.matrix_position(list_element[output_composant])]
+                      
+                      if (speed_output_PlanetaryGears1>speed_output*1.01) and (speed_output_PlanetaryGears1<speed_output*0.99):
+                              Z_ring=Planetary_2.Z
+                              
+                              print(tree.current_node)    
+                              
             tree.NextNode(True)
         
-   
+
     
     
-    
+
     
     
     
