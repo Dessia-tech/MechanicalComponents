@@ -72,6 +72,7 @@ class GearingPlanetary(Relation):
     def __init__(self,name,nodes):
         
         Relation.__init__(self,name)
+        self.Z_planetary=0
         for node in nodes:
             if isinstance(node,Planet):
                 self.Z_planet=node.Z
@@ -169,36 +170,50 @@ class PlanetaryGears():
         
         self.gearings=[]
         self.pivots=[]
-        
+        self.doubles=[]
         #Initialize gearing , pivots and Double Planets
         flag_double=0
-        flag_gearing=0
+        
         
         self.list_relations=[]
         self.list_nodes=[self.planetary_1] #list node is use for graph
-        for i,planet in enumerate(self.planets):           
+        
+        gearing=GearingPlanetary('Ge_1',[self.list_elements[0],self.list_elements[1]])
+        self.gearings.append(gearing)
+        self.list_nodes.append(gearing)
+        self.list_relations.append(gearing)
+        
+        i=0
+        
+        if planets[0].planet_type == 'Double':
+                flag_double+=1
+                
+        for i,planet in enumerate(self.planets[1:]):           
             
             if planet.planet_type == 'Double':
                 flag_double+=1
                 
             if flag_double == 2:
-                self.double=Double('Double'+str(i+1),[self.planets[i-1],self.planets[i]])
-                self.list_nodes.append(self.double)
-                self.list_relations.append(self.double)
+                double=Double('Double'+str(i+1),[self.planets[i],self.planets[i+1]])
+                self.doubles.append(double)
+                self.list_nodes.append(double)
+                self.list_relations.append(double)
                 flag_double=0
                 
-            else:    
-                self.gearings.append(GearingPlanetary('Ge_'+str(i+1),[self.list_elements[i],self.list_elements[i+1]]))
-                self.list_nodes.append(self.gearings[flag_gearing])
-                self.list_relations.append(self.gearings[flag_gearing])
-                flag_gearing+=1
+            else: 
+                gearing=GearingPlanet('Ge_'+str(i+1),[self.planets[i],self.planets[i+1]])
+                self.gearings.append(gearing)
+                self.list_nodes.append(gearing)
+                self.list_relations.append(gearing)
+                
                 
             self.pivots.append(Pivot('Pv'+str(i+1),[planet,self.planet_carrier]))    
             self.list_nodes.append(planet)
             
-        self.gearings.append(GearingPlanetary('Ge_'+str(i+2),[self.list_elements[i+1], self.list_elements[i+2]]))
-        self.list_nodes.extend([self.gearings[flag_gearing],self.planetary_2])
-        self.list_relations.append(self.gearings[flag_gearing])
+        gearing=GearingPlanetary('Ge_'+str(i+2),[self.list_elements[-3], self.list_elements[-2]])
+        self.gearings.append(gearing)
+        self.list_nodes.extend([gearing,self.planetary_2])
+        self.list_relations.append(gearing)
      
     def matrix_position(self,element):
         for k,element_speed in enumerate(self.list_elements_speed):
@@ -275,7 +290,7 @@ class PlanetaryGears():
                 system_matrix[n_equations+1][i]=impose_fixed_composant.system_equations()[0]
                 vector_b[n_equations+1]=impose_fixed_composant.system_equations()[1]
         
-                 
+                
         solution = solve(system_matrix, vector_b)
         for i in range(len(self.list_elements_speed)):
             self.list_elements_speed[i].speed=solution[i]
@@ -406,24 +421,30 @@ def cas_vitesse_1planetary(input_composant,fixed_composant,speed_input,output_co
         list_tree=[]
         for i in range(numbers_planet_planetary_gears+2):
             list_tree.append(74)
-        print(list_tree)
+        
         tree=dt.RegularDecisionTree(list_tree)
         Planets=[]
         Planet_Carrier=PlanetCarrier('PlanetCarrier')
         
         while not tree.finished:
-            if len(tree.current_node)==3:
+            if len(tree.current_node)==numbers_planet_planetary_gears+2:
                 Planetary_1=Planetary('Planetary_1',tree.current_node[0]+7,'Sun')
                 Planetary_2=Planetary('Planetary_2',tree.current_node[1]+7,'Ring')
                 list_element={'Planet_Carrier': Planet_Carrier, 'Planetary_1' : Planetary_1,'Planetary_2':Planetary_2}
+                Planets=[]
+                
                 for i in range(numbers_planet_planetary_gears):
-                    Planets.append(Planet('Planet'+str(i),'Simple',tree.current_node[i+1]+7))
-                    PlanetaryGears1=PlanetaryGears('PlanetaryGears1',Planetary_1,Planetary_2,Planets,Planet_Carrier)
-                if PlanetaryGears1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[PlanetaryGears1.matrix_position(list_element[output_composant])]== speed_output:
+                    Planets.append(Planet('Planet'+str(i),'Double',tree.current_node[i+2]+7))
+                    
+                PlanetaryGears1=PlanetaryGears('PlanetaryGears1',Planetary_1,Planetary_2,Planets,Planet_Carrier)
+                speed_output_PlanetaryGears1=PlanetaryGears1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[PlanetaryGears1.matrix_position(list_element[output_composant])]
+            
+                if (speed_output_PlanetaryGears1<speed_output*1.00001) and (speed_output_PlanetaryGears1>speed_output*0.99999):
+                        
                         print(tree.current_node)
             tree.NextNode(True)
         
-    
+   
     
     
     
