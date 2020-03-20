@@ -417,36 +417,120 @@ class AssemblyPlanetaryGears():
             self.list_elements_speed[i].speed=solution[i]
         return solution, system_matrix_assembly
             
-def cas_vitesse_1planetary(input_composant,fixed_composant,speed_input,output_composant,speed_output,numbers_planet_planetary_gears):
+def cas_vitesse_1_planetary_gears(input_composant,fixed_composant,speed_input,output_composant,speed_output,numbers_planet_planetary_gears,precision):
+        
         list_tree=[4]
+        
         for i in range(numbers_planet_planetary_gears+2):
             list_tree.append(74)
         
         tree=dt.RegularDecisionTree(list_tree)
-        Planets=[]
-        Planet_Carrier=PlanetCarrier('PlanetCarrier')
+        
+        
+        if speed_output<0:
+            precision=-precision
+        
+        planet_carrier=PlanetCarrier('PlanetCarrier')
+        
         Z_ring=0
+        
+        flag_inverse_speed_1=0
+        flag_inverse_speed_2=0
+        flag_inverse_speed_3=0
+        flag_inverse_speed_4=0
+        
         while not tree.finished:
-            if tree.current_node[0] == 0:
-                if len(tree.current_node)==3:
+            if tree.current_node[0] == 0 and len(tree.current_node)==3 and flag_inverse_speed_1==0:
+                
                     if tree.current_node[2]>tree.current_node[1] and tree.current_node[2]>(Z_ring-7):
-                      Planetary_1=Planetary('Planetary_1',tree.current_node[1]+7,'Sun')
-                      Planetary_2=Planetary('Planetary_2',tree.current_node[2]+7,'Ring')
-                      list_element={'Planet_Carrier': Planet_Carrier, 'Planetary_1' : Planetary_1,'Planetary_2':Planetary_2}
+                        
+                      planetary_1=Planetary('Planetary_1',tree.current_node[1]+7,'sun')
+                      planetary_2=Planetary('Planetary_2',tree.current_node[2]+7,'ring')
                       
-                      Planets=[]
+                      list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}
+                      
+                      planets=[]
                       
                       for i in range(numbers_planet_planetary_gears):
-                          Planets.append(Planet('Planet'+str(i),'simple',10))
+                         planets.append(Planet('Planet'+str(i),'simple',10))
                     
-                      PlanetaryGears1=PlanetaryGears('PlanetaryGears1',Planetary_1,Planetary_2,Planets,Planet_Carrier)
-                      speed_output_PlanetaryGears1=PlanetaryGears1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[PlanetaryGears1.matrix_position(list_element[output_composant])]
+                      planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
+                      speed_output_planetary_gears_1=planetary_gears_1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[planetary_gears_1.matrix_position(list_element[output_composant])]
                       
-                      if (speed_output_PlanetaryGears1>speed_output*1.01) and (speed_output_PlanetaryGears1<speed_output*0.99):
-                              Z_ring=Planetary_2.Z
+                      if (speed_output<0)!=(speed_output_planetary_gears_1<0):
+                          flag_inverse_speed_1=1
+                      
+                      if (speed_output_planetary_gears_1<speed_output*(1+precision/100)) and (speed_output_planetary_gears_1>speed_output*(1-precision/100)):
+                              Z_ring=planetary_2.Z
                               
-                              print(tree.current_node)    
+                              print(tree.current_node) 
+            
+            if tree.current_node[0]==1 and len(tree.current_node)==5 and flag_inverse_speed_2==0:
+                
+                planetary_1=Planetary('Planetary_1',tree.current_node[1]+7,'sun')
+                planetary_2=Planetary('Planetary_2',tree.current_node[2]+7,'ring')
+                
+                list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}
+                      
+                planets=[]
+                      
+                for i in range(numbers_planet_planetary_gears):
+                    planets.append(Planet('Planet'+str(i),'Double',tree.current_node[i+3]+7))
+                
+                
+                planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
+                speed_output_planetary_gears_1=planetary_gears_1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[planetary_gears_1.matrix_position(list_element[output_composant])]
+                
+                if (speed_output<0)!=(speed_output_planetary_gears_1<0):
+                          flag_inverse_speed_2=1
+                
+                if (speed_output_planetary_gears_1<speed_output*(1+precision/100)) and (speed_output_planetary_gears_1>speed_output*(1-precision/100)):
                               
+                              print(tree.current_node)
+                              
+            if tree.current_node[0]==2 and len(tree.current_node)==5 and flag_inverse_speed_3==0:
+                
+                      planetary_1=Planetary('Planetary_1',tree.current_node[1]+7,'ring')
+                      planetary_2=Planetary('Planetary_2',tree.current_node[2]+7,'ring')
+                      
+                      list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}
+                      
+                      planets=[]
+                      
+                      for i in range(numbers_planet_planetary_gears):
+                         planets.append(Planet('Planet'+str(i),'Double',tree.current_node[i+3]+7))
+                    
+                      planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
+                      speed_output_planetary_gears_1=planetary_gears_1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[planetary_gears_1.matrix_position(list_element[output_composant])]
+                      
+                      if (speed_output<0)!=(speed_output_planetary_gears_1<0):
+                          flag_inverse_speed_3=1
+                         
+                      if (speed_output_planetary_gears_1<speed_output*(1+precision/100)) and (speed_output_planetary_gears_1>speed_output*(1-precision/100)):
+                              
+                              print(tree.current_node)
+                              
+            if tree.current_node[0]==3 and len(tree.current_node)==5 and flag_inverse_speed_4==0:
+                
+                      planetary_1=Planetary('Planetary_1',tree.current_node[1]+7,'sun')
+                      planetary_2=Planetary('Planetary_2',tree.current_node[2]+7,'sun')
+                      
+                      list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}
+                      
+                      planets=[]
+                      
+                      for i in range(numbers_planet_planetary_gears):
+                         planets.append(Planet('Planet'+str(i),'Double',tree.current_node[i+3]+7))
+                    
+                      planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
+                      speed_output_planetary_gears_1=planetary_gears_1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[planetary_gears_1.matrix_position(list_element[output_composant])]
+                      
+                      if (speed_output<0)!=(speed_output_planetary_gears_1<0):
+                          flag_inverse_speed_4=1
+                      
+                      if (speed_output_planetary_gears_1<speed_output*(1+precision/100)) and (speed_output_planetary_gears_1>speed_output(1-precision/100)):
+                              
+                              print(tree.current_node)
             tree.NextNode(True)
         
 
