@@ -53,7 +53,7 @@ filter_analyze= wf.Filter(filters)
 input_values = {}
 blocks = []
 
-blocks.extend([blockA, optimizeA, attribute_selection1, 
+blocks.extend([blockA, optimizeA, attribute_selection1,
                 filter_analyze
                 ])
 
@@ -65,19 +65,19 @@ pipes = [wf.Pipe(blockA.outputs[0], optimizeA.inputs[0]),
 workflow = wf.Workflow(blocks, pipes, filter_analyze.outputs[0])
 
 #bis2 = bearings_opt.BearingAssemblyOptimizer(
-#                    loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
+#                    loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]],
 #                    speeds = [157.07],
 #                    operating_times = [3600000],
 #                    inner_diameters = [0.035, 0.035],
-#                    axial_positions = [0, 0.3], 
-#                    outer_diameters = [0.072, 0.072], 
+#                    axial_positions = [0, 0.3],
+#                    outer_diameters = [0.072, 0.072],
 #                    lengths = [0.03, 0.03],
 #                    linkage_types = [bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)]),
 #                                     bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)])],
 #                    mounting_types = [bearings.CombinationMounting([bearings.Mounting(), bearings.Mounting(left=True)])],
 #                    number_bearings = [[1], [1]],
 #                    catalog = schaeffler_catalog,
-##                    bearing_classes = [bearings.RadialBallBearing, 
+##                    bearing_classes = [bearings.RadialBallBearing,
 ##                                       bearings.AngularBallBearing,
 ##                                       bearings.TaperedRollerBearing,
 ##                                       bearings.NUP, bearings.N, bearings.NU,
@@ -85,20 +85,20 @@ workflow = wf.Workflow(blocks, pipes, filter_analyze.outputs[0])
 ##                                       ]
 #                    )
 
-    
+
 input_values = {workflow.index(blockA.inputs[0]): [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]],
                 workflow.index(blockA.inputs[1]): [157.07],
                 workflow.index(blockA.inputs[2]): [3600000],
                 workflow.index(blockA.inputs[3]): [0.035, 0.035],
                 workflow.index(blockA.inputs[4]): [0.072, 0.072],
-                workflow.index(blockA.inputs[5]): [0, 0.3], 
+                workflow.index(blockA.inputs[5]): [0, 0.3],
                 workflow.index(blockA.inputs[6]): [0.1, 0.1],
                 workflow.index(blockA.inputs[7]): [bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)]),
                                                    bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)])],
                 workflow.index(blockA.inputs[8]): [bearings.CombinationMounting([bearings.Mounting(), bearings.Mounting(left=True)])],
-                workflow.index(blockA.inputs[9]): [[1, 2, 3], [1, 2, 3]],
+                workflow.index(blockA.inputs[9]): [[1, 2], [1, 2]],
                 workflow.index(blockA.inputs[12]): schaeffler_catalog,
-                workflow.index(optimizeA.inputs[1]): 1000,
+                workflow.index(optimizeA.inputs[1]): 10,
                 }
 
 
@@ -107,7 +107,7 @@ workflow_run = workflow.run(input_values)
 
 a = workflow_run.to_dict()
 obj = wf.WorkflowRun.dict_to_object(a)
-    
+
 # c = Client()
 # c.api_url = 'http://localhost:5000'
 # # c.api_url = 'https://api.platform.dessia.tech'
