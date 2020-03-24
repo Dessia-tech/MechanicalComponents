@@ -46,6 +46,8 @@ import genmechanics.unidimensional as unidimensional
 
 from mechanical_components.tools import StringifyDictKeys
 
+import matplotlib.colors
+
 
 class Mounting(DessiaObject):
     _standalone_in_db = True
@@ -2292,11 +2294,43 @@ class BearingCatalog(DessiaObject):
         ax4.set_ylabel('Cr')
 
 
-#with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-#                           'mechanical_components/catalogs/schaeffler_v2.json') as schaeffler_json:
-#    schaeffler_catalog = BearingCatalog.load_from_file(schaeffler_json)
-#
-##schaeffler_catalog.save_to_file('essai')
+    def _display_angular(self):
+
+        filters = [{'attribute' : 'd'},
+                   {'attribute' : 'D'},
+                   {'attribute' : 'B'},
+                   {'attribute' : 'Cr'},
+                   {'attribute' : 'C0r'}]
+
+        bearings_index = {b:i for i, b in enumerate(self.bearings)}
+
+        datasets_values = []
+        datasets_names = []
+        for class_, bearings in self.bearings_by_types.items():
+            datasets_names.append(class_.__name__)
+            values = []
+            for bearing in bearings:
+                value = {'d': bearing.d,
+                         'D': bearing.D,
+                         'B': bearing.B,
+                         'Cr': bearing.Cr,
+                         'C0r': bearing.C0r}
+                values.append((bearings_index[bearing], value))
+            datasets_values.append(values)
+        displays = []
+        nds = len(datasets_values)
+        datasets = []
+        for ids, (dataset, name) in enumerate(zip(datasets_values, datasets_names)):
+            datasets.append({'label' : name,
+                             'color' : matplotlib.colors.to_hex(matplotlib.colors.hsv_to_rgb((ids/(nds-1),0.8, 0.7))),
+                             'values' : dataset,
+                      })
+    
+        displays = [{'angular_component': 'results',
+                         'filters': filters,
+                         'references_attribute': 'bearings',
+                         'datasets': datasets}]
+        return displays
 
 bearing_classes_ = [RadialBallBearing, AngularBallBearing,
                    NUP, N,

@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Mar 10 14:16:58 2020
 
-@author: dumouchel
 """
 
 import mechanical_components.bearings as bearings
-import mechanical_components.optimization.bearings as bearings_opt
 
-from volmdlr import plot_data
 
 import pkg_resources
 
