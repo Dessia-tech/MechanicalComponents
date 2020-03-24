@@ -6,7 +6,7 @@ Created on Tue Sep 25 15:49:08 2018
 """
 
 #import mechanical_components.wires as wires
-import mechanical_components.optimization.wires as wires_opt
+import mechanical_components.optimization.wires_protected as wires_opt
 
 import volmdlr as vm
 
@@ -28,5 +28,6 @@ wo = wires_opt.WiringOptimizer(waypoints, routes)
 wiring = wo.Route(wires_specs)
 
 wiring.Draw()
-
-wiring.CADExport()
+vol1 = wiring.volmdlr_volume_model()
+vol1.babylonjs(debug=True)
+#wiring.CADExport()

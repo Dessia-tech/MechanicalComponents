@@ -208,7 +208,7 @@ class Spring(DessiaObject):
         
         return vm.Contour2D([l1])
     
-    def Volume(self, F=0., position=vm.o3D, x=vm.x3D, z=vm.z3D):
+    def Volume(self, F=0., position=vm.O3D, x=vm.X3D, z=vm.Z3D):
 #        p_spring_coord = (self.pos_x, self.pos_y, 0)
 #        p_spring = vm.Point3D(p_spring_coord)
         

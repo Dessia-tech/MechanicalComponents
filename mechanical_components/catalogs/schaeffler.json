@@ -106234,6 +106234,6 @@
 "object_class": "mechanical_components.bearings.RadialBallBearing"
 }
 ],
-"name": "schaeffler",
+"name": "schaeffler bearing catalog",
 "object_class": "mechanical_components.bearings.BearingCatalog"
 }
