@@ -11,6 +11,11 @@ import mechanical_components.planetary_gears as pg
 import networkx as nx
 import numpy as npy
 import dectree 
+import math as m
+
+
+
+
 sun=pg.Planetary('sun',18,'sun')
 ring= pg.Planetary('ring',25,'sun')
 planet_carrier= pg.PlanetCarrier('planet_carrier')
@@ -42,6 +47,6 @@ assembly_planetary_gear=pg.AssemblyPlanetaryGears('assembly_planetary_gear',
 
 # print(assembly_planetary_gear.solve(500,planet_carrier,planetary_gears_2,[ring,sun],[planetary_gears_3,planetary_gears_2]))
 
-pg.cas_vitesse_1_planetary_gears('Planetary_1','Planet_Carrier',500,'Planetary_2',200,2,0.0000001)
+pg.cas_vitesse_1_planetary_gears('Planetary_1','Planet_Carrier',500,'Planetary_2',200,2,0.01,3)
 
 
