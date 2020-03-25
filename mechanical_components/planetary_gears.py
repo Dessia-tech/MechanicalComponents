@@ -48,7 +48,7 @@ class Planetary():
         self.planetary_type=planetary_type
         self.p=0
         self.speed=0
-        if planetary_type=='sun':
+        if planetary_type=='Sun':
             self.p=1
         else:
             self.p=-1
@@ -74,7 +74,8 @@ class GearingPlanetary(Relation):
         
         Relation.__init__(self,name)
         self.Z_planetary=0
-        for node in nodes:
+        self.nodes= nodes
+        for node in self.nodes:
             if isinstance(node,Planet):
                 self.Z_planet=node.Z
             else:
@@ -93,7 +94,8 @@ class GearingPlanet(Relation):
         
             Relation.__init__(self,name)
             self.Z_planets=[]
-            for node in nodes:
+            self.nodes= nodes
+            for node in self.nodes:
                 self.Z_planets.append(node.Z)
 
         def system_equations(self):
@@ -106,7 +108,7 @@ class Pivot(Relation):
     
     def __init__(self,name,nodes):
         Relation.__init__(self,name)
-        
+        self.nodes= nodes
     def system_equations(self):
         matrix= npy.array([1, -1])
         rhs= npy.array([0])
@@ -116,7 +118,7 @@ class Fixed (Relation):
     
     def __init__(self,name,nodes):
         Relation.__init__(self,name)
-        
+        self.nodes= nodes
     def system_equations(self):
         matrix= npy.array([1, -1])
         rhs= npy.array([0])
@@ -126,7 +128,7 @@ class Double (Relation):
     
     def __init__(self,name,nodes):
         Relation.__init__(self,name)
-        
+        self.nodes= nodes
     def system_equations(self):
         matrix= npy.array([1, -1])
         rhs= npy.array([0])
@@ -136,7 +138,7 @@ class Clutch (Relation):
     
     def __init__(self,name,nodes):
         Relation.__init__(self,name)
-        
+        self.nodes=nodes
     def system_equations(self):
         matrix= npy.array([1, -1])
         rhs= npy.array([0])
@@ -147,7 +149,7 @@ class ImposeSpeed(Relation):
     def __init__(self,name , node, input_speed):
               Relation.__init__(self,name)  
               self.input_speed=input_speed
-              
+              self.node=node
     def system_equations(self):
         matrix= npy.array([1])
         rhs= npy.array([self.input_speed])
@@ -181,7 +183,7 @@ class PlanetaryGears():
         
         gearing=GearingPlanetary('Ge_1',[self.list_elements[0],self.list_elements[1]])
         self.gearings.append(gearing)
-        self.list_nodes.append(gearing)
+        self.list_nodes.extend([gearing,self.planets[0]])
         self.list_relations.append(gearing)
         
         i=0
@@ -221,7 +223,54 @@ class PlanetaryGears():
             if element_speed==element:
                 return k
             
+    
+    def test_assembly_condition(self, number_planet):
+        if self.doubles:
+            planet_1=self.doubles[0].nodes[0]
+            planet_2=self.doubles[0].nodes[1]
             
+        else:
+            planet_1=self.planets[0]
+            
+        basic_ratio_planet_1=1
+        basic_ratio_planet_2=1
+        
+        for i, node_1 in enumerate(self.list_nodes):
+            if node_1==planet_1:
+                
+                inv_list_nodes=self.list_nodes[:i+1]
+                inv_list_nodes=inv_list_nodes[::-1]
+               
+                for j,node_2 in enumerate(inv_list_nodes):
+                    
+                    if isinstance(node_2,GearingPlanetary) or isinstance(node_2,GearingPlanet):
+                        
+                        basic_ratio_planet_1=basic_ratio_planet_1*(-inv_list_nodes[j-1].Z/inv_list_nodes[j+1].Z)
+                        if isinstance(inv_list_nodes[j+1],Planetary):
+                            if inv_list_nodes[j+1].planetary_type=='Ring':
+                            
+                                basic_ratio_planet_1=basic_ratio_planet_1 *-1
+                          
+                for j,node_2 in enumerate(self.list_nodes[i:]):
+                    
+                    if isinstance(node_2,GearingPlanetary) or isinstance(node_2,GearingPlanet):
+                        
+                        basic_ratio_planet_2=basic_ratio_planet_2*(-self.list_nodes[i+j-1].Z/self.list_nodes[i+j+1].Z)
+                        if isinstance(self.list_nodes[i+j+1],Planetary):
+                            if self.list_nodes[i+j+1].planetary_type=='Ring':
+                            
+                                basic_ratio_planet_2=basic_ratio_planet_1 *-1 
+        if self.doubles:
+            equation=(1/number_planet)*(1/basic_ratio_planet_1-1/basic_ratio_planet_2)*(planet_1.Z*planet_2.Z) 
+        else:
+            equation=(1/number_planet)*(1/basic_ratio_planet_1-1/basic_ratio_planet_2)*(planet_1.Z)
+        if int(equation)==equation:                   
+            return True 
+                        
+                        
+                
+                
+        
     def plot(self):
         
         graph_planetary_gear= nx.Graph()
@@ -417,13 +466,39 @@ class AssemblyPlanetaryGears():
         for i in range(len(self.list_elements_speed)):
             self.list_elements_speed[i].speed=solution[i]
         return solution, system_matrix_assembly
-            
-def cas_vitesse_1_planetary_gears(input_composant,fixed_composant,speed_input,output_composant,speed_output,numbers_succesives_planet_planetary_gears,precision,number_planet):
+  
+
+
+
+
+def test_speed_equal_speed_output_and_assembly_condition(node,solutions,planetary_1,planetary_2,planets,planet_carrier,input_composant,fixed_composant,speed_input,output_composant,speed_output,precision,Z_range,number_planet):
+     planetary_1.Z=node[1]+Z_range[0]
+     planetary_2.Z=node[2]+Z_range[0]
+     
+     for i,planet in enumerate(planets):
+          planet.Z=node[i+3]+Z_range[0]
+          
+     list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}        
+     planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
+     if planetary_gears_1.test_assembly_condition(number_planet):
+         speed_output_planetary_gears_1=planetary_gears_1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[planetary_gears_1.matrix_position(list_element[output_composant])]
+                                         
+         if (speed_output_planetary_gears_1<speed_output*(1+precision/100)) and (speed_output_planetary_gears_1>speed_output*(1-precision/100)):
+             solutions.append(planetary_gears_1)
+             print(node)
+             return True
+         else:
+             return False
+     else:
+         return False
+
+        
+def cas_vitesse_1_planetary_gears(input_composant,fixed_composant,speed_input,output_composant,speed_output,numbers_succesives_planet_planetary_gears,precision,number_planet,Z_range):
         debut=time.time()
         list_tree=[4]
-        #TODO
+        
         for i in range(numbers_succesives_planet_planetary_gears+2):
-            list_tree.append(74)
+            list_tree.append(Z_range[1]-Z_range[0]+1)
         
         tree=dt.RegularDecisionTree(list_tree)
         
@@ -431,48 +506,39 @@ def cas_vitesse_1_planetary_gears(input_composant,fixed_composant,speed_input,ou
         if speed_output<0:
             precision=-precision
         
-        planet_carrier=PlanetCarrier('PlanetCarrier')
-        planetary_1=Planetary('Planetary_1',7,'sun')
-        planetary_2=Planetary('Planetary_2',7,'ring')
-        list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}
-        planets=[]
         solutions=[]
-        for i in range(numbers_succesives_planet_planetary_gears):
-            planets.append(Planet('Planet'+str(i),'simple',7))    
-        Z_ring=0
-        
         
         while not tree.finished:
+            
             valid=True
-            # if len(tree.current_node)==3:
-            #     equation=(tree.current_node[1]+tree.current_node[2])/number_planet
-            #     if int(equation)!=equation:
                     
-            #         valid=False
-                
+            ## Test GCD Rules ##    
             if len(tree.current_node)>=4:
                 
                 if m.gcd(tree.current_node[1]+7,tree.current_node[3]+7)!=1:
                     valid= False
                     
-                for i in range(len(tree.current_node)-4):
-                    if m.gcd(tree.current_node[3+i]+7,tree.current_node[4+i]+7)!=1:
-                        valid= False
+                # for i in range(len(tree.current_node)-4):
+                #     if m.gcd(tree.current_node[3+i]+7,tree.current_node[4+i]+7)!=1:
+                #         valid= False
                         
                 if len(tree.current_node)==numbers_succesives_planet_planetary_gears+3:
                     if m.gcd(tree.current_node[2]+7,tree.current_node[-1]+7)!=1:
-                       valid= False
-                
+                        valid= False
+                       
+            ## Planetary Gears Type 1 ##    
             if tree.current_node[0] == 0 and valid:
                 
-                    planetary_1.planetary_type='sun'
-                    planetary_1.p=1
-                    planetary_2.planetary_type='ring'
-                    planetary_2.p=-1
+                    planet_carrier=PlanetCarrier('PlanetCarrier')
+                    planetary_1=Planetary('Planetary_1',7,'Sun')
+                    planetary_2=Planetary('Planetary_2',7,'Ring')
+                    list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}
+                    planets=[]
                     
-                    for planet in planets:
-                        planet.planet_type='Simple'
+                    for i in range(numbers_succesives_planet_planetary_gears):
+                        planets.append(Planet('Planet'+str(i),'Simple',7))    
                     
+                    ## Test Inverse Speed ##
                     if len(tree.current_node)==1:
                     
                       planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
@@ -481,33 +547,36 @@ def cas_vitesse_1_planetary_gears(input_composant,fixed_composant,speed_input,ou
                       if (speed_output<0)!=(speed_output_planetary_gears_1<0):
                           valid=False
                           
-                    elif len(tree.current_node)==3:    
-                        if tree.current_node[2]>tree.current_node[1] and tree.current_node[2]>(Z_ring-7):
+                    elif len(tree.current_node)==3: 
+                        ## Test Z ring >> last Z ring of solution ##
+                        if solutions:
+                            if tree.current_node[2]<(solutions[-1].planetary_2.Z-Z_range[0]):
+                                valid= False
                         
-                            planetary_1.Z=tree.current_node[1]+7
-                            planetary_2.Z=tree.current_node[2]+7
-                    
-                            planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
-                            speed_output_planetary_gears_1=planetary_gears_1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[planetary_gears_1.matrix_position(list_element[output_composant])]
-                                         
-                            if (speed_output_planetary_gears_1<speed_output*(1+precision/100)) and (speed_output_planetary_gears_1>speed_output*(1-precision/100)):
-                                Z_ring=planetary_2.Z
-                                solutions.append(planetary_gears_1)
-                                print(tree.current_node)
+                        ##Test Z ring >> Z sun ##
+                        if tree.current_node[2]>tree.current_node[1] and valid:
+                            
+                            ## Test speed = speed output  and assembly condition## 
+                            
+                            valid=test_speed_equal_speed_output_and_assembly_condition(tree.current_node+[Z_range[0],Z_range[0]],solutions,planetary_1,planetary_2,planets,planet_carrier,input_composant,fixed_composant,speed_input,output_composant,speed_output,precision,Z_range,number_planet)
+                                
+                                
                         else:
                             valid=False
-            
-            elif tree.current_node[0]==1 and valid:
+                            
+            ## Planetary Gears Type 2 ## 
+            elif tree.current_node[0]==1 and valid and numbers_succesives_planet_planetary_gears>=2:
                 
-                planetary_1.planetary_type='sun'
-                planetary_1.p=1
-                planetary_2.planetary_type='ring'
-                planetary_2.p=-1
-                
-                for planet in planets:
-                    planet.planet_type='Double'                
-                
+                planet_carrier=PlanetCarrier('PlanetCarrier')
+                planetary_1=Planetary('Planetary_1',7,'Sun')
+                planetary_2=Planetary('Planetary_2',7,'Ring')
+                list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}
+                planets=[]
                     
+                for i in range(numbers_succesives_planet_planetary_gears):
+                    planets.append(Planet('Planet'+str(i),'Double',7))                  
+                
+                ## Test Inverse Speed ##   
                 if len(tree.current_node)==1:
                       
                       planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
@@ -517,36 +586,30 @@ def cas_vitesse_1_planetary_gears(input_composant,fixed_composant,speed_input,ou
                           
                           valid=False
                           
+                         
                 elif len(tree.current_node)==numbers_succesives_planet_planetary_gears+3:
                     
+                    ## Test Z Ring >> Z planet ##
                     if (tree.current_node[2]>=tree.current_node[-1]):
-                        planetary_1.Z=tree.current_node[1]+7
-                        planetary_2.Z=tree.current_node[2]+7
-                
-                      
-                        for i,planet in enumerate(planets):
-                            planet.Z=tree.current_node[i+3]+7
- 
-                        planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
-                        speed_output_planetary_gears_1=planetary_gears_1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[planetary_gears_1.matrix_position(list_element[output_composant])]
-                
-                        if (speed_output_planetary_gears_1<speed_output*(1+precision/100)) and (speed_output_planetary_gears_1>speed_output*(1-precision/100)):
-                              
-                                  solutions.append(planetary_gears_1)
-                                  print(tree.current_node)
+                        
+                        ## Test speed = speed output and assembly condition## 
+                        valid=test_speed_equal_speed_output_and_assembly_condition(tree.current_node,solutions,planetary_1,planetary_2,planets,planet_carrier,input_composant,fixed_composant,speed_input,output_composant,speed_output,precision,Z_range,number_planet)
                     else:
                         valid=False
-                              
-            elif tree.current_node[0]==2 and valid:
+                        
+            ## Planetary Gears Type 3 ##                   
+            elif tree.current_node[0]==2 and valid and numbers_succesives_planet_planetary_gears>=2:
                 
-                      planetary_1.planetary_type='ring'
-                      planetary_1.p=-1
-                      planetary_2.planetary_type='ring'
-                      planetary_2.p=-1
-                      
-                      for planet in planets:
-                          planet.planet_type='Double' 
-                      
+                      planet_carrier=PlanetCarrier('PlanetCarrier')
+                      planetary_1=Planetary('Planetary_1',7,'Ring')
+                      planetary_2=Planetary('Planetary_2',7,'Ring')
+                      list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}
+                      planets=[]
+                    
+                      for i in range(numbers_succesives_planet_planetary_gears):
+                        planets.append(Planet('Planet'+str(i),'Double',7))  
+                        
+                      ## Test Inverse Speed ## 
                       if len(tree.current_node)==1:
                     
                           planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
@@ -555,45 +618,36 @@ def cas_vitesse_1_planetary_gears(input_composant,fixed_composant,speed_input,ou
                           if (speed_output<0)!=(speed_output_planetary_gears_1<0):
                              valid=False
                     
-                    
+                      ## Test Z Ring1 >> Z planet1 ##
                       elif len(tree.current_node)==4:
                           if (tree.current_node[1]<=tree.current_node[3]):
                               valid=False
                               
+                               
                       elif len(tree.current_node)==numbers_succesives_planet_planetary_gears+3:
                           
+                          ## Test Z Ring2 >> Z planet2 ##
                           if (tree.current_node[2]>=tree.current_node[-1]):
                               
-                              planetary_1.Z=tree.current_node[1]+7
-                              planetary_2.Z=tree.current_node[2]+7
-                      
-                      
-                              for i,planet in enumerate(planets):
-                                  planet.Z=tree.current_node[i+3]+7
-                              
-                          
-                              planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
-                          
-                              speed_output_planetary_gears_1=planetary_gears_1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[planetary_gears_1.matrix_position(list_element[output_composant])]
-                      
-                              
-                              if (speed_output_planetary_gears_1<speed_output*(1+precision/100)) and (speed_output_planetary_gears_1>speed_output*(1-precision/100)):
-                               
-                                  print(tree.current_node)
-                                  solutions.append(planetary_gears_1)
+                              ## Test speed = speed output and assembly condition ## 
+                              valid=test_speed_equal_speed_output_and_assembly_condition(tree.current_node,solutions,planetary_1,planetary_2,planets,planet_carrier,input_composant,fixed_composant,speed_input,output_composant,speed_output,precision,Z_range,number_planet)
                           else:
                              valid=False
-            elif tree.current_node[0]==3 and valid:
+            
+            ## Planetary Gears Type 4 ##      
+            elif tree.current_node[0]==3 and valid and numbers_succesives_planet_planetary_gears>=2:
                 
-                      planetary_1.planetary_type='sun'
-                      planetary_1.p=1
-                      planetary_2.planetary_type='sun'
-                      planetary_2.p=1
+                      planet_carrier=PlanetCarrier('PlanetCarrier')
+                      planetary_1=Planetary('Planetary_1',7,'Sun')
+                      planetary_2=Planetary('Planetary_2',7,'Sun')
+                      list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}
+                      planets=[]
+                    
+                      for i in range(numbers_succesives_planet_planetary_gears):
+                        planets.append(Planet('Planet'+str(i),'Double',7))  
                       
-                      for planet in planets:
-                          planet.planet_type='Double' 
                       
-                       
+                      ## Test Inverse Speed ##  
                       if len(tree.current_node)==1:
                           
                           planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
@@ -604,24 +658,13 @@ def cas_vitesse_1_planetary_gears(input_composant,fixed_composant,speed_input,ou
                              
                       elif len(tree.current_node)==numbers_succesives_planet_planetary_gears+3:
                           
-                          planetary_1.Z=tree.current_node[1]+7
-                          planetary_2.Z=tree.current_node[2]+7
-                      
-                      
-                          for i,planet in enumerate(planets):
-                              planet.Z=tree.current_node[i+3]+7
-                    
-                          planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
-                          speed_output_planetary_gears_1=planetary_gears_1.solve(speed_input,list_element[input_composant],list_element[fixed_composant])[planetary_gears_1.matrix_position(list_element[output_composant])]
-                      
-                      
-                          if (speed_output_planetary_gears_1<speed_output*(1+precision/100)) and (speed_output_planetary_gears_1>speed_output*(1-precision/100)):
-                                 solutions.append(planetary_gears_1)
-                                 print(tree.current_node)
+                          ## Test speed = speed output ##
+                           valid=test_speed_equal_speed_output_and_assembly_condition(tree.current_node,solutions,planetary_1,planetary_2,planets,planet_carrier,input_composant,fixed_composant,speed_input,output_composant,speed_output,precision,Z_range,number_planet)
+
             tree.NextNode(valid)
         fin=time.time()
         print(debut-fin)
-
+        return solutions
     
     
 
