@@ -12,7 +12,7 @@ import networkx as nx
 import numpy as npy
 import dectree 
 import math as m
-
+import copy
 
 
 
@@ -25,7 +25,7 @@ planet_3=pg.Planet('planet_3','Simple',5)
 planet_4=pg.Planet('planet_4','Double',5)
 planet_5=pg.Planet('planet_5','Double',5)
 planetary_gears_1= pg.PlanetaryGears('pl_1', sun, ring, [planet_1 ,planet_2], planet_carrier)
-print(m.gcd(12,4))
+
 
 
 
@@ -41,14 +41,19 @@ assembly_planetary_gear=pg.AssemblyPlanetaryGears('assembly_planetary_gear',
                                                    [[ring,planetary_gears_1],[sun,planetary_gears_4]]])
                                                   
 
+
+
+
+
+
 # planetary_gears_1.solve(500, ring,planet_3)
 # assembly_planetary_gear.plot()
 # print(assembly_planetary_gear.system_equations()[0])
-# solution,system_matrix=assembly_planetary_gear.solve(500,[planet_carrier,planetary_gears_2],[[ring,planetary_gears_3],[sun,planetary_gears_2]])
+#solution,system_matrix=assembly_planetary_gear.solve({planet_carrier:[500,planetary_gears_2] ,ring:[0,planetary_gears_3],sun:[0,planetary_gears_2]},)
 
-# print(assembly_planetary_gear.solve(500,planet_carrier,planetary_gears_2,[ring,sun],[planetary_gears_3,planetary_gears_2]))
-
-solution = pg.cas_vitesse_1_planetary_gears('Planetary_1','Planet_Carrier',500,'Planetary_2',200,2,0.001,3,[7 , 80])
+#print(assembly_planetary_gear.solve(500,planet_carrier,planetary_gears_2,[ring,sun],[planetary_gears_3,planetary_gears_2]))
+solutions=[]
+solutions = pg.cas_vitesse_1_planetary_gears({'Planetary_1':540,'Planet_Carrier':0},'Planetary_2',50,2,0.01,3,[7 , 80])
 
 
 
