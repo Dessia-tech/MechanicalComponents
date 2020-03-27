@@ -53,7 +53,7 @@ assembly_planetary_gear=pg.AssemblyPlanetaryGears('assembly_planetary_gear',
 
 #print(assembly_planetary_gear.solve(500,planet_carrier,planetary_gears_2,[ring,sun],[planetary_gears_3,planetary_gears_2]))
 solutions=[]
-solutions = pg.cas_vitesse_1_planetary_gears({'Planetary_1':540,'Planet_Carrier':0},'Planetary_2',50,2,0.01,3,[7 , 80])
+solutions = pg.cas_vitesse_1_planetary_gears({'Planetary_1':540,'Planet_Carrier':0},'Planetary_2',200,3,0.01,3,[7 , 80])
 
 
 
