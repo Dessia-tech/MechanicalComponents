@@ -12,7 +12,7 @@ import dectree as dt
 from scipy.linalg import solve
 import time
 import math as m
-
+import copy
 class Relation:
     
     def __init__ (self,name):
@@ -262,13 +262,16 @@ class PlanetaryGears():
                             
                                 basic_ratio_planet_2=basic_ratio_planet_2 *-1 
         if self.doubles:
-            equation=(1/number_planet)*(1/basic_ratio_planet_1-1/basic_ratio_planet_2)*(planet_1.Z*planet_2.Z) 
+            equation=(1/number_planet)*(1/basic_ratio_planet_1-1/basic_ratio_planet_2)*(planet_1.Z*planet_2.Z)
+
         else:
             equation=(1/number_planet)*(1/basic_ratio_planet_1-1/basic_ratio_planet_2)*(planet_1.Z)
 
-        if int(equation)==equation:                   
+        if int(equation)==equation:
+                  
             return True 
-                        
+        else:
+            return False                
                         
                 
                 
@@ -475,9 +478,11 @@ def test_speed_equal_speed_output_and_assembly_condition(node,solutions,planetar
 
      list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}        
      planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
+     
      real_input_speed_and_composants={}
      for composant in input_speeds_and_composants:
          real_input_speed_and_composants[list_element[composant]]=input_speeds_and_composants[composant]
+         
      if  planetary_gears_1.test_assembly_condition(number_planet):
          speed_output_planetary_gears_1=planetary_gears_1.solve(real_input_speed_and_composants)[planetary_gears_1.matrix_position(list_element[output_composant])]                               
          if (speed_output_planetary_gears_1<speed_output*(1+precision/100)) and (speed_output_planetary_gears_1>speed_output*(1-precision/100)):
@@ -490,69 +495,74 @@ def test_speed_equal_speed_output_and_assembly_condition(node,solutions,planetar
          return False
 
 
-def test_ratio_max_ratio_min(node,planetary_1,planetary_2,planet_carrier,planets,input_speeds_and_composants,output_composant,speed_output,list_element,Z_range):
-     
-     planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
-     
-     for composant in input_speeds_and_composants:
-        list_element[composant].speed=input_speeds_and_composants[composant] 
-                        
-     list_element[output_composant].speed=speed_output
-                          
-     ratio_goal=(abs(planetary_2.speed-planet_carrier.speed)/abs(planetary_1.speed-planet_carrier.speed))
+def test_ratio_max_ratio_min(node,planetary_1,planetary_2,planet_carrier,planets,input_speeds_and_composants,output_composant,speed_output,Z_range,number_planet):
+    
+    planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
 
-     previous_composant_Z_min=node[1]+ Z_range[0]
-     previous_composant_Z_max=previous_composant_Z_min
-                          
-     ratio_min=1
-     ratio_max=1
-                          
-     for planet in planetary_gears_1.planets:
-         gearing=True
-                              
-         for planets_double in planetary_gears_1.doubles:
-                                  
-             if planet==planets_double.nodes[1]:
-                 gearing=False
-                 previous_composant_Z_min=Z_range[0]
-                 previous_composant_Z_max=Z_range[1]
-                                      
-         if gearing:    
-                                  
-            for i in range(Z_range[0],Z_range[1]+1):
-                if m.gcd(previous_composant_Z_min,i)==1:
-                    planet_Z_min=i
+    list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}
+    for composant in input_speeds_and_composants:
+       list_element[composant].speed=input_speeds_and_composants[composant] 
+                       
+    list_element[output_composant].speed=speed_output
+                   
+    ratio_goal=(abs(planetary_2.speed-planet_carrier.speed)/abs(planetary_1.speed-planet_carrier.speed))
+
+    previous_composant_Z_min=node[1]+ Z_range[0]
+    previous_composant_Z_max=previous_composant_Z_min
                     
-                    ratio_max=ratio_max*previous_composant_Z_max/planet_Z_min
-         
-                    previous_composant_Z_min=planet_Z_min
-                    break
+    ratio_min=1
+    ratio_max=1
 
-            for i in range(Z_range[1],Z_range[0],-1):
-                if m.gcd(previous_composant_Z_max,i)==1:
-                    
-                    planet_Z_max=i
-                    ratio_min=ratio_max*previous_composant_Z_min/planet_Z_max
-                    previous_composant_Z_max=planet_Z_max
-                    break
-                                      
-     for i in range(Z_range[0],Z_range[1]+1):
-        if m.gcd(node[2]+ Z_range[0],i)==1:
-            ratio_min=ratio_min*i/(node[2]+ Z_range[0])
+                   
+    for j,planet in enumerate(planetary_gears_1.planets):
+        gearing=True
+                             
+        for planets_double in planetary_gears_1.doubles:
+                                 
+            if planet==planets_double.nodes[1]:
+                
+                gearing=False
+                previous_composant_Z_min=Z_range[1]
+                previous_composant_Z_max=Z_range[0] 
+                
+        if gearing:    
+                                 
+           for i in range(Z_range[0],Z_range[1]+1):
+               if m.gcd(previous_composant_Z_min,i)==1:
+                   
+                   planet_Z_min=i
+                   ratio_max=ratio_max*previous_composant_Z_min/planet_Z_min
+                   previous_composant_Z_min=planet_Z_min
+                   
+                   break
+   
+           for i in range(Z_range[1],Z_range[0],-1):
+               if m.gcd(previous_composant_Z_max,i)==1:
 
-            break
+                   planet_Z_max=i
+                   ratio_min=ratio_min*previous_composant_Z_max/planet_Z_max
+                   previous_composant_Z_max=planet_Z_max
+                   
+                   break
+                                     
+    for i in range(Z_range[0],Z_range[1]+1):
+       if m.gcd(node[2]+ Z_range[0],i)==1:
+           ratio_min=ratio_min*i/(node[2]+ Z_range[0])
 
-     for i in range(Z_range[1],Z_range[0],-1):
-        if m.gcd(node[2]+ Z_range[0],i)==1:
-            ratio_max=ratio_max*i/(node[2]+ Z_range[0])
+           break
+   
+    for i in range(Z_range[1],Z_range[0],-1):
+       if m.gcd(node[2]+ Z_range[0],i)==1:
+           ratio_max=ratio_max*i/(node[2]+ Z_range[0])
 
-            break
+           break
 
-     if (ratio_goal<ratio_min) or (ratio_goal>ratio_max):
-         
-        return False
-     else:
-         return True
+    if (ratio_goal<ratio_min) or (ratio_goal>ratio_max):
+
+       return False
+        
+    return True
+            
 
 def test_GCD_planet(nodes,planets,planetary_gears_1):
 
@@ -564,6 +574,7 @@ def test_GCD_planet(nodes,planets,planetary_gears_1):
          for planets_double in planetary_gears_1.doubles:
                                   
              if planets[i+1]==planets_double.nodes[1]:
+
                  gearing=False
          if gearing:
              if m.gcd(planets[i].Z,planets[i+1].Z)!=1:
@@ -590,6 +601,7 @@ def cas_vitesse_1_planetary_gears(input_speeds_and_composants,output_composant,s
         inv_2=False
         inv_3=False
         inv_4=False
+        
         while not tree.finished:
 
             valid=True
@@ -600,9 +612,7 @@ def cas_vitesse_1_planetary_gears(input_speeds_and_composants,output_composant,s
                 if m.gcd(tree.current_node[1]+Z_range[0],tree.current_node[3]+Z_range[0])!=1:
                     valid= False
                     
-                # for i in range(len(tree.current_node)-4):
-                #     if m.gcd(tree.current_node[3+i]+7,tree.current_node[4+i]+7)!=1:
-                #         valid= False
+  
                         
                 if len(tree.current_node)==numbers_succesives_planet_planetary_gears+3:
                     if m.gcd(tree.current_node[2]+Z_range[0],tree.current_node[-1]+Z_range[0])!=1:
@@ -647,6 +657,27 @@ def cas_vitesse_1_planetary_gears(input_speeds_and_composants,output_composant,s
                                 node= node+ [Z_range[0]]
                                 
                             valid=test_speed_equal_speed_output_and_assembly_condition(node,solutions,planetary_1,planetary_2,planets,planet_carrier,input_speeds_and_composants,output_composant,speed_output,precision,Z_range,number_planet)
+                            
+                            ## Append at solution valid Z_planets## 
+                            if valid:
+                                node=tree.current_node
+                                for i in range (numbers_succesives_planet_planetary_gears):
+                                    for j in range (Z_range[0],Z_range[1]+1):
+                                        if i==0 and m.gcd(node[1]+Z_range[0],j)==1:
+                                            solutions[-1].planets[i].Z= j
+
+                                            node.append(j)
+                                            break
+                                        elif i==numbers_succesives_planet_planetary_gears-1 and  m.gcd(node[2]+Z_range[0],j)==1:
+                                            solutions[-1].planets[i].Z= j
+                                            node.append(j)
+                                            break
+                                        
+                                        elif i!=0 and test_GCD_planet(node+[j],planets,planetary_gears_1):
+                                            solutions[-1].planets[i].Z= j
+                                            node.append(j)
+                                            break
+                                        
                             valid=False    
                                 
                         else:
@@ -698,7 +729,7 @@ def cas_vitesse_1_planetary_gears(input_speeds_and_composants,output_composant,s
                     
                     planetary_gears_1=PlanetaryGears('PlanetaryGears1',planetary_1,planetary_2,planets,planet_carrier)
                     
-                    valid=test_ratio_max_ratio_min(tree.current_node,planetary_1,planetary_2,planet_carrier,planets,input_speeds_and_composants,output_composant,speed_output,list_element,Z_range)
+                    valid=test_ratio_max_ratio_min(tree.current_node,planetary_1,planetary_2,planet_carrier,planets,input_speeds_and_composants,output_composant,speed_output,Z_range,number_planet)
                          
                 
                 
@@ -751,7 +782,7 @@ def cas_vitesse_1_planetary_gears(input_speeds_and_composants,output_composant,s
                       ## Test ratio max/ratio min for Z planetary 1 and Z planetary 2##           
                       elif len(tree.current_node)==3:
                           
-                          valid=test_ratio_max_ratio_min(tree.current_node,planetary_1,planetary_2,planet_carrier,planets,input_speeds_and_composants,output_composant,speed_output,list_element,Z_range)       
+                          valid=test_ratio_max_ratio_min(tree.current_node,planetary_1,planetary_2,planet_carrier,planets,input_speeds_and_composants,output_composant,speed_output,Z_range,number_planet)       
                                  
                       ## Test Z Ring1 >> Z planet1 ##
                       elif len(tree.current_node)==4:
@@ -811,7 +842,7 @@ def cas_vitesse_1_planetary_gears(input_speeds_and_composants,output_composant,s
                           
                           
                           
-                          valid=test_ratio_max_ratio_min(tree.current_node,planetary_1,planetary_2,planet_carrier,planets,input_speeds_and_composants,output_composant,speed_output,list_element,Z_range)
+                          valid=test_ratio_max_ratio_min(tree.current_node,planetary_1,planetary_2,planet_carrier,planets,input_speeds_and_composants,output_composant,speed_output,Z_range,number_planet)
                               
                       elif len(tree.current_node)==numbers_succesives_planet_planetary_gears+3:
                           

@@ -39,9 +39,16 @@ assembly_planetary_gear=pg.AssemblyPlanetaryGears('assembly_planetary_gear',
                                                    [[planet_carrier,planetary_gears_1],[planet_carrier,planetary_gears_4]],
                                                    [[sun,planetary_gears_1],[ring,planetary_gears_2]],
                                                    [[ring,planetary_gears_1],[sun,planetary_gears_4]]])
-                                                  
 
-
+# planet_carrier=pg.PlanetCarrier('PlanetCarrier')
+# planetary_1=pg.Planetary('Planetary_1',7,'Ring')
+# planetary_2=pg.Planetary('Planetary_2',7,'Ring')
+# list_element={'Planet_Carrier': planet_carrier, 'Planetary_1' : planetary_1,'Planetary_2':planetary_2}
+# planets=[]
+# for i in range(2):
+#             planets.append(pg.Planet('Planet'+str(i),'Double',7)) 
+                                                   
+# pg.test_ratio_max_ratio_min([2,69,60,42,9],planetary_1,planetary_2,planet_carrier,planets,{'Planetary_1':540,'Planet_Carrier':0},'Planetary_2',200,[7 , 80],3)
 
 
 
@@ -53,7 +60,7 @@ assembly_planetary_gear=pg.AssemblyPlanetaryGears('assembly_planetary_gear',
 
 #print(assembly_planetary_gear.solve(500,planet_carrier,planetary_gears_2,[ring,sun],[planetary_gears_3,planetary_gears_2]))
 solutions=[]
-solutions = pg.cas_vitesse_1_planetary_gears({'Planetary_1':540,'Planet_Carrier':0},'Planetary_2',200,3,0.01,3,[7 , 80])
+solutions = pg.cas_vitesse_1_planetary_gears({'Planetary_1':540,'Planet_Carrier':0},'Planetary_2',200,2,0.01,3,[7 , 80])
 
 
 
