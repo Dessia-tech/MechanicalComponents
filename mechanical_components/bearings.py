@@ -2306,30 +2306,35 @@ class BearingCatalog(DessiaObject):
 
         datasets_values = []
         datasets_names = []
+        
+        values = []
+        for bearing in self.bearings:
+            value = {'d': bearing.d,
+                     'D': bearing.D,
+                     'B': bearing.B,
+                     'Cr': bearing.Cr,
+                     'C0r': bearing.C0r}
+            values.append(value)
+
         for class_, bearings in self.bearings_by_types.items():
             datasets_names.append(class_.__name__)
-            values = []
+            dataset_values_indices = []
             for bearing in bearings:
-                value = {'d': bearing.d,
-                         'D': bearing.D,
-                         'B': bearing.B,
-                         'Cr': bearing.Cr,
-                         'C0r': bearing.C0r}
-                values.append((bearings_index[bearing], value))
-            datasets_values.append(values)
-        displays = []
+                dataset_values_indices.append(bearings_index[bearing])
+            datasets_values.append(dataset_values_indices)
         nds = len(datasets_values)
         datasets = []
-        for ids, (dataset, name) in enumerate(zip(datasets_values, datasets_names)):
+        for ids, (dataset_values, name) in enumerate(zip(datasets_values, datasets_names)):
             datasets.append({'label' : name,
                              'color' : matplotlib.colors.to_hex(matplotlib.colors.hsv_to_rgb((ids/(nds-1),0.8, 0.7))),
-                             'values' : dataset,
+                             'values' : dataset_values,
                       })
     
         displays = [{'angular_component': 'results',
-                         'filters': filters,
-                         'references_attribute': 'bearings',
-                         'datasets': datasets}]
+                     'filters': filters,
+                     'references_attribute': 'bearings',
+                     'values': values,
+                     'datasets': datasets}]
         return displays
 
 bearing_classes_ = [RadialBallBearing, AngularBallBearing,
