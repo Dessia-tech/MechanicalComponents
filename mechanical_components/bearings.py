@@ -2139,19 +2139,14 @@ class BearingCatalog(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-#    def __eq__(self, other_eb):
-#
-#        equal = True
-#        for bg, other_bg in zip(self.bearings, other_eb.bearings):
-#            equal = equal and bg == other_bg
-#        return equal
-#
-#    def __hash__(self):
-#
-#        catalog_hash = 0.
-#        for bg in self.bearings:
-#            catalog_hash = catalog_hash + hash(bg)
-#        return int(catalog_hash%100000)
+    def find_duplicates(self):
+        duplicates = []
+        for bearing in self.bearings:
+            if self.bearings.count(bearing) > 1:
+                duplicates.append(bearing)
+        return duplicates
+
+
 
     @classmethod
     def load_from_dataframe(cls, dataframe, catalog_name):
