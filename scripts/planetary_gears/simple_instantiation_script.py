@@ -13,9 +13,28 @@ import numpy as npy
 import dectree 
 import math as m
 import copy
+import volmdlr as vm
+import volmdlr.primitives3D as p3d
+import volmdlr.primitives2D as p2d
+import mechanical_components.meshes as meshes
+rack=meshes.Rack(0.34,2)
 
+meshes_1=meshes.Mesh(15,0.06,0.01,rack)
+meshes_1.Contour()
+speeds = {0: [243.620149773094, 253.56382935566927], 1: [92.0103009101568, 95.76582339628565]}
+center_distances=[0.09713462117912072, 0.12713462117912072]
+connections = {(0,1):(0,1),(0,1):(0,1)}
+torques = {0: -16.380372067375156, 1: 'output'}
+mesh_assembly=meshes.MeshCombination(center_distances,connections,{0:meshes_1,1:copy.copy(meshes_1)})
+                                  
+pos = vm.Point3D((0, 0, 1))
+axis = vm.Vector3D((0,0,1))
+radius=0.2
+length=0.5
+cylinder = p3d.Cylinder(pos, axis, radius, length)
 
-
+volumemodel = vm.Contour2D(meshes_1.Contour(1) )
+volumemodel.MPLPlot() 
 sun=pg.Planetary('sun',18,'Sun')
 ring= pg.Planetary('ring',25,'Sun')
 planet_carrier= pg.PlanetCarrier('planet_carrier')
@@ -35,10 +54,12 @@ planetary_gears_4= pg.PlanetaryGears('pl_4', sun, ring, [planet_1], planet_carri
 assembly_planetary_gear=pg.AssemblyPlanetaryGears('assembly_planetary_gear', 
                                                   [planetary_gears_1,planetary_gears_2,planetary_gears_3,planetary_gears_4], 
                                                   [[[sun,planetary_gears_2],[sun,planetary_gears_3]],
-                                                   [[planet_carrier,planetary_gears_3],[ring,planetary_gears_4]],
-                                                   [[planet_carrier,planetary_gears_1],[planet_carrier,planetary_gears_4]],
-                                                   [[sun,planetary_gears_1],[ring,planetary_gears_2]],
-                                                   [[ring,planetary_gears_1],[sun,planetary_gears_4]]])
+                                                    [[planet_carrier,planetary_gears_3],[ring,planetary_gears_4]],
+                                                    [[planet_carrier,planetary_gears_1],[planet_carrier,planetary_gears_4]],
+                                                    [[sun,planetary_gears_1],[ring,planetary_gears_2]],
+                                                    [[ring,planetary_gears_1],[sun,planetary_gears_4]]])
+
+# print(planetary_gears_1)
 
 # planet_carrier=pg.PlanetCarrier('PlanetCarrier')
 # planetary_1=pg.Planetary('Planetary_1',7,'Ring')
@@ -55,12 +76,20 @@ assembly_planetary_gear=pg.AssemblyPlanetaryGears('assembly_planetary_gear',
 
 # planetary_gears_1.solve(500, ring,planet_3)
 # assembly_planetary_gear.plot()
-# print(assembly_planetary_gear.system_equations()[0])
+# print(assembly_planetary_gear.system_equations()[0])print(node)
+                        
 #solution,system_matrix=assembly_planetary_gear.solve({planet_carrier:[500,planetary_gears_2] ,ring:[0,planetary_gears_3],sun:[0,planetary_gears_2]},)
 
 #print(assembly_planetary_gear.solve(500,planet_carrier,planetary_gears_2,[ring,sun],[planetary_gears_3,planetary_gears_2]))
-solutions=[]
-solutions = pg.cas_vitesse_1_planetary_gears({'Planetary_1':540,'Planet_Carrier':0},'Planetary_2',200,2,0.01,3,[7 , 80])
+
+# optimizer=pg.OptimizerPlanetaryGears([[200,250],[100,150], [300,350],[200,300],[200,350],[11,12],[13,15]],0.1,2,45)
+
+# optimizer.decission_tree_()
+
+
+
+# solutions=[]
+# solutions = pg.decision_tree_planetary_gears({'Planetary_1':500,'Planet_Carrier':0},'Planetary_2',-230,2,1,3,[7 , 80],[0.1, 1],0.1)
 
 
 

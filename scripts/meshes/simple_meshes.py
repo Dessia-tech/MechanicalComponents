@@ -2,7 +2,7 @@ import sys
 #del sys.modules['mechanical_components.optimization']
 import mechanical_components.optimization.meshes as meshes_opt
 import numpy as npy
-from interval import interval
+# from interval import interval
 
 #3 gears meshes test
 

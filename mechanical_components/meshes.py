@@ -486,7 +486,7 @@ class Rack(DessiaObject):
         p7=p4.Translation((self.tooth_space,0))
         p6=p7.Translation((-self.gear_dedendum*math.tan(self.transverse_pressure_angle),-self.gear_dedendum))
         L=primitives2D.OpenedRoundedLineSegments2D([p1,p2,p3,p4,p5,p6,p7],{4:self.root_radius,5:self.root_radius},False)
-
+        
         Rack_Elem=[]
         for i in range(number_pattern):
             Rack_Elem.append(L.Translation(((i)*(p7.vector-p1.vector))))
@@ -994,6 +994,9 @@ class MeshCombination(DessiaObject):
 
         self.transverse_pressure_angle = []
         for num_gear, (num1, num2) in enumerate(self.connections):
+            print(num_gear)
+            print(num1)
+            print(num2)
             mesh_first = self.meshes[num1]
             mesh_second = self.meshes[num2]
             df_first = 2*self.center_distance[num_gear]*mesh_first.z/mesh_second.z/(1+mesh_first.z/mesh_second.z)
