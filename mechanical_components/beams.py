@@ -38,12 +38,11 @@ class ISection(Section):
         p11 = vm.Point2D((-0.5*self.tw, -0.5*self.h+self.tf))
         p12 = vm.Point2D((-0.5*self.b, -0.5*self.h+self.tf))
 
-        rl = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4, p5, p6, p7, p8,
-                                                 p9, p10, p11, p12],
-                                                closed=True,
-                                                radius={3: self.r, 4: self.r,
-                                                        9: self.r, 10: self.r})
-        return vm.Contour2D([rl])
+        rl = primitives2D.ClosedRoundedLineSegments2D([p1, p2, p3, p4, p5, p6, p7, p8,
+                                                       p9, p10, p11, p12],
+                                                      radius={3: self.r, 4: self.r,
+                                                              9: self.r, 10: self.r})
+        return rl
     
     def plot(self):
         self.contour().MPLPlot()
@@ -81,7 +80,7 @@ class Beam(DessiaObject):
         self.length = length
         self.name = name
         
-    def cad_volumes(self, position=vm.O3D, x=vm.X3D, y=vm.Y3D):
+    def volmdlr_primitives(self, position=vm.O3D, x=vm.X3D, y=vm.Y3D):
         """
         x and y define the plane of section in the beam axis
         """
