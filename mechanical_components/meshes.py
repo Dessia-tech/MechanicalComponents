@@ -1525,6 +1525,7 @@ class MeshCombination(DessiaObject):
         export=[]
         for (i,center,k) in zip(list_gear,list_center,list_rot):
             model_export=[]
+            
             for m in i:
                 center = vm.Point2D(center)
                 model_trans = m.Translation(center)
@@ -1612,6 +1613,7 @@ class MeshCombination(DessiaObject):
                         Rotation[set_pos][eng1]=rot[eng1]
                         delta_rot=Rotation[set_pos][eng1]-(list_rot[0]-angle0)
                 Rotation[set_pos][eng2]=list_rot[1]-angle0-delta_rot*((self.meshes[eng1].z)/(self.meshes[eng2].z))
+            
             Gears3D_Rotate=self.GearRotate([Gears3D[eng1],Gears3D[eng2]],[(position1[1::]),(position2[1::])],
                                        list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
 
@@ -1628,6 +1630,8 @@ class MeshCombination(DessiaObject):
                 primitives.append(t1)
             vect_x = -0.5*self.gear_width[eng2]*x + vm.Vector3D((x.Dot(vm.Vector3D(centers[eng2])), 0,0))
             t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z, C2, [], vm.Vector3D(extrusion_vector2))
+
+            
             primitives.append(t2)
 
         model = vm.VolumeModel(primitives, name)

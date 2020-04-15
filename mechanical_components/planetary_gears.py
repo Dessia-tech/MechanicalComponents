@@ -13,6 +13,10 @@ from scipy.linalg import solve
 import time
 import math as m
 import copy
+import volmdlr as vm
+import volmdlr.primitives3D as p3d
+import volmdlr.primitives2D as p2d
+import mechanical_components.meshes as meshes
 class Relation:
 
     def __init__ (self,name):
@@ -49,10 +53,46 @@ class Planetary():
         self.p=0
         self.speed=0
         self.module=0
+        self.d=0
         if planetary_type=='Sun':
             self.p=1
         else:
             self.p=-1
+    def volume_plot(self,xy_position,z_position,module,length):
+         self.module=module
+         self.d=module*self.Z
+         radius=self.Z*module
+         x = vm.Vector3D((1,0,0))
+         y = vm.Vector3D((0,1,0))
+         z = vm.Vector3D((0,0,1))
+         rack=meshes.Rack(0.34,module)
+         meshes_1=meshes.Mesh(self.Z,radius,0.01,rack)
+         Gears3D={0:meshes_1.Contour(3)}
+         export=[]
+         center_2=(xy_position[0],xy_position[1])
+         center = vm.Point2D(center_2)
+         model_trans =Gears3D[0][0].Translation(center)
+         model_trans_rot = model_trans.Rotation(center, 0.1)
+         Gears3D_Rotate=[model_trans_rot]
+         export=[]
+         for (i,center,k) in zip([Gears3D[0]],[center_2],[-1]):
+                        model_export=[]
+                        
+                        for m in i:
+                            
+                            center = vm.Point2D(center)
+                            model_trans = m.Translation(center)
+                            model_trans_rot = model_trans.Rotation(center, k)
+                            model_export.append(model_trans_rot)
+                        export.append(model_export)
+         Gears3D_Rotate=export
+         vect_x = z_position*z 
+         extrusion_vector1 = length*z
+         C1=vm.Contour2D(Gears3D_Rotate[0])
+         i=vm.Vector3D(vect_x)
+         t1=p3d.ExtrudedProfile(vm.Vector3D(vect_x), x, y, C1, [], vm.Vector3D(extrusion_vector1))               
+         return t1
+         
 
 
 
@@ -64,6 +104,41 @@ class Planet():
         self.Z=Z
         self.speed=0
         self.module=0
+        
+    def volume_plot(self,xy_position,z_position,module,length):
+         self.module=module
+         self.d=module*self.Z
+         radius=self.Z*module
+         x = vm.Vector3D((1,0,0))
+         y = vm.Vector3D((0,1,0))
+         z = vm.Vector3D((0,0,1))
+         rack=meshes.Rack(0.34,module)
+         meshes_1=meshes.Mesh(self.Z,radius,0.01,rack)
+         Gears3D={0:meshes_1.Contour(3)}
+         export=[]
+         center_2=(xy_position[0],xy_position[1])
+         center = vm.Point2D(center_2)
+         model_trans =Gears3D[0][0].Translation(center)
+         model_trans_rot = model_trans.Rotation(center, 0.1)
+         Gears3D_Rotate=[model_trans_rot]
+         export=[]
+         for (i,center,k) in zip([Gears3D[0]],[center_2],[-1]):
+                        model_export=[]
+                        
+                        for m in i:
+                            
+                            center = vm.Point2D(center)
+                            model_trans = m.Translation(center)
+                            model_trans_rot = model_trans.Rotation(center, k)
+                            model_export.append(model_trans_rot)
+                        export.append(model_export)
+         Gears3D_Rotate=export
+         vect_x = z_position*z 
+         extrusion_vector1 = length*z
+         C1=vm.Contour2D(Gears3D_Rotate[0])
+         i=vm.Vector3D(vect_x)
+         t1=p3d.ExtrudedProfile(vm.Vector3D(vect_x), x, y, C1, [], vm.Vector3D(extrusion_vector1))               
+         return t1
 class PlanetCarrier():
 
     def __init__ (self,name):
@@ -86,7 +161,7 @@ class GearingPlanetary(Relation):
                 Z_planetary= node.p*node.Z
 
 
-        matrix=npy.array([Z_planetary ,Z_planet,Z_planetary])
+        matrix=npy.array([Z_planetary ,Z_planet,-Z_planetary])
         rhs= npy.array([0])
         return matrix,rhs
 
@@ -135,6 +210,13 @@ class Double (Relation):
         matrix= npy.array([1, -1])
         rhs= npy.array([0])
         return matrix,rhs
+    def volume_plot(self,xy_position,z_position,radius,length):
+         
+         pos = vm.Point3D((xy_position[0],xy_position[1],z_position))
+         axis = vm.Vector3D((0,0,1))
+         cylinder = p3d.Cylinder(pos, axis, radius, length)
+         return cylinder
+         
 
 class Clutch (Relation):
 
@@ -160,7 +242,7 @@ class ImposeSpeed(Relation):
 
 class PlanetaryGears():
 
-    def __init__(self,name,planetary_1,planetary_2,planets,planet_carrier):
+    def __init__(self,name,planetary_1,planetary_2,planets,planet_carrier,numbers_planets):
 
         #Initialize Planetarygears elements
         self.name=name
@@ -303,6 +385,39 @@ class PlanetaryGears():
         nx.draw_kamada_kawai(graph_planetary_gear, with_labels=True)
 
         return graph_planetary_gear
+    
+    
+    def volume_plot(self,xy_position,z_position,modules,lenght_gear,length_double,radius_double):
+        previous_xy_position=0
+        primitives=[]
+        n_plane_gearing=0
+        next_z_position=z_position
+        for node in self.list_nodes:
+             if isinstance(node,Planetary):
+                 next_z_position=next_z_position
+                 primitives.append(node.volume_plot(copy.copy(xy_position),copy.copy(next_z_position), modules[n_plane_gearing],lenght_gear))
+                
+                 
+                 next_xy_position=[xy_position[0],xy_position[1]+node.d/2+modules[n_plane_gearing]/2]
+                 
+                 
+             elif isinstance(node,Planet):
+                 if next_xy_position!=previous_xy_position:
+                     next_xy_position[1]+=(node.Z*modules[n_plane_gearing])/2 +modules[n_plane_gearing]/2
+                 primitives.append(node.volume_plot(copy.copy(next_xy_position),copy.copy(next_z_position), modules[n_plane_gearing],lenght_gear))
+                 previous_xy_position=copy.copy(next_xy_position)
+                 next_xy_position[1]+=node.d/2 +modules[n_plane_gearing]/2
+                 next_z_position=next_z_position
+                 
+             elif isinstance(node,Double)   :
+
+                 primitives.append(node.volume_plot(previous_xy_position,next_z_position+lenght_gear+(length_double)/2,radius_double ,length_double))
+                 next_z_position+=lenght_gear+length_double
+                 next_xy_position=previous_xy_position
+                 n_plane_gearing+=1
+        return primitives
+             
+         
 
     def system_equations(self):
         #initialize system matrix
@@ -615,7 +730,7 @@ def decision_tree_planetary_gears(input_speeds_and_composants, output_composant,
                 inv=False
             if len(node)==numbers_succesives_planet_planetary_gears+3:
                 tree.SetCurrentNodeNumberPossibilities(0)
-               
+            
             valid=True
             planet_carrier=PlanetCarrier('PlanetCarrier')
             node_data=tree.data
@@ -814,15 +929,21 @@ def decision_tree_planetary_gears(input_speeds_and_composants, output_composant,
                                                 planet.module=j
                                             solutions.append(planetary_gears_1)
                                             print(planetary_gears_1)
+                                            if len(solutions)==10:
+                                                print(len(solutions))
+                                                return solutions
                            elif valid:
                                 solutions.append(planetary_gears_1)
                                 print(planetary_gears_1)
+
                            tree.SetCurrentNodeNumberPossibilities(0)
                                 
                 
             ## Test_Inverse_Speed##        
             if len(node)==1:
-                if numbers_succesives_planet_planetary_gears==1 and node[0]!=0:
+                if node[0]!=3:
+                    tree.SetCurrentNodeNumberPossibilities(0)
+                elif numbers_succesives_planet_planetary_gears==1 and node[0]!=0:
                     tree.SetCurrentNodeNumberPossibilities(0)
                 else:    
                     key_input_speeds_and_composant=list(input_speeds_and_composants.keys())
@@ -887,7 +1008,7 @@ def decision_tree_planetary_gears(input_speeds_and_composants, output_composant,
                     if test_ratio_max_ratio_min(node_2,node_data,planetary_gears_1,input_speeds_and_composants,output_composant,speed_output,Z_range):
                         possibilities.append(i)
                 tree.SetCurrentNodeDataPossibilities(possibilities) 
-                
+            
             node=tree.NextNode(valid)  
             # ## Test GCD planetary_1 and planetary_2##   
                 
