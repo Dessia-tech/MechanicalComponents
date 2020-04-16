@@ -2139,19 +2139,14 @@ class BearingCatalog(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-#    def __eq__(self, other_eb):
-#
-#        equal = True
-#        for bg, other_bg in zip(self.bearings, other_eb.bearings):
-#            equal = equal and bg == other_bg
-#        return equal
-#
-#    def __hash__(self):
-#
-#        catalog_hash = 0.
-#        for bg in self.bearings:
-#            catalog_hash = catalog_hash + hash(bg)
-#        return int(catalog_hash%100000)
+    def find_duplicates(self):
+        duplicates = []
+        for bearing in self.bearings:
+            if self.bearings.count(bearing) > 1:
+                duplicates.append(bearing)
+        return duplicates
+
+
 
     @classmethod
     def load_from_dataframe(cls, dataframe, catalog_name):
@@ -2306,30 +2301,35 @@ class BearingCatalog(DessiaObject):
 
         datasets_values = []
         datasets_names = []
+        
+        values = []
+        for bearing in self.bearings:
+            value = {'d': bearing.d,
+                     'D': bearing.D,
+                     'B': bearing.B,
+                     'Cr': bearing.Cr,
+                     'C0r': bearing.C0r}
+            values.append(value)
+
         for class_, bearings in self.bearings_by_types.items():
             datasets_names.append(class_.__name__)
-            values = []
+            dataset_values_indices = []
             for bearing in bearings:
-                value = {'d': bearing.d,
-                         'D': bearing.D,
-                         'B': bearing.B,
-                         'Cr': bearing.Cr,
-                         'C0r': bearing.C0r}
-                values.append((bearings_index[bearing], value))
-            datasets_values.append(values)
-        displays = []
+                dataset_values_indices.append(bearings_index[bearing])
+            datasets_values.append(dataset_values_indices)
         nds = len(datasets_values)
         datasets = []
-        for ids, (dataset, name) in enumerate(zip(datasets_values, datasets_names)):
+        for ids, (dataset_values, name) in enumerate(zip(datasets_values, datasets_names)):
             datasets.append({'label' : name,
                              'color' : matplotlib.colors.to_hex(matplotlib.colors.hsv_to_rgb((ids/(nds-1),0.8, 0.7))),
-                             'values' : dataset,
+                             'values' : dataset_values,
                       })
     
         displays = [{'angular_component': 'results',
-                         'filters': filters,
-                         'references_attribute': 'bearings',
-                         'datasets': datasets}]
+                     'filters': filters,
+                     'references_attribute': 'bearings',
+                     'values': values,
+                     'datasets': datasets}]
         return displays
 
 bearing_classes_ = [RadialBallBearing, AngularBallBearing,
