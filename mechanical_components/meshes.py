@@ -994,9 +994,6 @@ class MeshCombination(DessiaObject):
 
         self.transverse_pressure_angle = []
         for num_gear, (num1, num2) in enumerate(self.connections):
-            print(num_gear)
-            print(num1)
-            print(num2)
             mesh_first = self.meshes[num1]
             mesh_second = self.meshes[num2]
             df_first = 2*self.center_distance[num_gear]*mesh_first.z/mesh_second.z/(1+mesh_first.z/mesh_second.z)

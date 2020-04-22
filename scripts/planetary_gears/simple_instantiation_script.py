@@ -31,12 +31,12 @@ data_wholer_curve={'data':[[4.307791955971963,1.6419147590563592],
 data_gear_material={'data':[[1.313871566195314,0.7858874572688317],
                       [1.4294457009773085,0.8802021097895326],
                       [1.4551288380965028,0.9097910273994609]
-                     ], 'x':'Log','y':'Log'}
+                     ], 'x':'Log','y':'Lèog'}
 material1=meshes.Material(volumic_mass, data_coeff_YB_Iso,
                            data_wholer_curve, data_gear_material)
 rack=meshes.Rack(0.34,)
 
-meshes_1=meshes.Mesh(20,0.06,0.01,rack)
+meshes_1=meshes.Mesh(20,0.06,0.01,rack) 
 meshes_1.Contour()
 
 center_distances=[0.09713462117912072]
@@ -66,12 +66,33 @@ planet_2=pg.Planet('planet_2','Simple',12)
 planet_3=pg.Planet('planet_3','Simple',12)
 planet_4=pg.Planet('planet_4','Double',5)
 planet_5=pg.Planet('planet_5','Double',5)
-planetary_gears_1= pg.PlanetaryGears('pl_1', [sun,ring,sun_2], [planet_1,planet_2], planet_carrier,[[sun,planet_1,'GE'],[planet_1,planet_2,'GE'],[planet_2,ring,'GE'],[planet_2,sun_2,'GI']])
+planetary_gears_1= pg.PlanetaryGear('pl_1', [sun,ring,sun_2], [planet_1,planet_2], planet_carrier,[[sun,planet_1,'GE'],[planet_1,planet_2,'GE'],[planet_2,ring,'GE'],[planet_2,sun_2,'GI']])
 torque_solution=planetary_gears_1.torque_solve({sun:0,planet_carrier:500})
 speed_solution=planetary_gears_1.speed_solve({sun_2:0,planet_carrier:500})
 print(torque_solution)
 print(speed_solution)
-
+Optimizer=pg.OptimizerPlanetaryGears([200],0.1,20)
+list_pos=[]
+list_solution=Optimizer.decission_tree(5,1,2,1)
+list_solution[15].plot()
+list_solution[15].plot_cinematic_graph(0.2,1,4)
+# list_pos=[]
+# list_previous=[]
+# # Optimizer.list_possibilities_planets_by_branch_step_1([0,0,0],list_pos,6,0,3,0,1)
+# # print(list_pos)
+# global_architecture,number_branch=Optimizer.list_possibilities_planets_by_branch_step_2([0,2,0],5,2,1)
+# print(global_architecture)
+# # print(global_architecture,number_branch)
+# list_branch=[]
+# list_planet_type=[]
+# for i in range (number_branch):
+#     list_branch.append(0)
+#     list_planet_type.append('Simple')
+# list_connexion=[]
+# for i in range(len(global_architecture)):
+#     Optimizer.list_possibilities_architecture_planet(1,number_branch,global_architecture[i],list_branch,list_pos,[],list_connexion)
+# print(list_pos,list_connexion)
+#Optimizer.number_possibilities_planets_type(0,[],['Simple','Simple','Simple','Simple','Simple','Simple','Simple','Simple','Simple','Simple'],10)
 # volume=vm.VolumeModel(planetary_gears_1.volume_plot([0,0],0,[0.02,0.01],0.1,0.5,0.05))
 # volume.babylonjs()
 
