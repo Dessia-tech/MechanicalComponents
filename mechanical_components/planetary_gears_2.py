@@ -25,7 +25,7 @@ class Gears():
         self.name = name
         self.Z = Z
 
-    def volume_plot(self, xy_position, z_position, module, length):
+    def volume_plot(self, xy_position, z_position, module, lenght):
          self.module = module
          self.d = module*self.Z
          radius = self.Z*module
@@ -59,7 +59,7 @@ class Gears():
 
          Gears3D_Rotate = export
          vect_x = z_position*z
-         extrusion_vector1 = length*z
+         extrusion_vector1 = lenght*z
          C1 = vm.Contour2D(Gears3D_Rotate[0])
          t1 = p3d.ExtrudedProfile(vm.Vector3D(vect_x), x, y, C1, [], vm.Vector3D(extrusion_vector1))
 
@@ -114,6 +114,7 @@ class GearingPlanetary(Gearing):
     def __init__(self, name, nodes):
         self.name = name
         self.nodes = nodes
+        self.type='GI'
         Gearing.__init__(self, self.name, self.nodes)
 
         for node in self.nodes:
@@ -142,6 +143,7 @@ class GearingPlanet(Gearing):
         def __init__(self, name, nodes):
             self.name = name
             self.nodes = nodes
+            self.type='GI'
             Gearing.__init__(self, self.name, self.nodes)
             self.Z_planets = []
 
@@ -193,11 +195,11 @@ class Double():
         rhs = npy.array([0])
         return matrix, rhs
 
-    def volume_plot(self, xy_position, z_position, radius, length):
+    def volume_plot(self, xy_position, z_position, radius, lenght):
 
          pos = vm.Point3D((xy_position[0], xy_position[1], z_position))
          axis = vm.Vector3D((0, 0, 1))
-         cylinder = p3d.Cylinder(pos, axis, radius, length)
+         cylinder = p3d.Cylinder(pos, axis, radius, lenght)
          return cylinder
 
 class ImposeSpeed():
@@ -231,10 +233,13 @@ class PlanetaryGear():
 
               if isinstance(connexion[0], Planet) and isinstance(connexion[1], Planet):
                 self.gearings.append(GearingPlanet('Gearing'+str(i), [connexion[0], connexion[1]]))
+                
 
               else:
                 self.gearings.append(GearingPlanetary('Gearing'+str(i),
                                                       [connexion[0], connexion[1]]))
+              self.gearings[-1].type=connexion[2]
+              
 
           else:
              self.doubles.append(Double('Double'+str(i), [connexion[0], connexion[1]]))
@@ -299,8 +304,220 @@ class PlanetaryGear():
 
     def plot(self):
         graph_planetary_gears = self.graph()
-
+        plt.figure()
         nx.draw_kamada_kawai(graph_planetary_gears, with_labels=True)
+
+
+
+    def plot_cinematic_graph_gear(self, coordinate,lenght,diameter,diameter_pivot,lenght_pivot,color):
+        list_color=['mediumblue','purple','green','k','mediumblue','purple','green','k','mediumblue','purple','green','k','mediumblue','purple','green','k']
+        x=npy.array([coordinate[0]+lenght_pivot/2,coordinate[0]-lenght_pivot/2,coordinate[0],coordinate[0],coordinate[0]+lenght/2,coordinate[0]-lenght/2])
+        y=npy.array([coordinate[1]+diameter_pivot/2,coordinate[1]+diameter_pivot/2,coordinate[1]+diameter_pivot/2,coordinate[1]+diameter/2,coordinate[1]+diameter/2,coordinate[1]+diameter/2])
+        plt.plot(x,y,list_color[color])
+        x=npy.array([coordinate[0]+lenght_pivot/2,coordinate[0]-lenght_pivot/2,coordinate[0],coordinate[0],coordinate[0]+lenght/2,coordinate[0]-lenght/2])
+        y=npy.array([coordinate[1]-diameter_pivot/2,coordinate[1]-diameter_pivot/2,coordinate[1]-diameter_pivot/2,coordinate[1]-diameter/2,coordinate[1]-diameter/2,coordinate[1]-diameter/2])
+        plt.plot(x,y,list_color[color])
+    
+    def plot_cinematic_graph_double(self, coordinate,diameter,lenght,color):
+        list_color=['mediumblue','purple','green','k','mediumblue','purple','green','k','mediumblue','purple','green','k','mediumblue','purple','green','k']
+        x=npy.array([coordinate[0], coordinate[0]+lenght])
+        y=npy.array([coordinate[1]+diameter/2,coordinate[1]+diameter/2])
+        plt.plot(x,y,list_color[color])
+        x=npy.array([coordinate[0], coordinate[0]+lenght])
+        y=npy.array([coordinate[1]-diameter/2,coordinate[1]-diameter/2])
+        plt.plot(x,y,list_color[color])
+        
+    def plot_cinematic_graph_planet_carrier(self,coordinates,planet_carrier_x,planet_carrier_y):
+        coordinate_y_min=0
+        coordinate_y_max=0
+        coordinate_x_max=0
+        for coordinate in coordinates:
+            if coordinate[0]>coordinate_x_max:
+                coordinate_x_max=coordinate[0]
+            if coordinate[1]< coordinate_y_min:
+                coordinate_y_min=coordinate[1]
+            if coordinate[1]>coordinate_y_max:
+                coordinate_y_max=coordinate[1]
+                
+        coordinate_planet_carrier=[coordinate_x_max+planet_carrier_x,coordinate_y_min-planet_carrier_y]
+       
+        for coordinate in coordinates:
+            x=[coordinate[0]-planet_carrier_x,coordinate_planet_carrier[0]]
+            y=[coordinate[1],coordinate[1]]
+            plt.plot(x,y,'r')
+        x=[coordinate_planet_carrier[0]+planet_carrier_x,coordinate_planet_carrier[0],coordinate_planet_carrier[0]]
+        y=[coordinate_planet_carrier[1],coordinate_planet_carrier[1],coordinate_y_max]
+        plt.plot(x,y,'r')
+        return coordinate_planet_carrier
+    
+    def plot_cinematic_graph_ring(self,coordinate,lenght_gear,coordinate_planet_carrier,diameter_ring,lenght_ring,color):
+        list_color=['steelblue','orchid','darkorange','palegreen','steelblue','orchid','darkorange','palegreen','steelblue','orchid','darkorange','palegreen','steelblue','orchid','darkorange','palegreen']
+        
+        x=[coordinate[0]-lenght_gear/2,coordinate[0]+lenght_gear/2,coordinate[0],coordinate[0],coordinate_planet_carrier[0]+lenght_ring,coordinate_planet_carrier[0]+lenght_ring]
+        y=[coordinate[1],coordinate[1],coordinate[1],diameter_ring/2,diameter_ring/2,coordinate_planet_carrier[1]]
+        plt.plot(x,y,list_color[color])
+        coordinate[1]-=(abs(coordinate[1]-coordinate_planet_carrier[1]))*2
+        # y=[coordinate[1],coordinate[1],coordinate[1],coordinate[1]-diameter_ring/2,coordinate[1]-diameter_ring/2,coordinate_planet_carrier[1]]
+        # plt.plot(x,y,list_color[color])
+        
+    def plot_cinematic_graph(self,lenght_gear,diameter_gear,lenght_double,diameter_pivot,lenght_pivot,planet_carrier_x,planet_carrier_y,diameter_ring_ini):
+        graph_path=self.path_planetary_to_planetary()
+
+        plt.figure()
+        
+        previous_relation_double=[]
+        previous_relation_gearing=[]
+        
+        previous_planet_gearing=[]
+        previous_planet_double=[]
+        inverse_relation_double=[]
+       
+        coordinate_planet=[[0,0]]
+        coordinate=[0,0]
+        index_coordinate_planet=[]
+        flag_first_planet=0
+        self.plot_cinematic_graph_gear(coordinate,lenght_gear,diameter_gear,diameter_pivot,lenght_pivot,0)
+        for path in graph_path:
+            
+            
+
+            
+            flag_way_inv_double=0
+            coordinate=[0,0]
+            
+            color=0
+            
+            for i,element in enumerate(path):
+                if not flag_first_planet and isinstance(element,Planet):
+                    if len(coordinate_planet)<2:
+                        index_coordinate_planet.append(element.name)
+                        flag_first_planet=1
+                
+                
+                if isinstance(element,Double):
+                            
+                    
+                    
+                    if element in  inverse_relation_double:
+                        
+                        coordinate=[coordinate[0]-lenght_double/(1+i*0.2),coordinate[1]]
+                        
+
+
+                        
+                    
+                    
+                    elif ((element.nodes[0] in previous_planet_double or element.nodes[1] in previous_planet_double) and not element  in previous_relation_double ):
+                        
+                        for double in previous_relation_double:
+                            for node in double.nodes:
+                                if element.nodes[0]==node or element.nodes[1]==node:
+                                    if  not double==previous_element:
+                                        if double in inverse_relation_double:
+                                            flag_way_inv_double=1
+                                        else:
+                                            flag_way_inv_double=0
+                                    else:
+                                        if not double in inverse_relation_double:
+                                            flag_way_inv_double=1
+                                        else:
+                                            flag_way_inv_double=0
+                                
+                        if flag_way_inv_double:
+                            self.plot_cinematic_graph_double(coordinate,diameter_pivot,+lenght_double/(1+i*0.2),color)
+                            coordinate=[coordinate[0]+lenght_double/(1+i*0.2),coordinate[1]]
+                        else:
+                            self.plot_cinematic_graph_double(coordinate,diameter_pivot,-lenght_double/(1+i*0.2),color)
+                            coordinate=[coordinate[0]-lenght_double/(1+i*0.2),coordinate[1]]
+                            inverse_relation_double.append(element)
+                            
+                        
+
+                            
+                    else:
+                        
+                        if not element in previous_relation_double:
+                            
+                            if previous_relation_double and previous_relation_double[-1] in inverse_relation_double:
+                                self.plot_cinematic_graph_double(coordinate,diameter_pivot,-lenght_double/(1+i*0.2),color)
+                                inverse_relation_double.append(element)
+                                coordinate=[coordinate[0]-lenght_double/(1+i*0.2),coordinate[1]]
+                            
+                            else:
+                                self.plot_cinematic_graph_double(coordinate,diameter_pivot,+lenght_double/(1+i*0.2),color)
+                                coordinate=[coordinate[0]+lenght_double/(1+i*0.2),coordinate[1]]
+                        else:
+                                
+                                coordinate=[coordinate[0]+lenght_double/(1+i*0.2),coordinate[1]]
+                       
+                    previous_relation_double.append(element)
+                    previous_planet_double.extend([element.nodes[0],element.nodes[1]])
+                
+                elif isinstance(element,GearingPlanet)  :
+
+                    color+=1
+
+                    if element.type=='GI':
+                        if previous_planet.name==element.nodes[0].name:
+                        
+                            coordinate=[coordinate[0],coordinate[1]-diameter_gear]
+                        else:
+                            coordinate=[coordinate[0],coordinate[1]+diameter_gear]
+                    elif element.type=='GE':
+                        if previous_planet.name==element.nodes[0].name:
+                        
+                            coordinate=[coordinate[0],coordinate[1]+diameter_gear]
+                        else:
+                            coordinate=[coordinate[0],coordinate[1]-diameter_gear]
+
+                        
+
+                    
+ 
+                    previous_relation_gearing.append(element)
+                    previous_planet_gearing.extend([element.nodes[0],element.nodes[1]])
+               
+                if isinstance(element,Planet):
+                    previous_planet=element
+                
+                if not isinstance(element,Planet) and not isinstance(element,Planetary) and not isinstance(element,GearingPlanetary)  :   
+                    
+                    if  not coordinate in coordinate_planet:
+                        coordinate_planet.append(coordinate)
+                        if not element.nodes[1].name in index_coordinate_planet:
+                            
+                            index_coordinate_planet.append(element.nodes[1].name)
+                        else:
+                            index_coordinate_planet.append(element.nodes[0].name)
+                        self.plot_cinematic_graph_gear(coordinate,lenght_gear,diameter_gear,diameter_pivot,lenght_pivot,color)
+                        
+                        
+                    previous_element=element
+                    
+                    
+        coordinate_planet_carrier=self.plot_cinematic_graph_planet_carrier(coordinate_planet,planet_carrier_x,planet_carrier_y)  
+        lenght_ring_ini=5
+        for gearing in self.gearings:
+            if isinstance(gearing,GearingPlanetary):
+                color+=1
+                if gearing.nodes[0].planetary_type=='Sun':
+                    index=index_coordinate_planet.index(gearing.nodes[1].name)
+                    planetary_diameter=((coordinate_planet[index][1]-diameter_gear/2)-coordinate_planet_carrier[1])*2
+                    self.plot_cinematic_graph_gear([coordinate_planet[index][0],coordinate_planet_carrier[1]],lenght_gear,planetary_diameter,diameter_pivot,lenght_pivot,color)
+                else:
+                    
+                    index=index_coordinate_planet.index(gearing.nodes[1].name)
+                    lenght_ring=lenght_ring_ini-(((coordinate_planet[index][0])*+100)/50)
+                    diameter_ring=diameter_ring_ini-(((coordinate_planet[index][0])*10+100)/50)
+                    coordinate_ring=[coordinate_planet[index][0],coordinate_planet[index][1]+diameter_gear/2]
+                    self.plot_cinematic_graph_ring(coordinate_ring, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color)
+
+
+
+
+
+
+
 
     def path_planetary_to_planetary(self):
         graph_planetary_gears = self.graph()
@@ -318,6 +535,11 @@ class PlanetaryGear():
 
 
         return list_path
+
+
+
+
+
 
     def test_assembly_condition(self, number_planet):
         valid = True
@@ -611,7 +833,7 @@ class PlanetsStructure():
                 self.planets.append(Planet('Pl'+str(number_planet),planet,7))
                 
                 if flag_first_planet_branch :
-                    if planet=='Double' and self.planets[-2].planet_type=='Double':
+                    if planet=='Double':
                         self.connexions.append([self.planets[-2], self.planets[-1],'D'])
                     else:
                         self.connexions.append([self.planets[-2], self.planets[-1],'GI'])
@@ -676,14 +898,118 @@ class PlanetsStructure():
                 path[i] = nx.get_node_attributes(graph_planetary_gears, path[i])[path[i]]
         return list_path
     
-
-    def plot_cinematic_graph_gear(self, coordinate,length,diameter):
-        x=npy.array([coordinate[0],coordinate[0]+length/2,coordinate[0]-length/2,coordinate[0],coordinate[0],coordinate[0]+length/2,coordinate[0]-length/2])
-        y=npy.array([coordinate[1]+diameter/2,coordinate[1]+diameter/2,coordinate[1]+diameter/2,coordinate[1]+diameter/2,coordinate[1]-diameter/2,coordinate[1]-diameter/2,coordinate[1]-diameter/2])
-        plt.plot(x,y)
+    def gearing_chain_recursive_function(self,n,planet,graph_planetary_gear,possibilities, list_possibilities,previous_relation):
         
-    def plot_cinematic_graph(self,length_gear,diameter_gear,length_double):
+        planet_2=copy.copy(planet)
+        neighbors=nx.all_neighbors(graph_planetary_gear,planet.name)
+        gearing=0
+        neighbors_2=[]
+        for neighbor in neighbors:
+            neighbor=nx.get_node_attributes(graph_planetary_gear,  neighbor)[neighbor]
+            neighbors_2.append(neighbor)
+        neighbors=neighbors_2
+        if not possibilities:
+            possibilities.append(planet_2)
+        n+=1
+        if previous_relation:
+            
+            neighbors.remove(previous_relation)
+        
+        # if n==13:
+        #     return list_possibilities
+
+            
+           
+        for neighbor in neighbors:
+
+            
+            possibilities_2=copy.copy(possibilities)
+            previous_relation=neighbor
+            
+            if isinstance(neighbor,GearingPlanet):
+                gearing=1
+                
+                if neighbor.nodes[0].name==planet_2.name:
+                    possibilities_2.append(neighbor.nodes[1])
+                    planet_3=neighbor.nodes[1]
+                else:
+                    possibilities_2.append(neighbor.nodes[0])
+                    planet_3=neighbor.nodes[0]
+                self.gearing_chain_recursive_function(n,planet_3,graph_planetary_gear,possibilities_2, list_possibilities,previous_relation)    
+                
+            elif isinstance(neighbor,Double):
+                
+                if neighbor.nodes[0].name==planet_2.name:
+                    
+                    planet_3=neighbor.nodes[1]
+                   
+                else:
+                    planet_3=neighbor.nodes[0]
+                    
+                self.gearing_chain_recursive_function(n,planet_3,graph_planetary_gear,[], list_possibilities,previous_relation) 
+        
+               
+        
+        if not gearing:
+            list_possibilities.append(possibilities)
+            return list_possibilities
+            
+        return list_possibilities
+    
+    def gearing_chain(self):
+        graph_planetary_gear=self.graph()
+        list_possibilities=self.gearing_chain_recursive_function(0,self.planets[0],graph_planetary_gear,[],[],0)
+        return list_possibilities
+                
+        
+
+    def plot_cinematic_graph_gear(self, coordinate,lenght,diameter,diameter_pivot,lenght_pivot,color):
+        list_color=['mediumblue','purple','green','k','mediumblue','purple','green','k','mediumblue','purple','green','k','mediumblue','purple','green','k']
+        x=npy.array([coordinate[0]+lenght_pivot/2,coordinate[0]-lenght_pivot/2,coordinate[0],coordinate[0],coordinate[0]+lenght/2,coordinate[0]-lenght/2])
+        y=npy.array([coordinate[1]+diameter_pivot/2,coordinate[1]+diameter_pivot/2,coordinate[1]+diameter_pivot/2,coordinate[1]+diameter/2,coordinate[1]+diameter/2,coordinate[1]+diameter/2])
+        plt.plot(x,y,list_color[color])
+        x=npy.array([coordinate[0]+lenght_pivot/2,coordinate[0]-lenght_pivot/2,coordinate[0],coordinate[0],coordinate[0]+lenght/2,coordinate[0]-lenght/2])
+        y=npy.array([coordinate[1]-diameter_pivot/2,coordinate[1]-diameter_pivot/2,coordinate[1]-diameter_pivot/2,coordinate[1]-diameter/2,coordinate[1]-diameter/2,coordinate[1]-diameter/2])
+        plt.plot(x,y,list_color[color])
+    
+    def plot_cinematic_graph_double(self, coordinate,diameter,lenght,color):
+        list_color=['mediumblue','purple','green','k','mediumblue','purple','green','k','mediumblue','purple','green','k','mediumblue','purple','green','k']
+        x=npy.array([coordinate[0], coordinate[0]+lenght])
+        y=npy.array([coordinate[1]+diameter/2,coordinate[1]+diameter/2])
+        plt.plot(x,y,list_color[color])
+        x=npy.array([coordinate[0], coordinate[0]+lenght])
+        y=npy.array([coordinate[1]-diameter/2,coordinate[1]-diameter/2])
+        plt.plot(x,y,list_color[color])
+        
+    def plot_cinematic_graph_planet_carrier(self,coordinates,planet_carrier_x,planet_carrier_y):
+        coordinate_y_min=0
+        coordinate_y_max=0
+        coordinate_x_max=0
+        for coordinate in coordinates:
+            if coordinate[0]>coordinate_x_max:
+                coordinate_x_max=coordinate[0]
+            if coordinate[1]< coordinate_y_min:
+                coordinate_y_min=coordinate[1]
+            if coordinate[1]>coordinate_y_max:
+                coordinate_y_max=coordinate[1]
+                
+        coordinate_planet_carrier=[coordinate_x_max+planet_carrier_x,coordinate_y_min-planet_carrier_y]
+       
+        for coordinate in coordinates:
+            x=[coordinate[0]-planet_carrier_x,coordinate_planet_carrier[0]]
+            y=[coordinate[1],coordinate[1]]
+            plt.plot(x,y,'r')
+        x=[coordinate_planet_carrier[0]+planet_carrier_x,coordinate_planet_carrier[0],coordinate_planet_carrier[0]]
+        y=[coordinate_planet_carrier[1],coordinate_planet_carrier[1],coordinate_y_max]
+        plt.plot(x,y,'r')
+        
+                
+            
+        
+        
+    def plot_cinematic_graph(self,lenght_gear,diameter_gear,lenght_double,diameter_pivot,lenght_pivot,planet_carrier_x,planet_carrier_y):
         graph_path=self.path_planet_to_planet()
+        
         plt.figure()
         
         previous_relation_double=[]
@@ -693,24 +1019,27 @@ class PlanetsStructure():
         previous_planet_double=[]
         inverse_relation_double=[]
         inverse_relation_gearing=[]
-        
+        coordinate_planet=[[0,0]]
+        coordinate=[0,0]
+        self.plot_cinematic_graph_gear(coordinate,lenght_gear,diameter_gear,diameter_pivot,lenght_pivot,0)
         for path in graph_path:
             
-            flag_inv_gearing=0
+
             flag_way_inv_gearing=0
-            flag_inv_double=0
             flag_way_inv_double=0
             coordinate=[0,0]
-            self.plot_cinematic_graph_gear(coordinate,length_gear,diameter_gear)
+            
+            color=0
+            
             for i,element in enumerate(path):
+                
                 if isinstance(element,Double):
                             
                     
                     
                     if element in  inverse_relation_double:
-                        x=[coordinate[0],coordinate[0]-length_double/(1+i*0.2)]
-                        y=[coordinate[1],coordinate[1]]
-                        coordinate=[coordinate[0]-length_double/(1+i*0.2),coordinate[1]]
+                        
+                        coordinate=[coordinate[0]-lenght_double/(1+i*0.2),coordinate[1]]
                         
 
 
@@ -734,45 +1063,58 @@ class PlanetsStructure():
                                             flag_way_inv_double=0
                                 
                         if flag_way_inv_double:
-                            x=[coordinate[0],coordinate[0]+length_double/(1+i*0.2)]
-                            y=[coordinate[1],coordinate[1]]
-                            coordinate=[coordinate[0]+length_double/(1+i*0.2),coordinate[1]]
+                            self.plot_cinematic_graph_double(coordinate,diameter_pivot,+lenght_double/(1+i*0.2),color)
+                            coordinate=[coordinate[0]+lenght_double/(1+i*0.2),coordinate[1]]
                         else:
-                            x=[coordinate[0],coordinate[0]-length_double/(1+i*0.2)]
-                            y=[coordinate[1],coordinate[1]]
-                            coordinate=[coordinate[0]-length_double/(1+i*0.2),coordinate[1]]
+                            self.plot_cinematic_graph_double(coordinate,diameter_pivot,-lenght_double/(1+i*0.2),color)
+                            coordinate=[coordinate[0]-lenght_double/(1+i*0.2),coordinate[1]]
                             inverse_relation_double.append(element)
                             
                         
 
                             
-                    else:    
-                        x=[coordinate[0],coordinate[0]+length_double/(1+i*0.2)]
-                        y=[coordinate[1],coordinate[1]]
-                        coordinate=[coordinate[0]+length_double/(1+i*0.2),coordinate[1]]
+                    else:
                         
-                    plt.plot(x,y)    
+                        if not element in previous_relation_double:
+                            
+                            if previous_relation_double and previous_relation_double[-1] in inverse_relation_double:
+                                self.plot_cinematic_graph_double(coordinate,diameter_pivot,-lenght_double/(1+i*0.2),color)
+                                inverse_relation_double.append(element)
+                                coordinate=[coordinate[0]-lenght_double/(1+i*0.2),coordinate[1]]
+                            
+                            else:
+                                self.plot_cinematic_graph_double(coordinate,diameter_pivot,+lenght_double/(1+i*0.2),color)
+                                coordinate=[coordinate[0]+lenght_double/(1+i*0.2),coordinate[1]]
+                        else:
+                                
+                                coordinate=[coordinate[0]+lenght_double/(1+i*0.2),coordinate[1]]
+                       
                     previous_relation_double.append(element)
                     previous_planet_double.extend([element.nodes[0],element.nodes[1]])
                 
                 elif isinstance(element,GearingPlanet)  :
+                    color+=1
                     if element in  inverse_relation_gearing:
+                        
                         coordinate=[coordinate[0],coordinate[1]-diameter_gear]
+                        
 
                     
-                    if ((element.nodes[0] in previous_planet_gearing or element.nodes[1] in previous_planet_gearing) and not element  in previous_relation_gearing ):
+                    elif ((element.nodes[0] in previous_planet_gearing or element.nodes[1] in previous_planet_gearing) and not element  in previous_relation_gearing ):
                         
                         for gearing in previous_relation_gearing:
                             for node in gearing.nodes:
                                 if element.nodes[0]==node or element.nodes[1]==node:
-
+                                    
                                     if  not gearing==previous_element:
+                                        
                                         if gearing in inverse_relation_gearing:
                                             
                                             flag_way_inv_gearing=1
                                         else:
                                             flag_way_inv_gearing=0
                                     else:
+                                        
                                         if not gearing in inverse_relation_gearing:
                                             flag_way_inv_gearing=1
                                         else:
@@ -780,9 +1122,12 @@ class PlanetsStructure():
                                             
                         if flag_way_inv_gearing:
                             coordinate=[coordinate[0],coordinate[1]+diameter_gear]
-                            inverse_relation_gearing.append(element)
+                            
                         else:
+                            
                             coordinate=[coordinate[0],coordinate[1]-diameter_gear]
+                            inverse_relation_gearing.append(element)
+                      
                       
 
                             
@@ -795,8 +1140,15 @@ class PlanetsStructure():
                     previous_planet_gearing.extend([element.nodes[0],element.nodes[1]])
                 
                 if not isinstance(element,Planet) :   
-                    self.plot_cinematic_graph_gear(coordinate,length_gear,diameter_gear)
+                    
+                    if  not coordinate in coordinate_planet:
+                        coordinate_planet.append(coordinate)
+                        self.plot_cinematic_graph_gear(coordinate,lenght_gear,diameter_gear,diameter_pivot,lenght_pivot,color)
+                        
                     previous_element=element
+                    
+                    
+        self.plot_cinematic_graph_planet_carrier(coordinate_planet,planet_carrier_x,planet_carrier_y)  
                     
         
         
@@ -806,17 +1158,17 @@ class PlanetsStructure():
     
     
 class OptimizerPlanetaryGears():
-    def __init__(self,input_speeds,diameter_cylinder,length_cylinder):
+    def __init__(self,input_speeds,diameter_cylinder,lenght_cylinder):
         self.input_speeds=input_speeds
         self.diameter=diameter_cylinder
-        self.length=length_cylinder
+        self.lenght=lenght_cylinder
         self.number_input=len(input_speeds)
         
     ## Recursive Function which give all the possibilities  of planet_type in a branch for a Planet number fixed ##
     ## Exemple Input:(0,[],[],4) -> Output:[['Simple', 'Double', 'Double', 'Simple'], ['Simple', 'Double', 'Double', 'Double'], ['Simple', 'Simple', 'Double', 'Double'], 
     ##['Simple', 'Simple', 'Simple', 'Simple'], ['Double', 'Double', 'Simple', 'Simple'], ['Double', 'Double', 'Double', 'Simple'], ['Double', 'Double', 'Double', 'Double']] ##    
     def list_possibilities_planets_type(self, n, list_planet_type, planet_type, number_max_planet):
-
+        
         if n==number_max_planet:
             planet_type_2=copy.copy(planet_type)
             list_planet_type.append(planet_type_2)
@@ -825,26 +1177,10 @@ class OptimizerPlanetaryGears():
         
         if not planet_type:
             planet_type_1=copy.copy(planet_type)
-            planet_type_2=copy.copy(planet_type)
             planet_type_1.append('Simple')
               
             self.list_possibilities_planets_type(n+1, list_planet_type, planet_type_1, number_max_planet)
-            if number_max_planet>1:  
-                planet_type_2.extend(['Double','Double'])
-                self.list_possibilities_planets_type(n+2, list_planet_type, planet_type_2, number_max_planet)
-
-            
-        elif planet_type[-1]=='Simple':
-            
-            if n<number_max_planet-1:
-                planet_type_2=copy.copy(planet_type)
-                planet_type_2.extend(['Double','Double'])
-                self.list_possibilities_planets_type(n+2, list_planet_type, planet_type_2, number_max_planet)
-            planet_type_1=copy.copy(planet_type)
-            planet_type_1.append('Simple')
-            
-            self.list_possibilities_planets_type(n+1, list_planet_type, planet_type_1, number_max_planet)
-        elif planet_type[-1]=='Double':
+        else:
             
             planet_type_1=copy.copy(planet_type)
             
@@ -1237,10 +1573,165 @@ class OptimizerPlanetaryGears():
                         self.list_possibilities_architecture_planet(branch+1,branch_maximum, architecture, possibilities_2, 
                                                                     list_possibilities, possibilities_connexion_2, list_possibilities_connexion)
                             
+     
+        
+    def list_possibilities_planetaries_recursive_function(self,n,planetaries,possibilitie, list_possibilities,gearing_chains,gearing_chains_planetary_type,gearing_chains_occupation,gearing_chains_planet_index):
+        
+        possibilitie_2=copy.copy(possibilitie)
+        list_planetary_type=[['Ring','GI'],['Sun','GE']]
+        gearing_chains_2=copy.copy(gearing_chains)
+        number=0
+        
+        
+        
+        if n==len(planetaries):
+            if not 0 in gearing_chains_occupation:
+                list_possibilities.append(possibilitie_2)
+            return list_possibilities
+        planetary=planetaries[n]
+        for i,gearing_chain in enumerate(gearing_chains_2):
+            number=copy.copy(i)
+            if gearing_chains_occupation[i]<2:
+                gearing_chains_occupation_2=copy.copy(gearing_chains_occupation)
+                gearing_chains_occupation_2[i]+=1
+                if gearing_chains_planet_index[i]==0:
+                    gearing_chains_planet_index_2=copy.copy(gearing_chains_planet_index)
+                    gearing_chains_planet_index_2[i]=1
+                    for planetary_type in list_planetary_type:
+                        if not gearing_chains_planetary_type[i]==planetary_type[0]:
+                            planetary_2=copy.copy(planetary)
+                            gearing_chain_2=copy.copy(gearing_chain)
+                            planetary_2.planetary_type=planetary_type[0]
+                            gearing_chains_planetary_type_2=copy.copy(gearing_chains_planetary_type)
+                            gearing_chains_planetary_type_2[i]=planetary_type[0]
+                            
+                            possibilitie_2[n]=[planetary_2,gearing_chain_2[0],planetary_type[1],number]
+                            self.list_possibilities_planetaries_recursive_function  (n+1,planetaries,possibilitie_2,list_possibilities,gearing_chains,gearing_chains_planetary_type_2,gearing_chains_occupation_2,gearing_chains_planet_index_2)                                                           
+                    gearing_chains_planet_index_2[i]=-1
+                    for planetary_type in list_planetary_type:
+                        
+                        if not gearing_chains_planetary_type[i]==planetary_type[0]:
+                            planetary_2=copy.copy(planetary)
+                            gearing_chain_2=copy.copy(gearing_chain)
+                            planetary_2.planetary_type=planetary_type[0]
+                            gearing_chains_planetary_type_2=copy.copy(gearing_chains_planetary_type)
+                            gearing_chains_planetary_type_2[i]=planetary_type[0]
+                            possibilitie_2[n]=[planetary_2,gearing_chain_2[-1],planetary_type[1],number]
+                            self.list_possibilities_planetaries_recursive_function  (n+1,planetaries,possibilitie_2,list_possibilities,gearing_chains,gearing_chains_planetary_type_2,gearing_chains_occupation_2,gearing_chains_planet_index_2)  
+                
+                elif gearing_chains_planet_index[i]==1:
+                    
+                    gearing_chains_planet_index_2=copy.copy(gearing_chains_planet_index)
+                    gearing_chains_planet_index_2[i]=-1
+                    for planetary_type in list_planetary_type:
+                        if not gearing_chains_planetary_type[i]==planetary_type[0]:
+                            planetary_2=copy.copy(planetary)
+                            gearing_chain_2=copy.copy(gearing_chain)
+                            planetary_2.planetary_type=planetary_type[0]
+                            gearing_chains_planetary_type_2=copy.copy(gearing_chains_planetary_type)
+                            gearing_chains_planetary_type_2[i]=planetary_type[0]
+                            possibilitie_2[n]=[planetary_2,gearing_chain_2[-1],planetary_type[1],number]
+                            self.list_possibilities_planetaries_recursive_function  (n+1,planetaries,possibilitie_2,list_possibilities,gearing_chains,gearing_chains_planetary_type_2,gearing_chains_occupation_2,gearing_chains_planet_index_2)  
+                else:  
+                    gearing_chains_planet_index_2=copy.copy(gearing_chains_planet_index)
+                    gearing_chains_planet_index_2[i]=-1 
+                    for planetary_type in list_planetary_type:
+                        if not gearing_chains_planetary_type[i]==planetary_type[0]:
+                            planetary_2=copy.copy(planetary)
+                            gearing_chain_2=copy.copy(gearing_chain)
+                            planetary_2.planetary_type=planetary_type[0]
+                            gearing_chains_planetary_type_2=copy.copy(gearing_chains_planetary_type)
+                            gearing_chains_planetary_type_2[i]=planetary_type[0]
+                            possibilitie_2[n]=[planetary_2,gearing_chain_2[0],planetary_type[1],number]
+        
+                            self.list_possibilities_planetaries_recursive_function  (n+1,planetaries,possibilitie_2,list_possibilities,gearing_chains,gearing_chains_planetary_type_2,gearing_chains_occupation_2,gearing_chains_planet_index_2)
+                
+        return list_possibilities
+    def list_possibilities_planetaries(self,planetaries,planets_structure,planet_carrier):   
+        gearing_chains=planets_structure.gearing_chain()
+
+        
+        if len(planetaries)<len(gearing_chains):
+            return []
+        possibilitie=[]
+        connexion=[]
+        gearing_chains_planetary_type=[]
+        gearing_chains_planet_index=[]
+        gearing_chains_occupation=[]
+        for i in enumerate(planetaries):
+            possibilitie.append(0)
+        for i in enumerate(gearing_chains):
+            gearing_chains_planetary_type.append(0)
+            gearing_chains_occupation.append(0)
+            gearing_chains_planet_index.append(0)
+        list_possibilities=self.list_possibilities_planetaries_recursive_function(0,planetaries,possibilitie,[],gearing_chains,gearing_chains_planetary_type,gearing_chains_occupation,gearing_chains_planet_index)
+        
+        for double in planets_structure.doubles:
+            
+            connexion.append([double.nodes[0],double.nodes[1],'D'])
+        list_solution=[]
+        
+        for i,possibilitie_2 in enumerate(list_possibilities[0:10]):
+            
+            connexion_2=copy.copy(connexion)
+            previous_planetary=[]
+            
+            for planetary_connexion in possibilitie_2:
+                connexion_2.append(planetary_connexion[:-1])
+                if not planetary_connexion[3]  in previous_planetary:
+                    
+                    gearing_chain=gearing_chains[planetary_connexion[3]]
+                    previous_planetary.append(planetary_connexion[3])
+                                   
+                    if len(gearing_chain)>1:
+       
+                        if gearing_chain[0]==planetary_connexion[1]:
+                            # for i in range (len(gearing_chain)):
+                            #     print(gearing_chain[i].name)
+                            # print('j')
+                            for planet_1,planet_2 in zip(gearing_chain[:-1],gearing_chain[1:]):
+                                # print(planet_1.name,planet_2.name)
+    
+             
+                                connexion_2.append([copy.deepcopy(planet_1),copy.deepcopy(planet_2),planetary_connexion[2]])
+                                
+                            
+    
+                        elif gearing_chain[-1] ==planetary_connexion[1] :
+                           gearing_chain_2= gearing_chain[::-1]  
+                           for planet_1,planet_2 in zip(gearing_chain_2[:-1],gearing_chain_2[1:]):
+                                
+                                connexion_2.append([copy.deepcopy(planet_1),copy.deepcopy(planet_2),planetary_connexion[2]])
+            planetary_gear=PlanetaryGear('PlanetaryGear'+str(i),planetaries,planets_structure.planets,planet_carrier,connexion_2)
+            list_path=planetary_gear.path_planetary_to_planetary()
+            list_planets=[]
+            for planet in planetary_gear.planets:
+                list_planets.append(planet.name)
+
+            for path in list_path:
+                for element in path:
+                    
+                    if element.name in list_planets:
+                        list_planets.remove(element.name)
+            # for planet in list_planets:
+            #     print(planet.name)
+            # print('a')
+            # planetary_gear.plot()
+            if not list_planets:
+                
+                list_solution.append(PlanetaryGear('PlanetaryGear'+str(i),planetaries,planets_structure.planets,planet_carrier,connexion_2))
+            # print(i)
+            # for j in range(len(connexion_2)):
+            #     print(connexion_2[j][0].name,connexion_2[j][1].name)
+            # print('a')
+        return list_solution    
         
             
         
-    def decission_tree(self, number_max_planet, number_junction, number_max_junction_by_planet, min_planet_branch):
+        
+            
+        
+    def decission_tree_architecture(self, number_max_planet, number_junction, number_max_junction_by_planet, min_planet_branch):
         tree=dt.DecisionTree()
         tree.SetCurrentNodeNumberPossibilities(self.number_input)
         node=tree.NextNode(True)
@@ -1259,7 +1750,7 @@ class OptimizerPlanetaryGears():
                 
                 for i in range(self.number_input):
                     if i != node[0] :
-                        planetaries[num_planetary] = self.input_speeds[i]
+                        planetaries[num_planetary].speed = self.input_speeds[i]
                         num_planetary+=1
                         
                 list_possibilities_junction=[]
@@ -1274,7 +1765,7 @@ class OptimizerPlanetaryGears():
                                                  number_max_junction_by_planet, sum_number_max_junction_by_planet)
                 
                 tree.SetCurrentNodeNumberPossibilities(len(list_possibilities_junction))
-                print(list_possibilities_junction)
+                
                 
                 
                 
@@ -1289,7 +1780,7 @@ class OptimizerPlanetaryGears():
                 list_global_architecture,number_branch=self.list_possibilities_planets_by_branch_step_2(list_junction, number_max_planet, 
                                                                                                         number_max_junction_by_planet, min_planet_branch)
                 tree.SetCurrentNodeNumberPossibilities(len(list_global_architecture))
-                print(list_global_architecture)
+                
                 
                 
             if len(node)==3:
@@ -1308,18 +1799,50 @@ class OptimizerPlanetaryGears():
                 
             
             if len(node)==4:
+
                 planet_architecture=list_possibilitie_planet_architecture[node[3]]
-                #planet_architecture.plot_cinematic_graph(0.1,1,4)
-                n+=1
-                list_solution.append(planet_architecture)
-                #planet_architecture.plot()
+                
+                list_possibilities=self.list_possibilities_planetaries(planetaries,planet_architecture,planet_carrier)
+                # #planet_architecture.plot_cinematic_graph(0.1,1,4)
+                # n+=1
+                # list_solution.append(planet_architecture)
+                # #planet_architecture.plot()
+                tree.SetCurrentNodeNumberPossibilities(len(list_possibilities))
+            
+            if len(node)==5:
+                planetary_gear=list_possibilities[node[4]]
+                list_solution.append(planetary_gear)
+                
+                if len(list_solution)==10:
+                    return list_solution
                 tree.SetCurrentNodeNumberPossibilities(0)
                 
             node=tree.NextNode(True)
         
         return list_solution
                 
-            
+    def decission_tree_z_number(planetary_gears, Z_range_sun,Z_range_ring) :
+        number_planetaries= len(planetary_gears.planetaries)
+        number_planets=len(planetary_gears.planets)
+        list_tree=[]
+        list_node_range_data=[]
+        for planetary in planetary_gears.planetaries:
+            if planetary.planetary_type='Ring':
+                list_tree.append(Z_range_ring[1]-Z_range_ring [0])
+                list_Z_node_range_data.append(Z_range_ring [0])
+            else:
+            list_tree.append(Z_range_sun[1]-Z_range_sun[0])
+            list_Z_node_range_data.append(Z_range_sun[0])
+        for planet in planetary_gears.planets: 
+            list_tree.append(Z_range_sun[1]-Z_range_sun[0])
+            list_Z_node_range_data.append(Z_range_sun[0])
+        
+        tree=dt.RegularDecisionTree(list_tree)
+        
+        while not tree.finished:
+            node=tree.CurrentNode()
+            node.data
+   
                 
                                                        
                 

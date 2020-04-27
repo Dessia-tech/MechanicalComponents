@@ -71,11 +71,17 @@ torque_solution=planetary_gears_1.torque_solve({sun:0,planet_carrier:500})
 speed_solution=planetary_gears_1.speed_solve({sun_2:0,planet_carrier:500})
 print(torque_solution)
 print(speed_solution)
-Optimizer=pg.OptimizerPlanetaryGears([200],0.1,20)
+Optimizer=pg.OptimizerPlanetaryGears([200,150,300,600],0.1,20)
 list_pos=[]
-list_solution=Optimizer.decission_tree(5,1,2,1)
-list_solution[15].plot()
-list_solution[15].plot_cinematic_graph(0.2,1,4)
+list_solution=Optimizer.decission_tree_architecture(5,1,2,1)
+for i,solution in enumerate(list_solution):
+  if i==10:
+      break
+  solution.plot_cinematic_graph(0.1,1,2,0.2,0.5,2,2,4)
+# list_solution[14].plot()
+
+    
+    # plt.savefig('bifurcation 0_'+str(i))
 # list_pos=[]
 # list_previous=[]
 # # Optimizer.list_possibilities_planets_by_branch_step_1([0,0,0],list_pos,6,0,3,0,1)
