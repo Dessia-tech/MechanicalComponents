@@ -7,7 +7,7 @@ Created on Mon Mar  9 12:43:48 2020
 """
 
 import matplotlib.pyplot as plt
-import mechanical_components.planetary_gears_2 as pg
+import mechanical_components.planetary_gears as pg
 import networkx as nx
 import numpy as npy
 import dectree 
@@ -92,6 +92,7 @@ for solution in  solution_2:
     print(solution)
     list_range_1=solution.speed_range(solution.planetaries[1],solution.planetaries[2],[])
     print(list_range_1)
+    print(solution.speed_solve({solution.planetaries[1]:306.15,solution.planetaries[2]:251.58}))
     list_range_2=solution.speed_range(solution.planetaries[0],solution.planet_carrier,[])
     print(list_range_2)
 # print(solution[0])
