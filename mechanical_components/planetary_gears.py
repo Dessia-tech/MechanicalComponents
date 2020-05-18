@@ -18,12 +18,16 @@ import volmdlr as vm
 import volmdlr.primitives3D as p3d
 import volmdlr.primitives2D as p2d
 import mechanical_components.meshes as meshes
+from dessia_common import DessiaObject
+from typing import TypeVar, List
 
-class Gears():
+class Gears(DessiaObject):
 
-    def __init__(self, name, Z):
-        self.name = name
+
+    def __init__(self, name: str, Z: int):
         self.Z = Z
+
+        DessiaObject.__init__(self, name=name)
 
     def volume_plot(self, xy_position, z_position, module, lenght):
          self.module = module
@@ -67,17 +71,17 @@ class Gears():
 
 class Planetary(Gears):
 
-    def __init__(self, name, Z, planetary_type):
+    def __init__(self, name: str, Z: int, planetary_type: str):
 
-        self.name = name
-        self.Z = Z
+
+
         self.planetary_type = planetary_type
         self.p = 0
         self.speed = 0
         self.module = 0
         self.d = 0
         self.speed_input = [0, 0]
-        Gears.__init__(self, self.name, self.Z)
+        Gears.__init__(self, name, Z)
 
         if planetary_type == 'Sun':
             self.p = 1
@@ -87,38 +91,42 @@ class Planetary(Gears):
 
 class Planet(Gears):
 
-    def __init__(self, name, planet_type, Z):
-        self.name = name
+    def __init__(self, name: str, planet_type: str, Z: int):
+
         self.planet_type = planet_type
-        self.Z = Z
+
         self.speed = 0
         self.module = 0
         self.speed_input = [0, 0]
 
-        Gears.__init__(self, self.name, self.Z)
+        Gears.__init__(self, name, Z)
 
 class PlanetCarrier():
+
 
     def __init__(self, name):
         self.name = name
         self.speed = 0
         self.speed_input = [0, 0]
+        # DessiaObject.__init__(self, name=name)
 
 
-class Gearing():
+
+class Gearing(DessiaObject):
+
 
     def __init__(self, name, nodes):
-        self.name = name
+
         self.nodes = nodes
+        DessiaObject.__init__(self, name=name)
 
 
 class GearingPlanetary(Gearing):
 
-    def __init__(self, name, nodes):
-        self.name = name
-        self.nodes = nodes
+    def __init__(self, name: str, nodes: List[Gears]):
+
         self.type = 'GI'
-        Gearing.__init__(self, self.name, self.nodes)
+        Gearing.__init__(self, name, nodes)
 
         for node in self.nodes:
             if isinstance(node, Planet):
@@ -143,11 +151,10 @@ class GearingPlanetary(Gearing):
 
 class GearingPlanet(Gearing):
 
-        def __init__(self, name, nodes):
-            self.name = name
-            self.nodes = nodes
+        def __init__(self, name: str, nodes: List[Gears]):
+
             self.type = 'GI'
-            Gearing.__init__(self, self.name, self.nodes)
+            Gearing.__init__(self, name, nodes)
             self.Z_planets = []
 
             for node in self.nodes:
@@ -165,34 +172,35 @@ class GearingPlanet(Gearing):
             return matrix, rhs
 
 
-class Pivot():
+class Pivot(DessiaObject):
 
-    def __init__(self, name, nodes):
+    A = TypeVar('A', Planetary, PlanetCarrier)
+    def __init__(self, name: str, nodes: A):
         self.nodes = nodes
-        self.name = name
 
+        DessiaObject.__init__(self, name=name)
     def speed_system_equations(self):
         matrix = npy.array([1, -1])
         rhs = npy.array([0])
         return matrix, rhs
 
-class Fixed():
+class Fixed(DessiaObject):
 
     def __init__(self, name, nodes):
         self.nodes = nodes
-        self.name = name
 
+        DessiaObject.__init__(self, name=name)
     def speed_system_equations(self):
         matrix = npy.array([1, -1])
         rhs = npy.array([0])
         return matrix, rhs
 
-class Double():
+class Double(DessiaObject):
 
-    def __init__(self, name, nodes):
-        self.name = name
+    def __init__(self, name: str, nodes: List[Planet]):
+
         self.nodes = nodes
-
+        DessiaObject.__init__(self, name=name)
     def speed_system_equations(self):
         matrix = npy.array([1, -1])
         rhs = npy.array([0])
@@ -205,12 +213,13 @@ class Double():
          cylinder = p3d.Cylinder(pos, axis, radius, lenght)
          return cylinder
 
-class ImposeSpeed():
-
-    def __init__(self, name, node, input_speed):
+class ImposeSpeed(DessiaObject):
+    A = TypeVar('A', Gears, PlanetCarrier)
+    def __init__(self, name: str, node: A, input_speed: float):
         self.input_speed = input_speed
         self.node = node
-        self.name = name
+
+        DessiaObject.__init__(self, name=name)
 
     def speed_system_equations(self):
         matrix = npy.array([1])
@@ -218,10 +227,35 @@ class ImposeSpeed():
         return matrix, rhs
 
 
-class PlanetaryGear():
+class PlanetaryGear(DessiaObject):
+    _standalone_in_db = True
 
-    def __init__(self, name, planetaries, planets, planet_carrier, connexions):
-        self.name = name
+    _generic_eq = True
+    A = TypeVar('A', Gears, str)
+    def __init__(self, name: str, planetaries: List[Planetary], planets: List[Planet],
+                 planet_carrier: PlanetCarrier, connexions: List[List[A]]):
+        '''
+        Define a PlanetaryGears
+
+        Parameters
+        ----------
+        name : String
+            DESCRIPTION.
+        planetaries : TYPE
+            DESCRIPTION.
+        planets : TYPE
+            DESCRIPTION.
+        planet_carrier : TYPE
+            DESCRIPTION.
+        connexions : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        '''
+
         self.planetaries = planetaries
         self.planets = planets
         self.planet_carrier = planet_carrier
@@ -233,7 +267,7 @@ class PlanetaryGear():
         self.connexions = connexions
         self.gearings = []
         self.doubles = []
-
+        DessiaObject.__init__(self, name=name)
         for i, connexion in  enumerate(connexions):
 
           ## Check to be sure that all the object in connexion are in planetaries,
@@ -585,25 +619,25 @@ class PlanetaryGear():
             if isinstance(gearing, GearingPlanetary):
                 color += 1
 
-                if (isinstance(gearing.nodes[0],Planetary) and gearing.nodes[0].planetary_type == 'Sun') \
-                or (isinstance(gearing.nodes[1],Planetary) and gearing.nodes[1].planetary_type == 'Sun') :
-                    
-                    if isinstance(gearing.nodes[0],Planetary):
+                if (isinstance(gearing.nodes[0], Planetary) and gearing.nodes[0].planetary_type == 'Sun') \
+                or (isinstance(gearing.nodes[1], Planetary) and gearing.nodes[1].planetary_type == 'Sun'):
+
+                    if isinstance(gearing.nodes[0], Planetary):
                         index = index_coordinate_planet.index(gearing.nodes[1].name)
                     else:
                         index = index_coordinate_planet.index(gearing.nodes[0].name)
-                        
+
                     planetary_diameter = ((coordinate_planet[index][1]-diameter_gear/2)-coordinate_planet_carrier[1])*2
 
                     self.plot_cinematic_graph_gear([coordinate_planet[index][0], coordinate_planet_carrier[1]], lenght_gear,
                                                    planetary_diameter, diameter_pivot, lenght_pivot, color)
 
                 else:
-                    if isinstance(gearing.nodes[0],Planetary):
+                    if isinstance(gearing.nodes[0], Planetary):
                         index = index_coordinate_planet.index(gearing.nodes[1].name)
                     else:
                         index = index_coordinate_planet.index(gearing.nodes[0].name)
-                        
+
                     lenght_ring = lenght_ring_ini-(((coordinate_planet[index][0])*+100)/50)
                     diameter_ring = diameter_ring_ini-(((coordinate_planet[index][0])*10+100)/50)
                     coordinate_ring = [coordinate_planet[index][0], coordinate_planet[index][1]+diameter_gear/2]
@@ -658,6 +692,8 @@ class PlanetaryGear():
         for i, element in enumerate(path):
 
             if isinstance(element, Gearing):
+
+
                 reason = reason*path[i-1].Z/path[i+1].Z
 
 
@@ -780,9 +816,9 @@ class PlanetaryGear():
                 else:
                     return []
 
-            print(range_input_1)
-            print(range_input_2)
-            print(range_planet_carrier)
+            # print(range_input_1)
+            # print(range_input_2)
+            # print(range_planet_carrier)
             list_planetary.remove(input_1)
             list_planetary.remove(input_2)
 
@@ -804,6 +840,9 @@ class PlanetaryGear():
             reason = self.reason(path[0])
 
             index = self.matrix_position(planetary)
+            c = ((range_input_1[1]-range_input_1[0])+(range_planet_carrier[1]-range_planet_carrier[0]))
+            if range_input_1[1] == range_input_1[0] and range_planet_carrier[1] == range_planet_carrier[0]:
+                return []
 
             coeff_input_1 = 2*(range_input_1[1]-range_input_1[0])/((range_input_1[1]-range_input_1[0])+(range_planet_carrier[1]-range_planet_carrier[0]))
             coeff_input_planet_carrier = 2*(range_planet_carrier[1]-range_planet_carrier[0])/((range_input_1[1]-range_input_1[0])+(range_planet_carrier[1]-range_planet_carrier[0]))
@@ -854,13 +893,13 @@ class PlanetaryGear():
                 if speed_min < planetary.speed_input[0]:
 
                     if reason < 1:
-                        speed_diff = (planetary.speed_input[0]-speed_min)/(coeff_input_1*reason-coeff_input_planet_carrier*(1-reason))
+                        speed_diff = (planetary.speed_input[0]-speed_min)/(coeff_input_1*reason+coeff_input_planet_carrier*(1-reason))
                         range_input_1[0] += coeff_input_1*speed_diff
-                        range_planet_carrier[0] += coeff_input_planet_carrier*cspeed_diff
+                        range_planet_carrier[0] += coeff_input_planet_carrier*speed_diff
 
 
                     else:
-                        speed_diff = (planetary.speed_input[0]-speed_min)/(reason*coeff_input_1+coeff_input_planet_carrier*(reason-1))
+                        speed_diff = (planetary.speed_input[0]-speed_min)/(reason*coeff_input_1-coeff_input_planet_carrier*(reason-1))
                         range_input_1[0] += coeff_input_1*speed_diff
                         range_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
 
@@ -874,14 +913,14 @@ class PlanetaryGear():
                 if speed_max > planetary.speed_input[1]:
 
                     if reason < 1:
-                        speed_diff = (speed_max-planetary.speed_input[1])/(coeff_input_1*reason-coeff_input_planet_carrier*(1-reason))
+                        speed_diff = (speed_max-planetary.speed_input[1])/(coeff_input_1*reason+coeff_input_planet_carrier*(1-reason))
                         range_input_1[1] -= coeff_input_1*speed_diff
                         range_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
 
                     else:
-                        speed_diff = (speed_max-planetary.speed_input[1])/(reason*coeff_input_1+coeff_input_planet_carrier*(reason-1))
+                        speed_diff = (speed_max-planetary.speed_input[1])/(reason*coeff_input_1-coeff_input_planet_carrier*(reason-1))
                         range_input_1[1] -= coeff_input_1*speed_diff
-                        range_planet_carrier[0] += coeff_input_planet_carrer*speed_diff
+                        range_planet_carrier[0] += coeff_input_planet_carrier*speed_diff
 
 
                 elif speed_max > planetary.speed_input[0]:
@@ -1325,8 +1364,9 @@ class PlanetaryGear():
 
 
 
-class PlanetsStructure():
-    def __init__(self, architecture, branch_connexions):
+class PlanetsStructure(DessiaObject):
+    A = TypeVar('A', int, str)
+    def __init__(self, name: str, architecture: List[List[str]], branch_connexions: List[List[A]]):
         self.architecture = architecture
         self.branch_connexions = branch_connexions
         self.planets = []
@@ -1334,7 +1374,7 @@ class PlanetsStructure():
         number_planet = 0
         self.gearings = []
         self.doubles = []
-
+        DessiaObject.__init__(self, name=name)
         first_last_composant_branch = []
         for branch in self.architecture:
 
@@ -1544,8 +1584,8 @@ class PlanetsStructure():
 
 
 
-    def plot_cinematic_graph(self, lenght_gear, diameter_gear, lenght_double, diameter_pivot,
-                             lenght_pivot, planet_carrier_x, planet_carrier_y):
+    def plot_cinematic_graph(self, lenght_gear=0.1, diameter_gear=1, lenght_double=2, diameter_pivot=0.2,
+                             lenght_pivot=0.5, planet_carrier_x=2, planet_carrier_y=2):
 
         graph_path = self.path_planet_to_planet()
 
@@ -1701,18 +1741,17 @@ class PlanetsStructure():
 
 
 
+class OptimizerPlanetStructure(DessiaObject):
+    _standalone_in_db = True
 
+    _generic_eq = True
 
-
-
-
-class OptimizerPlanetaryGears():
-    def __init__(self, input_speeds, diameter_cylinder, lenght_cylinder):
-
-        self.input_speeds = input_speeds
-        self.diameter = diameter_cylinder
-        self.lenght = lenght_cylinder
-        self.number_input = len(input_speeds)
+    def __init__(self, number_max_planet: int, number_junction: int, number_max_junction_by_planet: int, min_planet_branch: int):
+        self.number_max_planet = number_max_planet
+        self.number_junction = number_junction
+        self.number_max_junction_by_planet = number_max_junction_by_planet
+        self.min_planet_branch = min_planet_branch
+        DessiaObject.__init__(self, name='Optimizer')
 
     ## Recursive Function which give all the possibilities  of planet_type in a branch for a Planet number fixed ##
     ## Exemple Input:(0,[],[],4) -> Output:[['Simple', 'Double', 'Double', 'Simple'], ['Simple', 'Double', 'Double', 'Double'], ['Simple', 'Simple', 'Double', 'Double'],
@@ -1748,14 +1787,14 @@ class OptimizerPlanetaryGears():
     ## Recursive Function which give all the possibilities for a junction number fixed ##
     ## Exemple Input:([],[0,0,0,0],2,2,[2,2,2,2]) -> Output:[[2, 0, 0, 0], [1, 1, 0, 0], [1, 0, 1, 0], [1, 0, 0, 1], [0, 2, 0, 0],
     ## [0, 1, 1, 0], [0, 1, 0, 1], [0, 0, 2, 0], [0, 0, 1, 1], [0, 0, 0, 2]] ##
-    def list_possibilities_junction(self, list_possibilities, possibilitie, number_junction,
-                                    number_junction_max, number_junction_max_by_planet, sum_number_junction_max_by_planet):
+    def list_possibilities_junction(self, list_possibilities, possibilitie, number_junction_recursive_fonction,
+                                    sum_number_junction_max_by_planet):
 
-        number_junction_2 = copy.copy(number_junction)
+        number_junction_recursive_fonction_2 = copy.copy(number_junction_recursive_fonction)
         possibilitie_2 = copy.copy(possibilitie)
         sum_number_junction_max_by_planet_2 = copy.copy(sum_number_junction_max_by_planet)
-
-        if number_junction == number_junction_max:
+        number_junction_max = self.number_junction
+        if number_junction_recursive_fonction == number_junction_max:
 
             if not possibilitie_2  in list_possibilities:
                 list_possibilities.append(possibilitie_2)
@@ -1774,12 +1813,12 @@ class OptimizerPlanetaryGears():
             if possibilitie_2[i] < sum_number_junction_max_by_planet_2[i]:
 
                 if i+1 < len(possibilitie)-1:
-                    sum_number_junction_max_by_planet_2[i+1] += number_junction_max_by_planet
+                    sum_number_junction_max_by_planet_2[i+1] += self.number_junction_max_by_planet
 
                 possibilitie_2[i] += 1
 
-                self.list_possibilities_junction(list_possibilities, possibilitie_2, number_junction_2+1, number_junction_max,
-                                                 number_junction_max_by_planet, sum_number_junction_max_by_planet_2)
+                self.list_possibilities_junction(list_possibilities, possibilitie_2, number_junction_recursive_fonction_2+1,
+                                                 sum_number_junction_max_by_planet_2)
 
             else:
                 flag = 0
@@ -1790,7 +1829,7 @@ class OptimizerPlanetaryGears():
     ## Recursive Function which give all the possibilities for a limited number of connexion( number_max_connextion) in a list_connexion ##
     ## Exemple Input:(0 ,[], [[0, 0], [0, 0]] ,[[2, 4], [2, 5], [3, 6]],2,2) -> Output:[[[2, 4], [2, 5]], [[2, 4], [3, 6]], [[2, 5], [3, 6]]] ##
     def list_possibilities_connexion_branch_step_1(self, n, list_possibilities, possibilitie,
-                                                   list_connexion_branch, number_max_connexion, number_max_junction_by_branch):
+                                                   list_connexion_branch, number_max_connexion):
 
         possibilitie_2 = copy.copy(possibilitie)
         if  n == number_max_connexion:
@@ -1829,11 +1868,11 @@ class OptimizerPlanetaryGears():
                     if element_2[1] == element_1[1]:
                         flag_branch = 0
 
-                if number_connexion_by_branch <= number_max_junction_by_branch and flag_branch:
+                if number_connexion_by_branch <= self.number_max_junction_by_planet and flag_branch:
                     possibilitie_2[n-1] = element_1
 
                     self.list_possibilities_connexion_branch_step_1(n, list_possibilities, possibilitie_2,
-                                                                    list_connexion_branch, number_max_connexion, number_max_junction_by_branch)
+                                                                    list_connexion_branch, number_max_connexion)
                     possibilitie_2[n-1] = possibilitie[n-1]
         return list_possibilities
 
@@ -1849,7 +1888,7 @@ class OptimizerPlanetaryGears():
     ## Exemple Input:(0 ,[0,0],[],[],[2,3,4,5,6],[1],[2,2],2) -> Output:[[[[1, 2], [1, 3]], [[2, 4], [2, 5]]], [[[1, 2], [1, 3]], [[2, 4], [3, 5]]], [[[1, 2], [1, 3]], [[2, 5], [3, 4]]], [[[1, 2], [1, 3]], [[3, 4], [3, 5]]]] ##
     def list_possibilities_connexion_branch_step_2(self, n, possibilitie, list_possibilities,
                                                    list_previous_branch, remaning_branch, previous_branch,
-                                                   number_junction_branch, number_max_junction_by_branch):
+                                                   number_junction_branch):
 
         possibilitie_2 = copy.copy(possibilitie)
         remaning_branch_2 = copy.copy(remaning_branch)
@@ -1876,7 +1915,7 @@ class OptimizerPlanetaryGears():
             possibilitie_3.append([0, 0])
 
         self.list_possibilities_connexion_branch_step_1(0, list_possibilities_connexion_2, possibilitie_3,
-                                                        list_possibilities_connexion, number_connexion, number_max_junction_by_branch)
+                                                        list_possibilities_connexion, number_connexion)
 
 
 
@@ -1896,8 +1935,7 @@ class OptimizerPlanetaryGears():
                     previous_branch_3.remove(element_2[0])
 
             self.list_possibilities_connexion_branch_step_2(n, possibilitie_2, list_possibilities, list_previous_branch,
-                                                            remaning_branch_3, previous_branch_3, number_junction_branch,
-                                                            number_max_junction_by_branch)
+                                                            remaning_branch_3, previous_branch_3, number_junction_branch)
 
         return list_possibilities
 
@@ -1906,7 +1944,7 @@ class OptimizerPlanetaryGears():
     ## Exemple Input:([0,0,0],[],6,0,3,0,1) -> Output:[[1, 1, 4], [1, 2, 3], [1, 3, 2], [1, 4, 1], [2, 1, 3], [2, 2, 2], [2, 3, 1], [3, 1, 2], [3, 2, 1], [4, 1, 1]] ##
     def list_possibilities_planets_by_branch_step_1(self, possibilities, list_possibilities,
                                                     number_planet, number_branch, number_branch_max,
-                                                    number_other_planet, min_planet_branch):
+                                                    number_other_planet):
 
 
         possibilities_2 = copy.copy(possibilities)
@@ -1921,18 +1959,18 @@ class OptimizerPlanetaryGears():
             return list_possibilities
 
 
-        for i in range(min_planet_branch, number_planet-number_other_planet-(number_branch_max-number_branch-1)):
+        for i in range(self.min_planet_branch, number_planet-number_other_planet-(number_branch_max-number_branch-1)):
 
             possibilities_2[number_branch-1] = i
             self.list_possibilities_planets_by_branch_step_1(possibilities_2, list_possibilities,
-                                                             number_planet, number_branch, number_branch_max, number_other_planet+i, 1)
+                                                             number_planet, number_branch, number_branch_max, number_other_planet+i)
 
 
 
     ##  Function which give all the possibilities of branch for a possibility junction  ##
     ## Exemple Input:([0,1,1],7,3,1) -> Output:[[[2, 1, 1, 1, 2], [[[1, 2], [1, 3]], [[2, 4], [2, 5]]]],
     ##[[2, 1, 1, 2, 1], [[[1, 2], [1, 3]], [[2, 4], [2, 5]]]], [[2, 1, 2, 1, 1], [[[1, 2], [1, 3]], [[2, 4], [2, 5]]]]etc... ##
-    def list_possibilities_planets_by_branch_step_2(self, junction, number_planet, number_max_junction_by_branch, min_planet_branch):
+    def list_possibilities_planets_by_branch_step_2(self, junction):
 
         list_number_planet_branch = []
         number_planet_branch = 0
@@ -1966,7 +2004,7 @@ class OptimizerPlanetaryGears():
         list_previous_branch = []
 
         self.list_possibilities_connexion_branch_step_2(0, connexion, list_connexion, list_previous_branch, remaning_branch,
-                                                        previous_branch, list_number_junctions, number_max_junction_by_branch)
+                                                        previous_branch, list_number_junctions)
 
         list_architecture = []
         for i, connexion_2 in enumerate(list_connexion):
@@ -1987,7 +2025,7 @@ class OptimizerPlanetaryGears():
 
 
 
-            number_planet_unknow = number_planet-number_planet_know
+            number_planet_unknow = self.number_max_planet-number_planet_know
             possibilitie = []
 
             for i in range(len(previous_branch_final)):
@@ -1996,7 +2034,7 @@ class OptimizerPlanetaryGears():
             list_planet_by_branch = []
 
             self.list_possibilities_planets_by_branch_step_1(possibilitie, list_planet_by_branch, number_planet_unknow, 0,
-                                                             len(previous_branch_final), 0, min_planet_branch)
+                                                             len(previous_branch_final), 0)
 
             for planet_by_branch in list_planet_by_branch:
 
@@ -2051,7 +2089,7 @@ class OptimizerPlanetaryGears():
             if branch == branch_maximum:
 
                 possibilities_connexion_3 = copy.deepcopy(possibilities_connexion_2)
-                list_possibilities.append(PlanetsStructure(possibilities_2, possibilities_connexion_3))
+                list_possibilities.append(PlanetsStructure('PlanetsStructure', possibilities_2, possibilities_connexion_3))
 
             else:
 
@@ -2146,7 +2184,68 @@ class OptimizerPlanetaryGears():
                                                                     list_possibilities, possibilities_connexion_2,
                                                                     list_possibilities_connexion)
 
+    def decision_tree(self):
+        tree = dt.DecisionTree()
 
+
+        list_possibilities_junction = []
+        list_planet = []
+        sum_number_max_junction_by_planet = []
+        list_solution = []
+        for i in range(self.number_max_planet-2):
+            list_planet.append(0)
+            sum_number_max_junction_by_planet.append(self.number_max_junction_by_planet)
+
+        self.list_possibilities_junction(list_possibilities_junction, list_planet, 0, sum_number_max_junction_by_planet)
+
+        tree.SetCurrentNodeNumberPossibilities(len(list_possibilities_junction))
+        node = tree.NextNode(True)
+
+
+        while not tree.finished:
+
+
+            if len(node) == 1:
+
+                list_junction = list_possibilities_junction[node[0]]
+
+                list_global_architecture, number_branch = self.list_possibilities_planets_by_branch_step_2(list_junction)
+
+                tree.SetCurrentNodeNumberPossibilities(len(list_global_architecture))
+
+
+
+            if len(node) == 2:
+
+                global_architecture = list_global_architecture[node[1]]
+                list_branch = []
+
+                for i in range(number_branch):
+                    list_branch.append(0)
+
+
+                list_connexion = []
+                list_possibilities = []
+                self.list_possibilities_architecture_planet(1, number_branch, global_architecture, list_branch,
+                                                            list_possibilities, [], list_connexion)
+
+                list_solution.extend(list_possibilities)
+                tree.SetCurrentNodeNumberPossibilities(0)
+
+            node = tree.NextNode(True)
+
+        return list_solution
+
+class OptimizerPlanetaryGearsArchitecture(DessiaObject):
+    _standalone_in_db = True
+
+    _generic_eq = True
+    def __init__(self, planet_structures: PlanetsStructure, input_speeds: List[List[float]]):
+
+
+        self.planet_structures = planet_structures
+        self.number_input = len(input_speeds)
+        DessiaObject.__init__(self, name='Optimizer')
 
     def list_possibilities_planetaries_recursive_function(self, n, planetaries, possibilitie, list_possibilities, gearing_chains,
                                                           gearing_chains_planetary_type, gearing_chains_occupation,
@@ -2368,6 +2467,78 @@ class OptimizerPlanetaryGears():
 
         return list_solution
 
+    def decision_tree(self):
+        tree = dt.DecisionTree()
+
+
+        planet_carrier = PlanetCarrier('PlanetCarrier')
+        planetaries = []
+        n = 0
+        list_solution = []
+        list_paths_type = []
+
+        for i in range(self.number_input-1):
+            planetaries.append(Planetary('Planetary_'+str(i), 7, 'Sun'))
+
+        tree.SetCurrentNodeNumberPossibilities(len(self.planet_structures))
+        node = tree.NextNode(True)
+
+
+        while not tree.finished:
+            valid = True
+
+            if len(node) == 1:
+             planet_architecture = self.planet_structures[node[0]]
+             list_planetary_gears = self.list_possibilities_planetaries(planetaries, planet_architecture, planet_carrier)
+             tree.SetCurrentNodeNumberPossibilities(len(list_planetary_gears))
+
+            if len(node) == 2:
+
+                planetary_gear = list_planetary_gears[node[1]]
+
+                paths_solution = planetary_gear.path_planetary_to_planetary_type()
+
+                for paths in list_paths_type:
+
+                    number_similaritie = 0
+
+                    for path in paths:
+
+                        for path_solution in paths_solution:
+                            if path_solution == path:
+                             number_similaritie += 1
+
+                    if number_similaritie == len(paths):
+                        valid = False
+                        break
+
+
+                if valid:
+                    list_paths_type.append(paths_solution)
+                    list_solution.append(planetary_gear)
+
+                tree.SetCurrentNodeNumberPossibilities(0)
+
+            node = tree.NextNode(valid)
+
+        return list_solution
+
+class OptimizerPlanetaryGearsZNumber(DessiaObject):
+    _standalone_in_db = True
+
+    _generic_eq = True
+
+    def __init__(self, planetary_gear: PlanetaryGear, input_speeds: List[List[float]], diameter_cylinder: float, lenght_cylinder: float, Z_range_sun: List[int], Z_range_ring: List[int], number_planet: int):
+        self.planetary_gear = planetary_gear
+        self.input_speeds = input_speeds
+        self.diameter = diameter_cylinder
+        self.lenght = lenght_cylinder
+        self.number_input = len(input_speeds)
+        self.Z_range_sun = Z_range_sun
+        self.Z_range_ring = Z_range_ring
+        self.number_planet = number_planet
+        DessiaObject.__init__(self, name='Optimizer')
+
     def multiplication_possibility_speed(self, list_1, n, element_multiplication, list_multiplication):
 
 
@@ -2502,6 +2673,7 @@ class OptimizerPlanetaryGears():
             if len(node) == 6:
 
                 possibility_speed = list_possibility_speed[node[5]]
+
                 for i, planetarie in enumerate(planetary_gear.planetaries):
                     planetarie.speed_input = possibility_speed[i]
 
@@ -2521,67 +2693,8 @@ class OptimizerPlanetaryGears():
         return True
 
 
-    def test_vitesse_and_assembly_condition(self, planetary_gear, begin_gearing_chain, end_gearing_chain, number_planet,
+    def test_vitesse_and_assembly_condition(self, planetary_gear, begin_gearing_chain, end_gearing_chain,
                                             list_previous_planetary):
-
-        # ratio_1= begin_gearing_chain.speed_input[0]/end_gearing_chain.speed_input[0]
-        # ratio_2= begin_gearing_chain.speed_input[1]/end_gearing_chain.speed_input[1]
-
-        # if ratio_1<ratio_2:
-        #     ratio_min=ratio_1
-        #     ratio_max=ratio_2
-        # else:
-        #     ratio_min=ratio_2
-        #     ratio_max=ratio_1
-
-        # speed_solution=planetary_gear.speed_solve({planetary_gear.planet_carrier:planetary_gear.planet_carrier.speed_input[0],end_gearing_chain:end_gearing_chain.speed_input[1]})
-        # index=planetary_gear.matrix_position(begin_gearing_chain)
-        # alpha=(end_gearing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0])/(begin_gearing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0])
-        # if alpha<0:
-        #     speed_solution_2=planetary_gear.speed_solve({planetary_gear.planet_carrier:planetary_gear.planet_carrier.speed_input[1],end_gearing_chain:end_gearing_chain.speed_input[0]})
-        # else:
-        #     speed_solution=planetary_gear.speed_solve({planetary_gear.planet_carrier:planetary_gear.planet_carrier.speed_input[0],end_gearing_chain:end_gearing_chain.speed_input[0]})
-        #     speed_solution_2=planetary_gear.speed_solve({planetary_gear.planet_carrier:planetary_gear.planet_carrier.speed_input[1],end_gearing_chain:end_gearing_chain.speed_input[1]})
-
-        # if speed_solution[index]:
-        #     ratio_solution=begin_gearing_chain.speed_input[0]/speed_solution[index]
-        # else:
-        #     return False
-        #     ratio_solution=0
-
-        # if end_gearing_chain.speed_input[0]!=600:
-        #     print(end_gearing_chain.speed_input[0])
-        #     print(speed_solution[index])
-        # if ratio_solution<=ratio_min or ratio_solution>=ratio_max:
-
-
-        #     return False
-
-
-        # for planetary in list_previous_planetary:
-
-        #         index_2=planetary_gear.matrix_position(planetary)
-        #         # print(speed_solution)
-        #         # print(speed_solution_2)
-        #         # print('a')
-        #         if speed_solution[index_2]<=speed_solution_2[index_2] and (speed_solution[index_2]>=planetary.speed_input[1] or speed_solution_2[index_2]<=planetary.speed_input[0]):
-        #             return False
-        #         if speed_solution_2[index_2]<=speed_solution[index_2] and (speed_solution_2[index_2]>=planetary.speed_input[1] or speed_solution[index_2]<=planetary.speed_input[0]):
-        #             return False
-        #         print(speed_solution[index_2])
-        #         print(speed_solution_2[index_2])
-        #         print(planetary.speed_input[1])
-        #         print(planetary.speed_input[0])
-        #         print('a')
-
-        # if speed_solution[index]<=speed_solution_2[index] and (speed_solution[index]>=begin_gearing_chain.speed_input[1] or speed_solution_2[index]<=begin_gearing_chain.speed_input[0]):
-        #     return False
-        # if speed_solution_2[index]<=speed_solution[index] and (speed_solution_2[index]>=begin_gearing_chain.speed_input[1] or speed_solution[index]<=begin_gearing_chain.speed_input[0]):
-        #     return False
-        # print(speed_solution)
-        # print(speed_solution_2)
-        # print('a')
-
 
         range_speed = planetary_gear.speed_range(begin_gearing_chain, planetary_gear.planet_carrier, list_previous_planetary)
 
@@ -2595,13 +2708,12 @@ class OptimizerPlanetaryGears():
         if range_speed[planetary_gear.planet_carrier.name][0] > range_speed[planetary_gear.planet_carrier.name][1]:
             return False
 
-        if not planetary_gear.test_assembly_condition(number_planet, [begin_gearing_chain, end_gearing_chain]):
+        if not planetary_gear.test_assembly_condition(self.number_planet, [begin_gearing_chain, end_gearing_chain]):
             return False
 
         return True
 
     def z_range_mini_max(self, planetary_gear, element, begin_gearing_chain, end_gearing_chain, path):
-
 
         if not element in path[0]:
 
@@ -2623,363 +2735,492 @@ class OptimizerPlanetaryGears():
             reason_min = reason_2
             reason_max = reason_1
 
+        if reason_min and reason_max:
+            Z_min = int(reason*element.Z/reason_max)-1
+            Z_max = int(reason*element.Z/reason_min)+1
 
-        Z_min = int(reason*element.Z/reason_max)-1
-        Z_max = int(reason*element.Z/reason_min)+1
-
+        elif not reason_min:
+             Z_min = int(reason*element.Z/reason_max)-1
+             Z_max = self.Z_range_sun[1]
+        else:
+            Z_min = 0
+            Z_max = int(reason*element.Z/reason_min)+1
         Z_range_mini_maxi = [Z_min, Z_max]
 
 
         return Z_range_mini_maxi
 
-    def decision_tree_z_number(self, planetary_gear, Z_range_sun, Z_range_ring, number_planet):
-
-        planet_double = []
-
-
-        for double in planetary_gear.doubles:
-
-            if not double.nodes[0] in planet_double:
-                planet_double.append(double.nodes[0])
-
-            if not double.nodes[1] in planet_double:
-                planet_double.append(double.nodes[1])
-
-        list_planet_remove = []
-
-        for planet in planetary_gear.planets:
-            if not planet in planet_double:
-                list_planet_remove.append(planet)
-
-
-        list_tree = []
-        debut = time.time()
-        list_node_range_data = []
-        gearing_chains = planetary_gear.gearing_chain()
-
-        number_element_gearing_chain = []
-        numbers_gearing_chain = []
-        number_gearing_chain = 0
-        totals_element_previous_gearing_chain = []
-        total_element_previous_gearing_chain = 0
-        flags_gearing_change = []
+    def decision_tree_speed_possibilities(self):
+        tree = dt.DecisionTree()
+        tree.SetCurrentNodeNumberPossibilities(self.number_input)
+        node = tree.NextNode(True)
         list_solution = []
-        flag_gcd = []
-
-        for i, gearing_chain in enumerate(gearing_chains):
-            if isinstance(gearing_chain[-1], Planetary):
-
-                if gearing_chain[-1].planetary_type == 'Ring':
-
-                    gearing_chains[i] = gearing_chain[::-1]
-
-                if  not isinstance(gearing_chain[0], Planetary) and gearing_chain[-1].planetary_type == 'Sun':
-
-                    gearing_chains[i] = gearing_chain[::-1]
-
-            gearing_chain_2 = copy.copy(gearing_chain)
-
-            for element in gearing_chain_2:
-
-                if element in list_planet_remove:
-
-                    gearing_chains[i].remove(element)
-
-
-        for gearing_chain in gearing_chains:
-
-            number_element_gearing_chain.append(len(gearing_chain))
-            flags_gearing_change.append(1)
-
-            for i, element in enumerate(gearing_chain):
-                flag_gcd.append(2)
-
-                if i != 0:
-                    flags_gearing_change.append(0)
-
-                totals_element_previous_gearing_chain.append(total_element_previous_gearing_chain)
-                numbers_gearing_chain.append(number_gearing_chain)
-
-                if isinstance(element, Planetary) and element.planetary_type == 'Ring':
-
-                    list_tree.append(Z_range_ring[1]-Z_range_ring[0])
-                    list_node_range_data.append(Z_range_ring[0])
-
-                else:
-                    list_tree.append(Z_range_sun[1]-Z_range_sun[0])
-                    list_node_range_data.append(Z_range_sun[0])
-
-            number_gearing_chain += 1
-            total_element_previous_gearing_chain += len(gearing_chain)
-
-        list_planet_remove_neighbour = []
-
-
-
-        for i, planet in enumerate(list_planet_remove):
-            planet.Z = 1
-            list_planet_remove_neighbour.append([planet])
-
-            for gearing in planetary_gear.gearings:
-
-                if gearing.nodes[0] == planet:
-                    list_planet_remove_neighbour[i].append(gearing.nodes[1])
-
-                if gearing.nodes[1] == planet:
-                    list_planet_remove_neighbour[i].append(gearing.nodes[0])
-
-
-        tree = dt.RegularDecisionTree(list_tree)
-
-        Z_range_mini_maxi = []
-        Z_range_mini_maxi_2 = []
-        flag_gearing_change = 0
-        flag_Z_range_mini_maxi = 0
-        flag_Z_range_mini_maxi_2 = 0
-        number_max_z_planet = Z_range_sun[1]
-        list_planetaries_Z_range_mini_maxi = []
-        list_path = []
-
         while not tree.finished:
-
-            valid = True
-            node = tree.current_node
-
-            number_gearing_chain = numbers_gearing_chain[len(node)-1]
-            flag_gearing_change = flags_gearing_change[len(node)-1]
-            total_element_previous_gearing_chain = totals_element_previous_gearing_chain[len(node)-1]
-
-            element = gearing_chains[number_gearing_chain][len(node)-total_element_previous_gearing_chain-1]
-            element.Z = list_node_range_data[len(node)-1]+ node[len(node)-1]
 
 
             if len(node) == 1:
 
-                if isinstance(element, Planetary) and element.planetary_type == 'Ring':
-                    number_max_z_planet = element.Z
+                    self.planetary_gear.planet_carrier.speed_input = self.input_speeds[node[0]]
+
+                    input_speeds_2 = copy.copy(self.input_speeds)
+                    input_speeds_2.remove(self.input_speeds[node[0]])
+
+                    list_possibility_speed = []
+                    self.multiplication_possibility_speed(input_speeds_2, 0, [], list_possibility_speed)
+
+                    tree.SetCurrentNodeNumberPossibilities(len(list_possibility_speed))
+
+
+            if len(node) == 2:
+
+                    possibility_speed = list_possibility_speed[node[1]]
+                    for i, planetarie in enumerate(self.planetary_gear.planetaries):
+                        planetarie.speed_input = possibility_speed[i]
+
+                    list_solution.append(copy.deepcopy(self.planetary_gear))
+                    tree.SetCurrentNodeNumberPossibilities(0)
+
+            node = tree.NextNode(True)
+
+        return list_solution
+    def decision_tree(self):
+        list_planetary_gears_speed = self.decision_tree_speed_possibilities()
+
+
+        for i, planetary_gear in enumerate(list_planetary_gears_speed):
+            print(i)
+            planet_double = []
+
+
+            for double in planetary_gear.doubles:
+
+                if not double.nodes[0] in planet_double:
+                    planet_double.append(double.nodes[0])
+
+                if not double.nodes[1] in planet_double:
+                    planet_double.append(double.nodes[1])
+
+            list_planet_remove = []
+
+            for planet in planetary_gear.planets:
+                if not planet in planet_double:
+                    list_planet_remove.append(planet)
+
+
+            list_tree = []
+            debut = time.time()
+            list_node_range_data = []
+            gearing_chains_modif = planetary_gear.gearing_chain()
+            gearing_chains = copy.copy(gearing_chains_modif)
+            number_element_gearing_chain = []
+            numbers_gearing_chain = []
+            number_gearing_chain = 0
+            totals_element_previous_gearing_chain = []
+            total_element_previous_gearing_chain = 0
+            flags_gearing_change = []
+            list_solution = []
+            flag_gcd = []
+
+            for i, gearing_chain in enumerate(gearing_chains_modif):
+                if isinstance(gearing_chain[-1], Planetary):
+
+                    if gearing_chain[-1].planetary_type == 'Ring':
+
+                        gearing_chains_modif[i] = gearing_chain[::-1]
+                        gearing_chains[i] = gearing_chain[::-1]
+
+                    if  not isinstance(gearing_chain[0], Planetary) and gearing_chain[-1].planetary_type == 'Sun':
+
+                        gearing_chains_modif[i] = gearing_chain[::-1]
+                        gearing_chains[i] = gearing_chain[::-1]
+                gearing_chain_2 = copy.copy(gearing_chain)
+
+                for element in gearing_chain_2:
+
+                    if element in list_planet_remove:
+
+                        gearing_chains_modif[i].remove(element)
+
+
+            for gearing_chain in gearing_chains_modif:
+
+                number_element_gearing_chain.append(len(gearing_chain))
+                flags_gearing_change.append(1)
+
+                for i, element in enumerate(gearing_chain):
+                    flag_gcd.append(2)
+
+                    if i != 0:
+                        flags_gearing_change.append(0)
+
+                    totals_element_previous_gearing_chain.append(total_element_previous_gearing_chain)
+                    numbers_gearing_chain.append(number_gearing_chain)
+
+                    if isinstance(element, Planetary) and element.planetary_type == 'Ring':
+
+                        list_tree.append(self.Z_range_ring[1]-self.Z_range_ring[0])
+                        list_node_range_data.append(self.Z_range_ring[0])
+
+                    else:
+                        list_tree.append(self.Z_range_sun[1]-self.Z_range_sun[0])
+                        list_node_range_data.append(self.Z_range_sun[0])
+
+                number_gearing_chain += 1
+                total_element_previous_gearing_chain += len(gearing_chain)
+
+            list_planet_remove_neighbour = []
+
+
+            for i, planet in enumerate(list_planet_remove):
+                planet.Z = 1
+                list_planet_remove_neighbour.append([planet])
+
+                for gearing in planetary_gear.gearings:
+
+                    if gearing.nodes[0] == planet:
+                        list_planet_remove_neighbour[i].append(gearing.nodes[1])
+
+                    if gearing.nodes[1] == planet:
+                        list_planet_remove_neighbour[i].append(gearing.nodes[0])
+
+
+            tree = dt.RegularDecisionTree(list_tree)
+
+            Z_range_mini_maxi = []
+            Z_range_mini_maxi_2 = []
+            flag_gearing_change = 0
+            flag_Z_range_mini_maxi = 0
+            flag_Z_range_mini_maxi_2 = 0
+            number_max_z_planet = self.Z_range_sun[1]
+            list_planetaries_Z_range_mini_maxi = []
+            list_path = []
+            while not tree.finished:
+
+                valid = True
+                node = tree.current_node
+
+                number_gearing_chain = numbers_gearing_chain[len(node)-1]
+                flag_gearing_change = flags_gearing_change[len(node)-1]
+                total_element_previous_gearing_chain = totals_element_previous_gearing_chain[len(node)-1]
+
+                element = gearing_chains_modif[number_gearing_chain][len(node)-total_element_previous_gearing_chain-1]
+                element.Z = list_node_range_data[len(node)-1]+ node[len(node)-1]
+
+
+                if len(node) == 1:
+
+
+                    if isinstance(element, Planetary) and element.planetary_type == 'Ring':
+                        number_max_z_planet = element.Z
 
 
 
+                elif not flag_gearing_change:
 
-            elif not flag_gearing_change:
+                    previous_element = gearing_chains_modif[number_gearing_chain][len(node)-total_element_previous_gearing_chain-2]
 
-                previous_element = gearing_chains[number_gearing_chain][len(node)-total_element_previous_gearing_chain-2]
+                    if len(gearing_chains_modif[number_gearing_chain]) > 2 \
+                    and gearing_chains_modif[number_gearing_chain][0].planetary_type == 'Ring':
 
-                if flag_gcd[len(node)-1] == 2:
-
-                    for relation in planetary_gear.relations:
-
-                        if relation.nodes[0] == previous_element and relation.nodes[1] == element:
-                            flag_gcd[len(node)-1] = 1
-                            break
-
-                        if relation.nodes[1] == previous_element and relation.nodes[0] == element:
-                            flag_gcd[len(node)-1] = 1
-                            break
+                        number_max_z_previous_planets = 0
+                        for i in range(len(node)-total_element_previous_gearing_chain-2):
+                            previous_planet = gearing_chains_modif[number_gearing_chain][i+1]
 
 
-                    if flag_gcd[len(node)-1] == 2:
-                       flag_gcd[len(node)-1] = 0
+                            number_max_z_previous_planets += previous_planet.Z
 
 
-                if flag_gcd[len(node)-1]:
-                    if not self.test_GCD(previous_element.Z, element.Z):
-                        valid = False
+                        if isinstance(element, Planetary):
+                            flag_impose_z_number = True
 
-                if element.Z > number_max_z_planet:
+                            for planet in list_planet_remove:
+                              if planet in gearing_chains[number_gearing_chain]:
+                                  flag_impose_z_number = False
+                                  break
 
-                    valid = False
+                            if flag_impose_z_number:
+
+                                if element.Z != number_max_z_planet-number_max_z_previous_planets:
+
+                                        valid = False
+
+
+                            else:
+                                if element.Z > number_max_z_planet-number_max_z_previous_planets:
+                                        valid = False
+                        else:
+                            if element.Z > number_max_z_planet-number_max_z_previous_planets:
+
+                                valid = False
+                    else:
+                        if element.Z > number_max_z_planet:
+
+                                valid = False
+
+                    if flag_gcd[len(node)-1] == 2 and valid:
+
+                        for relation in planetary_gear.relations:
+
+                            if relation.nodes[0] == previous_element and relation.nodes[1] == element:
+                                flag_gcd[len(node)-1] = 1
+                                break
+
+                            if relation.nodes[1] == previous_element and relation.nodes[0] == element:
+                                flag_gcd[len(node)-1] = 1
+                                break
+
+
+                        if flag_gcd[len(node)-1] == 2:
+                           flag_gcd[len(node)-1] = 0
+
+
+                    if flag_gcd[len(node)-1]:
+                        if not self.test_GCD(previous_element.Z, element.Z):
+                            valid = False
 
 
 
-            else:
-                if isinstance(element, Planetary) and element.planetary_type == 'Ring':
-                    number_max_z_planet = element.Z
 
                 else:
-                    number_max_z_planet = Z_range_sun[1]
+
+                    if isinstance(element, Planetary) and element.planetary_type == 'Ring':
+                        number_max_z_planet = element.Z
 
 
-            if len(node) == number_element_gearing_chain[number_gearing_chain]+total_element_previous_gearing_chain and valid:
-
-                begin_gearing_chain = gearing_chains[number_gearing_chain][0]
-                end_gearing_chain = gearing_chains[number_gearing_chain][-1]
-
-                planetary_gear = PlanetaryGear(planetary_gear.name, planetary_gear.planetaries, planetary_gear.planets,
-                                               planetary_gear.planet_carrier, planetary_gear.connexions)
-
-                if Z_range_mini_maxi:
-
-                    if element.Z < Z_range_mini_maxi[0] or element.Z > Z_range_mini_maxi[1]:
-                        valid = False
-
-                if Z_range_mini_maxi_2:
-
-                    if element.Z < Z_range_mini_maxi_2[0]  or element.Z > Z_range_mini_maxi_2[1]:
-                        valid = False
-
-                if valid:
-
-                    if numbers_gearing_chain[len(node)-1] == 0:
-
-                            first_planetary = begin_gearing_chain
-
-                            if not first_planetary in list_planetaries_Z_range_mini_maxi:
-                                list_planetaries_Z_range_mini_maxi.append(first_planetary)
+                    else:
+                        number_max_z_planet = self.Z_range_sun[1]
 
 
-                            if isinstance(begin_gearing_chain, Planetary) and isinstance(end_gearing_chain, Planetary):
+                if len(node) == number_element_gearing_chain[number_gearing_chain]+total_element_previous_gearing_chain and valid:
+
+                    begin_gearing_chain = gearing_chains_modif[number_gearing_chain][0]
+                    end_gearing_chain = gearing_chains_modif[number_gearing_chain][-1]
+
+                    planetary_gear = PlanetaryGear(planetary_gear.name, planetary_gear.planetaries, planetary_gear.planets,
+                                                   planetary_gear.planet_carrier, planetary_gear.connexions)
+
+                    if Z_range_mini_maxi:
+
+                        if element.Z < Z_range_mini_maxi[0] or element.Z > Z_range_mini_maxi[1]:
+                            valid = False
+
+                    if Z_range_mini_maxi_2:
+
+                        if element.Z < Z_range_mini_maxi_2[0]  or element.Z > Z_range_mini_maxi_2[1]:
+                            valid = False
+
+                    if valid:
+
+                        if numbers_gearing_chain[len(node)-1] == 0:
+
+                                first_planetary = begin_gearing_chain
+
+                                if not first_planetary in list_planetaries_Z_range_mini_maxi:
+                                    list_planetaries_Z_range_mini_maxi.append(first_planetary)
+
+
+                                if isinstance(begin_gearing_chain, Planetary) and isinstance(end_gearing_chain, Planetary):
+
+                                    if not end_gearing_chain in list_planetaries_Z_range_mini_maxi:
+
+                                        list_planetaries_Z_range_mini_maxi.append(end_gearing_chain)
+                                        list_path.append(planetary_gear.path_planetary_to_planetary([begin_gearing_chain, end_gearing_chain]))
+
+                                    if not flag_Z_range_mini_maxi:
+
+
+                                        Z_range_mini_maxi = self.z_range_mini_max(planetary_gear, element, begin_gearing_chain,
+                                                                                  end_gearing_chain,
+                                                                                  list_path[list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)-1])
+
+                                        flag_Z_range_mini_maxi = 1
+
+
+
+                                        if element.Z < Z_range_mini_maxi[0] or element.Z < Z_range_mini_maxi[1]:
+
+                                            valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_gearing_chain,
+                                                                                             end_gearing_chain,
+                                                                                             list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)+1])
+
+                                        else:
+                                            valid = False
+                                    else:
+
+                                        valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_gearing_chain,
+                                                                                         end_gearing_chain,
+                                                                                         list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)+1])
+
+
+
+                        else:
+
+                            if not begin_gearing_chain in list_planetaries_Z_range_mini_maxi:
+
+
+                                        list_planetaries_Z_range_mini_maxi.append(begin_gearing_chain)
+                                        list_path.append(planetary_gear.path_planetary_to_planetary([first_planetary, begin_gearing_chain]))
+
+                            if not flag_Z_range_mini_maxi:
+
+                                        Z_range_mini_maxi = self.z_range_mini_max(planetary_gear, element,
+                                                                                  first_planetary, begin_gearing_chain,
+                                                                                  list_path[list_planetaries_Z_range_mini_maxi.index(begin_gearing_chain)-1])
+
+                                        flag_Z_range_mini_maxi = 1
+
+                                        if Z_range_mini_maxi:
+                                            if element.Z < Z_range_mini_maxi[0] or element.Z < Z_range_mini_maxi[1]:
+                                                valid = self.test_vitesse_and_assembly_condition(planetary_gear, first_planetary,
+                                                                                                 begin_gearing_chain,
+                                                                                                 list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(begin_gearing_chain)+1])
+
+                                            else:
+                                                valid = False
+
+                            else:
+
+                                valid = self.test_vitesse_and_assembly_condition(planetary_gear, first_planetary,
+                                                                                 begin_gearing_chain,
+                                                                                 list_planetaries_Z_range_mini_maxi[:list_planetaries_Z_range_mini_maxi.index(begin_gearing_chain)+1])
+
+
+
+
+                            if isinstance(end_gearing_chain, Planetary) and valid:
+
 
                                 if not end_gearing_chain in list_planetaries_Z_range_mini_maxi:
 
-                                    list_planetaries_Z_range_mini_maxi.append(end_gearing_chain)
-                                    list_path.append(planetary_gear.path_planetary_to_planetary([begin_gearing_chain, end_gearing_chain]))
-
-                                if not flag_Z_range_mini_maxi:
+                                        list_planetaries_Z_range_mini_maxi.append(end_gearing_chain)
+                                        list_path.append(planetary_gear.path_planetary_to_planetary([first_planetary, end_gearing_chain]))
 
 
-                                    Z_range_mini_maxi = self.z_range_mini_max(planetary_gear, element, begin_gearing_chain,
-                                                                              end_gearing_chain,
-                                                                              list_path[list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)-1])
+                                if not flag_Z_range_mini_maxi_2:
 
-                                    flag_Z_range_mini_maxi = 1
+                                        Z_range_mini_maxi_2 = self.z_range_mini_max(planetary_gear, element, first_planetary, end_gearing_chain,
+                                                                                    list_path[list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)-1])
+                                        flag_Z_range_mini_maxi_2 = 1
+                                        if Z_range_mini_maxi_2:
+                                            if element.Z < Z_range_mini_maxi_2[0] or element.Z < Z_range_mini_maxi_2[1]:
 
+                                                valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_gearing_chain,
+                                                                                                 end_gearing_chain, number_planet,
+                                                                                                 list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)+1])
 
-                                    if element.Z < Z_range_mini_maxi[0] or element.Z < Z_range_mini_maxi[1]:
-
-                                        valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_gearing_chain,
-                                                                                         end_gearing_chain, number_planet,
-                                                                                         list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)+1])
-
-                                    else:
-                                        valid = False
+                                            else:
+                                                valid = False
                                 else:
 
-                                    valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_gearing_chain,
+                                    valid = self.test_vitesse_and_assembly_condition(planetary_gear, first_planetary,
                                                                                      end_gearing_chain, number_planet,
                                                                                      list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)+1])
 
 
 
-                    else:
-
-                        if not begin_gearing_chain in list_planetaries_Z_range_mini_maxi:
 
 
-                                    list_planetaries_Z_range_mini_maxi.append(begin_gearing_chain)
-                                    list_path.append(planetary_gear.path_planetary_to_planetary([first_planetary, begin_gearing_chain]))
 
-                        if not flag_Z_range_mini_maxi:
+                        if number_gearing_chain == len(gearing_chains_modif)-1 and valid:
 
-                                    Z_range_mini_maxi = self.z_range_mini_max(planetary_gear, element,
-                                                                              first_planetary, begin_gearing_chain,
-                                                                              list_path[list_planetaries_Z_range_mini_maxi.index(begin_gearing_chain)-1])
-
-                                    flag_Z_range_mini_maxi = 1
-
-
-                                    if element.Z < Z_range_mini_maxi[0] or element.Z < Z_range_mini_maxi[1]:
-                                        valid = self.test_vitesse_and_assembly_condition(planetary_gear, first_planetary,
-                                                                                         begin_gearing_chain, number_planet,
-                                                                                         list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(begin_gearing_chain)+1])
-
-                                    else:
-                                        valid = False
-
-                        else:
-
-                            valid = self.test_vitesse_and_assembly_condition(planetary_gear, first_planetary,
-                                                                             begin_gearing_chain, number_planet,
-                                                                             list_planetaries_Z_range_mini_maxi[:list_planetaries_Z_range_mini_maxi.index(begin_gearing_chain)+1])
+                            list_tree_planetary = []
 
 
 
 
-                        if isinstance(end_gearing_chain, Planetary) and valid:
 
+                            if list_planet_remove:
 
-                            if not end_gearing_chain in list_planetaries_Z_range_mini_maxi:
+                                for i in range(len(list_planet_remove)):
+                                    list_planet_remove_2  = copy.copy(list_planet_remove)
+                                    list_planet_remove_neighbour_2 = copy.copy(list_planet_remove_neighbour)
+                                    list_planet_remove[i].Z = 1
+                                    valid_planet = True
 
-                                    list_planetaries_Z_range_mini_maxi.append(end_gearing_chain)
-                                    list_path.append(planetary_gear.path_planetary_to_planetary([first_planetary, end_gearing_chain]))
+                                    for gearing_chain in gearing_chains:
+                                        if list_planet_remove[i] in gearing_chain and valid_planet:
 
+                                            if gearing_chain[0].planetary_type == 'Ring' :
 
-                            if not flag_Z_range_mini_maxi_2:
+                                                number_z_max = 0
+                                                for element_2 in gearing_chain:
+                                                    if  element_2 != list_planet_remove[i] and element_2 != gearing_chain[0]:
+                                                        number_z_max += element_2.Z
 
-                                    Z_range_mini_maxi_2 = self.z_range_mini_max(planetary_gear, element, first_planetary, end_gearing_chain,
-                                                                                list_path[list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)-1])
-                                    flag_Z_range_mini_maxi_2 = 1
+                                                if  isinstance(gearing_chain[-1], Planetary):
 
-                                    if element.Z < Z_range_mini_maxi_2[0] or element.Z < Z_range_mini_maxi_2[1]:
+                                                    list_planet_remove[i].Z = gearing_chain[0].Z-number_z_max
+                                                    if list_planet_remove[i].Z < self.Z_range_sun[0]:
+                                                        list_planet_remove[i].Z = self.Z_range_sun[0]
+                                                        valid_planet = False
+                                                    neighbour = list_planet_remove_neighbour[i]
+                                                    if not self.test_GCD(list_planet_remove[i].Z, neighbour[1].Z):
+                                                        valid_planet = False
 
-                                        valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_gearing_chain,
-                                                                                         end_gearing_chain, number_planet,
-                                                                                         list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)+1])
+                                                        break
+                                                    if not self.test_GCD(list_planet_remove[i].Z, neighbour[2].Z):
+                                                        valid_planet = False
+                                                        break
 
-                                    else:
-                                        valid = False
+                                                    list_planet_remove_2.remove(list_planet_remove[i])
+                                                    list_planet_remove_neighbour_2.remove(neighbour)
+
+                                                else:
+                                                    if gearing_chain[0].Z-number_z_max - self.Z_range_sun[0] > 0:
+                                                        list_tree_planetary.append(gearing_chain[0].Z-number_z_max - self.Z_range_sun[0])
+
+                                                    else:
+                                                        valid_planet = False
+                                                        break
+
+                                            else:
+                                                list_tree_planetary.append(self.Z_range_sun[1]-self.Z_range_sun[0])
+                                            break
+                                if list_tree_planetary and valid_planet:
+                                    tree_planet = dt.RegularDecisionTree(list_tree_planetary)
+
+                                    while not tree_planet.finished:
+
+                                        valid_planet = True
+                                        node_planet = tree_planet.current_node
+                                        element_planet = list_planet_remove_2[len(node_planet)-1]
+                                        neighbour = list_planet_remove_neighbour_2[len(node_planet)-1]
+                                        element_planet.Z = node_planet[len(node_planet)-1]+self.Z_range_sun[0]
+
+                                        if not self.test_GCD(element_planet.Z, neighbour[1].Z):
+                                            valid_planet = False
+
+                                        if not self.test_GCD(element_planet.Z, neighbour[2].Z):
+                                            valid_planet = False
+
+                                        if valid_planet and len(node_planet) == len(list_tree_planetary):
+                                            list_solution.append(planetary_gear)
+
+                                            # print(planetary_gear)
+                                            # if list_solution:
+                                            #     return list_solution
+
+                                        tree_planet.NextNode(valid_planet)
+
                             else:
+                                list_solution.append(planetary_gear)
+                                # print(planetary_gear)
 
-                                valid = self.test_vitesse_and_assembly_condition(planetary_gear, first_planetary,
-                                                                                 end_gearing_chain, number_planet,
-                                                                                 list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)+1])
+                        # if len(list_solution) > 30:
+                        #     return list_solution
 
+                else:
 
+                    Z_range_mini_maxi = []
+                    Z_range_mini_maxi_2 = []
+                    flag_Z_range_mini_maxi = 0
+                    flag_Z_range_mini_maxi_2 = 0
 
+                tree.NextNode(valid)
 
+            fin = time.time()
 
-
-                    if number_gearing_chain == len(gearing_chains)-1 and valid:
-
-                        list_tree_planetary = []
-
-                        for i in range(len(list_planet_remove)):
-
-                            list_planet_remove[i].Z = 1
-                            list_tree_planetary.append(Z_range_sun[1]-Z_range_sun[0])
-
-                        if list_planet_remove:
-                            tree_planet = dt.RegularDecisionTree(list_tree_planetary)
-
-                            while not tree_planet.finished:
-
-                                valid_planet = True
-                                node_planet = tree_planet.current_node
-                                element_planet = list_planet_remove[len(node_planet)-1]
-                                neighbour = list_planet_remove_neighbour[len(node_planet)-1]
-                                element_planet.Z = node_planet[len(node_planet)-1]+Z_range_sun[0]
-
-                                if not self.test_GCD(element_planet.Z, neighbour[1].Z):
-                                    valid_planet = False
-
-                                if not self.test_GCD(element_planet.Z, neighbour[2].Z):
-                                    valid_planet = False
-
-                                if valid_planet and len(node_planet) == len(list_tree_planetary):
-                                    list_solution.append(planetary_gear)
-                                    print(planetary_gear)
-
-                                tree_planet.NextNode(valid_planet)
-
-                        else:
-                            list_solution.append(planetary_gear)
-                            print(planetary_gear)
-
-                    if len(list_solution) > 30:
-                        return list_solution
-
-            else:
-
-                Z_range_mini_maxi = []
-                Z_range_mini_maxi_2 = []
-                flag_Z_range_mini_maxi = 0
-                flag_Z_range_mini_maxi_2 = 0
-
-            tree.NextNode(valid)
-
-        fin = time.time()
-
-        print(fin-debut)
+            print(fin-debut)
         return list_solution
 
 

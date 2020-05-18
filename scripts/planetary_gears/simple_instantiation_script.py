@@ -74,27 +74,38 @@ torque_solution=planetary_gears_1.torque_solve({sun:0,planet_carrier:500})
 speed_solution=planetary_gears_1.speed_solve({sun:200,planet_carrier:500})
 print(torque_solution)
 print(speed_solution)
-Optimizer=pg.OptimizerPlanetaryGears([[500,510],[680,690],[300,310],[250,260]],0.1,20)
-list_pos=[]
-list_solution=Optimizer.decision_tree_architecture(3,0,2,1)
+Optimizer_planet_structure=pg.OptimizerPlanetStructure(3,0,2,1)
+list_planet_structure=Optimizer_planet_structure.decision_tree()
+
+Optimizer_planetarie_gears=pg.OptimizerPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250]])
+list_planetary_gear=Optimizer_planetarie_gears.decision_tree()
+
+Optimizer_planetarie_gear_z=pg.OptimizerPlanetaryGearsZNumber(list_planetary_gear[0],[[500,550],[600,650],[300,350],[200,250]],0,0,[7,80],[40,100],3)
+Optimizer_planetarie_gear_z.decision_tree()
+# for planetary_gear in list_planetary_gear:
+#     planetary_gear.plot_cinematic_graph()
 
 
-# list_intervalle=pg.intervalle_fonction_test([-300,300],[-700,700],[-1000,1100],[],1,1)
-# print(len(list_solution))
-for i,solution in enumerate(list_solution): 
+# list_pos=[]
+# list_solution=Optimizer.decision_tree_architecture(3,0,2,1)
+
+
+# # list_intervalle=pg.intervalle_fonction_test([-300,300],[-700,700],[-1000,1100],[],1,1)
+# # print(len(list_solution))
+# for i,solution in enumerate(list_solution): 
 #     print(i)
-# # # list_solution[24].plot()
-#     # solution.plot_cinematic_graph(0.1,1,2,0.2,0.5,2,2,10)
-    solution_2=Optimizer.decision_tree_z_number(solution,[7,80],[40,100],3)
-    if solution_2:
-         break
-for solution in  solution_2:
-    print(solution)
-    list_range_1=solution.speed_range(solution.planetaries[1],solution.planetaries[2],[])
-    print(list_range_1)
-    print(solution.speed_solve({solution.planetaries[1]:306.15,solution.planetaries[2]:251.58}))
-    list_range_2=solution.speed_range(solution.planetaries[0],solution.planet_carrier,[])
-    print(list_range_2)
+# # # # list_solution[24].plot()
+
+
+#     solution_2=Optimizer.decision_tree_z_number(list_solution[i],[7,80],[40,100],3)
+    # if solution_2:
+    #      break
+# for solution in  solution_2:
+#     list_range_1=solution.speed_range(solution.planetaries[0],solution.planetaries[2],[])
+#     print(list_range_1)
+#     # print(solution.speed_solve({solution.planetaries[1]:306.15,solution.planetaries[2]:251.58}))
+#     list_range_2=solution.speed_range(solution.planetaries[0],solution.planet_carrier,[])
+#     print(list_range_2)
 # print(solution[0])
 # list_range_1=solution[0].speed_range(solution[0].planetaries[1],solution[0].planetaries[0],[])
 # print(list_range_1)
