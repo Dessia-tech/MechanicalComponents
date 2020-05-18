@@ -2726,14 +2726,23 @@ class OptimizerPlanetaryGearsZNumber(DessiaObject):
 
         reason_2 = abs((begin_gearing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0])/
                        (end_gearing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0]))
+        
+        reason_3 = abs((begin_gearing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[1])/
+                       (end_gearing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[1]))
+        
+        reason_4 = abs((begin_gearing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0])/
+                       (end_gearing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0]))
+        
+        reason_min=min(reason_1,reason_2,reason_3,reason_4)
+        reason_max=max(reason_1,reason_2,reason_3,reason_4)
 
-        if reason_1 < reason_2:
-            reason_min = reason_1
-            reason_max = reason_2
+        # if reason_1 < reason_2:
+        #     reason_min = reason_1
+        #     reason_max = reason_2
 
-        else:
-            reason_min = reason_2
-            reason_max = reason_1
+        # else:
+        #     reason_min = reason_2
+        #     reason_max = reason_1
 
         if reason_min and reason_max:
             Z_min = int(reason*element.Z/reason_max)-1
@@ -2746,8 +2755,7 @@ class OptimizerPlanetaryGearsZNumber(DessiaObject):
             Z_min = 0
             Z_max = int(reason*element.Z/reason_min)+1
         Z_range_mini_maxi = [Z_min, Z_max]
-
-
+       
         return Z_range_mini_maxi
 
     def decision_tree_speed_possibilities(self):
