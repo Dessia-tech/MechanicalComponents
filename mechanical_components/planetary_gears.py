@@ -2315,6 +2315,7 @@ class OptimizerPlanetStructure(DessiaObject):
                 # planet_structure.plot_cinematic_graph()
                 if self.solution_sort(planet_structure,list_solution):
                     list_solution.append(planet_structure)
+                
                 tree.SetCurrentNodeNumberPossibilities(0)
             node = tree.NextNode(True)
 
@@ -2554,18 +2555,20 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
 
     def solution_sort_recursive_function(self,new_first_node,first_node_check,new_graph,graph_check,previous_node,previous_node_check):
         list_number_false=[]
-        valid=False
-
-        for new_neighbor in nx.neighbors(new_graph,new_first_node):
-            if new_neighbor != previous_node:
-                number_false=0
-                if len(list( nx.neighbors(graph_check,first_node_check))) != len(list( nx.neighbors(new_graph,new_first_node))):
+        list_neighbors=list(nx.neighbors(graph_check,first_node_check))
+        if len(list( nx.neighbors(graph_check,first_node_check))) != len(list( nx.neighbors(new_graph,new_first_node))):
                      
                     valid=True
                     return valid
                 
-                for neighbor_check in nx.neighbors(graph_check,first_node_check):
-                    if len(previous_node_check)<2 or neighbor_check != previous_node_check[-2]:
+        for new_neighbor in nx.neighbors(new_graph,new_first_node):
+            valid=False
+            if new_neighbor != previous_node:
+                number_false=0
+               
+                
+                for neighbor_check in list_neighbors:
+                    if (len(previous_node_check)<2 or neighbor_check != previous_node_check[-2]) :
                         if type(nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor]) == type(nx.get_node_attributes(graph_check,neighbor_check)[neighbor_check]):
                             
                             if type(nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor]) == Planetary:
@@ -2573,24 +2576,33 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
                                 if nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor].planetary_type == nx.get_node_attributes(graph_check,neighbor_check)[neighbor_check].planetary_type:
                                     
                                     valid=self.solution_sort_recursive_function(new_neighbor,neighbor_check,new_graph,graph_check,new_first_node,previous_node_check + [neighbor_check])
-                                
+                                    
+                                    if not valid:
+                                        list_neighbors.remove(neighbor_check)
+                                    else:
+                                        number_false+=1
+                                        
+                                    
                                 else:
                                     
                                     number_false+=1
                             
                             else:
                                 valid=self.solution_sort_recursive_function(new_neighbor,neighbor_check,new_graph,graph_check,new_first_node,previous_node_check + [neighbor_check])
-                            
+                                
+                                if not valid:
+                                       
+                                        list_neighbors.remove(neighbor_check)
+                                else:
+                                    number_false+=1
                             
                         else:
                             number_false+=1
                         
-                        
-                        if type(nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor]) == Planetary:
-                            print(number_false)
-                if number_false == len(list(nx.neighbors(graph_check,first_node_check)))-(len(previous_node_check)>1):
-                    if type(nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor]) == Planetary:
-                            print('a')
+                
+            
+                if number_false >= len(list(nx.neighbors(graph_check,first_node_check)))-(len(previous_node_check)>1):
+                    
                     valid=True
                     return valid
                 
@@ -2599,23 +2611,7 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
                             list_number_false.append([number_false,nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor].planetary_type])
                     else:
                         list_number_false.append([number_false,type(nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor])])
-        # print(list( nx.neighbors(graph_check,first_node_check)))
-        # print(list( nx.neighbors(new_graph,new_first_node)))
-        # print(list_number_false)
-         
-        sum_number_false=0
-        list_previous_type_false=[]
-        for number_false in list_number_false:
-            if number_false[1]=='Sun':
-                print(number_false[0])
-            if not number_false[1] in list_previous_type_false:
-                sum_number_false += number_false[0]
-                list_previous_type_false.append(number_false[1])
 
-        if sum_number_false!=0 and sum_number_false!=len(list_number_false):
-            valid=True
-            print(valid)
-            return valid
         
         return valid
                 
@@ -2632,7 +2628,8 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
             if len(list(nx.neighbors(new_graph,node))) == 1:
                 first_node=node
                 break
-       
+        list_valid=[]
+        list_possible_node=[]
         for planetary_gear in planetary_gears_check:
             
             
@@ -2644,15 +2641,25 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
             for node in nx.nodes(graph_check):
                 
                 if len(list(nx.neighbors(graph_check,node))) == 1 and type(nx.get_node_attributes(graph_check,node)[node]) == type(nx.get_node_attributes(new_graph,first_node)[first_node]):
-                    possible_first_node_check.append(node)
+                    if type(nx.get_node_attributes(graph_check,node)[node])== Planetary:
+                        if nx.get_node_attributes(graph_check,node)[node].planetary_type == nx.get_node_attributes(new_graph,first_node)[first_node].planetary_type:
+                           possible_first_node_check.append(node)
+                    else:       
+                        possible_first_node_check.append(node)
                     
-                    
+                  
             for node in possible_first_node_check:
                 valid=self.solution_sort_recursive_function(first_node,node,new_graph,graph_check,first_node,[node])
+                list_valid.append(valid)
+            if possible_first_node_check:    
+                list_possible_node.append([possible_first_node_check])
+            
+       
+        if  False in list_valid:
+            return False
+            return False
                 
-                if  not valid:
-                    return False
-                
+            
         return True           
 
     def decision_tree(self):
@@ -2669,6 +2676,7 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
             planetaries.append(Planetary('Planetary_'+str(i), 7, 'Sun'))
 
         tree.SetCurrentNodeNumberPossibilities(len(self.planet_structures))
+        print(len(self.planet_structures))
         node = tree.NextNode(True)
 
 
@@ -2679,15 +2687,15 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
              planet_architecture = self.planet_structures[node[0]]
              list_planetary_gears = self.list_possibilities_planetaries(planetaries, planet_architecture, planet_carrier)
              tree.SetCurrentNodeNumberPossibilities(len(list_planetary_gears))
-
+             list_check=[]
             if len(node) == 2:
 
                 planetary_gear = list_planetary_gears[node[1]]
+                
 
-
-                if self.solution_sort(planetary_gear,list_solution):
+                if self.solution_sort(planetary_gear,list_check):
                     list_solution.append(planetary_gear)
-
+                    list_check.append(planetary_gear)
                 tree.SetCurrentNodeNumberPossibilities(0)
 
             node = tree.NextNode(valid)
