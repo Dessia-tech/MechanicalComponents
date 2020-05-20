@@ -54,19 +54,19 @@ cycles={0:1e8}
 
 # volumemodel = vm.Contour2D(meshes_1.Contour(1) )
 # volumemodel.MPLPlot() 
-sun=pg.Planetary('sun',36,'Sun')
-sun_2=pg.Planetary('sun_2',60,'Sun')
-ring= pg.Planetary('ring',84,'Ring')
+sun=pg.Planetary(36,'Sun','sun')
+sun_2=pg.Planetary(60,'Sun','sun_2')
+ring= pg.Planetary(84,'Ring','ring')
 planet_carrier= pg.PlanetCarrier('planet_carrier')
-planet_1=pg.Planet('planet_1','Simple',12)
+planet_1=pg.Planet('Simple',12,'planet_1')
 
 
 
-planet_2=pg.Planet('planet_2','Simple',12)
-planet_3=pg.Planet('planet_3','Simple',16)
-planet_4=pg.Planet('planet_4','Double',5)
-planet_5=pg.Planet('planet_5','Double',5)
-planetary_gears_1= pg.PlanetaryGear('pl_1', [sun,ring,sun_2], [planet_1,planet_2,planet_3], planet_carrier,[[sun,planet_1,'GE'],[planet_1,planet_2,'GE'],[planet_2,ring,'GE'],[planet_2,planet_3,'D'],[planet_3,sun_2,'GI']])
+planet_2=pg.Planet('Simple',12,'planet_2')
+planet_3=pg.Planet('Simple',16,'planet_3')
+planet_4=pg.Planet('Double',5,'planet_4')
+planet_5=pg.Planet('Double',5,'planet_5')
+planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2], [planet_1,planet_2,planet_3], planet_carrier,[[sun,planet_1,'GE'],[planet_1,planet_2,'GE'],[planet_2,ring,'GE'],[planet_2,planet_3,'D'],[planet_3,sun_2,'GI']],'pl_1')
 
 print(planetary_gears_1.gearing_chain())
 print([sun,ring,sun_2])
@@ -74,18 +74,18 @@ torque_solution=planetary_gears_1.torque_solve({sun:0,planet_carrier:500})
 speed_solution=planetary_gears_1.speed_solve({sun:200,planet_carrier:500})
 print(torque_solution)
 print(speed_solution)
-Optimizer_planet_structure=pg.OptimizerPlanetStructure(4,1,2,1)
+Optimizer_planet_structure=pg.OptimizerPlanetStructure(3,0,2,1)
 list_planet_structure=Optimizer_planet_structure.decision_tree()
 for planet_structure in list_planet_structure:
     planet_structure.plot_cinematic_graph()
-Optimizer_planetarie_gears=pg.OptimizerPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250],[100,200]])
+Optimizer_planetarie_gears=pg.OptimizerPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250]])
 list_planetary_gears=Optimizer_planetarie_gears.decision_tree()
 # print(len(list_planetary_gears))
 for planetary_gears in list_planetary_gears:
     planetary_gears.plot_cinematic_graph()
     print(planetary_gears)
-# Optimizer_planetarie_gear_z=pg.OptimizerPlanetaryGearsZNumber(list_planetary_gear[2],[[500,550],[600,650],[300,350],[200,250]],0,0,[7,80],[40,100],3)
-# Optimizer_planetarie_gear_z.decision_tree()
+Optimizer_planetarie_gear_z=pg.OptimizerPlanetaryGearsZNumber(list_planetary_gears[0],[[500,550],[600,650],[300,350],[200,250]],0,0,[7,80],[40,100],3)
+Optimizer_planetarie_gear_z.decision_tree()
 # for planetary_gear in list_planetary_gear:
 #     planetary_gear.plot_cinematic_graph()
 
