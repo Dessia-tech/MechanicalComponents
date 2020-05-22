@@ -1364,47 +1364,13 @@ class PlanetaryGear(DessiaObject):
 
 class PlanetsStructure(DessiaObject):
     A = TypeVar('A', int, str)
-    def __init__(self, architecture: List[List[str]], branch_connexions: List[List[A]],name:str=''):
-        self.architecture = architecture
-        self.branch_connexions = branch_connexions
-        self.planets = []
-        self.connexions = []
+    def __init__(self, planets: List[Planet], connexions,name:str=''):
+        self.planets = planets
+        self.connexions = connexions
         number_planet = 0
         self.gearings = []
         self.doubles = []
         DessiaObject.__init__(self, name=name)
-        first_last_composant_branch = []
-        for branch in self.architecture:
-
-            flag_first_planet_branch = 0
-
-            for planet in branch:
-                number_planet += 1
-                self.planets.append(Planet(planet, 7, 'Pl'+str(number_planet)))
-
-                if flag_first_planet_branch:
-
-                    if planet == 'Double':
-                        self.connexions.append([self.planets[-2], self.planets[-1], 'D'])
-                    else:
-                        self.connexions.append([self.planets[-2], self.planets[-1], 'GI'])
-
-                else:
-                    first_composant_branch = self.planets[-1]
-                    flag_first_planet_branch = 1
-
-            last_composant_branch = self.planets[-1]
-            first_last_composant_branch.append([first_composant_branch, last_composant_branch])
-
-        for branch_connexion in self.branch_connexions:
-
-            if branch_connexion[2] == 'Simple':
-                self.connexions.append([first_last_composant_branch[branch_connexion[0]-1][1],
-                                        first_last_composant_branch[branch_connexion[1]-1][0], 'GI'])
-
-            else:
-                self.connexions.append([first_last_composant_branch[branch_connexion[0]-1][1],
-                                        first_last_composant_branch[branch_connexion[1]-1][0], 'D'])
 
 
         for i, connexion in  enumerate(self.connexions):
@@ -2087,7 +2053,42 @@ class OptimizerPlanetStructure(DessiaObject):
             if branch == branch_maximum:
 
                 possibilities_connexion_3 = copy.deepcopy(possibilities_connexion_2)
-                list_possibilities.append(PlanetsStructure(possibilities_2, possibilities_connexion_3,'PlanetsStructure'))
+                planets=[]
+                connexions=[]
+                first_last_composant_branch = []
+                for branch_2 in possibilities_2:
+
+                    flag_first_planet_branch = 0
+        
+                    for planet in branch_2:
+                        number_planet += 1
+                        planets.append(Planet(planet, 7, 'Pl'+str(number_planet)))
+        
+                        if flag_first_planet_branch:
+        
+                            if planet == 'Double':
+                                connexions.append([planets[-2], planets[-1], 'D'])
+                            else:
+                                connexions.append([planets[-2], planets[-1], 'GI'])
+        
+                        else:
+                            first_composant_branch = planets[-1]
+                            flag_first_planet_branch = 1
+        
+                    last_composant_branch = planets[-1]
+                    first_last_composant_branch.append([first_composant_branch, last_composant_branch])
+        
+                for branch_connexion in possibilities_connexion_3:
+        
+                    if branch_connexion[2] == 'Simple':
+                        connexions.append([first_last_composant_branch[branch_connexion[0]-1][1],
+                                                first_last_composant_branch[branch_connexion[1]-1][0], 'GI'])
+        
+                    else:
+                        connexions.append([first_last_composant_branch[branch_connexion[0]-1][1],
+                                                first_last_composant_branch[branch_connexion[1]-1][0], 'D'])
+                        
+                list_possibilities.append(PlanetsStructure(planets, connexions,'PlanetsStructure'))
 
             else:
 
