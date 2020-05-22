@@ -78,17 +78,18 @@ print(speed_solution)
 Generator_planet_structure=pg.GeneratorPlanetStructure(3,0,2,1)
 list_planet_structure=Generator_planet_structure.decision_tree()
 # for planet_structure in list_planet_structure:
-#     planet_structure.plot_cinematic_graph()
+#     planet_structure.plot_kinematic_graph()
 Generator_planetarie_gears=pg.GeneratorPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250]])
 list_planetary_gears=Generator_planetarie_gears.decision_tree()
 # print(len(list_planetary_gears))
 # for planetary_gears in list_planetary_gears:
-#     planetary_gears.plot_cinematic_graph()
+#     planetary_gears.plot_kinematic_graph()
 #     print(planetary_gears)
-Generator_planetarie_gear_z=pg.GeneratorPlanetaryGearsZNumber(list_planetary_gears[0],[[500,550],[600,650],[300,350],[200,250]],0,0,[7,80],[40,100],3)
-Generator_planetarie_gear_z.decision_tree()
+for i in range(len(list_planetary_gears)):
+    Generator_planetarie_gear_z=pg.GeneratorPlanetaryGearsZNumber(list_planetary_gears[i],[[500,550],[600,650],[300,350],[200,250]],0,0,[7,80],[40,100],3)
+    Generator_planetarie_gear_z.decision_tree()
 # for planetary_gear in list_planetary_gear:
-#     planetary_gear.plot_cinematic_graph()
+#     planetary_gear.plot_kinematic_graph()
 
 
 # list_pos=[]
@@ -123,7 +124,7 @@ Generator_planetarie_gear_z.decision_tree()
         # break
 #     # if i==20:
 #     #     break
-#     solution.plot_cinematic_graph(0.1,1,2,0.2,0.5,2,2,10)
+#     solution.plot_kinematic_graph(0.1,1,2,0.2,0.5,2,2,10)
 
   
 # list_solution[14].plot()

@@ -72,6 +72,24 @@ class Gears(DessiaObject):
 class Planetary(Gears):
 
     def __init__(self, Z: int, planetary_type: str, name: str = ''):
+        '''
+        
+
+        Parameters
+        ----------
+        Z : int
+            The number of tooth
+            
+        planetary_type : str
+            The type of the planetary:
+            - ' Ring' for ring
+            - 'Sun' for sun
+            
+        name : str, optional
+            DESCRIPTION. The default is ''.
+
+
+        '''
 
 
 
@@ -92,6 +110,24 @@ class Planetary(Gears):
 class Planet(Gears):
 
     def __init__(self, planet_type: str, Z: int, name: str = ''):
+        '''
+        
+
+        Parameters
+        ----------
+        planet_type : str
+            The type of the planet:
+            - 'Simple' when the 
+        Z : int
+            The number of tooth
+        name : str, optional
+            DESCRIPTION. The default is ''.
+
+        Returns
+        -------
+        None.
+
+        '''
 
         self.planet_type = planet_type
 
@@ -232,6 +268,24 @@ class ImposeSpeed(DessiaObject):
 class Connection(DessiaObject):
 
     def __init__(self, nodes: List[Gears], connection_type: str, name: str = ''):
+        '''
+        
+
+        Parameters
+        ----------
+        nodes : List[Gears]
+            The 2 elements connected
+        connection_type : str
+            The type of the connection : 
+            -'D' is for Double 
+            -'GI' is when the first element of nodes gearing to the second inward of the planetary gear
+            -'GE' is when the first element of nodes gearing to the second outward of the planetary gear
+            
+        name : str, optional
+
+
+
+        '''
         self.nodes = nodes
         self.connection_type = connection_type
         DessiaObject.__init__(self, name=name)
@@ -244,26 +298,24 @@ class PlanetaryGear(DessiaObject):
     def __init__(self, planetaries: List[Planetary], planets: List[Planet],
                  planet_carrier: PlanetCarrier, connections: List[Connection], name: str = ''):
         '''
-        Define a PlanetaryGears
+        Define a Planetary Gears
 
         Parameters
         ----------
-        name : String
-            DESCRIPTION.
-        planetaries : TYPE
-            DESCRIPTION.
-        planets : TYPE
-            DESCRIPTION.
-        planet_carrier : TYPE
-            DESCRIPTION.
-        connections : TYPE
-            DESCRIPTION.
+        planetaries : List[Planetary]
+            The planetaries of the planetary gear
+        planets : List[Planet]
+            The planets of the planetary gear
+        planet_carrier : PlanetCarrier
+            The planet_carrer of the planetary gear
+        connections : List[Connection]
+            list of the connection bettween element ( gearing and Double)
+        name : str, optional
 
-        Returns
-        -------
-        None.
+
 
         '''
+
 
         self.planetaries = planetaries
         self.planets = planets
@@ -381,15 +433,17 @@ class PlanetaryGear(DessiaObject):
 
         return graph_planetary_gear
 
-    def plot(self):
+    # def plot_graph(self):
+ 
 
-        graph_planetary_gears = self.graph()
-        plt.figure()
-        nx.draw_kamada_kawai(graph_planetary_gears, with_labels=True)
+       
+    #     graph_planetary_gears = self.graph()
+    #     plt.figure()
+    #     nx.draw_kamada_kawai(graph_planetary_gears, with_labels=True)
 
 
 
-    def plot_cinematic_graph_gear(self, coordinate, lenght, diameter,
+    def plot_kinematic_graph_gear(self, coordinate, lenght, diameter,
                                   diameter_pivot, lenght_pivot, color):
 
         list_color = ['mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k',
@@ -411,7 +465,7 @@ class PlanetaryGear(DessiaObject):
 
         plt.plot(x, y, list_color[color])
 
-    def plot_cinematic_graph_double(self, coordinate, diameter, lenght, color):
+    def plot_kinematic_graph_double(self, coordinate, diameter, lenght, color):
 
         list_color = ['mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k',
                       'mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k']
@@ -426,7 +480,7 @@ class PlanetaryGear(DessiaObject):
 
         plt.plot(x, y, list_color[color])
 
-    def plot_cinematic_graph_planet_carrier(self, coordinates, planet_carrier_x, planet_carrier_y):
+    def plot_kinematic_graph_planet_carrier(self, coordinates, planet_carrier_x, planet_carrier_y):
 
         coordinate_y_min = 0
         coordinate_y_max = 0
@@ -456,7 +510,7 @@ class PlanetaryGear(DessiaObject):
 
         return coordinate_planet_carrier
 
-    def plot_cinematic_graph_ring(self, coordinate, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color):
+    def plot_kinematic_graph_ring(self, coordinate, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color):
 
         list_color = ['steelblue', 'orchid', 'darkorange', 'palegreen', 'steelblue', 'orchid', 'darkorange', 'palegreen',
                       'steelblue', 'orchid', 'darkorange', 'palegreen', 'steelblue', 'orchid', 'darkorange', 'palegreen']
@@ -469,8 +523,41 @@ class PlanetaryGear(DessiaObject):
         coordinate[1] -= (abs(coordinate[1]-coordinate_planet_carrier[1]))*2
 
 
-    def plot_cinematic_graph(self, lenght_gear=0.1, diameter_gear=1, lenght_double=2, diameter_pivot=0.2, lenght_pivot=0.5,
+    def plot_kinematic_graph(self, lenght_gear=0.1, diameter_gear=1, lenght_double=2, diameter_pivot=0.2, lenght_pivot=0.5,
                              planet_carrier_x=2, planet_carrier_y=2, diameter_ring_ini=10):
+        '''
+        Plot the kinematic graph of the planetary gear
+
+        Parameters
+        ----------
+        lenght_gear : float, optional
+            The width of  the gears. The default is 0.1.
+            
+        diameter_gear : float, optional
+            The diameter of the gears. The default is 1.
+            
+        lenght_double : float, optional
+            The lenght of the connections betwen 2 double planets. The default is 2.
+            
+        diameter_pivot : float, optional
+            The diameter of the representatives signs of pivot. The default is 0.2.
+            
+        lenght_pivot : float, optional
+             The length of the representatives signs of pivot. The default is 0.5.
+             
+        planet_carrier_x : float, optional
+            The parameter for the position of planet carrer in x. The default is 2.
+            
+        planet_carrier_y : float, optional
+            The parameter for the position of planet carrer in y. The default is 2.
+            
+        diameter_ring_ini : float, optional
+            The diameter of ring.  The default is 10.
+
+        
+
+        '''
+        
 
         graph_path = self.path_planetary_to_planetary()
 
@@ -487,7 +574,7 @@ class PlanetaryGear(DessiaObject):
         coordinate = [0, 0]
         index_coordinate_planet = []
         flag_first_planet = 0
-        self.plot_cinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, 0)
+        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, 0)
         for path in graph_path:
 
 
@@ -542,11 +629,11 @@ class PlanetaryGear(DessiaObject):
 
                         if flag_way_inv_double:
 
-                            self.plot_cinematic_graph_double(coordinate, diameter_pivot, lenght_double/(1+i*0.2), color)
+                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, lenght_double/(1+i*0.2), color)
                             coordinate = [coordinate[0]+lenght_double/(1+i*0.2), coordinate[1]]
 
                         else:
-                            self.plot_cinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
+                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
                             coordinate = [coordinate[0]-lenght_double/(1+i*0.2), coordinate[1]]
                             inverse_relation_double.append(element)
 
@@ -558,12 +645,12 @@ class PlanetaryGear(DessiaObject):
                         if not element in previous_relation_double:
 
                             if previous_relation_double and previous_relation_double[-1] in inverse_relation_double:
-                                self.plot_cinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
+                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
                                 inverse_relation_double.append(element)
                                 coordinate = [coordinate[0]-lenght_double/(1+i*0.2), coordinate[1]]
 
                             else:
-                                self.plot_cinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color)
+                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color)
                                 coordinate = [coordinate[0]+lenght_double/(1+i*0.2), coordinate[1]]
                         else:
 
@@ -614,13 +701,13 @@ class PlanetaryGear(DessiaObject):
                         else:
 
                             index_coordinate_planet.append(element.nodes[0])
-                        self.plot_cinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, color)
+                        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, color)
 
 
                     previous_element = element
 
 
-        coordinate_planet_carrier = self.plot_cinematic_graph_planet_carrier(coordinate_planet, planet_carrier_x, planet_carrier_y)
+        coordinate_planet_carrier = self.plot_kinematic_graph_planet_carrier(coordinate_planet, planet_carrier_x, planet_carrier_y)
         lenght_ring_ini = 5
         for gearing in self.gearings:
 
@@ -637,7 +724,7 @@ class PlanetaryGear(DessiaObject):
 
                     planetary_diameter = ((coordinate_planet[index][1]-diameter_gear/2)-coordinate_planet_carrier[1])*2
 
-                    self.plot_cinematic_graph_gear([coordinate_planet[index][0], coordinate_planet_carrier[1]], lenght_gear,
+                    self.plot_kinematic_graph_gear([coordinate_planet[index][0], coordinate_planet_carrier[1]], lenght_gear,
                                                    planetary_diameter, diameter_pivot, lenght_pivot, color)
 
                 else:
@@ -650,7 +737,7 @@ class PlanetaryGear(DessiaObject):
                     diameter_ring = diameter_ring_ini-(((coordinate_planet[index][0])*10+100)/50)
                     coordinate_ring = [coordinate_planet[index][0], coordinate_planet[index][1]+diameter_gear/2]
 
-                    self.plot_cinematic_graph_ring(coordinate_ring, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color)
+                    self.plot_kinematic_graph_ring(coordinate_ring, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color)
 
 
 
@@ -660,6 +747,21 @@ class PlanetaryGear(DessiaObject):
 
 
     def path_planetary_to_planetary(self, planetaries=[]):
+        '''
+        A function which give all the path betwen the first planetary of the list planetaries (input) and the other
+        The path includes the planets and the connections(Gearing and Doubles)
+
+        Parameters
+        ----------
+        planetaries : List[Planetary], optional
+            The first planetary of the list is the beginning of all the path , the others planetaries of the list are the endings of the paths. 
+            The default is the list of planetaries .
+
+        Returns
+        -------
+        list_path : List[List[Planet,Gearing,Double,Planetary]]
+
+        '''
         if not planetaries:
             planetaries = self.planetaries
         graph_planetary_gears = self.graph()
@@ -678,24 +780,38 @@ class PlanetaryGear(DessiaObject):
 
         return list_path
 
-    def path_planetary_to_planetary_type(self):
-        list_path = self.path_planetary_to_planetary()
-        for i in range(len(list_path)):
+    # def path_planetary_to_planetary_type(self):
+    #     list_path = self.path_planetary_to_planetary()
+    #     for i in range(len(list_path)):
 
-            for j in range(len(list_path[i])):
+    #         for j in range(len(list_path[i])):
 
-                if isinstance(list_path[i][j], Planetary):
+    #             if isinstance(list_path[i][j], Planetary):
 
-                    list_path[i][j] = list_path[i][j].planetary_type
+    #                 list_path[i][j] = list_path[i][j].planetary_type
 
-                else:
+    #             else:
 
-                    list_path[i][j] = str(type(list_path[i][j]))
-        return list_path
+    #                 list_path[i][j] = str(type(list_path[i][j]))
+    #     return list_path
 
 
 
     def reason_abs(self, path):
+        '''
+        A function wich give the reason ( Willis relation) of a planetary gear
+
+        Parameters
+        ----------
+        path : List[Planet,Gearing,Double]
+            The path betwen the two planetaries for which we want to calculate the reason  
+
+        Returns
+        -------
+        reason : float
+  
+
+        '''
         reason = 1
         for i, element in enumerate(path):
 
@@ -708,6 +824,20 @@ class PlanetaryGear(DessiaObject):
         return reason
 
     def reason(self, path):
+        '''
+         A function which give the reason ( Willis relation) of a planetary gear with the (-1)^n ( n = the number of gearing)
+
+        Parameters
+        ----------
+        path : List[Planet,Gearing,Double]
+            The path betwen the two planetaries for which we want to calculate the reason  
+
+        Returns
+        -------
+        reason : float
+            
+
+        '''
         reason = 1
 
         for i, element in enumerate(path):
@@ -724,6 +854,29 @@ class PlanetaryGear(DessiaObject):
         return reason
 
     def speed_range(self, input_1, input_2, list_planetary=[]):
+        '''
+        
+
+        A function which give the real speed_range of 2 planetaries ( or planet_carrier) which allow to fulfill 
+        the condition of input speed of all the other planetaries ( or planet_carrier)
+        ( We need to have speed input into all planetaries and planet_carrer)
+        ----------
+        input_1 : Planetary or PlanetCarrier
+            The first input 
+            
+        input_2 : Planetary or PlanetCarrier
+            The second input
+            
+        list_planetary : List[PLanetary,PlannetCarrer], optional
+           The list of planetary ( or planet_carrier) that we want to check the input speed condition. 
+           The default is all the planetaries and the planet_carrier.
+
+        Returns
+        -------
+        DICTIONARY
+            This is a dictionary where all the planetary and planet_carrier are associated with their speed range
+
+        '''
 
         if list_planetary == []:
             list_planetary = copy.copy(self.planetaries)
@@ -1091,6 +1244,15 @@ class PlanetaryGear(DessiaObject):
         return list_possibilities
 
     def gearing_chain(self):
+        """
+        A function wich return all the gearing chain in the planetary gear.
+        A gearing chain is a list of planetaries and planets which gearing together
+
+        Returns
+        -------
+        list_possibilities : List[List[Planetary,Planet]]
+
+        """
         graph_planetary_gear = self.graph()
         list_possibilities = self.gearing_chain_recursive_function(0, self.planetaries[0], graph_planetary_gear, [], [], 0, 0, [])
 
@@ -1099,6 +1261,24 @@ class PlanetaryGear(DessiaObject):
 
 
     def test_assembly_condition(self, number_planet, planetaries=[]):
+        '''
+        A function which test the assembly condition for the planetary gear
+
+        Parameters
+        ----------
+        number_planet : Int
+            The number of planet which are arround the planetary gear ( exemple: 3,4 or 5) 
+            
+        planetaries : List[Planetary], optional
+            The list of the two planetary which we want to test the assembly condition. 
+            The default is all the planetary of the planetary gear.
+
+        Returns
+        -------
+        valid : Boolean
+ 
+
+        '''
         if not planetaries:
             planetaries = self.planetaries
         valid = True
@@ -1219,6 +1399,23 @@ class PlanetaryGear(DessiaObject):
         return system_matrix, rhs
 
     def speed_solve(self, input_speeds_and_composants):
+        '''
+        A function which give the speed of all the elements(Planetary,Planet,Planet_carrier) of planetary gear 
+        whith 2 input elements and speeds
+
+        Parameters
+        ----------
+        input_speeds_and_composants : Dictionary{Planetary,Planet,Planet_carrier : float}
+            A dictionary where the element input are associated with their speed input
+
+        Returns
+        -------
+        solution : List[float]
+            A list where the first elements are the speeds of the planetaries, then, there are the speeds of the planets, 
+            and to finish the last element is the speed of the planet_carrer
+            We can know the position of an element in the list by using the function matrix position whith the element in input 
+
+        '''
 
         system_matrix, vector_b = self.speed_system_equations()
         n_equations = len(self.relations)
@@ -1344,7 +1541,21 @@ class PlanetaryGear(DessiaObject):
         return system_matrix, rhs, element_association
 
     def torque_solve(self, input_torque_and_composant):
+        '''
+        A function which give the torque of all the elements(Planetary,Planet,Planet_carrier) of planetary gear
+        whith n-2 input elements and torques (whith n= number of planetary + planet carrier )
 
+        Parameters
+        ----------
+        input_torque_and_composant : Dictionary{Planetary,Planet,Planet_carrier : float}
+            A dictionary where the element input are associated with their torque input
+
+        Returns
+        -------
+        torque_element_association : Dictionary{Planetary,Planet,Planet_carrier : float}
+            A dictionary where all the element are associated with their torque calculated
+
+        '''
         system_matrix, vector_b, element_association = self.torque_system_equation()
 
         for composant in input_torque_and_composant:
@@ -1374,6 +1585,19 @@ class PlanetaryGear(DessiaObject):
 class PlanetsStructure(DessiaObject):
 
     def __init__(self, planets: List[Planet], connections: List[Connection], name: str = ''):
+        '''
+        
+
+        Define a PlanetsStructure (A planetary gears without planetaries)
+        ----------
+        planets : List[Planet]
+            The list of all the planets of the PlanetStructure
+        connections : List[Connection]
+            List of the connection bettween Planet( gearing and Double)
+        name : str, optional
+
+
+        '''
         self.planets = planets
         self.connections = connections
         number_planet = 0
@@ -1409,13 +1633,23 @@ class PlanetsStructure(DessiaObject):
 
         return graph_planetary_gear
 
-    def plot(self):
+    # def plot(self):
 
-        graph_planetary_gears = self.graph()
-        plt.figure()
-        nx.draw_kamada_kawai(graph_planetary_gears, with_labels=True)
+    #     graph_planetary_gears = self.graph()
+    #     plt.figure()
+    #     nx.draw_kamada_kawai(graph_planetary_gears, with_labels=True)
 
     def path_planet_to_planet(self):
+        '''
+        A function which give all the path betwen the first planet of the list planets(input of PlanetStructure) and the other
+        The path includes the planets and the connections(Gearing and Doubles)
+
+        Returns
+        -------
+        list_path : List[List[Planet,Gearing,Double]]
+ 
+
+        '''
         graph_planetary_gears = self.graph()
         list_path = []
 
@@ -1490,13 +1724,23 @@ class PlanetsStructure(DessiaObject):
         return list_possibilities
 
     def gearing_chain(self):
+        '''
+        A function wich return all the gearing chain in the planetary gear.
+        A gearing chain is a list of planets which gearing together
+
+        Returns
+        -------
+        list_possibilities : List[Planet]
+ 
+
+        '''
         graph_planetary_gear = self.graph()
         list_possibilities = self.gearing_chain_recursive_function(0, self.planets[0], graph_planetary_gear, [], [], 0)
         return list_possibilities
 
 
 
-    def plot_cinematic_graph_gear(self, coordinate, lenght, diameter, diameter_pivot, lenght_pivot, color):
+    def plot_kinematic_graph_gear(self, coordinate, lenght, diameter, diameter_pivot, lenght_pivot, color):
         list_color = ['mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k',
                       'mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k']
 
@@ -1516,7 +1760,7 @@ class PlanetsStructure(DessiaObject):
 
         plt.plot(x, y, list_color[color])
 
-    def plot_cinematic_graph_double(self, coordinate, diameter, lenght, color):
+    def plot_kinematic_graph_double(self, coordinate, diameter, lenght, color):
         list_color = ['mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k',
                       'mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k']
 
@@ -1530,7 +1774,7 @@ class PlanetsStructure(DessiaObject):
 
         plt.plot(x, y, list_color[color])
 
-    def plot_cinematic_graph_planet_carrier(self, coordinates, planet_carrier_x, planet_carrier_y):
+    def plot_kinematic_graph_planet_carrier(self, coordinates, planet_carrier_x, planet_carrier_y):
         coordinate_y_min = 0
         coordinate_y_max = 0
         coordinate_x_max = 0
@@ -1557,8 +1801,38 @@ class PlanetsStructure(DessiaObject):
 
 
 
-    def plot_cinematic_graph(self, lenght_gear=0.1, diameter_gear=1, lenght_double=2, diameter_pivot=0.2,
+    def plot_kinematic_graph(self, lenght_gear=0.1, diameter_gear=1, lenght_double=2, diameter_pivot=0.2,
                              lenght_pivot=0.5, planet_carrier_x=2, planet_carrier_y=2):
+        '''
+        
+
+        Plot the kinematic graph of the planetary gear
+
+        Parameters
+        ----------
+        lenght_gear : float, optional
+            The width of  the gears. The default is 0.1.
+            
+        diameter_gear : float, optional
+            The diameter of the gears. The default is 1.
+            
+        lenght_double : float, optional
+            The lenght of the connections betwen 2 double planets. The default is 2.
+            
+        diameter_pivot : float, optional
+            The diameter of the representatives signs of pivot. The default is 0.2.
+            
+        lenght_pivot : float, optional
+             The length of the representatives signs of pivot. The default is 0.5.
+             
+        planet_carrier_x : float, optional
+            The parameter for the position of planet carrer in x. The default is 2.
+            
+        planet_carrier_y : float, optional
+            The parameter for the position of planet carrer in y. The default is 2.
+
+
+        '''
 
         graph_path = self.path_planet_to_planet()
 
@@ -1574,7 +1848,7 @@ class PlanetsStructure(DessiaObject):
         coordinate_planet = [[0, 0]]
         coordinate = [0, 0]
 
-        self.plot_cinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, 0)
+        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, 0)
         for path in graph_path:
 
 
@@ -1619,12 +1893,12 @@ class PlanetsStructure(DessiaObject):
 
                         if flag_way_inv_double:
 
-                            self.plot_cinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color)
+                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color)
                             coordinate = [coordinate[0]+lenght_double/(1+i*0.2), coordinate[1]]
 
                         else:
 
-                            self.plot_cinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
+                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
                             coordinate = [coordinate[0]-lenght_double/(1+i*0.2), coordinate[1]]
                             inverse_relation_double.append(element)
 
@@ -1637,13 +1911,13 @@ class PlanetsStructure(DessiaObject):
 
                             if previous_relation_double and previous_relation_double[-1] in inverse_relation_double:
 
-                                self.plot_cinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
+                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
                                 inverse_relation_double.append(element)
                                 coordinate = [coordinate[0]-lenght_double/(1+i*0.2), coordinate[1]]
 
 
                             else:
-                                self.plot_cinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color)
+                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color)
                                 coordinate = [coordinate[0]+lenght_double/(1+i*0.2), coordinate[1]]
                         else:
 
@@ -1705,12 +1979,12 @@ class PlanetsStructure(DessiaObject):
 
                     if  not coordinate in coordinate_planet:
                         coordinate_planet.append(coordinate)
-                        self.plot_cinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, color)
+                        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, color)
 
                     previous_element = element
 
 
-        self.plot_cinematic_graph_planet_carrier(coordinate_planet, planet_carrier_x, planet_carrier_y)
+        self.plot_kinematic_graph_planet_carrier(coordinate_planet, planet_carrier_x, planet_carrier_y)
 
 
 
@@ -1721,6 +1995,33 @@ class GeneratorPlanetStructure(DessiaObject):
 
     def __init__(self, number_max_planet: int, number_junction: int, number_max_junction_by_planet: int, min_planet_branch: int,
                  name: str = ''):
+        '''
+        A geanerator of planet_structure
+
+        Parameters
+        ----------
+        number_max_planet : int
+            The number of planet in the planet structure
+            
+        number_junction : int
+            The number of junction in the planet structure 
+            (a junction is for the example when a planet is connected to 3 element (Planetary or Planets))
+            (when a planet is connected to 4 elements we consider that is equal to 2 junctions)
+            
+        number_max_junction_by_planet : int
+            The maximum of junction that we can have on 1 planet.
+            
+        min_planet_branch : int
+            The minimum of planet that we want in a branch.
+            (a branch begining with of planetary or a junction and ending with a planetary or a junction)
+            (when there are a junction, 1 branch ending and 2 begining)
+            
+        name : str, optional
+ 
+
+        '''
+        
+        
         self.number_max_planet = number_max_planet
         self.number_junction = number_junction
         self.number_max_junction_by_planet = number_max_junction_by_planet
@@ -2338,7 +2639,7 @@ class GeneratorPlanetStructure(DessiaObject):
             if len(node) == 3:
 
                 planet_structure = list_possibilities[node[2]]
-                # planet_structure.plot_cinematic_graph()
+                # planet_structure.plot_kinematic_graph()
                 if self.solution_sort(planet_structure, list_solution):
                     list_solution.append(planet_structure)
 
@@ -2353,8 +2654,20 @@ class GeneratorPlanetaryGearsArchitecture(DessiaObject):
     _standalone_in_db = True
 
     _generic_eq = True
-    def __init__(self, planet_structures: PlanetsStructure, input_speeds: List[List[float]], name: str = ''):
+    def __init__(self, planet_structures: List[PlanetsStructure], input_speeds: List[List[float]], name: str = ''):
+        '''
+        A generator of architectures of planetary gears
 
+        Parameters
+        ----------
+        planet_structures : List[PlanetsStructure]
+            The list of Planets structure with which we want to generate planetary gears architrectures
+        input_speeds : List[List[float]]
+            The list of speed range input
+        name : str, optional
+         
+
+        '''
 
         self.planet_structures = planet_structures
         self.number_input = len(input_speeds)
@@ -2769,7 +3082,36 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
     _generic_eq = True
 
-    def __init__(self, planetary_gear: PlanetaryGear, input_speeds: List[List[float]], diameter_cylinder: float, lenght_cylinder: float, Z_range_sun: List[int], Z_range_ring: List[int], number_planet: int, name: str = ''):
+    def __init__(self, planetary_gear: PlanetaryGear, input_speeds: List[List[float]], diameter_cylinder: float, 
+                 lenght_cylinder: float, Z_range_sun: List[int], Z_range_ring: List[int], number_planet: int, name: str = ''):
+        '''
+        A generator of all the number of tooth in a planetary gear
+
+        Parameters
+        ----------
+        planetary_gear : PlanetaryGear
+            the planetary gears that we want to generate all the number of tooth possible 
+            
+        input_speeds : List[List[float]]
+            The list of speed range input
+            
+        diameter_cylinder : float
+            DESCRIPTION.
+        lenght_cylinder : float
+            DESCRIPTION.
+            
+        Z_range_sun : List[int]
+            The range of number tooth that can take a normal gear
+        Z_range_ring : List[int]
+            The range of number tooth that can take a ring 
+            
+        number_planet : int
+            The number of planet which are arround the planetary gear ( exemple: 3,4 or 5) 
+        name : str, optional
+
+
+        '''
+        
         self.planetary_gear = planetary_gear
         self.input_speeds = input_speeds
         self.diameter = diameter_cylinder
