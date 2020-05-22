@@ -7,16 +7,17 @@ Created on Thu May 14 16:31:51 2020
 """
 import mechanical_components.planetary_gears as pg
 
-sun=pg.Planetary('sun',36,'Sun')
-sun_2=pg.Planetary('sun_2',60,'Sun')
-ring= pg.Planetary('ring',84,'Ring')
-planet_carrier= pg.PlanetCarrier('planet_carrier')
-planet_1=pg.Planet('planet_1','Simple',12)
-planet_2=pg.Planet('planet_2','Double',12)
-planet_3=pg.Planet('planet_3','Double',16)
-connexion=[sun,planet_1,'GE'],[planet_1,planet_2,'GE'],[planet_2,ring,'GE'],[planet_2,planet_3,'D'],[planet_3,sun_2,'GI']
+sun = pg.Planetary(36, 'Sun', 'sun')
+sun_2 = pg.Planetary(60, 'Sun', 'sun_2')
+ring = pg.Planetary(84, 'Ring', 'ring')
+planet_carrier = pg.PlanetCarrier('planet_carrier')
+planet_1 = pg.Planet('Simple', 12, 'planet_1')
+planet_2 = pg.Planet('Double', 12, 'planet_2')
+planet_3 = pg.Planet('Double', 16, 'planet_3')
+connexion = [pg.Connection([sun, planet_1], 'GE'), pg.Connection([planet_1, planet_2], 'GE'), pg.Connection([planet_2, ring], 'GE'),
+             pg.Connection([planet_2, planet_3], 'D'), pg.Connection([planet_3, sun_2], 'GI')]
 
-planetary_gears_1= pg.PlanetaryGear('pl_1', [sun,ring,sun_2], [planet_1,planet_2,planet_3], planet_carrier,connexion)
+planetary_gears_1 = pg.PlanetaryGear([sun, ring, sun_2], [planet_1, planet_2, planet_3], planet_carrier, connexion, 'pl_1')
 
 
 

@@ -24,7 +24,7 @@ from typing import TypeVar, List
 class Gears(DessiaObject):
 
 
-    def __init__(self, Z: int,name: str =''):
+    def __init__(self, Z: int, name: str = ''):
         self.Z = Z
 
         DessiaObject.__init__(self, name=name)
@@ -71,7 +71,7 @@ class Gears(DessiaObject):
 
 class Planetary(Gears):
 
-    def __init__(self, Z: int, planetary_type: str,name: str=''):
+    def __init__(self, Z: int, planetary_type: str, name: str = ''):
 
 
 
@@ -91,7 +91,7 @@ class Planetary(Gears):
 
 class Planet(Gears):
 
-    def __init__(self, planet_type: str, Z: int,name: str=''):
+    def __init__(self, planet_type: str, Z: int, name: str = ''):
 
         self.planet_type = planet_type
 
@@ -104,8 +104,8 @@ class Planet(Gears):
 class PlanetCarrier(DessiaObject):
 
 
-    def __init__(self, name: str=''):
-        
+    def __init__(self, name: str = ''):
+
         self.speed = 0
         self.speed_input = [0, 0]
         DessiaObject.__init__(self, name=name)
@@ -115,7 +115,7 @@ class PlanetCarrier(DessiaObject):
 class Gearing(DessiaObject):
 
 
-    def __init__(self , nodes: List[Gears],name:str = ''):
+    def __init__(self, nodes: List[Gears], name: str = ''):
 
         self.nodes = nodes
         DessiaObject.__init__(self, name=name)
@@ -123,7 +123,7 @@ class Gearing(DessiaObject):
 
 class GearingPlanetary(Gearing):
 
-    def __init__(self, nodes: List[Gears],name: str = ''):
+    def __init__(self, nodes: List[Gears], name: str = ''):
 
         self.type = 'GI'
         Gearing.__init__(self, nodes, name)
@@ -151,7 +151,7 @@ class GearingPlanetary(Gearing):
 
 class GearingPlanet(Gearing):
 
-        def __init__(self,nodes: List[Gears], name: str=''):
+        def __init__(self, nodes: List[Gears], name: str = ''):
 
             self.type = 'GI'
             Gearing.__init__(self, nodes, name)
@@ -175,7 +175,7 @@ class GearingPlanet(Gearing):
 class Pivot(DessiaObject):
 
     A = TypeVar('A', Planetary, PlanetCarrier)
-    def __init__(self, nodes: A,name: str = ''):
+    def __init__(self, nodes: A, name: str = ''):
         self.nodes = nodes
 
         DessiaObject.__init__(self, name=name)
@@ -186,7 +186,7 @@ class Pivot(DessiaObject):
 
 class Fixed(DessiaObject):
 
-    def __init__(self, nodes,name:str=''):
+    def __init__(self, nodes, name: str = ''):
         self.nodes = nodes
 
         DessiaObject.__init__(self, name=name)
@@ -197,7 +197,7 @@ class Fixed(DessiaObject):
 
 class Double(DessiaObject):
 
-    def __init__(self, nodes: List[Planet],name: str = ''):
+    def __init__(self, nodes: List[Planet], name: str = ''):
 
         self.nodes = nodes
         DessiaObject.__init__(self, name=name)
@@ -215,7 +215,7 @@ class Double(DessiaObject):
 
 class ImposeSpeed(DessiaObject):
     A = TypeVar('A', Gears, PlanetCarrier)
-    def __init__(self, node: A, input_speed: float,name: str=''):
+    def __init__(self, node: A, input_speed: float, name: str = ''):
         self.input_speed = input_speed
         self.node = node
 
@@ -227,13 +227,22 @@ class ImposeSpeed(DessiaObject):
         return matrix, rhs
 
 
-class PlanetaryGear(DessiaObject):
-    _standalone_in_db = True
 
-    _generic_eq = True
-    A = TypeVar('A', Gears, str)
+
+class Connection(DessiaObject):
+
+    def __init__(self, nodes: List[Gears], connection_type: str, name: str = ''):
+        self.nodes = nodes
+        self.connection_type = connection_type
+        DessiaObject.__init__(self, name=name)
+
+class PlanetaryGear(DessiaObject):
+    # _standalone_in_db = True
+
+    # _generic_eq = True
+
     def __init__(self, planetaries: List[Planetary], planets: List[Planet],
-                 planet_carrier: PlanetCarrier, connexions: List[List[A]],name: str = ''):
+                 planet_carrier: PlanetCarrier, connections: List[Connection], name: str = ''):
         '''
         Define a PlanetaryGears
 
@@ -247,7 +256,7 @@ class PlanetaryGear(DessiaObject):
             DESCRIPTION.
         planet_carrier : TYPE
             DESCRIPTION.
-        connexions : TYPE
+        connections : TYPE
             DESCRIPTION.
 
         Returns
@@ -264,47 +273,48 @@ class PlanetaryGear(DessiaObject):
         for element in self.elements:
             self.elements_name.append(element.name)
 
-        self.connexions = connexions
+        self.connections = connections
         self.gearings = []
         self.doubles = []
         DessiaObject.__init__(self, name=name)
-        for i, connexion in  enumerate(connexions):
 
-          ## Check to be sure that all the object in connexion are in planetaries,
+        for i, connection in  enumerate(connections):
+
+          ## Check to be sure that all the object in connection are in planetaries,
           ## planets, or planet_carrier ##
-          if not connexion[1] in self.elements:
+          if not connection.nodes[1] in self.elements:
 
-                if isinstance(connexion[1], Planetary):
+                if isinstance(connection.nodes[1], Planetary):
 
-                    self.elements[self.elements_name.index(connexion[1].name)].planetary_type = connexion[1].planetary_type
-                    self.elements[self.elements_name.index(connexion[1].name)].p = connexion[1].p
+                    self.elements[self.elements_name.index(connection.nodes[1].name)].planetary_type = connection.nodes[1].planetary_type
+                    self.elements[self.elements_name.index(connection.nodes[1].name)].p = connection.nodes[1].p
 
-                connexion[1] = self.elements[self.elements_name.index(connexion[1].name)]
+                connection.nodes[1] = self.elements[self.elements_name.index(connection.nodes[1].name)]
 
-          if not connexion[0] in self.elements:
-                if isinstance(connexion[0], Planetary):
-                    self.elements[self.elements_name.index(connexion[0].name)].planetary_type = connexion[0].planetary_type
-                    self.elements[self.elements_name.index(connexion[0].name)].p = connexion[0].p
-                connexion[0] = self.elements[self.elements_name.index(connexion[0].name)]
-
-
+          if not connection.nodes[0] in self.elements:
+                if isinstance(connection.nodes[0], Planetary):
+                    self.elements[self.elements_name.index(connection.nodes[0].name)].planetary_type = connection.nodes[0].planetary_type
+                    self.elements[self.elements_name.index(connection.nodes[0].name)].p = connection.nodes[0].p
+                connection.nodes[0] = self.elements[self.elements_name.index(connection.nodes[0].name)]
 
 
-          if connexion[2] != 'D':
 
-              if isinstance(connexion[0], Planet) and isinstance(connexion[1], Planet):
-                self.gearings.append(GearingPlanet([connexion[0], connexion[1]],'Gearing'+str(i)))
+
+          if connection.connection_type != 'D':
+
+              if isinstance(connection.nodes[0], Planet) and isinstance(connection.nodes[1], Planet):
+                self.gearings.append(GearingPlanet([connection.nodes[0], connection.nodes[1]], 'Gearing'+str(i)))
 
 
               else:
-                self.gearings.append(GearingPlanetary([connexion[0], connexion[1]],'Gearing'+str(i),))
+                self.gearings.append(GearingPlanetary([connection.nodes[0], connection.nodes[1]], 'Gearing'+str(i),))
 
 
-              self.gearings[-1].type = connexion[2]
+              self.gearings[-1].type = connection.connection_type
 
 
           else:
-             self.doubles.append(Double([connexion[0], connexion[1]],'Double'+str(i)))
+             self.doubles.append(Double([connection.nodes[0], connection.nodes[1]], 'Double'+str(i)))
 
         self.relations = self.gearings + self.doubles
 
@@ -327,11 +337,10 @@ class PlanetaryGear(DessiaObject):
 
             else:
                 number_ring += 1
-        connexions_name = copy.deepcopy(self.connexions)
-        for i in range(len(connexions_name)):
-
-            connexions_name[i][0] = connexions_name[i][0].name
-            connexions_name[i][1] = connexions_name[i][1].name
+        connections_name = []
+        for i in range(len(self.connections)):
+            connections_name.append([self.connections[i].nodes[0].name, self.connections[i].nodes[1].name,
+                                     self.connections[i].connection_type])
 
         return 'Name:' + self.name + '\n\n' + \
                'Planetary Number:' + str(len(self.planetaries)) + '\n' + \
@@ -341,7 +350,7 @@ class PlanetaryGear(DessiaObject):
                'Planets_Number:' + str(len(self.planets)) + '\n' + \
                'Planets_Double_Number:' + str(len(self.doubles)) + '\n' + \
                'Z_Planets:' + str(Z_planets) + '\n\n' + \
-                str(connexions_name) + '\n\n\n'
+                str(connections_name) + '\n\n\n'
 
 
     def matrix_position(self, element):
@@ -1363,24 +1372,24 @@ class PlanetaryGear(DessiaObject):
 
 
 class PlanetsStructure(DessiaObject):
-    A = TypeVar('A', int, str)
-    def __init__(self, planets: List[Planet], connexions,name:str=''):
+
+    def __init__(self, planets: List[Planet], connections: List[Connection], name: str = ''):
         self.planets = planets
-        self.connexions = connexions
+        self.connections = connections
         number_planet = 0
         self.gearings = []
         self.doubles = []
         DessiaObject.__init__(self, name=name)
 
 
-        for i, connexion in  enumerate(self.connexions):
+        for i, connection in  enumerate(self.connections):
 
-          if connexion[2] != 'D':
+          if connection.connection_type != 'D':
 
-             self.gearings.append(GearingPlanet([connexion[0], connexion[1]],'Gearing'+str(i)))
+             self.gearings.append(GearingPlanet([connection.nodes[0], connection.nodes[1]], 'Gearing'+str(i)))
 
           else:
-             self.doubles.append(Double([connexion[0], connexion[1]],'Double'+str(i)))
+             self.doubles.append(Double([connection.nodes[0], connection.nodes[1]], 'Double'+str(i)))
 
         self.relations = self.gearings + self.doubles
 
@@ -1705,17 +1714,18 @@ class PlanetsStructure(DessiaObject):
 
 
 
-class OptimizerPlanetStructure(DessiaObject):
+class GeneratorPlanetStructure(DessiaObject):
     _standalone_in_db = True
 
     _generic_eq = True
 
-    def __init__(self, number_max_planet: int, number_junction: int, number_max_junction_by_planet: int, min_planet_branch: int, name:str = ''):
+    def __init__(self, number_max_planet: int, number_junction: int, number_max_junction_by_planet: int, min_planet_branch: int,
+                 name: str = ''):
         self.number_max_planet = number_max_planet
         self.number_junction = number_junction
         self.number_max_junction_by_planet = number_max_junction_by_planet
         self.min_planet_branch = min_planet_branch
-        DessiaObject.__init__(self, name= name)
+        DessiaObject.__init__(self, name=name)
 
     ## Recursive Function which give all the possibilities  of planet_type in a branch for a Planet number fixed ##
     ## Exemple Input:(0,[],[],4) -> Output:[['Simple', 'Double', 'Double', 'Simple'], ['Simple', 'Double', 'Double', 'Double'], ['Simple', 'Simple', 'Double', 'Double'],
@@ -1752,7 +1762,7 @@ class OptimizerPlanetStructure(DessiaObject):
     ## Exemple Input:([],[0,0,0,0],2,2,[2,2,2,2]) -> Output:[[2, 0, 0, 0], [1, 1, 0, 0], [1, 0, 1, 0], [1, 0, 0, 1], [0, 2, 0, 0],
     ## [0, 1, 1, 0], [0, 1, 0, 1], [0, 0, 2, 0], [0, 0, 1, 1], [0, 0, 0, 2]] ##
     def junction_possibilities(self, list_possibilities, possibilitie, number_junction_recursive_fonction,
-                                    sum_number_junction_max_by_planet):
+                               sum_number_junction_max_by_planet):
 
         number_junction_recursive_fonction_2 = copy.copy(number_junction_recursive_fonction)
         possibilitie_2 = copy.copy(possibilitie)
@@ -1782,7 +1792,7 @@ class OptimizerPlanetStructure(DessiaObject):
                 possibilitie_2[i] += 1
 
                 self.junction_possibilities(list_possibilities, possibilitie_2, number_junction_recursive_fonction_2+1,
-                                                 sum_number_junction_max_by_planet_2)
+                                            sum_number_junction_max_by_planet_2)
 
             else:
                 flag = 0
@@ -1790,13 +1800,13 @@ class OptimizerPlanetStructure(DessiaObject):
         return list_possibilities
 
 
-    ## Recursive Function which give all the possibilities for a limited number of connexion( number_max_connextion) in a list_connexion ##
+    ## Recursive Function which give all the possibilities for a limited number of connection( number_max_connextion) in a list_connection ##
     ## Exemple Input:(0 ,[], [[0, 0], [0, 0]] ,[[2, 4], [2, 5], [3, 6]],2,2) -> Output:[[[2, 4], [2, 5]], [[2, 4], [3, 6]], [[2, 5], [3, 6]]] ##
-    def connexion_branch_possibilities_step_1(self, n, list_possibilities, possibilitie,
-                                                   list_connexion_branch, number_max_connexion):
+    def connection_branch_possibilities_step_1(self, n, list_possibilities, possibilitie,
+                                               list_connection_branch, number_max_connection):
 
         possibilitie_2 = copy.copy(possibilitie)
-        if  n == number_max_connexion:
+        if  n == number_max_connection:
 
             if not possibilitie in list_possibilities:
                 flag_similaritie = 0
@@ -1804,12 +1814,12 @@ class OptimizerPlanetStructure(DessiaObject):
                 for possibilitie_3 in list_possibilities:
                     similaritie = 0
 
-                    for connexion in possibilitie_2:
+                    for connection in possibilitie_2:
 
-                        if connexion in possibilitie_3:
+                        if connection in possibilitie_3:
                             similaritie += 1
 
-                    if similaritie == number_max_connexion:
+                    if similaritie == number_max_connection:
                         flag_similaritie = 1
                         break
 
@@ -1819,24 +1829,24 @@ class OptimizerPlanetStructure(DessiaObject):
 
         else:
             n += 1
-            for element_1 in list_connexion_branch:
+            for element_1 in list_connection_branch:
 
-                number_connexion_by_branch = 0
+                number_connection_by_branch = 0
                 flag_branch = 1
 
                 for element_2 in possibilitie_2:
 
                     if element_2[0] == element_1[0]:
-                        number_connexion_by_branch += 1
+                        number_connection_by_branch += 1
 
                     if element_2[1] == element_1[1]:
                         flag_branch = 0
 
-                if number_connexion_by_branch <= self.number_max_junction_by_planet and flag_branch:
+                if number_connection_by_branch <= self.number_max_junction_by_planet and flag_branch:
                     possibilitie_2[n-1] = element_1
 
-                    self.connexion_branch_possibilities_step_1(n, list_possibilities, possibilitie_2,
-                                                                    list_connexion_branch, number_max_connexion)
+                    self.connection_branch_possibilities_step_1(n, list_possibilities, possibilitie_2,
+                                                                list_connection_branch, number_max_connection)
                     possibilitie_2[n-1] = possibilitie[n-1]
         return list_possibilities
 
@@ -1848,11 +1858,11 @@ class OptimizerPlanetStructure(DessiaObject):
 
 
 
-    ## Recursive Function which give all the possibilities  of connexion  for a number_junction fixed and a number branch fixed ##
+    ## Recursive Function which give all the possibilities  of connection  for a number_junction fixed and a number branch fixed ##
     ## Exemple Input:(0 ,[0,0],[],[],[2,3,4,5,6],[1],[2,2],2) -> Output:[[[[1, 2], [1, 3]], [[2, 4], [2, 5]]], [[[1, 2], [1, 3]], [[2, 4], [3, 5]]], [[[1, 2], [1, 3]], [[2, 5], [3, 4]]], [[[1, 2], [1, 3]], [[3, 4], [3, 5]]]] ##
-    def connexion_branch_possibilities_step_2(self, n, possibilitie, list_possibilities,
-                                                   list_previous_branch, remaning_branch, previous_branch,
-                                                   number_junction_branch):
+    def connection_branch_possibilities_step_2(self, n, possibilitie, list_possibilities,
+                                               list_previous_branch, remaning_branch, previous_branch,
+                                               number_junction_branch):
 
         possibilitie_2 = copy.copy(possibilitie)
         remaning_branch_2 = copy.copy(remaning_branch)
@@ -1863,31 +1873,31 @@ class OptimizerPlanetStructure(DessiaObject):
             list_previous_branch.append(previous_branch_2)
             return None
 
-        number_connexion = number_junction_branch[n]
+        number_connection = number_junction_branch[n]
         n += 1
 
-        list_possibilities_connexion = []
+        list_possibilities_connection = []
         for element in previous_branch_2:
-            for j in range(number_connexion):
-                list_possibilities_connexion.append([element, remaning_branch_2[j]])
+            for j in range(number_connection):
+                list_possibilities_connection.append([element, remaning_branch_2[j]])
 
-        list_possibilities_connexion_2 = []
+        list_possibilities_connection_2 = []
         possibilitie_3 = []
 
-        for i in range(number_connexion):
+        for i in range(number_connection):
 
             possibilitie_3.append([0, 0])
 
-        self.connexion_branch_possibilities_step_1(0, list_possibilities_connexion_2, possibilitie_3,
-                                                        list_possibilities_connexion, number_connexion)
+        self.connection_branch_possibilities_step_1(0, list_possibilities_connection_2, possibilitie_3,
+                                                    list_possibilities_connection, number_connection)
 
 
 
-        for element_1 in list_possibilities_connexion_2:
+        for element_1 in list_possibilities_connection_2:
             remaning_branch_3 = copy.copy(remaning_branch_2)
             previous_branch_3 = copy.copy(previous_branch_2)
 
-            for i in range(number_connexion):
+            for i in range(number_connection):
                 previous_branch_3.append(remaning_branch_2[i])
                 remaning_branch_3.remove(remaning_branch_2[i])
 
@@ -1898,8 +1908,8 @@ class OptimizerPlanetStructure(DessiaObject):
                 if element_2[0] in previous_branch_3:
                     previous_branch_3.remove(element_2[0])
 
-            self.connexion_branch_possibilities_step_2(n, possibilitie_2, list_possibilities, list_previous_branch,
-                                                            remaning_branch_3, previous_branch_3, number_junction_branch)
+            self.connection_branch_possibilities_step_2(n, possibilitie_2, list_possibilities, list_previous_branch,
+                                                        remaning_branch_3, previous_branch_3, number_junction_branch)
 
         return list_possibilities
 
@@ -1907,8 +1917,8 @@ class OptimizerPlanetStructure(DessiaObject):
     ## Recursive Function which give all the possibilities to distribute a number planet fixed in a number_branch fixed  ##
     ## Exemple Input:([0,0,0],[],6,0,3,0,1) -> Output:[[1, 1, 4], [1, 2, 3], [1, 3, 2], [1, 4, 1], [2, 1, 3], [2, 2, 2], [2, 3, 1], [3, 1, 2], [3, 2, 1], [4, 1, 1]] ##
     def planets_by_branch_possibilities_step_1(self, possibilities, list_possibilities,
-                                                    number_planet, number_branch, number_branch_max,
-                                                    number_other_planet):
+                                               number_planet, number_branch, number_branch_max,
+                                               number_other_planet):
 
 
         possibilities_2 = copy.copy(possibilities)
@@ -1927,7 +1937,7 @@ class OptimizerPlanetStructure(DessiaObject):
 
             possibilities_2[number_branch-1] = i
             self.planets_by_branch_possibilities_step_1(possibilities_2, list_possibilities,
-                                                             number_planet, number_branch, number_branch_max, number_other_planet+i)
+                                                        number_planet, number_branch, number_branch_max, number_other_planet+i)
 
 
 
@@ -1952,8 +1962,8 @@ class OptimizerPlanetStructure(DessiaObject):
                 number_planet_branch = 0
                 list_number_junctions.append(junction[i]+1)
 
-        list_connexion = []
-        connexion = []
+        list_connection = []
+        connection = []
         remaning_branch = []
         previous_branch = [1]
         list_number_planet = [0]
@@ -1963,29 +1973,29 @@ class OptimizerPlanetStructure(DessiaObject):
             list_number_planet.append(0)
 
         for i in range(len(list_number_junctions)):
-            connexion.append(0)
+            connection.append(0)
 
         list_previous_branch = []
 
-        self.connexion_branch_possibilities_step_2(0, connexion, list_connexion, list_previous_branch, remaning_branch,
-                                                        previous_branch, list_number_junctions)
+        self.connection_branch_possibilities_step_2(0, connection, list_connection, list_previous_branch, remaning_branch,
+                                                    previous_branch, list_number_junctions)
 
         list_architecture = []
-        for i, connexion_2 in enumerate(list_connexion):
+        for i, connection_2 in enumerate(list_connection):
 
             number_planet_know = 0
             previous_branch_final = list_previous_branch[i]
-            previous_connexion_by_branch = []
+            previous_connection_by_branch = []
 
-            for i, connexion_by_branch in enumerate(connexion_2):
+            for i, connection_by_branch in enumerate(connection_2):
 
-                for element in connexion_by_branch:
+                for element in connection_by_branch:
 
-                    if not element[0] in previous_connexion_by_branch:
+                    if not element[0] in previous_connection_by_branch:
 
                         list_number_planet[element[0]-1] = list_number_planet_branch[i]
                         number_planet_know += list_number_planet_branch[i]
-                        previous_connexion_by_branch.append(element[0])
+                        previous_connection_by_branch.append(element[0])
 
 
 
@@ -1998,7 +2008,7 @@ class OptimizerPlanetStructure(DessiaObject):
             list_planet_by_branch = []
 
             self.planets_by_branch_possibilities_step_1(possibilitie, list_planet_by_branch, number_planet_unknow, 0,
-                                                             len(previous_branch_final), 0)
+                                                        len(previous_branch_final), 0)
 
             for planet_by_branch in list_planet_by_branch:
 
@@ -2006,7 +2016,7 @@ class OptimizerPlanetStructure(DessiaObject):
 
                     list_number_planet[branch-1] = planet_by_branch[i]
 
-                list_architecture.append([copy.copy(list_number_planet), connexion_2])
+                list_architecture.append([copy.copy(list_number_planet), connection_2])
 
         return list_architecture, number_branch
 
@@ -2015,33 +2025,33 @@ class OptimizerPlanetStructure(DessiaObject):
     ##  Recursive Function which give all the possibilities of architecure (branch and planet_type) for a possibility junction  ##
     ## Exemple Input:(1,5,[[[2, 1, 1, 1, 2], [[[1, 2], [1, 3]], [[2, 4], [2, 5]]]],[0,0,0,0,0],[],[],[]]) -> Output: list of PlanetsStructure objet ##
     def architecture_planet_possibilities(self, branch, branch_maximum, architecture, possibilities,
-                                               list_possibilities, possibilities_connexion, list_possibilities_connexion):
+                                          list_possibilities, possibilities_connection, list_possibilities_connection):
 
 
 
-        possibilities_connexion_2 = copy.copy(possibilities_connexion)
+        possibilities_connection_2 = copy.copy(possibilities_connection)
         number_planet = architecture[0][branch-1]
 
         list_planet_possibilities = []
 
         if number_planet == 1:
 
-            for branch_connexion in possibilities_connexion_2:
-                if branch_connexion[1] == branch:
-                    list_planet_possibilities = [[branch_connexion[2]]]
+            for branch_connection in possibilities_connection_2:
+                if branch_connection[1] == branch:
+                    list_planet_possibilities = [[branch_connection[2]]]
                     break
 
         else:
             self.planets_type_possibilities(0, list_planet_possibilities, [], number_planet)
 
 
-        number_connexion = 0
-        for connexion in architecture[1]:
-            for branch_2 in connexion:
+        number_connection = 0
+        for connection in architecture[1]:
+            for branch_2 in connection:
                 if branch_2[0] == branch:
-                    number_connexion += 1
+                    number_connection += 1
 
-                    possibilities_connexion_2.append([branch, branch_2[1], 'Simple'])
+                    possibilities_connection_2.append([branch, branch_2[1], 'Simple'])
 
 
 
@@ -2052,216 +2062,231 @@ class OptimizerPlanetStructure(DessiaObject):
 
             if branch == branch_maximum:
 
-                possibilities_connexion_3 = copy.deepcopy(possibilities_connexion_2)
-                planets=[]
-                connexions=[]
+                possibilities_connection_3 = copy.deepcopy(possibilities_connection_2)
+
+                planets = []
+                connections = []
                 first_last_composant_branch = []
+
                 for branch_2 in possibilities_2:
 
                     flag_first_planet_branch = 0
-        
+
                     for planet in branch_2:
                         number_planet += 1
                         planets.append(Planet(planet, 7, 'Pl'+str(number_planet)))
-        
+
                         if flag_first_planet_branch:
-        
+
                             if planet == 'Double':
-                                connexions.append([planets[-2], planets[-1], 'D'])
+                                connections.append(Connection([planets[-2], planets[-1]], 'D'))
                             else:
-                                connexions.append([planets[-2], planets[-1], 'GI'])
-        
+                                connections.append(Connection([planets[-2], planets[-1]], 'GI'))
+
                         else:
                             first_composant_branch = planets[-1]
                             flag_first_planet_branch = 1
-        
+
                     last_composant_branch = planets[-1]
                     first_last_composant_branch.append([first_composant_branch, last_composant_branch])
-        
-                for branch_connexion in possibilities_connexion_3:
-        
-                    if branch_connexion[2] == 'Simple':
-                        connexions.append([first_last_composant_branch[branch_connexion[0]-1][1],
-                                                first_last_composant_branch[branch_connexion[1]-1][0], 'GI'])
-        
+
+                for branch_connection in possibilities_connection_3:
+
+                    if branch_connection[2] == 'Simple':
+                        connections.append(Connection([first_last_composant_branch[branch_connection[0]-1][1],
+                                                       first_last_composant_branch[branch_connection[1]-1][0]], 'GI'))
+
                     else:
-                        connexions.append([first_last_composant_branch[branch_connexion[0]-1][1],
-                                                first_last_composant_branch[branch_connexion[1]-1][0], 'D'])
-                        
-                list_possibilities.append(PlanetsStructure(planets, connexions,'PlanetsStructure'))
+                        connections.append(Connection([first_last_composant_branch[branch_connection[0]-1][1],
+                                                       first_last_composant_branch[branch_connection[1]-1][0]], 'D'))
+
+                list_possibilities.append(PlanetsStructure(planets, connections, 'PlanetsStructure'))
 
             else:
 
-                if number_connexion == 0:
+                if number_connection == 0:
                     self.architecture_planet_possibilities(branch+1, branch_maximum, architecture, possibilities_2,
-                                                                list_possibilities, possibilities_connexion_2,
-                                                                list_possibilities_connexion)
+                                                           list_possibilities, possibilities_connection_2,
+                                                           list_possibilities_connection)
 
 
 
-                elif number_connexion == 2:
+                elif number_connection == 2:
 
-                    possibilities_connexion_2[-1][2] = 'Double'
-                    possibilities_connexion_2[-2][2] = 'Simple'
+                    possibilities_connection_2[-1][2] = 'Double'
+                    possibilities_connection_2[-2][2] = 'Simple'
 
                     self.architecture_planet_possibilities(branch+1, branch_maximum, architecture, possibilities_2,
-                                                                list_possibilities, possibilities_connexion_2,
-                                                                list_possibilities_connexion)
+                                                           list_possibilities, possibilities_connection_2,
+                                                           list_possibilities_connection)
 
-                    possibilities_connexion_2[-1][2] = 'Simple'
-                    possibilities_connexion_2[-2][2] = 'Double'
+                    possibilities_connection_2[-1][2] = 'Simple'
+                    possibilities_connection_2[-2][2] = 'Double'
                     self.architecture_planet_possibilities(branch+1, branch_maximum, architecture, possibilities_2,
-                                                                list_possibilities, possibilities_connexion_2,
-                                                                list_possibilities_connexion)
+                                                           list_possibilities, possibilities_connection_2,
+                                                           list_possibilities_connection)
 
 
                     if planet_possibilities[-1] == 'Simple':
 
-                        possibilities_connexion_2[-1][2] = 'Double'
-                        possibilities_connexion_2[-2][2] = 'Double'
+                        possibilities_connection_2[-1][2] = 'Double'
+                        possibilities_connection_2[-2][2] = 'Double'
                         self.architecture_planet_possibilities(branch+1, branch_maximum, architecture, possibilities_2,
-                                                                    list_possibilities, possibilities_connexion_2,
-                                                                    list_possibilities_connexion)
+                                                               list_possibilities, possibilities_connection_2,
+                                                               list_possibilities_connection)
 
                     elif planet_possibilities[-1] == 'Double':
 
-                        possibilities_connexion_2[-1][2] = 'Simple'
-                        possibilities_connexion_2[-2][2] = 'Simple'
+                        possibilities_connection_2[-1][2] = 'Simple'
+                        possibilities_connection_2[-2][2] = 'Simple'
                         self.architecture_planet_possibilities(branch+1, branch_maximum, architecture, possibilities_2,
-                                                                    list_possibilities, possibilities_connexion_2,
-                                                                    list_possibilities_connexion)
+                                                               list_possibilities, possibilities_connection_2,
+                                                               list_possibilities_connection)
 
 
 
-                elif number_connexion == 3:
+                elif number_connection == 3:
 
                     if planet_possibilities[-1] == 'Simple':
 
-                        possibilities_connexion_2[-1][2] = 'Double'
-                        possibilities_connexion_2[-2][2] = 'Double'
-                        possibilities_connexion_2[-3][2] = 'Simple'
+                        possibilities_connection_2[-1][2] = 'Double'
+                        possibilities_connection_2[-2][2] = 'Double'
+                        possibilities_connection_2[-3][2] = 'Simple'
 
                         self.architecture_planet_possibilities(branch+1, branch_maximum, architecture, possibilities_2,
-                                                                    list_possibilities, possibilities_connexion_2,
-                                                                    list_possibilities_connexion)
+                                                               list_possibilities, possibilities_connection_2,
+                                                               list_possibilities_connection)
 
-                        possibilities_connexion_2[-1][2] = 'Simple'
-                        possibilities_connexion_2[-2][2] = 'Double'
-                        possibilities_connexion_2[-3][2] = 'Double'
+                        possibilities_connection_2[-1][2] = 'Simple'
+                        possibilities_connection_2[-2][2] = 'Double'
+                        possibilities_connection_2[-3][2] = 'Double'
                         self.architecture_planet_possibilities(branch+1, branch_maximum, architecture, possibilities_2,
-                                                                    list_possibilities, possibilities_connexion_2,
-                                                                    list_possibilities_connexion)
+                                                               list_possibilities, possibilities_connection_2,
+                                                               list_possibilities_connection)
 
-                        possibilities_connexion_2[-1][2] = 'Double'
-                        possibilities_connexion_2[-2][2] = 'Simple'
-                        possibilities_connexion_2[-3][2] = 'Double'
+                        possibilities_connection_2[-1][2] = 'Double'
+                        possibilities_connection_2[-2][2] = 'Simple'
+                        possibilities_connection_2[-3][2] = 'Double'
                         self.architecture_planet_possibilities(branch+1, branch_maximum, architecture, possibilities_2,
-                                                                    list_possibilities, possibilities_connexion_2,
-                                                                    list_possibilities_connexion)
+                                                               list_possibilities, possibilities_connection_2,
+                                                               list_possibilities_connection)
 
                     elif planet_possibilities[-1] == 'Double':
 
-                        possibilities_connexion_2[-1][2] = 'Simple'
-                        possibilities_connexion_2[-2][2] = 'Simple'
-                        possibilities_connexion_2[-3][2] = 'Double'
+                        possibilities_connection_2[-1][2] = 'Simple'
+                        possibilities_connection_2[-2][2] = 'Simple'
+                        possibilities_connection_2[-3][2] = 'Double'
 
                         self.architecture_planet_possibilities(branch+1, branch_maximum, architecture, possibilities_2,
-                                                                    list_possibilities, possibilities_connexion_2,
-                                                                    list_possibilities_connexion)
+                                                               list_possibilities, possibilities_connection_2,
+                                                               list_possibilities_connection)
 
-                        possibilities_connexion_2[-1][2] = 'Simple'
-                        possibilities_connexion_2[-2][2] = 'Double'
-                        possibilities_connexion_2[-3][2] = 'Simple'
+                        possibilities_connection_2[-1][2] = 'Simple'
+                        possibilities_connection_2[-2][2] = 'Double'
+                        possibilities_connection_2[-3][2] = 'Simple'
                         self.architecture_planet_possibilities(branch+1, branch_maximum, architecture, possibilities_2,
-                                                                    list_possibilities, possibilities_connexion_2,
-                                                                    list_possibilities_connexion)
+                                                               list_possibilities, possibilities_connection_2,
+                                                               list_possibilities_connection)
 
-                        possibilities_connexion_2[-1][2] = 'Double'
-                        possibilities_connexion_2[-2][2] = 'Simple'
-                        possibilities_connexion_2[-3][2] = 'Simple'
+                        possibilities_connection_2[-1][2] = 'Double'
+                        possibilities_connection_2[-2][2] = 'Simple'
+                        possibilities_connection_2[-3][2] = 'Simple'
                         self.architecture_planet_possibilities(branch+1, branch_maximum, architecture, possibilities_2,
-                                                                    list_possibilities, possibilities_connexion_2,
-                                                                    list_possibilities_connexion)
+                                                               list_possibilities, possibilities_connection_2,
+                                                               list_possibilities_connection)
 
 
-    def solution_sort_recursive_function(self,new_first_node,first_node_check,new_graph,graph_check,previous_node,previous_node_check):
-        list_number_false=[]
-        valid=False
+    def solution_sort_recursive_function(self, new_first_node, first_node_check, new_graph, graph_check, previous_node,
+                                         previous_node_check):
+        list_number_false = []
+        valid = False
 
-        for new_neighbor in nx.neighbors(new_graph,new_first_node):
+        for new_neighbor in nx.neighbors(new_graph, new_first_node):
+
             if new_neighbor != previous_node:
-                number_false=0
-                if len(list( nx.neighbors(graph_check,first_node_check))) != len(list( nx.neighbors(new_graph,new_first_node))):
-                     
-                    valid=True
-                    return valid
-                
-                for neighbor_check in nx.neighbors(graph_check,first_node_check):
-                    if len(previous_node_check)<2 or neighbor_check != previous_node_check[-2]:
-                        if type(nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor]) == type(nx.get_node_attributes(graph_check,neighbor_check)[neighbor_check]):
-                            valid=self.solution_sort_recursive_function(new_neighbor,neighbor_check,new_graph,graph_check,new_first_node,previous_node_check + [neighbor_check])
-                            
-                            
-                        else:
-                            number_false+=1
-                        
-                        
-                                
-                if number_false == len(list(nx.neighbors(graph_check,first_node_check)))-(len(previous_node_check)>1):
-                    
-                    valid=True
-                    return valid
-                
-                else:
-                    list_number_false.append([number_false,type(nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor])])
 
-        sum_number_false=0
-        list_previous_type_false=[]
+                number_false = 0
+                if len(list(nx.neighbors(graph_check, first_node_check))) != len(list(nx.neighbors(new_graph, new_first_node))):
+
+                    valid = True
+                    return valid
+
+                for neighbor_check in nx.neighbors(graph_check, first_node_check):
+
+                    if len(previous_node_check) < 2 or neighbor_check != previous_node_check[-2]:
+
+                        if type(nx.get_node_attributes(new_graph, new_neighbor)[new_neighbor]) == \
+                           type(nx.get_node_attributes(graph_check, neighbor_check)[neighbor_check]):
+
+                            valid = self.solution_sort_recursive_function(new_neighbor, neighbor_check, new_graph,
+                                                                          graph_check, new_first_node,
+                                                                          previous_node_check + [neighbor_check])
+
+
+                        else:
+                            number_false += 1
+
+
+
+                if number_false == len(list(nx.neighbors(graph_check, first_node_check)))-(len(previous_node_check) > 1):
+
+                    valid = True
+                    return valid
+
+                else:
+                    list_number_false.append([number_false, type(nx.get_node_attributes(new_graph, new_neighbor)[new_neighbor])])
+
+        sum_number_false = 0
+        list_previous_type_false = []
         for number_false in list_number_false:
+
             if not number_false[1] in list_previous_type_false:
                 sum_number_false += number_false[0]
                 list_previous_type_false.append(number_false[1])
 
-        if sum_number_false!=0 and sum_number_false!=len(list_number_false):
-            valid=True
-            
+        if sum_number_false != 0 and sum_number_false != len(list_number_false):
+            valid = True
+
             return valid
-        
+
         return valid
-                
+
 
 
     def solution_sort(self, new_planet_structure, planet_structures_check):
-        
+
         new_graph = new_planet_structure.graph()
-        
+
         for node in nx.nodes(new_graph):
-            
-            if len(list(nx.neighbors(new_graph,node))) == 1:
-                first_node=node
+
+            if len(list(nx.neighbors(new_graph, node))) == 1:
+                first_node = node
                 break
-       
+
         for planet_structure in planet_structures_check:
-            
-            
-            graph_check= planet_structure.graph()
-            possible_first_node_check=[]
+
+
+            graph_check = planet_structure.graph()
+            possible_first_node_check = []
             for node in nx.nodes(graph_check):
-                
-                if len(list(nx.neighbors(graph_check,node))) == 1 and type(nx.get_node_attributes(graph_check,node)[node]) == type(nx.get_node_attributes(new_graph,first_node)[first_node]):
+
+                if len(list(nx.neighbors(graph_check, node))) == 1 and \
+                   type(nx.get_node_attributes(graph_check, node)[node]) == \
+                   type(nx.get_node_attributes(new_graph, first_node)[first_node]):
+
                     possible_first_node_check.append(node)
-                    
-                    
+
+
             for node in possible_first_node_check:
-                valid=self.solution_sort_recursive_function(first_node,node,new_graph,graph_check,first_node,[node])
-                
+                valid = self.solution_sort_recursive_function(first_node, node, new_graph, graph_check, first_node, [node])
+
                 if  not valid:
                     return False
-                
-        return True           
-            
-        
-    
+
+        return True
+
+
+
     def decision_tree(self):
         tree = dt.DecisionTree()
 
@@ -2278,7 +2303,7 @@ class OptimizerPlanetStructure(DessiaObject):
 
         tree.SetCurrentNodeNumberPossibilities(len(list_possibilities_junction))
         node = tree.NextNode(True)
-        
+
 
         while not tree.finished:
 
@@ -2302,29 +2327,33 @@ class OptimizerPlanetStructure(DessiaObject):
                     list_branch.append(0)
 
 
-                list_connexion = []
+                list_connection = []
                 list_possibilities = []
                 self.architecture_planet_possibilities(1, number_branch, global_architecture, list_branch,
-                                                            list_possibilities, [], list_connexion)
+                                                       list_possibilities, [], list_connection)
 
-               
+
                 tree.SetCurrentNodeNumberPossibilities(len(list_possibilities))
-            if len(node)==3:
-                planet_structure=list_possibilities[node[2]]
+
+            if len(node) == 3:
+
+                planet_structure = list_possibilities[node[2]]
                 # planet_structure.plot_cinematic_graph()
-                if self.solution_sort(planet_structure,list_solution):
+                if self.solution_sort(planet_structure, list_solution):
                     list_solution.append(planet_structure)
-                
+
                 tree.SetCurrentNodeNumberPossibilities(0)
+
+
             node = tree.NextNode(True)
 
         return list_solution
 
-class OptimizerPlanetaryGearsArchitecture(DessiaObject):
+class GeneratorPlanetaryGearsArchitecture(DessiaObject):
     _standalone_in_db = True
 
     _generic_eq = True
-    def __init__(self, planet_structures: PlanetsStructure, input_speeds: List[List[float]], name:str=''):
+    def __init__(self, planet_structures: PlanetsStructure, input_speeds: List[List[float]], name: str = ''):
 
 
         self.planet_structures = planet_structures
@@ -2332,8 +2361,8 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def planetaries_possibilities_recursive_function(self, n, planetaries, possibilitie, list_possibilities, gearing_chains,
-                                                          gearing_chains_planetary_type, gearing_chains_occupation,
-                                                          gearing_chains_planet_index):
+                                                     gearing_chains_planetary_type, gearing_chains_occupation,
+                                                     gearing_chains_planet_index):
 
 
         possibilitie_2 = copy.copy(possibilitie)
@@ -2381,10 +2410,10 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
 
                             possibilitie_2[n] = [planetary_2, gearing_chain_2[0], planetary_type[1], number]
                             self.planetaries_possibilities_recursive_function(n+1, planetaries, possibilitie_2,
-                                                                                   list_possibilities, gearing_chains,
-                                                                                   gearing_chains_planetary_type_2,
-                                                                                   gearing_chains_occupation_2,
-                                                                                   gearing_chains_planet_index_2)
+                                                                              list_possibilities, gearing_chains,
+                                                                              gearing_chains_planetary_type_2,
+                                                                              gearing_chains_occupation_2,
+                                                                              gearing_chains_planet_index_2)
 
 
                     gearing_chains_planet_index_2[i] = -1
@@ -2404,10 +2433,10 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
 
                             possibilitie_2[n] = [planetary_2, gearing_chain_2[-1], planetary_type[1], number]
                             self.planetaries_possibilities_recursive_function(n+1, planetaries, possibilitie_2,
-                                                                                   list_possibilities, gearing_chains,
-                                                                                   gearing_chains_planetary_type_2,
-                                                                                   gearing_chains_occupation_2,
-                                                                                   gearing_chains_planet_index_2)
+                                                                              list_possibilities, gearing_chains,
+                                                                              gearing_chains_planetary_type_2,
+                                                                              gearing_chains_occupation_2,
+                                                                              gearing_chains_planet_index_2)
 
 
 
@@ -2431,10 +2460,10 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
 
                             possibilitie_2[n] = [planetary_2, gearing_chain_2[-1], planetary_type[1], number]
                             self.planetaries_possibilities_recursive_function(n+1, planetaries, possibilitie_2,
-                                                                                   list_possibilities, gearing_chains,
-                                                                                   gearing_chains_planetary_type_2,
-                                                                                   gearing_chains_occupation_2,
-                                                                                   gearing_chains_planet_index_2)
+                                                                              list_possibilities, gearing_chains,
+                                                                              gearing_chains_planetary_type_2,
+                                                                              gearing_chains_occupation_2,
+                                                                              gearing_chains_planet_index_2)
 
 
                 else:
@@ -2455,10 +2484,10 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
 
                             possibilitie_2[n] = [planetary_2, gearing_chain_2[0], planetary_type[1], number]
                             self.planetaries_possibilities_recursive_function(n+1, planetaries, possibilitie_2,
-                                                                                   list_possibilities, gearing_chains,
-                                                                                   gearing_chains_planetary_type_2,
-                                                                                   gearing_chains_occupation_2,
-                                                                                   gearing_chains_planet_index_2)
+                                                                              list_possibilities, gearing_chains,
+                                                                              gearing_chains_planetary_type_2,
+                                                                              gearing_chains_occupation_2,
+                                                                              gearing_chains_planet_index_2)
 
         return list_possibilities
 
@@ -2468,12 +2497,12 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
         gearing_chains = planets_structure.gearing_chain()
 
 
-        
+
         if len(planetaries) < len(gearing_chains):
             return []
-        
+
         possibilitie = []
-        connexion = []
+        connection = []
         gearing_chains_planetary_type = []
         gearing_chains_planet_index = []
         gearing_chains_occupation = []
@@ -2487,49 +2516,49 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
             gearing_chains_planet_index.append(0)
 
         list_possibilities = self.planetaries_possibilities_recursive_function(0, planetaries, possibilitie, [],
-                                                                                    gearing_chains, gearing_chains_planetary_type,
-                                                                                    gearing_chains_occupation,
-                                                                                    gearing_chains_planet_index)
+                                                                               gearing_chains, gearing_chains_planetary_type,
+                                                                               gearing_chains_occupation,
+                                                                               gearing_chains_planet_index)
 
 
         for double in planets_structure.doubles:
 
-            connexion.append([double.nodes[0], double.nodes[1], 'D'])
+            connection.append(Connection([double.nodes[0], double.nodes[1]], 'D'))
 
         list_solution = []
-        
+
         for i, possibilitie_2 in enumerate(list_possibilities):
 
-            connexion_2 = copy.copy(connexion)
+            connection_2 = copy.copy(connection)
             previous_planetary = []
 
-            for planetary_connexion in possibilitie_2:
-                connexion_2.append(planetary_connexion[:-1])
-                
-                if not planetary_connexion[3]  in previous_planetary:
-                   
-                    gearing_chain = gearing_chains[planetary_connexion[3]]
-                    
-                    previous_planetary.append(planetary_connexion[3])
+            for planetary_connection in possibilitie_2:
+                connection_2.append(Connection([planetary_connection[:-1][0], planetary_connection[:-1][1]], planetary_connection[:-1][2]))
+
+                if not planetary_connection[3]  in previous_planetary:
+
+                    gearing_chain = gearing_chains[planetary_connection[3]]
+
+                    previous_planetary.append(planetary_connection[3])
 
                     if len(gearing_chain) > 1:
 
-                        if gearing_chain[0] == planetary_connexion[1]:
+                        if gearing_chain[0] == planetary_connection[1]:
                             for planet_1, planet_2 in zip(gearing_chain[:-1], gearing_chain[1:]):
 
-                                connexion_2.append([planet_1, planet_2, planetary_connexion[2]])
+                                connection_2.append(Connection([planet_1, planet_2], planetary_connection[2]))
 
 
-                        elif gearing_chain[-1] == planetary_connexion[1]:
+                        elif gearing_chain[-1] == planetary_connection[1]:
 
                            gearing_chain_2 = gearing_chain[::-1]
 
                            for planet_1, planet_2 in zip(gearing_chain_2[:-1], gearing_chain_2[1:]):
 
-                                connexion_2.append([planet_1, planet_2, planetary_connexion[2]])
+                                connection_2.append(Connection([planet_1, planet_2], planetary_connection[2]))
 
-               
-            planetary_gear = PlanetaryGear(planetaries, planets_structure.planets, planet_carrier, connexion_2, 'PlanetaryGear'+str(i))
+
+            planetary_gear = PlanetaryGear(planetaries, planets_structure.planets, planet_carrier, connection_2, 'PlanetaryGear'+str(i))
             list_path = planetary_gear.path_planetary_to_planetary()
             list_planets = []
             # print(planetary_gear.planets)
@@ -2539,7 +2568,7 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
 
             for path in list_path:
                 for element in path:
-    
+
                     if element.name in list_planets:
                         list_planets.remove(element.name)
 
@@ -2547,121 +2576,152 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
             if not list_planets:
 
                 list_solution.append(PlanetaryGear(copy.deepcopy(planetaries),
-                                                   copy.deepcopy(planets_structure.planets), copy.copy(planet_carrier), connexion_2, 'PlanetaryGear'+str(i)))
+                                                   copy.deepcopy(planets_structure.planets), copy.copy(planet_carrier), connection_2, 'PlanetaryGear'+str(i)))
 
 
 
         return list_solution
 
 
-    def solution_sort_recursive_function(self,new_first_node,first_node_check,new_graph,graph_check,previous_node,previous_node_check):
-        list_number_false=[]
-        list_neighbors=list(nx.neighbors(graph_check,first_node_check))
-        if len(list( nx.neighbors(graph_check,first_node_check))) != len(list( nx.neighbors(new_graph,new_first_node))):
-                     
-                    valid=True
+    def solution_sort_recursive_function(self, new_first_node, first_node_check, new_graph, graph_check, previous_node,
+                                         previous_node_check):
+
+        list_number_false = []
+        list_neighbors = list(nx.neighbors(graph_check, first_node_check))
+
+        if len(list(nx.neighbors(graph_check, first_node_check))) != len(list(nx.neighbors(new_graph, new_first_node))):
+
+                    valid = True
                     return valid
-                
-        for new_neighbor in nx.neighbors(new_graph,new_first_node):
-            valid=False
+
+        for new_neighbor in nx.neighbors(new_graph, new_first_node):
+
+            valid = False
+
             if new_neighbor != previous_node:
-                number_false=0
-               
-                
+                number_false = 0
+
+
                 for neighbor_check in list_neighbors:
-                    if (len(previous_node_check)<2 or neighbor_check != previous_node_check[-2]) :
-                        if type(nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor]) == type(nx.get_node_attributes(graph_check,neighbor_check)[neighbor_check]):
-                            
-                            if type(nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor]) == Planetary:
-                                
-                                if nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor].planetary_type == nx.get_node_attributes(graph_check,neighbor_check)[neighbor_check].planetary_type:
-                                    
-                                    valid=self.solution_sort_recursive_function(new_neighbor,neighbor_check,new_graph,graph_check,new_first_node,previous_node_check + [neighbor_check])
-                                    
+
+                    if (len(previous_node_check) < 2 or neighbor_check != previous_node_check[-2]):
+
+                        if type(nx.get_node_attributes(new_graph, new_neighbor)[new_neighbor]) == \
+                           type(nx.get_node_attributes(graph_check, neighbor_check)[neighbor_check]):
+
+                            if type(nx.get_node_attributes(new_graph, new_neighbor)[new_neighbor]) == Planetary:
+
+
+                                if nx.get_node_attributes(new_graph, new_neighbor)[new_neighbor].planetary_type == \
+                                   nx.get_node_attributes(graph_check, neighbor_check)[neighbor_check].planetary_type:
+
+
+                                    valid = self.solution_sort_recursive_function(new_neighbor, neighbor_check, new_graph, graph_check,
+                                                                                  new_first_node, previous_node_check + [neighbor_check])
+
                                     if not valid:
                                         list_neighbors.remove(neighbor_check)
+
                                     else:
-                                        number_false+=1
-                                        
-                                    
+                                        number_false += 1
+
+
                                 else:
-                                    
-                                    number_false+=1
-                            
+
+                                    number_false += 1
+
                             else:
-                                valid=self.solution_sort_recursive_function(new_neighbor,neighbor_check,new_graph,graph_check,new_first_node,previous_node_check + [neighbor_check])
-                                
+                                valid = self.solution_sort_recursive_function(new_neighbor, neighbor_check, new_graph, graph_check,
+                                                                              new_first_node, previous_node_check + [neighbor_check])
+
                                 if not valid:
-                                       
+
                                         list_neighbors.remove(neighbor_check)
                                 else:
-                                    number_false+=1
-                            
-                        else:
-                            number_false+=1
-                        
-                
-            
-                if number_false >= len(list(nx.neighbors(graph_check,first_node_check)))-(len(previous_node_check)>1):
-                    
-                    valid=True
-                    return valid
-                
-                else:
-                    if type(nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor])== Planetary:
-                            list_number_false.append([number_false,nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor].planetary_type])
-                    else:
-                        list_number_false.append([number_false,type(nx.get_node_attributes(new_graph,new_neighbor)[new_neighbor])])
+                                    number_false += 1
 
-        
+                        else:
+                            number_false += 1
+
+
+
+                if number_false >= len(list(nx.neighbors(graph_check, first_node_check)))-(len(previous_node_check) > 1):
+
+                    valid = True
+                    return valid
+
+
+                else:
+                    if type(nx.get_node_attributes(new_graph, new_neighbor)[new_neighbor]) == Planetary:
+
+                            list_number_false.append([number_false,
+                                                      nx.get_node_attributes(new_graph, new_neighbor)[new_neighbor].planetary_type])
+
+                    else:
+                        list_number_false.append([number_false, type(nx.get_node_attributes(new_graph, new_neighbor)[new_neighbor])])
+
+
         return valid
-                
+
 
 
     def solution_sort(self, new_planetary_gear, planetary_gears_check):
-        
+
         new_graph = new_planetary_gear.graph()
         new_graph.remove_node(str(new_planetary_gear.planet_carrier))
-        for i,planet in enumerate(new_planetary_gear.planets):
+
+        for i, planet in enumerate(new_planetary_gear.planets):
             new_graph.remove_node('Pv'+str(i))
+
         for node in nx.nodes(new_graph):
-            
-            if len(list(nx.neighbors(new_graph,node))) == 1:
-                first_node=node
+
+            if len(list(nx.neighbors(new_graph, node))) == 1:
+                first_node = node
                 break
-        list_valid=[]
-        list_possible_node=[]
+
+        list_valid = []
+        list_possible_node = []
         for planetary_gear in planetary_gears_check:
-            
-            
-            graph_check= planetary_gear.graph()
+
+
+            graph_check = planetary_gear.graph()
             graph_check.remove_node(str(planetary_gear.planet_carrier))
-            for i,planet in enumerate(planetary_gear.planets):
+
+            for i, planet in enumerate(planetary_gear.planets):
                 graph_check.remove_node('Pv'+str(i))
-            possible_first_node_check=[]
+
+            possible_first_node_check = []
+
             for node in nx.nodes(graph_check):
-                
-                if len(list(nx.neighbors(graph_check,node))) == 1 and type(nx.get_node_attributes(graph_check,node)[node]) == type(nx.get_node_attributes(new_graph,first_node)[first_node]):
-                    if type(nx.get_node_attributes(graph_check,node)[node])== Planetary:
-                        if nx.get_node_attributes(graph_check,node)[node].planetary_type == nx.get_node_attributes(new_graph,first_node)[first_node].planetary_type:
+
+                if len(list(nx.neighbors(graph_check, node))) == 1 and type(nx.get_node_attributes(graph_check, node)[node]) == \
+                   type(nx.get_node_attributes(new_graph, first_node)[first_node]):
+
+                    if type(nx.get_node_attributes(graph_check, node)[node]) == Planetary:
+
+                        if nx.get_node_attributes(graph_check, node)[node].planetary_type ==  \
+                           nx.get_node_attributes(new_graph, first_node)[first_node].planetary_type:
+
                            possible_first_node_check.append(node)
-                    else:       
+
+                    else:
                         possible_first_node_check.append(node)
-                    
-                  
+
+
             for node in possible_first_node_check:
-                valid=self.solution_sort_recursive_function(first_node,node,new_graph,graph_check,first_node,[node])
+                valid = self.solution_sort_recursive_function(first_node, node, new_graph, graph_check, first_node, [node])
                 list_valid.append(valid)
-            if possible_first_node_check:    
+
+            if possible_first_node_check:
                 list_possible_node.append([possible_first_node_check])
-            
-       
+
+
         if  False in list_valid:
             return False
             return False
-                
-            
-        return True           
+
+
+        return True
 
     def decision_tree(self):
         tree = dt.DecisionTree()
@@ -2688,13 +2748,14 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
              planet_architecture = self.planet_structures[node[0]]
              list_planetary_gears = self.planetaries_possibilities(planetaries, planet_architecture, planet_carrier)
              tree.SetCurrentNodeNumberPossibilities(len(list_planetary_gears))
-             list_check=[]
+             list_check = []
+
             if len(node) == 2:
 
                 planetary_gear = list_planetary_gears[node[1]]
-                
 
-                if self.solution_sort(planetary_gear,list_check):
+
+                if self.solution_sort(planetary_gear, list_check):
                     list_solution.append(planetary_gear)
                     list_check.append(planetary_gear)
                 tree.SetCurrentNodeNumberPossibilities(0)
@@ -2703,7 +2764,7 @@ class OptimizerPlanetaryGearsArchitecture(DessiaObject):
 
         return list_solution
 
-class OptimizerPlanetaryGearsZNumber(DessiaObject):
+class GeneratorPlanetaryGearsZNumber(DessiaObject):
     _standalone_in_db = True
 
     _generic_eq = True
@@ -2717,7 +2778,7 @@ class OptimizerPlanetaryGearsZNumber(DessiaObject):
         self.Z_range_sun = Z_range_sun
         self.Z_range_ring = Z_range_ring
         self.number_planet = number_planet
-        DessiaObject.__init__(self, name= name)
+        DessiaObject.__init__(self, name=name)
 
     def multiplication_possibility_speed(self, list_1, n, element_multiplication, list_multiplication):
 
@@ -2741,7 +2802,7 @@ class OptimizerPlanetaryGearsZNumber(DessiaObject):
         return list_multiplication
 
 
-    
+
 
 
     def test_GCD(self, Z_1, Z_2):
@@ -2786,15 +2847,15 @@ class OptimizerPlanetaryGearsZNumber(DessiaObject):
 
         reason_2 = abs((begin_gearing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0])/
                        (end_gearing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0]))
-        
+
         reason_3 = abs((begin_gearing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[1])/
                        (end_gearing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[1]))
-        
+
         reason_4 = abs((begin_gearing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0])/
                        (end_gearing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0]))
-        
-        reason_min=min(reason_1,reason_2,reason_3,reason_4)
-        reason_max=max(reason_1,reason_2,reason_3,reason_4)
+
+        reason_min = min(reason_1, reason_2, reason_3, reason_4)
+        reason_max = max(reason_1, reason_2, reason_3, reason_4)
 
 
         if reason_min and reason_max:
@@ -2808,7 +2869,7 @@ class OptimizerPlanetaryGearsZNumber(DessiaObject):
             Z_min = 0
             Z_max = int(reason*element.Z/reason_min)+1
         Z_range_mini_maxi = [Z_min, Z_max]
-       
+
         return Z_range_mini_maxi
 
     def decision_tree_speed_possibilities(self):
@@ -2956,10 +3017,10 @@ class OptimizerPlanetaryGearsZNumber(DessiaObject):
             list_planetaries_Z_range_mini_maxi = []
             list_path = []
             while not tree.finished:
-                
+
                 valid = True
                 node = tree.current_node
-                
+
                 number_gearing_chain = numbers_gearing_chain[len(node)-1]
                 flag_gearing_change = flags_gearing_change[len(node)-1]
                 total_element_previous_gearing_chain = totals_element_previous_gearing_chain[len(node)-1]
@@ -3058,7 +3119,7 @@ class OptimizerPlanetaryGearsZNumber(DessiaObject):
                     end_gearing_chain = gearing_chains_modif[number_gearing_chain][-1]
 
                     planetary_gear = PlanetaryGear(planetary_gear.planetaries, planetary_gear.planets,
-                                                   planetary_gear.planet_carrier, planetary_gear.connexions,planetary_gear.name)
+                                                   planetary_gear.planet_carrier, planetary_gear.connections, planetary_gear.name)
 
                     if Z_range_mini_maxi:
 
@@ -3193,7 +3254,7 @@ class OptimizerPlanetaryGearsZNumber(DessiaObject):
                             if list_planet_remove:
 
                                 for i in range(len(list_planet_remove)):
-                                    list_planet_remove_2  = copy.copy(list_planet_remove)
+                                    list_planet_remove_2 = copy.copy(list_planet_remove)
                                     list_planet_remove_neighbour_2 = copy.copy(list_planet_remove_neighbour)
                                     list_planet_remove[i].Z = 1
                                     valid_planet = True
@@ -3201,7 +3262,7 @@ class OptimizerPlanetaryGearsZNumber(DessiaObject):
                                     for gearing_chain in gearing_chains:
                                         if list_planet_remove[i] in gearing_chain and valid_planet:
 
-                                            if gearing_chain[0].planetary_type == 'Ring' :
+                                            if gearing_chain[0].planetary_type == 'Ring':
 
                                                 number_z_max = 0
                                                 for element_2 in gearing_chain:
