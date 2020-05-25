@@ -81,8 +81,8 @@ class Planetary(Gears):
             The number of tooth
             
         planetary_type : str
-            The type of the planetary:
-            - ' Ring' for ring
+            The type of the planetary:\n
+            - ' Ring' for ring\n
             - 'Sun' for sun
             
         name : str, optional
@@ -109,15 +109,12 @@ class Planetary(Gears):
 
 class Planet(Gears):
 
-    def __init__(self, planet_type: str, Z: int, name: str = ''):
+    def __init__(self, Z: int, name: str = ''):
         '''
         
 
         Parameters
         ----------
-        planet_type : str
-            The type of the planet:
-            - 'Simple' when the 
         Z : int
             The number of tooth
         name : str, optional
@@ -129,7 +126,7 @@ class Planet(Gears):
 
         '''
 
-        self.planet_type = planet_type
+       
 
         self.speed = 0
         self.module = 0
@@ -276,9 +273,9 @@ class Connection(DessiaObject):
         nodes : List[Gears]
             The 2 elements connected
         connection_type : str
-            The type of the connection : 
-            -'D' is for Double 
-            -'GI' is when the first element of nodes gearing to the second inward of the planetary gear
+            The type of the connection : \n
+            -'D' is for Double \n
+            -'GI' is when the first element of nodes gearing to the second inward of the planetary gear \n
             -'GE' is when the first element of nodes gearing to the second outward of the planetary gear
             
         name : str, optional
@@ -302,14 +299,19 @@ class PlanetaryGear(DessiaObject):
 
         Parameters
         ----------
+        
         planetaries : List[Planetary]
             The planetaries of the planetary gear
+            
         planets : List[Planet]
             The planets of the planetary gear
+            
         planet_carrier : PlanetCarrier
             The planet_carrer of the planetary gear
+            
         connections : List[Connection]
-            list of the connection bettween element ( gearing and Double)
+            List of the connection bettween element ( gearing and Double)
+            
         name : str, optional
 
 
@@ -1641,7 +1643,7 @@ class PlanetsStructure(DessiaObject):
 
     def path_planet_to_planet(self):
         '''
-        A function which give all the path betwen the first planet of the list planets(input of PlanetStructure) and the other
+        A function which give all the path betwen the first planet of the list planets(input of PlanetStructure) and the other.
         The path includes the planets and the connections(Gearing and Doubles)
 
         Returns
@@ -2375,7 +2377,7 @@ class GeneratorPlanetStructure(DessiaObject):
 
                     for planet in branch_2:
                         number_planet += 1
-                        planets.append(Planet(planet, 7, 'Pl'+str(number_planet)))
+                        planets.append(Planet(7, 'Pl'+str(number_planet)))
 
                         if flag_first_planet_branch:
 

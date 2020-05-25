@@ -11,9 +11,9 @@ sun = pg.Planetary(36, 'Sun', 'sun')
 sun_2 = pg.Planetary(60, 'Sun', 'sun_2')
 ring = pg.Planetary(84, 'Ring', 'ring')
 planet_carrier = pg.PlanetCarrier('planet_carrier')
-planet_1 = pg.Planet('Simple', 12, 'planet_1')
-planet_2 = pg.Planet('Double', 12, 'planet_2')
-planet_3 = pg.Planet('Double', 16, 'planet_3')
+planet_1 = pg.Planet( 12, 'planet_1')
+planet_2 = pg.Planet( 12, 'planet_2')
+planet_3 = pg.Planet( 16, 'planet_3')
 connexion = [pg.Connection([sun, planet_1], 'GE'), pg.Connection([planet_1, planet_2], 'GE'), pg.Connection([planet_2, ring], 'GE'),
              pg.Connection([planet_2, planet_3], 'D'), pg.Connection([planet_3, sun_2], 'GI')]
 
