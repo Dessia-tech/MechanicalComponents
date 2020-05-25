@@ -1,7 +1,7 @@
 kind: pipeline
 name: default
 
-steps:   
+steps:
 - name: install, doc and script running
   image: python:3
   commands:
@@ -11,21 +11,19 @@ steps:
   - cd doc
   - make html
   - cd ../
-  - python scripts/bearings/bearing3.py
-  - python scripts/meshes/meshes_agb.py
-  - python scripts/meshes/meshes2.py
-
+  - python scripts/bearings/bearing_test.py
+  - python scripts/bearings/optimizer_bearing_test.py
+  # - python scripts/bearings/workflow_assembly_bearing_test.py
+  # - python scripts/bearings/workflow_combination_bearing_test.py
 
 - name: develop
   image: python:3
   commands:
-  - git fetch --tags
   - python setup.py develop
 
 - name: sdist
   image: python:3
   commands:
-  - git fetch --tags
   - python setup.py sdist
 
 
@@ -58,7 +56,7 @@ steps:
     - git pull origin from_proprietary
     - tar -vxf ../dist/*.tar.gz --strip-components=1 -C .
     - git config --global user.email "root@dessia.tech"
-    - git config --global user.name "Root commit bot" 
+    - git config --global user.name "Root commit bot"
     - git add -A
     - if ! [[ -z $(git status -s -uno) ]]; then git commit -m "Automated commit"; fi
     - git push origin from_proprietary
@@ -66,7 +64,7 @@ steps:
 
 - name: upload_doc_master
   image: appleboy/drone-scp
-  when: 
+  when:
     branch: master
     event: tag
   settings:
@@ -80,8 +78,8 @@ steps:
 
 - name: upload sdist to seafile
   image: dessia/drone-seafile
-  when: 
-    branch: master 
+  when:
+    branch: master
     event: push
   settings:
     server_url: https://partage.dessia.tech
@@ -97,7 +95,7 @@ steps:
 - name: notify
   when:
     status:
-    - failure 
+    - failure
   image: drillster/drone-email
   settings:
     host: mail.dessia.tech
