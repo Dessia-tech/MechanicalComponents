@@ -70,26 +70,27 @@ class Gears(DessiaObject):
          return t1
 
 class Planetary(Gears):
+    '''
+        
+    Define a planetary
+    
+    :param Z: The number of tooth
+    :type Z: int      
+    :param planetary_type: The type of the planetary:
+        
+        - ' Ring' for ring
+        
+        - 'Sun' for sun
+        
+    :type planetary_type: str    
+    :param name: Name
+    :type name: str, optional
+
+
+    '''
 
     def __init__(self, Z: int, planetary_type: str, name: str = ''):
-        '''
         
-
-        Parameters
-        ----------
-        Z : int
-            The number of tooth
-            
-        planetary_type : str
-            The type of the planetary:\n
-            - ' Ring' for ring\n
-            - 'Sun' for sun
-            
-        name : str, optional
-            DESCRIPTION. The default is ''.
-
-
-        '''
 
 
 
@@ -108,23 +109,19 @@ class Planetary(Gears):
             self.p = -1
 
 class Planet(Gears):
+    '''
+    Define a planet
+
+    :param Z: The number of tooth 
+    :type Z: int
+    :param name: Name 
+    :type name: str, optional
+
+
+    '''
 
     def __init__(self, Z: int, name: str = ''):
-        '''
         
-
-        Parameters
-        ----------
-        Z : int
-            The number of tooth
-        name : str, optional
-            DESCRIPTION. The default is ''.
-
-        Returns
-        -------
-        None.
-
-        '''
 
        
 
@@ -135,9 +132,18 @@ class Planet(Gears):
         Gears.__init__(self, Z, name)
 
 class PlanetCarrier(DessiaObject):
+    '''
+    Define a planet carrier
 
+    :param name: Name
+    :type name: str, optional
+
+ 
+
+    '''
 
     def __init__(self, name: str = ''):
+        
 
         self.speed = 0
         self.speed_input = [0, 0]
@@ -263,26 +269,32 @@ class ImposeSpeed(DessiaObject):
 
 
 class Connection(DessiaObject):
+    '''
+    Define a connection
+
+
+    :param nodes: The 2 elements connected 
+    :type nodes: List[Planet,Planetary]
+    :param connection_type: The type of the connection : 
+        
+        -'D' is for Double 
+        
+        -'GI' is when the first element of nodes gearing to the second inward of the planetary gear 
+        
+        -'GE' is when the first element of nodes gearing to the second outward of the planetary gear
+        
+        
+    :type connection_type: str
+        
+    :param name: Name
+    :type name: str, optional
+
+
+
+    '''
 
     def __init__(self, nodes: List[Gears], connection_type: str, name: str = ''):
-        '''
-        
-
-        Parameters
-        ----------
-        nodes : List[Gears]
-            The 2 elements connected
-        connection_type : str
-            The type of the connection : \n
-            -'D' is for Double \n
-            -'GI' is when the first element of nodes gearing to the second inward of the planetary gear \n
-            -'GE' is when the first element of nodes gearing to the second outward of the planetary gear
-            
-        name : str, optional
-
-
-
-        '''
+       
         self.nodes = nodes
         self.connection_type = connection_type
         DessiaObject.__init__(self, name=name)
@@ -291,32 +303,23 @@ class PlanetaryGear(DessiaObject):
     # _standalone_in_db = True
 
     # _generic_eq = True
-
+    '''
+    Define a Planetary Gears
+    
+    :param planetaries: The planetaries of the planetary gear
+    :type planetaries: List[Planetary]
+    :param planets: The planets of the planetary gear
+    :type planets: List[Planet]
+    :param planet_carrier: The planet_carrer of the planetary gear
+    :type planet_carrier: PlanetCarrier
+    :param connections: List of the connection bettween element ( gearing and Double)
+    :type connections: List[Connection]
+    :param name: name
+    :type name: str,optional
+    '''
     def __init__(self, planetaries: List[Planetary], planets: List[Planet],
                  planet_carrier: PlanetCarrier, connections: List[Connection], name: str = ''):
-        '''
-        Define a Planetary Gears
 
-        Parameters
-        ----------
-        
-        planetaries : List[Planetary]
-            The planetaries of the planetary gear
-            
-        planets : List[Planet]
-            The planets of the planetary gear
-            
-        planet_carrier : PlanetCarrier
-            The planet_carrer of the planetary gear
-            
-        connections : List[Connection]
-            List of the connection bettween element ( gearing and Double)
-            
-        name : str, optional
-
-
-
-        '''
 
 
         self.planetaries = planetaries
@@ -408,6 +411,15 @@ class PlanetaryGear(DessiaObject):
 
 
     def matrix_position(self, element):
+        '''Give the position of the element in the speed solve matrix and in the speed result liste   
+
+        :param element: the element whose position we want to know
+        :type element: Planet,Planetary or PlanetCarrier
+        
+        :return: The position
+        :rtype: int
+
+        '''
 
         return self.elements.index(element)
 
@@ -530,31 +542,31 @@ class PlanetaryGear(DessiaObject):
         '''
         Plot the kinematic graph of the planetary gear
 
-        Parameters
-        ----------
-        lenght_gear : float, optional
-            The width of  the gears. The default is 0.1.
+        :param lenght_gear: The width of  the gears. The default is 0.1.
+        :type lenght_gear: float, optional
             
-        diameter_gear : float, optional
-            The diameter of the gears. The default is 1.
+        :param diameter_gear: The diameter of the gears. The default is 1
+        :type diameter_gear: float, optional
             
-        lenght_double : float, optional
-            The lenght of the connections betwen 2 double planets. The default is 2.
             
-        diameter_pivot : float, optional
-            The diameter of the representatives signs of pivot. The default is 0.2.
+        :param lenght_double: The lenght of the connections between 2 double planets. The default is 2
+        :type lenght_double: float, optional
             
-        lenght_pivot : float, optional
-             The length of the representatives signs of pivot. The default is 0.5.
+        :param diameter_pivot: The diameter of the representatives signs for pivot. The default is 0.2.
+        :type diameter_pivot: float, optional
+            
+        :param lenght_pivot: The length of the representatives signs for pivot. The default is 0.5.
+        :type lenght_pivot: float, optional
              
-        planet_carrier_x : float, optional
-            The parameter for the position of planet carrer in x. The default is 2.
+        :param planet_carrier_x: The parameter for the position of planet carrer in x. The default is 2.
+        :type planet_carrier_x: float, optional  
             
-        planet_carrier_y : float, optional
-            The parameter for the position of planet carrer in y. The default is 2.
+        :param planet_carrier_y: The parameter for the position of planet carrer in y. The default is 2.
+        :type planet_carrier_y: float, optional
             
-        diameter_ring_ini : float, optional
-            The diameter of ring.  The default is 10.
+        :param diameter_ring_ini: The diameter of ring.  The default is 10.
+        :type diameter_ring_ini: float, optional
+            
 
         
 
@@ -750,19 +762,19 @@ class PlanetaryGear(DessiaObject):
 
     def path_planetary_to_planetary(self, planetaries=[]):
         '''
-        A function which give all the path betwen the first planetary of the list planetaries (input) and the other
+        A function which give all the path betwen the first planetary of the list planetaries (input) and the others
+        
         The path includes the planets and the connections(Gearing and Doubles)
 
-        Parameters
-        ----------
-        planetaries : List[Planetary], optional
-            The first planetary of the list is the beginning of all the path , the others planetaries of the list are the endings of the paths. 
-            The default is the list of planetaries .
+ 
+        :param planetaries: The first planetary of the list is the beginning of all the path , the others planetaries of the list are the endings of the paths. 
+                            The default is the list of planetaries .
+        
+        :type planetaries: List[Planetary], optional
 
-        Returns
-        -------
-        list_path : List[List[Planet,Gearing,Double,Planetary]]
-
+        :return: list_path
+        :rtype: List[List[Planet,Gearing,Double,Planetary]]
+        
         '''
         if not planetaries:
             planetaries = self.planetaries
@@ -803,14 +815,11 @@ class PlanetaryGear(DessiaObject):
         '''
         A function wich give the reason ( Willis relation) of a planetary gear
 
-        Parameters
-        ----------
-        path : List[Planet,Gearing,Double]
-            The path betwen the two planetaries for which we want to calculate the reason  
-
-        Returns
-        -------
-        reason : float
+        :param path: The path betwen the two planetaries for which we want to calculate the reason (give by the method path_planetary_to_planetary)
+        :type path: List[Planet, Gearing, Double]
+            
+        :return: reason
+        :rtype: float
   
 
         '''
@@ -827,16 +836,14 @@ class PlanetaryGear(DessiaObject):
 
     def reason(self, path):
         '''
-         A function which give the reason ( Willis relation) of a planetary gear with the (-1)^n ( n = the number of gearing)
+        A function which give the reason ( Willis relation) of a planetary gear with the coefficient (-1)^n ( n = the number of gearing)
 
-        Parameters
-        ----------
-        path : List[Planet,Gearing,Double]
-            The path betwen the two planetaries for which we want to calculate the reason  
+        :param path: The path betwen the two planetaries for which we want to calculate the reason  
+        :type path: List[Planet, Gearing, Double] 
 
-        Returns
-        -------
-        reason : float
+
+        :return: reason 
+        :rtype: float
             
 
         '''
@@ -862,21 +869,19 @@ class PlanetaryGear(DessiaObject):
         A function which give the real speed_range of 2 planetaries ( or planet_carrier) which allow to fulfill 
         the condition of input speed of all the other planetaries ( or planet_carrier)
         ( We need to have speed input into all planetaries and planet_carrer)
-        ----------
-        input_1 : Planetary or PlanetCarrier
-            The first input 
+        
+        :param input_1: The first input 
+        :type input_1: Planetary or PlanetCarrier
+ 
+        :param input_2: The second input
+        :type input_2: Planetary or PlanetCarrier
             
-        input_2 : Planetary or PlanetCarrier
-            The second input
-            
-        list_planetary : List[PLanetary,PlannetCarrer], optional
-           The list of planetary ( or planet_carrier) that we want to check the input speed condition. 
-           The default is all the planetaries and the planet_carrier.
+        :param list_planetary: The list of planetary ( or planet_carrier) that we want to check the input speed condition. 
+         The default is all the planetaries and the planet_carrier.
+        :type list_planetary: List[Planetary, PlannetCarrier], optional
 
-        Returns
-        -------
-        DICTIONARY
-            This is a dictionary where all the planetary and planet_carrier are associated with their speed range
+        :return: A dictionary where all the planetary and planet_carrier are associated with their speed range
+        :rtype: Dictionary
 
         '''
 
@@ -1250,9 +1255,8 @@ class PlanetaryGear(DessiaObject):
         A function wich return all the gearing chain in the planetary gear.
         A gearing chain is a list of planetaries and planets which gearing together
 
-        Returns
-        -------
-        list_possibilities : List[List[Planetary,Planet]]
+        :return: the list of gearing_chains
+        :rtype: List[List[Planetary,Planet]]
 
         """
         graph_planetary_gear = self.graph()
@@ -1266,18 +1270,14 @@ class PlanetaryGear(DessiaObject):
         '''
         A function which test the assembly condition for the planetary gear
 
-        Parameters
-        ----------
-        number_planet : Int
-            The number of planet which are arround the planetary gear ( exemple: 3,4 or 5) 
+        :param number_planet: The number of planet which are arround the planetary gear ( exemple: 3,4 or 5)  
+        :type number_planet: Int
             
-        planetaries : List[Planetary], optional
-            The list of the two planetary which we want to test the assembly condition. 
-            The default is all the planetary of the planetary gear.
+        :param planetaries: The list of the two planetary which we want to test the assembly condition. The default is all the planetary of the planetary gear.
+        :type planetaries: List[Planetary], optional   
 
-        Returns
-        -------
-        valid : Boolean
+        :return: The result of the test 
+        :rtype: Boolean
  
 
         '''
@@ -1405,17 +1405,15 @@ class PlanetaryGear(DessiaObject):
         A function which give the speed of all the elements(Planetary,Planet,Planet_carrier) of planetary gear 
         whith 2 input elements and speeds
 
-        Parameters
-        ----------
-        input_speeds_and_composants : Dictionary{Planetary,Planet,Planet_carrier : float}
-            A dictionary where the element input are associated with their speed input
+        :param input_speeds_and_composants: A dictionary where the element input are associated with their speed input
+        :type input_speeds_and_composants: Dictionary{Planetary, Planet, PlanetCarrier : float}
 
-        Returns
-        -------
-        solution : List[float]
-            A list where the first elements are the speeds of the planetaries, then, there are the speeds of the planets, 
-            and to finish the last element is the speed of the planet_carrer
-            We can know the position of an element in the list by using the function matrix position whith the element in input 
+        :return: A list where the first elements are the speeds of the planetaries, then, there are the speeds of the planets, 
+                and to finish the last element is the speed of the planet_carrier.
+                We can know the position of an element in the list by using the function matrix position whith the element in input 
+                
+        :rtype: List[float]
+
 
         '''
 
@@ -1544,18 +1542,15 @@ class PlanetaryGear(DessiaObject):
 
     def torque_solve(self, input_torque_and_composant):
         '''
-        A function which give the torque of all the elements(Planetary,Planet,Planet_carrier) of planetary gear
+        A function which give the torque of all the elements(Planetary, Planet, PlanetCarrier) of planetary gear
         whith n-2 input elements and torques (whith n= number of planetary + planet carrier )
 
-        Parameters
-        ----------
-        input_torque_and_composant : Dictionary{Planetary,Planet,Planet_carrier : float}
-            A dictionary where the element input are associated with their torque input
+        :param input_torque_and_composant: A dictionary where the element input are associated with their torque input
+        :type input_torque_and_composant: Dictionary{ Planetary, Planet, PlanetCarrier : float}
 
-        Returns
-        -------
-        torque_element_association : Dictionary{Planetary,Planet,Planet_carrier : float}
-            A dictionary where all the element are associated with their torque calculated
+        :return:  A dictionary where all the element are associated with their torque calculated
+        :rtype: Dictionary{ Planetary, Planet, PlanetCarrier : float}
+
 
         '''
         system_matrix, vector_b, element_association = self.torque_system_equation()
@@ -1585,24 +1580,26 @@ class PlanetaryGear(DessiaObject):
 
 
 class PlanetsStructure(DessiaObject):
+    '''
+    Define a PlanetsStructure (A planetary gears without planetaries)
+    
+    :param planets: The list of all the planets of the PlanetStructure
+    :type planets: List[Planet]
+
+    :param connections : List of the connection bettween Planet( gearing and Double)
+    :type connections:List[Connection]
+    
+    :param name : Name
+    :type name: str, optional
+
+
+    '''
 
     def __init__(self, planets: List[Planet], connections: List[Connection], name: str = ''):
-        '''
         
-
-        Define a PlanetsStructure (A planetary gears without planetaries)
-        ----------
-        planets : List[Planet]
-            The list of all the planets of the PlanetStructure
-        connections : List[Connection]
-            List of the connection bettween Planet( gearing and Double)
-        name : str, optional
-
-
-        '''
         self.planets = planets
         self.connections = connections
-        number_planet = 0
+        
         self.gearings = []
         self.doubles = []
         DessiaObject.__init__(self, name=name)
@@ -1646,9 +1643,8 @@ class PlanetsStructure(DessiaObject):
         A function which give all the path betwen the first planet of the list planets(input of PlanetStructure) and the other.
         The path includes the planets and the connections(Gearing and Doubles)
 
-        Returns
-        -------
-        list_path : List[List[Planet,Gearing,Double]]
+        :return: list_path
+        :rtype: List[List[Planet,Gearing,Double]]
  
 
         '''
@@ -1730,9 +1726,8 @@ class PlanetsStructure(DessiaObject):
         A function wich return all the gearing chain in the planetary gear.
         A gearing chain is a list of planets which gearing together
 
-        Returns
-        -------
-        list_possibilities : List[Planet]
+        :return: List of gearing chains
+        :rtype: List[Planet]
  
 
         '''
@@ -1810,29 +1805,26 @@ class PlanetsStructure(DessiaObject):
 
         Plot the kinematic graph of the planetary gear
 
-        Parameters
-        ----------
-        lenght_gear : float, optional
-            The width of  the gears. The default is 0.1.
+        :param lenght_gear: The width of  the gears. The default is 0.1.
+        :type length_gear: float, optional
             
-        diameter_gear : float, optional
-            The diameter of the gears. The default is 1.
+        :param diameter_gear: The diameter of the gears. The default is 1.
+        :type diameter_gear: float, optional
             
-        lenght_double : float, optional
-            The lenght of the connections betwen 2 double planets. The default is 2.
+        :param lenght_double: The lenght of the connections betwen 2 double planets. The default is 2.
+        :type length_double: float, optional
             
-        diameter_pivot : float, optional
-            The diameter of the representatives signs of pivot. The default is 0.2.
+        :param diameter_pivot: The diameter of the representatives signs of pivot. The default is 0.2.
+        :type diameter_pivot: float, optional
             
-        lenght_pivot : float, optional
-             The length of the representatives signs of pivot. The default is 0.5.
+        :param lenght_pivot: The length of the representatives signs of pivot. The default is 0.5.
+        :type lenght_pivot: float, optional
              
-        planet_carrier_x : float, optional
-            The parameter for the position of planet carrer in x. The default is 2.
+        :param planet_carrier_x: float, optional The parameter for the position of planet carrer in x. The default is 2.
+        :type planet_carrer_x: float, optional 
             
-        planet_carrier_y : float, optional
-            The parameter for the position of planet carrer in y. The default is 2.
-
+        :param planet_carrier_y: The parameter for the position of planet carrer in y. The default is 2.
+        :type planet_carrier_y: float, optional
 
         '''
 
@@ -1991,37 +1983,37 @@ class PlanetsStructure(DessiaObject):
 
 
 class GeneratorPlanetStructure(DessiaObject):
+    '''
+    A geanerator of planet_structure
+
+    :param number_max_planet: The number of planet in the planet structure
+    :type number_max_planet: int
+        
+    :param number_junction: The number of junction in the planet structure 
+                             (a junction is for example when a planet is connected to 3 element (Planetary or Planets))
+                             (when a planet is connected to 4 elements we consider that is equal to 2 junctions)
+    :type number_junction: int
+        
+    :param number_max_junction_by_planet: The maximum of junction that we can have on 1 planet.
+    :type number_max_junction_by_planet: int
+        
+    :param min_planet_branch: The minimum of planet that we want in a branch.
+                               (a branch begining with of planetary or a junction and ending with a planetary or a junction)
+                               (when there are a junction, 1 branch ending and 2 begining)
+        
+    :type min_planet_branch: int
+        
+    :param name: Name 
+    :type name: str, optional
+ 
+
+    '''
     _standalone_in_db = True
 
     _generic_eq = True
-
+        
     def __init__(self, number_max_planet: int, number_junction: int, number_max_junction_by_planet: int, min_planet_branch: int,
                  name: str = ''):
-        '''
-        A geanerator of planet_structure
-
-        Parameters
-        ----------
-        number_max_planet : int
-            The number of planet in the planet structure
-            
-        number_junction : int
-            The number of junction in the planet structure 
-            (a junction is for the example when a planet is connected to 3 element (Planetary or Planets))
-            (when a planet is connected to 4 elements we consider that is equal to 2 junctions)
-            
-        number_max_junction_by_planet : int
-            The maximum of junction that we can have on 1 planet.
-            
-        min_planet_branch : int
-            The minimum of planet that we want in a branch.
-            (a branch begining with of planetary or a junction and ending with a planetary or a junction)
-            (when there are a junction, 1 branch ending and 2 begining)
-            
-        name : str, optional
- 
-
-        '''
         
         
         self.number_max_planet = number_max_planet
@@ -2653,23 +2645,25 @@ class GeneratorPlanetStructure(DessiaObject):
         return list_solution
 
 class GeneratorPlanetaryGearsArchitecture(DessiaObject):
+    '''
+    A generator of architectures of planetary gears
+
+    :param planet_structures: The list of Planets structure with which we want to generate planetary gears architrectures
+    :type planet_structures: List[PlanetsStructure]
+        
+    :param input_speeds: The list of speed range input
+    :type input_speeds: List[List[float]]
+    
+    :param name: Name
+    :type name: str, optional
+     
+
+    '''
     _standalone_in_db = True
 
     _generic_eq = True
     def __init__(self, planet_structures: List[PlanetsStructure], input_speeds: List[List[float]], name: str = ''):
-        '''
-        A generator of architectures of planetary gears
-
-        Parameters
-        ----------
-        planet_structures : List[PlanetsStructure]
-            The list of Planets structure with which we want to generate planetary gears architrectures
-        input_speeds : List[List[float]]
-            The list of speed range input
-        name : str, optional
-         
-
-        '''
+        
 
         self.planet_structures = planet_structures
         self.number_input = len(input_speeds)
@@ -3080,44 +3074,40 @@ class GeneratorPlanetaryGearsArchitecture(DessiaObject):
         return list_solution
 
 class GeneratorPlanetaryGearsZNumber(DessiaObject):
+    '''
+    A generator of all the number of tooth in a planetary gear
+
+    :param planetary_gear: The planetary gears that we want to generate all the number of tooth possible  
+    :type planetary_gear: PlanetaryGear
+        
+    :param input_speeds: The list of speed range input
+    :type input_speeds: List[List[float]]    
+        
+    :param Z_range_sun: The range of number tooth that can take a normal gear
+    :type Z_range_sun: List[int]
+
+    :param Z_range_ring: The range of number tooth that can take a ring
+    :type Z_range_ring: List[int]
+        
+    :param number_planet: The number of planet which are arround the planetary gear ( exemple: 3,4 or 5) 
+    :type number_planet: int
+    
+    :param name: Name
+    :type name: str, optional
+
+
+    '''
     _standalone_in_db = True
 
     _generic_eq = True
 
-    def __init__(self, planetary_gear: PlanetaryGear, input_speeds: List[List[float]], diameter_cylinder: float, 
-                 lenght_cylinder: float, Z_range_sun: List[int], Z_range_ring: List[int], number_planet: int, name: str = ''):
-        '''
-        A generator of all the number of tooth in a planetary gear
-
-        Parameters
-        ----------
-        planetary_gear : PlanetaryGear
-            the planetary gears that we want to generate all the number of tooth possible 
-            
-        input_speeds : List[List[float]]
-            The list of speed range input
-            
-        diameter_cylinder : float
-            DESCRIPTION.
-        lenght_cylinder : float
-            DESCRIPTION.
-            
-        Z_range_sun : List[int]
-            The range of number tooth that can take a normal gear
-        Z_range_ring : List[int]
-            The range of number tooth that can take a ring 
-            
-        number_planet : int
-            The number of planet which are arround the planetary gear ( exemple: 3,4 or 5) 
-        name : str, optional
-
-
-        '''
+    def __init__(self, planetary_gear: PlanetaryGear, input_speeds: List[List[float]],
+                 Z_range_sun: List[int], Z_range_ring: List[int], number_planet: int, name: str = ''):
+        
         
         self.planetary_gear = planetary_gear
         self.input_speeds = input_speeds
-        self.diameter = diameter_cylinder
-        self.lenght = lenght_cylinder
+
         self.number_input = len(input_speeds)
         self.Z_range_sun = Z_range_sun
         self.Z_range_ring = Z_range_ring

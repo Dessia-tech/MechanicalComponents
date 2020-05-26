@@ -6,4 +6,4 @@ Objet construction
 
    example_obj0
    example_obj1
-   example_obj2
+ 

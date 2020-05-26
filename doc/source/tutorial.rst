@@ -6,3 +6,4 @@
 
    example
    example_objet
+   planetary_gears 

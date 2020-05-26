@@ -1,5 +1,8 @@
 Key Concepts
 ============
+.. toctree::
+    :maxdepth:1
+    concepts_planetary_gears
 
 Rack
 ----
@@ -48,3 +51,5 @@ MeshAssemblyOptimizer
 
   .. autoclass:: mechanical_components.optimization.meshes.MeshAssemblyOptimizer
      :members: AnalyseZ,AnalyzeCombination,Optimize,SearchOptimumCD
+
+
