@@ -1,5 +1,5 @@
 Planetary Gear
-============
+===============
 
 .. toctree::
    :maxdepth: 2

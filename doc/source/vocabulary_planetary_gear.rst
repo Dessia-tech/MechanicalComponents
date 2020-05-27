@@ -1,9 +1,11 @@
-Vocabulary Planetary Gear
-============
+Vocabulary Planetary Gear 
+=========================
 
 In this part, we explain some concepts we use in the code for generate or analyse planetary gears. 
 
-Meshing Chain
+.. _meshing_chain:  
+
+Meshing Chain 
 ----------------
 A meshing chain is a list of planetaries and/or planets linked by mesh.
 
@@ -20,9 +22,11 @@ meshing_chain_2=[sun_2, planet_3]
 In a planetary gears ,there is minimum 1 planetary in a meching chain and maximum 2. The planetaries can be only at the beginning or/and at the end of the list. 
 If there is a ring in one side at the list, the  planetary at the other side  is necessarily a sun ( if there is an another one)
 
-It's use for the analyse to easily determinate the gearing plan. For the generator part, it's use to determinate the position and the form of the planetaries generated.   
+It's use for the analyse to easily determinate the gearing plan. For the generator part, it's use to determinate the position and the form of the planetaries generated. 
+  
+.. _path:
 
-Path
+Path 
 ----------------
 
 A path represent the elements and the relations which there are betwen 2 elements (in a planetary gears, is betwen 2 planetaries).
@@ -42,8 +46,9 @@ path_2= [sun, gearing_1, planet_1, gearing_2, planet_2, gearing_4, ring]
 
 The path is use in planetary gears to calculate the reason and test the assembly condition between two planetaries. It's also use for the kinematic schema plot 
 
+.. _branch:
 
-Branch
+Branch 
 ----------------
 
 A branch is a notion which concern only the planets structure in a planetary gear. It's a list wich contains only planets.
@@ -71,6 +76,7 @@ number of junction of a planet = number of branch connected to this planet -2
 
 The branch is use to generate the planets structures of planetary gear.
 
+.. _junction:
 
 Junction
 ----------------
