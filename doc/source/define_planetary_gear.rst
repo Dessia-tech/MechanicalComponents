@@ -1,5 +1,5 @@
-Planetary Gear
-----------------------------------
+Define a Planetary Gear
+============
 
 In this tutorial, we will define a Planetary Gear 
 

@@ -1,4 +1,4 @@
-Planetary Gears
+Planetary Gear
 ============
 
 
@@ -36,7 +36,7 @@ Planetary Gears
 .. seealso::
 
   .. autoclass:: mechanical_components.planetary_gears.PlanetaryGear
-     :members: matrix_position,plot_kinematic_graph,path_planetary_to_planetary,reson_abs,reason,gearing_chain,test_assembly_condition,speed_solve,speed_range,torque_solve
+     :members: matrix_position,plot_kinematic_graph,path_planetary_to_planetary,reson_abs,reason,meshing_chain,test_assembly_condition,speed_solve,speed_range,torque_solve
 
 Planets Strucuture
 ---------------------
@@ -44,7 +44,7 @@ Planets Strucuture
 .. seealso::
 
   .. autoclass:: mechanical_components.planetary_gears.PlanetsStructure
-     :members: path_planet_to_planet,gearing_chain,plot_kinematic_graph
+     :members: path_planet_to_planet,meshing_chain,plot_kinematic_graph
 
 Generator Planet Structure
 ---------------------

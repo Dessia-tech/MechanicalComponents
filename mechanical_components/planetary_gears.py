@@ -151,7 +151,7 @@ class PlanetCarrier(DessiaObject):
 
 
 
-class Gearing(DessiaObject):
+class Meshing(DessiaObject):
 
 
     def __init__(self, nodes: List[Gears], name: str = ''):
@@ -160,12 +160,12 @@ class Gearing(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
 
-class GearingPlanetary(Gearing):
+class MeshingPlanetary(Meshing):
 
     def __init__(self, nodes: List[Gears], name: str = ''):
 
         self.type = 'GI'
-        Gearing.__init__(self, nodes, name)
+        Meshing.__init__(self, nodes, name)
 
         for node in self.nodes:
             if isinstance(node, Planet):
@@ -188,12 +188,12 @@ class GearingPlanetary(Gearing):
         return matrix, rhs
 
 
-class GearingPlanet(Gearing):
+class MeshingPlanet(Meshing):
 
         def __init__(self, nodes: List[Gears], name: str = ''):
 
             self.type = 'GI'
-            Gearing.__init__(self, nodes, name)
+            Meshing.__init__(self, nodes, name)
             self.Z_planets = []
 
             for node in self.nodes:
@@ -279,9 +279,9 @@ class Connection(DessiaObject):
         
         -'D' is for Double 
         
-        -'GI' is when the first element of nodes gearing to the second inward of the planetary gear 
+        -'GI' is when the first element of nodes meshing to the second inward of the planetary gear 
         
-        -'GE' is when the first element of nodes gearing to the second outward of the planetary gear
+        -'GE' is when the first element of nodes meshing to the second outward of the planetary gear
         
         
     :type connection_type: str
@@ -312,7 +312,7 @@ class PlanetaryGear(DessiaObject):
     :type planets: List[Planet]
     :param planet_carrier: The planet_carrer of the planetary gear
     :type planet_carrier: PlanetCarrier
-    :param connections: List of the connection bettween element ( gearing and Double)
+    :param connections: List of the connection bettween element ( meshing and Double)
     :type connections: List[Connection]
     :param name: name
     :type name: str,optional
@@ -331,7 +331,7 @@ class PlanetaryGear(DessiaObject):
             self.elements_name.append(element.name)
 
         self.connections = connections
-        self.gearings = []
+        self.meshings = []
         self.doubles = []
         DessiaObject.__init__(self, name=name)
 
@@ -360,20 +360,20 @@ class PlanetaryGear(DessiaObject):
           if connection.connection_type != 'D':
 
               if isinstance(connection.nodes[0], Planet) and isinstance(connection.nodes[1], Planet):
-                self.gearings.append(GearingPlanet([connection.nodes[0], connection.nodes[1]], 'Gearing'+str(i)))
+                self.meshings.append(MeshingPlanet([connection.nodes[0], connection.nodes[1]], 'meshing'+str(i)))
 
 
               else:
-                self.gearings.append(GearingPlanetary([connection.nodes[0], connection.nodes[1]], 'Gearing'+str(i),))
+                self.meshings.append(MeshingPlanetary([connection.nodes[0], connection.nodes[1]], 'meshing'+str(i),))
 
 
-              self.gearings[-1].type = connection.connection_type
+              self.meshings[-1].type = connection.connection_type
 
 
           else:
              self.doubles.append(Double([connection.nodes[0], connection.nodes[1]], 'Double'+str(i)))
 
-        self.relations = self.gearings + self.doubles
+        self.relations = self.meshings + self.doubles
 
     def __str__(self):
 
@@ -578,9 +578,9 @@ class PlanetaryGear(DessiaObject):
         plt.figure()
 
         previous_relation_double = []
-        previous_relation_gearing = []
+        previous_relation_meshing = []
 
-        previous_planet_gearing = []
+        previous_planet_meshing = []
         previous_planet_double = []
         inverse_relation_double = []
 
@@ -673,7 +673,7 @@ class PlanetaryGear(DessiaObject):
                     previous_relation_double.append(element)
                     previous_planet_double.extend([element.nodes[0], element.nodes[1]])
 
-                elif isinstance(element, GearingPlanet):
+                elif isinstance(element, MeshingPlanet):
 
                     color += 1
 
@@ -697,14 +697,14 @@ class PlanetaryGear(DessiaObject):
 
 
 
-                    previous_relation_gearing.append(element)
-                    previous_planet_gearing.extend([element.nodes[0], element.nodes[1]])
+                    previous_relation_meshing.append(element)
+                    previous_planet_meshing.extend([element.nodes[0], element.nodes[1]])
 
                 if isinstance(element, Planet):
                     previous_planet = element
 
                 if not isinstance(element, Planet) and not isinstance(element, Planetary) \
-                and not isinstance(element, GearingPlanetary):
+                and not isinstance(element, MeshingPlanetary):
 
                     if  not coordinate in coordinate_planet:
                         coordinate_planet.append(coordinate)
@@ -723,18 +723,18 @@ class PlanetaryGear(DessiaObject):
 
         coordinate_planet_carrier = self.plot_kinematic_graph_planet_carrier(coordinate_planet, planet_carrier_x, planet_carrier_y)
         lenght_ring_ini = 5
-        for gearing in self.gearings:
+        for meshing in self.meshings:
 
-            if isinstance(gearing, GearingPlanetary):
+            if isinstance(meshing, MeshingPlanetary):
                 color += 1
 
-                if (isinstance(gearing.nodes[0], Planetary) and gearing.nodes[0].planetary_type == 'Sun') \
-                or (isinstance(gearing.nodes[1], Planetary) and gearing.nodes[1].planetary_type == 'Sun'):
+                if (isinstance(meshing.nodes[0], Planetary) and meshing.nodes[0].planetary_type == 'Sun') \
+                or (isinstance(meshing.nodes[1], Planetary) and meshing.nodes[1].planetary_type == 'Sun'):
 
-                    if isinstance(gearing.nodes[0], Planetary):
-                        index = index_coordinate_planet.index(gearing.nodes[1])
+                    if isinstance(meshing.nodes[0], Planetary):
+                        index = index_coordinate_planet.index(meshing.nodes[1])
                     else:
-                        index = index_coordinate_planet.index(gearing.nodes[0])
+                        index = index_coordinate_planet.index(meshing.nodes[0])
 
                     planetary_diameter = ((coordinate_planet[index][1]-diameter_gear/2)-coordinate_planet_carrier[1])*2
 
@@ -742,10 +742,10 @@ class PlanetaryGear(DessiaObject):
                                                    planetary_diameter, diameter_pivot, lenght_pivot, color)
 
                 else:
-                    if isinstance(gearing.nodes[0], Planetary):
-                        index = index_coordinate_planet.index(gearing.nodes[1])
+                    if isinstance(meshing.nodes[0], Planetary):
+                        index = index_coordinate_planet.index(meshing.nodes[1])
                     else:
-                        index = index_coordinate_planet.index(gearing.nodes[0])
+                        index = index_coordinate_planet.index(meshing.nodes[0])
 
                     lenght_ring = lenght_ring_ini-(((coordinate_planet[index][0])*+100)/50)
                     diameter_ring = diameter_ring_ini-(((coordinate_planet[index][0])*10+100)/50)
@@ -764,7 +764,7 @@ class PlanetaryGear(DessiaObject):
         '''
         A function which give all the path betwen the first planetary of the list planetaries (input) and the others
         
-        The path includes the planets and the connections(Gearing and Doubles)
+        The path includes the planets and the connections(meshing and Doubles)
 
  
         :param planetaries: The first planetary of the list is the beginning of all the path , the others planetaries of the list are the endings of the paths. 
@@ -773,7 +773,7 @@ class PlanetaryGear(DessiaObject):
         :type planetaries: List[Planetary], optional
 
         :return: list_path
-        :rtype: List[List[Planet,Gearing,Double,Planetary]]
+        :rtype: List[List[Planet,meshing,Double,Planetary]]
         
         '''
         if not planetaries:
@@ -816,7 +816,7 @@ class PlanetaryGear(DessiaObject):
         A function wich give the reason ( Willis relation) of a planetary gear
 
         :param path: The path betwen the two planetaries for which we want to calculate the reason (give by the method path_planetary_to_planetary)
-        :type path: List[Planet, Gearing, Double]
+        :type path: List[Planet, meshing, Double]
             
         :return: reason
         :rtype: float
@@ -826,7 +826,7 @@ class PlanetaryGear(DessiaObject):
         reason = 1
         for i, element in enumerate(path):
 
-            if isinstance(element, Gearing):
+            if isinstance(element, Meshing):
 
 
                 reason = reason*path[i-1].Z/path[i+1].Z
@@ -836,10 +836,10 @@ class PlanetaryGear(DessiaObject):
 
     def reason(self, path):
         '''
-        A function which give the reason ( Willis relation) of a planetary gear with the coefficient (-1)^n ( n = the number of gearing)
+        A function which give the reason ( Willis relation) of a planetary gear with the coefficient (-1)^n ( n = the number of meshing)
 
         :param path: The path betwen the two planetaries for which we want to calculate the reason  
-        :type path: List[Planet, Gearing, Double] 
+        :type path: List[Planet, meshing, Double] 
 
 
         :return: reason 
@@ -851,7 +851,7 @@ class PlanetaryGear(DessiaObject):
 
         for i, element in enumerate(path):
 
-            if isinstance(element, Gearing):
+            if isinstance(element, Meshing):
 
                 reason = reason*-path[i-1].Z/path[i+1].Z
 
@@ -1162,12 +1162,12 @@ class PlanetaryGear(DessiaObject):
 
 
 
-    def gearing_chain_recursive_function(self, number_gearing_chain, element, graph_planetary_gear, possibilities,
-                                         list_possibilities, previous_relation, gearing_way, previous_gearing_chains):
+    def meshing_chain_recursive_function(self, number_meshing_chain, element, graph_planetary_gear, possibilities,
+                                         list_possibilities, previous_relation, meshing_way, previous_meshing_chains):
 
 
         neighbors = nx.all_neighbors(graph_planetary_gear, str(element))
-        gearing = 0
+        meshing = 0
         neighbors_2 = []
         for neighbor in neighbors:
             neighbor = nx.get_node_attributes(graph_planetary_gear, neighbor)[neighbor]
@@ -1186,13 +1186,13 @@ class PlanetaryGear(DessiaObject):
 
         for neighbor in neighbors_2:
 
-            gearing = copy.copy(gearing)
+            meshing = copy.copy(meshing)
 
             previous_relation = neighbor
 
-            if isinstance(neighbor, Gearing):
+            if isinstance(neighbor, Meshing):
 
-                if gearing == 0 or gearing_way == 0:
+                if meshing == 0 or meshing_way == 0:
                     if neighbor.nodes[0] == element:
                         possibilities.append(neighbor.nodes[1])
                         element_3 = neighbor.nodes[1]
@@ -1201,11 +1201,11 @@ class PlanetaryGear(DessiaObject):
                         possibilities.append(neighbor.nodes[0])
                         element_3 = neighbor.nodes[0]
 
-                    self.gearing_chain_recursive_function(number_gearing_chain, element_3, graph_planetary_gear, possibilities,
-                                                          list_possibilities, previous_relation, 0, previous_gearing_chains)
-                    gearing_way = -1
+                    self.meshing_chain_recursive_function(number_meshing_chain, element_3, graph_planetary_gear, possibilities,
+                                                          list_possibilities, previous_relation, 0, previous_meshing_chains)
+                    meshing_way = -1
 
-                if gearing == 1 or gearing_way == 1:
+                if meshing == 1 or meshing_way == 1:
 
                     if neighbor.nodes[0] == element:
                         possibilities = [neighbor.nodes[1]] + possibilities
@@ -1215,9 +1215,9 @@ class PlanetaryGear(DessiaObject):
                         possibilities = [neighbor.nodes[0]] + possibilities
 
                         element_3 = neighbor.nodes[0]
-                    self.gearing_chain_recursive_function(number_gearing_chain, element_3, graph_planetary_gear, possibilities,
-                                                          list_possibilities, previous_relation, 1, previous_gearing_chains)
-                gearing = 1
+                    self.meshing_chain_recursive_function(number_meshing_chain, element_3, graph_planetary_gear, possibilities,
+                                                          list_possibilities, previous_relation, 1, previous_meshing_chains)
+                meshing = 1
 
 
             elif isinstance(neighbor, Double):
@@ -1229,20 +1229,20 @@ class PlanetaryGear(DessiaObject):
                 else:
                     element_3 = neighbor.nodes[0]
 
-                self.gearing_chain_recursive_function(number_gearing_chain+1, element_3, graph_planetary_gear, [],
-                                                      list_possibilities, previous_relation, 0, previous_gearing_chains)
+                self.meshing_chain_recursive_function(number_meshing_chain+1, element_3, graph_planetary_gear, [],
+                                                      list_possibilities, previous_relation, 0, previous_meshing_chains)
 
 
 
-        if not gearing:
+        if not meshing:
 
-                if not number_gearing_chain in previous_gearing_chains:
+                if not number_meshing_chain in previous_meshing_chains:
 
-                    previous_gearing_chains.append(number_gearing_chain)
+                    previous_meshing_chains.append(number_meshing_chain)
                     list_possibilities.append(possibilities)
 
                 else:
-                    index = previous_gearing_chains.index(number_gearing_chain)
+                    index = previous_meshing_chains.index(number_meshing_chain)
                     list_possibilities[index] = possibilities
 
 
@@ -1250,17 +1250,17 @@ class PlanetaryGear(DessiaObject):
 
         return list_possibilities
 
-    def gearing_chain(self):
+    def meshing_chain(self):
         """
-        A function wich return all the gearing chain in the planetary gear.
-        A gearing chain is a list of planetaries and planets which gearing together
+        A function wich return all the meshing chain in the planetary gear.
+        A meshing chain is a list of planetaries and planets which meshed together
 
-        :return: the list of gearing_chains
+        :return: the list of meshing_chains
         :rtype: List[List[Planetary,Planet]]
 
         """
         graph_planetary_gear = self.graph()
-        list_possibilities = self.gearing_chain_recursive_function(0, self.planetaries[0], graph_planetary_gear, [], [], 0, 0, [])
+        list_possibilities = self.meshing_chain_recursive_function(0, self.planetaries[0], graph_planetary_gear, [], [], 0, 0, [])
 
         return list_possibilities
 
@@ -1322,7 +1322,7 @@ class PlanetaryGear(DessiaObject):
 
                 for j, node_2 in enumerate(inv_list_nodes):
 
-                    if isinstance(node_2, (GearingPlanetary, GearingPlanet)):
+                    if isinstance(node_2, (MeshingPlanetary, MeshingPlanet)):
 
                         basic_ratio_planet_1 = basic_ratio_planet_1*\
                         (-inv_list_nodes[j-1].Z/inv_list_nodes[j+1].Z)
@@ -1337,7 +1337,7 @@ class PlanetaryGear(DessiaObject):
 
                 for j, node_2 in enumerate(list_nodes_2[position_planet:]):
 
-                    if isinstance(node_2, (GearingPlanetary, GearingPlanet)):
+                    if isinstance(node_2, (MeshingPlanetary, MeshingPlanet)):
 
                         basic_ratio_planet_2 = basic_ratio_planet_2 * \
                         (-list_nodes_2[position_planet+j-1].Z / list_nodes_2[position_planet+j+1].Z)
@@ -1372,7 +1372,7 @@ class PlanetaryGear(DessiaObject):
         for i, relation in enumerate(self.relations):
             matrix_relation, rhs_relation = relation.speed_system_equations()
 
-            if isinstance(relation, GearingPlanetary):
+            if isinstance(relation, MeshingPlanetary):
 
                 if isinstance(relation.nodes[0], Planetary):
                     matrix_position_planetary = self.matrix_position(relation.nodes[0])
@@ -1446,13 +1446,13 @@ class PlanetaryGear(DessiaObject):
         return solution
 
     def torque_system_equation(self):
-        n_gearing_planetary = 0
-        for gearing in self.gearings:
-            if isinstance(gearing, GearingPlanetary):
-                n_gearing_planetary += 1
+        n_meshing_planetary = 0
+        for meshing in self.meshings:
+            if isinstance(meshing, MeshingPlanetary):
+                n_meshing_planetary += 1
 
-        n_equations = (len(self.gearings)-n_gearing_planetary)+n_gearing_planetary*2
-        n_variables = (len(self.gearings)-n_gearing_planetary)*2+n_gearing_planetary*3 + 1
+        n_equations = (len(self.meshings)-n_meshing_planetary)+n_meshing_planetary*2
+        n_variables = (len(self.meshings)-n_meshing_planetary)*2+n_meshing_planetary*3 + 1
 
         system_matrix = npy.zeros((n_equations, n_variables))
         rhs = npy.zeros(n_equations)
@@ -1463,10 +1463,10 @@ class PlanetaryGear(DessiaObject):
         for element in self.elements:
            element_association[element] = []
 
-        for gearing in self.gearings:
-            matrix_relation, rhs_relation = gearing.torque_system_equations()
+        for meshing in self.meshings:
+            matrix_relation, rhs_relation = meshing.torque_system_equations()
 
-            if isinstance(gearing, GearingPlanetary):
+            if isinstance(meshing, MeshingPlanetary):
 
                 system_matrix[num_equation][num_element] = matrix_relation[0][0]
                 system_matrix[num_equation][num_element+1] = matrix_relation[0][1]
@@ -1476,14 +1476,14 @@ class PlanetaryGear(DessiaObject):
                 rhs[num_equation] = rhs_relation[0]
                 rhs[num_equation+1] = rhs_relation[1]
 
-                if isinstance(gearing.nodes[0], Planetary):
+                if isinstance(meshing.nodes[0], Planetary):
 
-                    element_association[gearing.nodes[0]].append(num_element)
-                    element_association[gearing.nodes[1]].append(num_element+1)
+                    element_association[meshing.nodes[0]].append(num_element)
+                    element_association[meshing.nodes[1]].append(num_element+1)
 
                 else:
-                    element_association[gearing.nodes[1]].append(num_element)
-                    element_association[gearing.nodes[0]].append(num_element+1)
+                    element_association[meshing.nodes[1]].append(num_element)
+                    element_association[meshing.nodes[0]].append(num_element+1)
 
                 element_association[self.planet_carrier].append(num_element+2)
 
@@ -1497,8 +1497,8 @@ class PlanetaryGear(DessiaObject):
 
                 rhs[num_equation] = rhs_relation[0]
 
-                element_association[gearing.nodes[0]].append(num_element)
-                element_association[gearing.nodes[1]].append(num_element+1)
+                element_association[meshing.nodes[0]].append(num_element)
+                element_association[meshing.nodes[1]].append(num_element+1)
 
 
                 num_element += 2
@@ -1586,7 +1586,7 @@ class PlanetsStructure(DessiaObject):
     :param planets: The list of all the planets of the PlanetStructure
     :type planets: List[Planet]
 
-    :param connections : List of the connection bettween Planet( gearing and Double)
+    :param connections : List of the connection bettween Planet( meshing and Double)
     :type connections:List[Connection]
     
     :param name : Name
@@ -1600,7 +1600,7 @@ class PlanetsStructure(DessiaObject):
         self.planets = planets
         self.connections = connections
         
-        self.gearings = []
+        self.meshings = []
         self.doubles = []
         DessiaObject.__init__(self, name=name)
 
@@ -1609,12 +1609,12 @@ class PlanetsStructure(DessiaObject):
 
           if connection.connection_type != 'D':
 
-             self.gearings.append(GearingPlanet([connection.nodes[0], connection.nodes[1]], 'Gearing'+str(i)))
+             self.meshings.append(MeshingPlanet([connection.nodes[0], connection.nodes[1]], 'meshing'+str(i)))
 
           else:
              self.doubles.append(Double([connection.nodes[0], connection.nodes[1]], 'Double'+str(i)))
 
-        self.relations = self.gearings + self.doubles
+        self.relations = self.meshings + self.doubles
 
     def graph(self):
 
@@ -1641,10 +1641,10 @@ class PlanetsStructure(DessiaObject):
     def path_planet_to_planet(self):
         '''
         A function which give all the path betwen the first planet of the list planets(input of PlanetStructure) and the other.
-        The path includes the planets and the connections(Gearing and Doubles)
+        The path includes the planets and the connections(meshing and Doubles)
 
         :return: list_path
-        :rtype: List[List[Planet,Gearing,Double]]
+        :rtype: List[List[Planet,meshing,Double]]
  
 
         '''
@@ -1661,11 +1661,11 @@ class PlanetsStructure(DessiaObject):
                 path[i] = nx.get_node_attributes(graph_planetary_gears, path[i])[path[i]]
         return list_path
 
-    def gearing_chain_recursive_function(self, n, planet, graph_planetary_gear, possibilities, list_possibilities, previous_relation):
+    def meshing_chain_recursive_function(self, n, planet, graph_planetary_gear, possibilities, list_possibilities, previous_relation):
 
         planet_2 = copy.copy(planet)
         neighbors = nx.all_neighbors(graph_planetary_gear, str(planet))
-        gearing = 0
+        meshing = 0
         neighbors_2 = []
         for neighbor in neighbors:
             neighbor = nx.get_node_attributes(graph_planetary_gear, neighbor)[neighbor]
@@ -1687,8 +1687,8 @@ class PlanetsStructure(DessiaObject):
             possibilities_2 = copy.copy(possibilities)
             previous_relation = neighbor
 
-            if isinstance(neighbor, GearingPlanet):
-                gearing = 1
+            if isinstance(neighbor, MeshingPlanet):
+                meshing = 1
 
                 if neighbor.nodes[0] == planet:
 
@@ -1698,7 +1698,7 @@ class PlanetsStructure(DessiaObject):
                 else:
                     possibilities_2.append(neighbor.nodes[0])
                     planet_3 = neighbor.nodes[0]
-                self.gearing_chain_recursive_function(n, planet_3, graph_planetary_gear, possibilities_2,
+                self.meshing_chain_recursive_function(n, planet_3, graph_planetary_gear, possibilities_2,
                                                       list_possibilities, previous_relation)
 
             elif isinstance(neighbor, Double):
@@ -1710,29 +1710,29 @@ class PlanetsStructure(DessiaObject):
                 else:
                     planet_3 = neighbor.nodes[0]
 
-                self.gearing_chain_recursive_function(n, planet_3, graph_planetary_gear, [],
+                self.meshing_chain_recursive_function(n, planet_3, graph_planetary_gear, [],
                                                       list_possibilities, previous_relation)
 
 
 
-        if not gearing:
+        if not meshing:
             list_possibilities.append(possibilities)
             return list_possibilities
 
         return list_possibilities
 
-    def gearing_chain(self):
+    def meshing_chain(self):
         '''
-        A function wich return all the gearing chain in the planetary gear.
-        A gearing chain is a list of planets which gearing together
+        A function wich return all the meshing chain in the planetary gear.
+        A meshing chain is a list of planets which meshed together
 
-        :return: List of gearing chains
+        :return: List of meshing chains
         :rtype: List[Planet]
  
 
         '''
         graph_planetary_gear = self.graph()
-        list_possibilities = self.gearing_chain_recursive_function(0, self.planets[0], graph_planetary_gear, [], [], 0)
+        list_possibilities = self.meshing_chain_recursive_function(0, self.planets[0], graph_planetary_gear, [], [], 0)
         return list_possibilities
 
 
@@ -1833,12 +1833,12 @@ class PlanetsStructure(DessiaObject):
         plt.figure()
 
         previous_relation_double = []
-        previous_relation_gearing = []
+        previous_relation_meshing = []
 
-        previous_planet_gearing = []
+        previous_planet_meshing = []
         previous_planet_double = []
         inverse_relation_double = []
-        inverse_relation_gearing = []
+        inverse_relation_meshing = []
         coordinate_planet = [[0, 0]]
         coordinate = [0, 0]
 
@@ -1846,7 +1846,7 @@ class PlanetsStructure(DessiaObject):
         for path in graph_path:
 
 
-            flag_way_inv_gearing = 0
+            flag_way_inv_meshing = 0
             flag_way_inv_double = 0
             coordinate = [0, 0]
 
@@ -1920,43 +1920,43 @@ class PlanetsStructure(DessiaObject):
                     previous_relation_double.append(element)
                     previous_planet_double.extend([element.nodes[0], element.nodes[1]])
 
-                elif isinstance(element, GearingPlanet):
+                elif isinstance(element, MeshingPlanet):
                     color += 1
-                    if element in  inverse_relation_gearing:
+                    if element in  inverse_relation_meshing:
 
                         coordinate = [coordinate[0], coordinate[1]-diameter_gear]
 
 
-                    elif ((element.nodes[0] in previous_planet_gearing or element.nodes[1] in previous_planet_gearing) \
-                    and not element  in previous_relation_gearing):
+                    elif ((element.nodes[0] in previous_planet_meshing or element.nodes[1] in previous_planet_meshing) \
+                    and not element  in previous_relation_meshing):
 
-                        for gearing in previous_relation_gearing:
+                        for meshing in previous_relation_meshing:
 
-                            for node in gearing.nodes:
+                            for node in meshing.nodes:
 
                                 if element.nodes[0] == node or element.nodes[1] == node:
 
-                                    if  not gearing == previous_element:
+                                    if  not meshing == previous_element:
 
-                                        if gearing in inverse_relation_gearing:
+                                        if meshing in inverse_relation_meshing:
 
-                                            flag_way_inv_gearing = 1
+                                            flag_way_inv_meshing = 1
                                         else:
-                                            flag_way_inv_gearing = 0
+                                            flag_way_inv_meshing = 0
                                     else:
 
-                                        if not gearing in inverse_relation_gearing:
-                                            flag_way_inv_gearing = 1
+                                        if not meshing in inverse_relation_meshing:
+                                            flag_way_inv_meshing = 1
                                         else:
-                                            flag_way_inv_gearing = 0
+                                            flag_way_inv_meshing = 0
 
-                        if flag_way_inv_gearing:
+                        if flag_way_inv_meshing:
                             coordinate = [coordinate[0], coordinate[1]+diameter_gear]
 
                         else:
 
                             coordinate = [coordinate[0], coordinate[1]-diameter_gear]
-                            inverse_relation_gearing.append(element)
+                            inverse_relation_meshing.append(element)
 
 
 
@@ -1966,8 +1966,8 @@ class PlanetsStructure(DessiaObject):
 
                         coordinate = [coordinate[0], coordinate[1]+diameter_gear]
 
-                    previous_relation_gearing.append(element)
-                    previous_planet_gearing.extend([element.nodes[0], element.nodes[1]])
+                    previous_relation_meshing.append(element)
+                    previous_planet_meshing.extend([element.nodes[0], element.nodes[1]])
 
                 if not isinstance(element, Planet):
 
@@ -2082,7 +2082,7 @@ class GeneratorPlanetStructure(DessiaObject):
             if possibilitie_2[i] < sum_number_junction_max_by_planet_2[i]:
 
                 if i+1 < len(possibilitie)-1:
-                    sum_number_junction_max_by_planet_2[i+1] += self.number_junction_max_by_planet
+                    sum_number_junction_max_by_planet_2[i+1] += self.number_max_junction_by_planet
 
                 possibilitie_2[i] += 1
 
@@ -2669,165 +2669,165 @@ class GeneratorPlanetaryGearsArchitecture(DessiaObject):
         self.number_input = len(input_speeds)
         DessiaObject.__init__(self, name=name)
 
-    def planetaries_possibilities_recursive_function(self, n, planetaries, possibilitie, list_possibilities, gearing_chains,
-                                                     gearing_chains_planetary_type, gearing_chains_occupation,
-                                                     gearing_chains_planet_index):
+    def planetaries_possibilities_recursive_function(self, n, planetaries, possibilitie, list_possibilities, meshing_chains,
+                                                     meshing_chains_planetary_type, meshing_chains_occupation,
+                                                     meshing_chains_planet_index):
 
 
         possibilitie_2 = copy.copy(possibilitie)
         list_planetary_type = [['Ring', 'GI', -1], ['Sun', 'GE', 1]]
-        gearing_chains_2 = copy.copy(gearing_chains)
+        meshing_chains_2 = copy.copy(meshing_chains)
         number = 0
 
 
 
         if n == len(planetaries):
 
-            if not 0 in gearing_chains_occupation:
+            if not 0 in meshing_chains_occupation:
                 list_possibilities.append(possibilitie_2)
 
             return list_possibilities
 
         planetary = planetaries[n]
 
-        for i, gearing_chain in enumerate(gearing_chains_2):
+        for i, meshing_chain in enumerate(meshing_chains_2):
             number = copy.copy(i)
 
-            if gearing_chains_occupation[i] < 2:
+            if meshing_chains_occupation[i] < 2:
 
-                gearing_chains_occupation_2 = copy.copy(gearing_chains_occupation)
-                gearing_chains_occupation_2[i] += 1
+                meshing_chains_occupation_2 = copy.copy(meshing_chains_occupation)
+                meshing_chains_occupation_2[i] += 1
 
 
 
-                if gearing_chains_planet_index[i] == 0:
+                if meshing_chains_planet_index[i] == 0:
 
-                    gearing_chains_planet_index_2 = copy.copy(gearing_chains_planet_index)
-                    gearing_chains_planet_index_2[i] = 1
+                    meshing_chains_planet_index_2 = copy.copy(meshing_chains_planet_index)
+                    meshing_chains_planet_index_2[i] = 1
 
                     for planetary_type in list_planetary_type:
-                        if not gearing_chains_planetary_type[i] == planetary_type[0]:
+                        if not meshing_chains_planetary_type[i] == planetary_type[0]:
 
                             planetary_2 = copy.copy(planetary)
-                            gearing_chain_2 = copy.copy(gearing_chain)
+                            meshing_chain_2 = copy.copy(meshing_chain)
 
                             planetary_2.planetary_type = planetary_type[0]
                             planetary_2.p = planetary_type[2]
 
-                            gearing_chains_planetary_type_2 = copy.copy(gearing_chains_planetary_type)
-                            gearing_chains_planetary_type_2[i] = planetary_type[0]
+                            meshing_chains_planetary_type_2 = copy.copy(meshing_chains_planetary_type)
+                            meshing_chains_planetary_type_2[i] = planetary_type[0]
 
-                            possibilitie_2[n] = [planetary_2, gearing_chain_2[0], planetary_type[1], number]
+                            possibilitie_2[n] = [planetary_2, meshing_chain_2[0], planetary_type[1], number]
                             self.planetaries_possibilities_recursive_function(n+1, planetaries, possibilitie_2,
-                                                                              list_possibilities, gearing_chains,
-                                                                              gearing_chains_planetary_type_2,
-                                                                              gearing_chains_occupation_2,
-                                                                              gearing_chains_planet_index_2)
+                                                                              list_possibilities, meshing_chains,
+                                                                              meshing_chains_planetary_type_2,
+                                                                              meshing_chains_occupation_2,
+                                                                              meshing_chains_planet_index_2)
 
 
-                    gearing_chains_planet_index_2[i] = -1
+                    meshing_chains_planet_index_2[i] = -1
 
 
                     for planetary_type in list_planetary_type:
 
-                        if not gearing_chains_planetary_type[i] == planetary_type[0]:
+                        if not meshing_chains_planetary_type[i] == planetary_type[0]:
                             planetary_2 = copy.copy(planetary)
-                            gearing_chain_2 = copy.copy(gearing_chain)
+                            meshing_chain_2 = copy.copy(meshing_chain)
 
                             planetary_2.planetary_type = planetary_type[0]
                             planetary_2.p = planetary_type[2]
 
-                            gearing_chains_planetary_type_2 = copy.copy(gearing_chains_planetary_type)
-                            gearing_chains_planetary_type_2[i] = planetary_type[0]
+                            meshing_chains_planetary_type_2 = copy.copy(meshing_chains_planetary_type)
+                            meshing_chains_planetary_type_2[i] = planetary_type[0]
 
-                            possibilitie_2[n] = [planetary_2, gearing_chain_2[-1], planetary_type[1], number]
+                            possibilitie_2[n] = [planetary_2, meshing_chain_2[-1], planetary_type[1], number]
                             self.planetaries_possibilities_recursive_function(n+1, planetaries, possibilitie_2,
-                                                                              list_possibilities, gearing_chains,
-                                                                              gearing_chains_planetary_type_2,
-                                                                              gearing_chains_occupation_2,
-                                                                              gearing_chains_planet_index_2)
+                                                                              list_possibilities, meshing_chains,
+                                                                              meshing_chains_planetary_type_2,
+                                                                              meshing_chains_occupation_2,
+                                                                              meshing_chains_planet_index_2)
 
 
 
-                elif gearing_chains_planet_index[i] == 1:
+                elif meshing_chains_planet_index[i] == 1:
 
-                    gearing_chains_planet_index_2 = copy.copy(gearing_chains_planet_index)
-                    gearing_chains_planet_index_2[i] = -1
+                    meshing_chains_planet_index_2 = copy.copy(meshing_chains_planet_index)
+                    meshing_chains_planet_index_2[i] = -1
 
                     for planetary_type in list_planetary_type:
 
-                        if not gearing_chains_planetary_type[i] == planetary_type[0]:
+                        if not meshing_chains_planetary_type[i] == planetary_type[0]:
 
                             planetary_2 = copy.copy(planetary)
-                            gearing_chain_2 = copy.copy(gearing_chain)
+                            meshing_chain_2 = copy.copy(meshing_chain)
 
                             planetary_2.planetary_type = planetary_type[0]
                             planetary_2.p = planetary_type[2]
 
-                            gearing_chains_planetary_type_2 = copy.copy(gearing_chains_planetary_type)
-                            gearing_chains_planetary_type_2[i] = planetary_type[0]
+                            meshing_chains_planetary_type_2 = copy.copy(meshing_chains_planetary_type)
+                            meshing_chains_planetary_type_2[i] = planetary_type[0]
 
-                            possibilitie_2[n] = [planetary_2, gearing_chain_2[-1], planetary_type[1], number]
+                            possibilitie_2[n] = [planetary_2, meshing_chain_2[-1], planetary_type[1], number]
                             self.planetaries_possibilities_recursive_function(n+1, planetaries, possibilitie_2,
-                                                                              list_possibilities, gearing_chains,
-                                                                              gearing_chains_planetary_type_2,
-                                                                              gearing_chains_occupation_2,
-                                                                              gearing_chains_planet_index_2)
+                                                                              list_possibilities, meshing_chains,
+                                                                              meshing_chains_planetary_type_2,
+                                                                              meshing_chains_occupation_2,
+                                                                              meshing_chains_planet_index_2)
 
 
                 else:
-                    gearing_chains_planet_index_2 = copy.copy(gearing_chains_planet_index)
-                    gearing_chains_planet_index_2[i] = -1
+                    meshing_chains_planet_index_2 = copy.copy(meshing_chains_planet_index)
+                    meshing_chains_planet_index_2[i] = -1
 
                     for planetary_type in list_planetary_type:
-                        if not gearing_chains_planetary_type[i] == planetary_type[0]:
+                        if not meshing_chains_planetary_type[i] == planetary_type[0]:
 
                             planetary_2 = copy.copy(planetary)
-                            gearing_chain_2 = copy.copy(gearing_chain)
+                            meshing_chain_2 = copy.copy(meshing_chain)
 
                             planetary_2.planetary_type = planetary_type[0]
                             planetary_2.p = planetary_type[2]
 
-                            gearing_chains_planetary_type_2 = copy.copy(gearing_chains_planetary_type)
-                            gearing_chains_planetary_type_2[i] = planetary_type[0]
+                            meshing_chains_planetary_type_2 = copy.copy(meshing_chains_planetary_type)
+                            meshing_chains_planetary_type_2[i] = planetary_type[0]
 
-                            possibilitie_2[n] = [planetary_2, gearing_chain_2[0], planetary_type[1], number]
+                            possibilitie_2[n] = [planetary_2, meshing_chain_2[0], planetary_type[1], number]
                             self.planetaries_possibilities_recursive_function(n+1, planetaries, possibilitie_2,
-                                                                              list_possibilities, gearing_chains,
-                                                                              gearing_chains_planetary_type_2,
-                                                                              gearing_chains_occupation_2,
-                                                                              gearing_chains_planet_index_2)
+                                                                              list_possibilities, meshing_chains,
+                                                                              meshing_chains_planetary_type_2,
+                                                                              meshing_chains_occupation_2,
+                                                                              meshing_chains_planet_index_2)
 
         return list_possibilities
 
 
 
     def planetaries_possibilities(self, planetaries, planets_structure, planet_carrier):
-        gearing_chains = planets_structure.gearing_chain()
+        meshing_chains = planets_structure.meshing_chain()
 
 
 
-        if len(planetaries) < len(gearing_chains):
+        if len(planetaries) < len(meshing_chains):
             return []
 
         possibilitie = []
         connection = []
-        gearing_chains_planetary_type = []
-        gearing_chains_planet_index = []
-        gearing_chains_occupation = []
+        meshing_chains_planetary_type = []
+        meshing_chains_planet_index = []
+        meshing_chains_occupation = []
 
         for i in enumerate(planetaries):
             possibilitie.append(0)
 
-        for i in enumerate(gearing_chains):
-            gearing_chains_planetary_type.append(0)
-            gearing_chains_occupation.append(0)
-            gearing_chains_planet_index.append(0)
+        for i in enumerate(meshing_chains):
+            meshing_chains_planetary_type.append(0)
+            meshing_chains_occupation.append(0)
+            meshing_chains_planet_index.append(0)
 
         list_possibilities = self.planetaries_possibilities_recursive_function(0, planetaries, possibilitie, [],
-                                                                               gearing_chains, gearing_chains_planetary_type,
-                                                                               gearing_chains_occupation,
-                                                                               gearing_chains_planet_index)
+                                                                               meshing_chains, meshing_chains_planetary_type,
+                                                                               meshing_chains_occupation,
+                                                                               meshing_chains_planet_index)
 
 
         for double in planets_structure.doubles:
@@ -2846,23 +2846,23 @@ class GeneratorPlanetaryGearsArchitecture(DessiaObject):
 
                 if not planetary_connection[3]  in previous_planetary:
 
-                    gearing_chain = gearing_chains[planetary_connection[3]]
+                    meshing_chain = meshing_chains[planetary_connection[3]]
 
                     previous_planetary.append(planetary_connection[3])
 
-                    if len(gearing_chain) > 1:
+                    if len(meshing_chain) > 1:
 
-                        if gearing_chain[0] == planetary_connection[1]:
-                            for planet_1, planet_2 in zip(gearing_chain[:-1], gearing_chain[1:]):
+                        if meshing_chain[0] == planetary_connection[1]:
+                            for planet_1, planet_2 in zip(meshing_chain[:-1], meshing_chain[1:]):
 
                                 connection_2.append(Connection([planet_1, planet_2], planetary_connection[2]))
 
 
-                        elif gearing_chain[-1] == planetary_connection[1]:
+                        elif meshing_chain[-1] == planetary_connection[1]:
 
-                           gearing_chain_2 = gearing_chain[::-1]
+                           meshing_chain_2 = meshing_chain[::-1]
 
-                           for planet_1, planet_2 in zip(gearing_chain_2[:-1], gearing_chain_2[1:]):
+                           for planet_1, planet_2 in zip(meshing_chain_2[:-1], meshing_chain_2[1:]):
 
                                 connection_2.append(Connection([planet_1, planet_2], planetary_connection[2]))
 
@@ -3148,27 +3148,27 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
         return True
 
 
-    def test_vitesse_and_assembly_condition(self, planetary_gear, begin_gearing_chain, end_gearing_chain,
+    def test_vitesse_and_assembly_condition(self, planetary_gear, begin_meshing_chain, end_meshing_chain,
                                             list_previous_planetary):
 
-        range_speed = planetary_gear.speed_range(begin_gearing_chain, planetary_gear.planet_carrier, list_previous_planetary)
+        range_speed = planetary_gear.speed_range(begin_meshing_chain, planetary_gear.planet_carrier, list_previous_planetary)
 
         if not range_speed:
             return False
 
 
-        if range_speed[begin_gearing_chain][0] > range_speed[begin_gearing_chain][1]:
+        if range_speed[begin_meshing_chain][0] > range_speed[begin_meshing_chain][1]:
             return False
 
         if range_speed[planetary_gear.planet_carrier][0] > range_speed[planetary_gear.planet_carrier][1]:
             return False
 
-        if not planetary_gear.test_assembly_condition(self.number_planet, [begin_gearing_chain, end_gearing_chain]):
+        if not planetary_gear.test_assembly_condition(self.number_planet, [begin_meshing_chain, end_meshing_chain]):
             return False
 
         return True
 
-    def z_range_mini_max(self, planetary_gear, element, begin_gearing_chain, end_gearing_chain, path):
+    def z_range_mini_max(self, planetary_gear, element, begin_meshing_chain, end_meshing_chain, path):
 
         if not element in path[0]:
 
@@ -3176,17 +3176,17 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
         reason = planetary_gear.reason_abs(path[0])
 
-        reason_1 = abs((begin_gearing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[1])/
-                       (end_gearing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[1]))
+        reason_1 = abs((begin_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[1])/
+                       (end_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[1]))
 
-        reason_2 = abs((begin_gearing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0])/
-                       (end_gearing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0]))
+        reason_2 = abs((begin_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0])/
+                       (end_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0]))
 
-        reason_3 = abs((begin_gearing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[1])/
-                       (end_gearing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[1]))
+        reason_3 = abs((begin_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[1])/
+                       (end_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[1]))
 
-        reason_4 = abs((begin_gearing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0])/
-                       (end_gearing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0]))
+        reason_4 = abs((begin_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0])/
+                       (end_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0]))
 
         reason_min = min(reason_1, reason_2, reason_3, reason_4)
         reason_max = max(reason_1, reason_2, reason_3, reason_4)
@@ -3266,51 +3266,51 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
             list_tree = []
             debut = time.time()
             list_node_range_data = []
-            gearing_chains_modif = planetary_gear.gearing_chain()
-            gearing_chains = copy.copy(gearing_chains_modif)
-            number_element_gearing_chain = []
-            numbers_gearing_chain = []
-            number_gearing_chain = 0
-            totals_element_previous_gearing_chain = []
-            total_element_previous_gearing_chain = 0
-            flags_gearing_change = []
+            meshing_chains_modif = planetary_gear.meshing_chain()
+            meshing_chains = copy.copy(meshing_chains_modif)
+            number_element_meshing_chain = []
+            numbers_meshing_chain = []
+            number_meshing_chain = 0
+            totals_element_previous_meshing_chain = []
+            total_element_previous_meshing_chain = 0
+            flags_meshing_change = []
             list_solution = []
             flag_gcd = []
 
-            for i, gearing_chain in enumerate(gearing_chains_modif):
-                if isinstance(gearing_chain[-1], Planetary):
+            for i, meshing_chain in enumerate(meshing_chains_modif):
+                if isinstance(meshing_chain[-1], Planetary):
 
-                    if gearing_chain[-1].planetary_type == 'Ring':
+                    if meshing_chain[-1].planetary_type == 'Ring':
 
-                        gearing_chains_modif[i] = gearing_chain[::-1]
-                        gearing_chains[i] = gearing_chain[::-1]
+                        meshing_chains_modif[i] = meshing_chain[::-1]
+                        meshing_chains[i] = meshing_chain[::-1]
 
-                    if  not isinstance(gearing_chain[0], Planetary) and gearing_chain[-1].planetary_type == 'Sun':
+                    if  not isinstance(meshing_chain[0], Planetary) and meshing_chain[-1].planetary_type == 'Sun':
 
-                        gearing_chains_modif[i] = gearing_chain[::-1]
-                        gearing_chains[i] = gearing_chain[::-1]
-                gearing_chain_2 = copy.copy(gearing_chain)
+                        meshing_chains_modif[i] = meshing_chain[::-1]
+                        meshing_chains[i] = meshing_chain[::-1]
+                meshing_chain_2 = copy.copy(meshing_chain)
 
-                for element in gearing_chain_2:
+                for element in meshing_chain_2:
 
                     if element in list_planet_remove:
 
-                        gearing_chains_modif[i].remove(element)
+                        meshing_chains_modif[i].remove(element)
 
 
-            for gearing_chain in gearing_chains_modif:
+            for meshing_chain in meshing_chains_modif:
 
-                number_element_gearing_chain.append(len(gearing_chain))
-                flags_gearing_change.append(1)
+                number_element_meshing_chain.append(len(meshing_chain))
+                flags_meshing_change.append(1)
 
-                for i, element in enumerate(gearing_chain):
+                for i, element in enumerate(meshing_chain):
                     flag_gcd.append(2)
 
                     if i != 0:
-                        flags_gearing_change.append(0)
+                        flags_meshing_change.append(0)
 
-                    totals_element_previous_gearing_chain.append(total_element_previous_gearing_chain)
-                    numbers_gearing_chain.append(number_gearing_chain)
+                    totals_element_previous_meshing_chain.append(total_element_previous_meshing_chain)
+                    numbers_meshing_chain.append(number_meshing_chain)
 
                     if isinstance(element, Planetary) and element.planetary_type == 'Ring':
 
@@ -3321,8 +3321,8 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                         list_tree.append(self.Z_range_sun[1]-self.Z_range_sun[0])
                         list_node_range_data.append(self.Z_range_sun[0])
 
-                number_gearing_chain += 1
-                total_element_previous_gearing_chain += len(gearing_chain)
+                number_meshing_chain += 1
+                total_element_previous_meshing_chain += len(meshing_chain)
 
             list_planet_remove_neighbour = []
 
@@ -3331,20 +3331,20 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                 planet.Z = 1
                 list_planet_remove_neighbour.append([planet])
 
-                for gearing in planetary_gear.gearings:
+                for meshing in planetary_gear.meshings:
 
-                    if gearing.nodes[0] == planet:
-                        list_planet_remove_neighbour[i].append(gearing.nodes[1])
+                    if meshing.nodes[0] == planet:
+                        list_planet_remove_neighbour[i].append(meshing.nodes[1])
 
-                    if gearing.nodes[1] == planet:
-                        list_planet_remove_neighbour[i].append(gearing.nodes[0])
+                    if meshing.nodes[1] == planet:
+                        list_planet_remove_neighbour[i].append(meshing.nodes[0])
 
 
             tree = dt.RegularDecisionTree(list_tree)
 
             Z_range_mini_maxi = []
             Z_range_mini_maxi_2 = []
-            flag_gearing_change = 0
+            flag_meshing_change = 0
             flag_Z_range_mini_maxi = 0
             flag_Z_range_mini_maxi_2 = 0
             number_max_z_planet = self.Z_range_sun[1]
@@ -3355,11 +3355,11 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                 valid = True
                 node = tree.current_node
 
-                number_gearing_chain = numbers_gearing_chain[len(node)-1]
-                flag_gearing_change = flags_gearing_change[len(node)-1]
-                total_element_previous_gearing_chain = totals_element_previous_gearing_chain[len(node)-1]
+                number_meshing_chain = numbers_meshing_chain[len(node)-1]
+                flag_meshing_change = flags_meshing_change[len(node)-1]
+                total_element_previous_meshing_chain = totals_element_previous_meshing_chain[len(node)-1]
 
-                element = gearing_chains_modif[number_gearing_chain][len(node)-total_element_previous_gearing_chain-1]
+                element = meshing_chains_modif[number_meshing_chain][len(node)-total_element_previous_meshing_chain-1]
                 element.Z = list_node_range_data[len(node)-1]+ node[len(node)-1]
 
 
@@ -3371,16 +3371,16 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
 
 
-                elif not flag_gearing_change:
+                elif not flag_meshing_change:
 
-                    previous_element = gearing_chains_modif[number_gearing_chain][len(node)-total_element_previous_gearing_chain-2]
+                    previous_element = meshing_chains_modif[number_meshing_chain][len(node)-total_element_previous_meshing_chain-2]
 
-                    if len(gearing_chains_modif[number_gearing_chain]) > 2 \
-                    and gearing_chains_modif[number_gearing_chain][0].planetary_type == 'Ring':
+                    if len(meshing_chains_modif[number_meshing_chain]) > 2 \
+                    and meshing_chains_modif[number_meshing_chain][0].planetary_type == 'Ring':
 
                         number_max_z_previous_planets = 0
-                        for i in range(len(node)-total_element_previous_gearing_chain-2):
-                            previous_planet = gearing_chains_modif[number_gearing_chain][i+1]
+                        for i in range(len(node)-total_element_previous_meshing_chain-2):
+                            previous_planet = meshing_chains_modif[number_meshing_chain][i+1]
 
 
                             number_max_z_previous_planets += previous_planet.Z
@@ -3390,7 +3390,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                             flag_impose_z_number = True
 
                             for planet in list_planet_remove:
-                              if planet in gearing_chains[number_gearing_chain]:
+                              if planet in meshing_chains[number_meshing_chain]:
                                   flag_impose_z_number = False
                                   break
 
@@ -3447,10 +3447,10 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                         number_max_z_planet = self.Z_range_sun[1]
 
 
-                if len(node) == number_element_gearing_chain[number_gearing_chain]+total_element_previous_gearing_chain and valid:
+                if len(node) == number_element_meshing_chain[number_meshing_chain]+total_element_previous_meshing_chain and valid:
 
-                    begin_gearing_chain = gearing_chains_modif[number_gearing_chain][0]
-                    end_gearing_chain = gearing_chains_modif[number_gearing_chain][-1]
+                    begin_meshing_chain = meshing_chains_modif[number_meshing_chain][0]
+                    end_meshing_chain = meshing_chains_modif[number_meshing_chain][-1]
 
                     planetary_gear = PlanetaryGear(planetary_gear.planetaries, planetary_gear.planets,
                                                    planetary_gear.planet_carrier, planetary_gear.connections, planetary_gear.name)
@@ -3467,27 +3467,27 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
                     if valid:
 
-                        if numbers_gearing_chain[len(node)-1] == 0:
+                        if numbers_meshing_chain[len(node)-1] == 0:
 
-                                first_planetary = begin_gearing_chain
+                                first_planetary = begin_meshing_chain
 
                                 if not first_planetary in list_planetaries_Z_range_mini_maxi:
                                     list_planetaries_Z_range_mini_maxi.append(first_planetary)
 
 
-                                if isinstance(begin_gearing_chain, Planetary) and isinstance(end_gearing_chain, Planetary):
+                                if isinstance(begin_meshing_chain, Planetary) and isinstance(end_meshing_chain, Planetary):
 
-                                    if not end_gearing_chain in list_planetaries_Z_range_mini_maxi:
+                                    if not end_meshing_chain in list_planetaries_Z_range_mini_maxi:
 
-                                        list_planetaries_Z_range_mini_maxi.append(end_gearing_chain)
-                                        list_path.append(planetary_gear.path_planetary_to_planetary([begin_gearing_chain, end_gearing_chain]))
+                                        list_planetaries_Z_range_mini_maxi.append(end_meshing_chain)
+                                        list_path.append(planetary_gear.path_planetary_to_planetary([begin_meshing_chain, end_meshing_chain]))
 
                                     if not flag_Z_range_mini_maxi:
 
 
-                                        Z_range_mini_maxi = self.z_range_mini_max(planetary_gear, element, begin_gearing_chain,
-                                                                                  end_gearing_chain,
-                                                                                  list_path[list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)-1])
+                                        Z_range_mini_maxi = self.z_range_mini_max(planetary_gear, element, begin_meshing_chain,
+                                                                                  end_meshing_chain,
+                                                                                  list_path[list_planetaries_Z_range_mini_maxi.index(end_meshing_chain)-1])
 
                                         flag_Z_range_mini_maxi = 1
 
@@ -3495,41 +3495,41 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
                                         if element.Z < Z_range_mini_maxi[0] or element.Z < Z_range_mini_maxi[1]:
 
-                                            valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_gearing_chain,
-                                                                                             end_gearing_chain,
-                                                                                             list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)+1])
+                                            valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_meshing_chain,
+                                                                                             end_meshing_chain,
+                                                                                             list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_meshing_chain)+1])
 
                                         else:
                                             valid = False
                                     else:
 
-                                        valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_gearing_chain,
-                                                                                         end_gearing_chain,
-                                                                                         list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)+1])
+                                        valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_meshing_chain,
+                                                                                         end_meshing_chain,
+                                                                                         list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_meshing_chain)+1])
 
 
 
                         else:
 
-                            if not begin_gearing_chain in list_planetaries_Z_range_mini_maxi:
+                            if not begin_meshing_chain in list_planetaries_Z_range_mini_maxi:
 
 
-                                        list_planetaries_Z_range_mini_maxi.append(begin_gearing_chain)
-                                        list_path.append(planetary_gear.path_planetary_to_planetary([first_planetary, begin_gearing_chain]))
+                                        list_planetaries_Z_range_mini_maxi.append(begin_meshing_chain)
+                                        list_path.append(planetary_gear.path_planetary_to_planetary([first_planetary, begin_meshing_chain]))
 
                             if not flag_Z_range_mini_maxi:
 
                                         Z_range_mini_maxi = self.z_range_mini_max(planetary_gear, element,
-                                                                                  first_planetary, begin_gearing_chain,
-                                                                                  list_path[list_planetaries_Z_range_mini_maxi.index(begin_gearing_chain)-1])
+                                                                                  first_planetary, begin_meshing_chain,
+                                                                                  list_path[list_planetaries_Z_range_mini_maxi.index(begin_meshing_chain)-1])
 
                                         flag_Z_range_mini_maxi = 1
 
                                         if Z_range_mini_maxi:
                                             if element.Z < Z_range_mini_maxi[0] or element.Z < Z_range_mini_maxi[1]:
                                                 valid = self.test_vitesse_and_assembly_condition(planetary_gear, first_planetary,
-                                                                                                 begin_gearing_chain,
-                                                                                                 list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(begin_gearing_chain)+1])
+                                                                                                 begin_meshing_chain,
+                                                                                                 list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(begin_meshing_chain)+1])
 
                                             else:
                                                 valid = False
@@ -3537,47 +3537,47 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                             else:
 
                                 valid = self.test_vitesse_and_assembly_condition(planetary_gear, first_planetary,
-                                                                                 begin_gearing_chain,
-                                                                                 list_planetaries_Z_range_mini_maxi[:list_planetaries_Z_range_mini_maxi.index(begin_gearing_chain)+1])
+                                                                                 begin_meshing_chain,
+                                                                                 list_planetaries_Z_range_mini_maxi[:list_planetaries_Z_range_mini_maxi.index(begin_meshing_chain)+1])
 
 
 
 
-                            if isinstance(end_gearing_chain, Planetary) and valid:
+                            if isinstance(end_meshing_chain, Planetary) and valid:
 
 
-                                if not end_gearing_chain in list_planetaries_Z_range_mini_maxi:
+                                if not end_meshing_chain in list_planetaries_Z_range_mini_maxi:
 
-                                        list_planetaries_Z_range_mini_maxi.append(end_gearing_chain)
-                                        list_path.append(planetary_gear.path_planetary_to_planetary([first_planetary, end_gearing_chain]))
+                                        list_planetaries_Z_range_mini_maxi.append(end_meshing_chain)
+                                        list_path.append(planetary_gear.path_planetary_to_planetary([first_planetary, end_meshing_chain]))
 
 
                                 if not flag_Z_range_mini_maxi_2:
 
-                                        Z_range_mini_maxi_2 = self.z_range_mini_max(planetary_gear, element, first_planetary, end_gearing_chain,
-                                                                                    list_path[list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)-1])
+                                        Z_range_mini_maxi_2 = self.z_range_mini_max(planetary_gear, element, first_planetary, end_meshing_chain,
+                                                                                    list_path[list_planetaries_Z_range_mini_maxi.index(end_meshing_chain)-1])
                                         flag_Z_range_mini_maxi_2 = 1
                                         if Z_range_mini_maxi_2:
                                             if element.Z < Z_range_mini_maxi_2[0] or element.Z < Z_range_mini_maxi_2[1]:
 
-                                                valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_gearing_chain,
-                                                                                                 end_gearing_chain, number_planet,
-                                                                                                 list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)+1])
+                                                valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_meshing_chain,
+                                                                                                 end_meshing_chain, number_planet,
+                                                                                                 list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_meshing_chain)+1])
 
                                             else:
                                                 valid = False
                                 else:
 
                                     valid = self.test_vitesse_and_assembly_condition(planetary_gear, first_planetary,
-                                                                                     end_gearing_chain, number_planet,
-                                                                                     list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_gearing_chain)+1])
+                                                                                     end_meshing_chain, number_planet,
+                                                                                     list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_meshing_chain)+1])
 
 
 
 
 
 
-                        if number_gearing_chain == len(gearing_chains_modif)-1 and valid:
+                        if number_meshing_chain == len(meshing_chains_modif)-1 and valid:
 
                             list_tree_planetary = []
 
@@ -3593,19 +3593,19 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                     list_planet_remove[i].Z = 1
                                     valid_planet = True
 
-                                    for gearing_chain in gearing_chains:
-                                        if list_planet_remove[i] in gearing_chain and valid_planet:
+                                    for meshing_chain in meshing_chains:
+                                        if list_planet_remove[i] in meshing_chain and valid_planet:
 
-                                            if gearing_chain[0].planetary_type == 'Ring':
+                                            if meshing_chain[0].planetary_type == 'Ring':
 
                                                 number_z_max = 0
-                                                for element_2 in gearing_chain:
-                                                    if  element_2 != list_planet_remove[i] and element_2 != gearing_chain[0]:
+                                                for element_2 in meshing_chain:
+                                                    if  element_2 != list_planet_remove[i] and element_2 != meshing_chain[0]:
                                                         number_z_max += element_2.Z
 
-                                                if  isinstance(gearing_chain[-1], Planetary):
+                                                if  isinstance(meshing_chain[-1], Planetary):
 
-                                                    list_planet_remove[i].Z = gearing_chain[0].Z-number_z_max
+                                                    list_planet_remove[i].Z = meshing_chain[0].Z-number_z_max
                                                     if list_planet_remove[i].Z < self.Z_range_sun[0]:
                                                         list_planet_remove[i].Z = self.Z_range_sun[0]
                                                         valid_planet = False
@@ -3622,8 +3622,8 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                                     list_planet_remove_neighbour_2.remove(neighbour)
 
                                                 else:
-                                                    if gearing_chain[0].Z-number_z_max - self.Z_range_sun[0] > 0:
-                                                        list_tree_planetary.append(gearing_chain[0].Z-number_z_max - self.Z_range_sun[0])
+                                                    if meshing_chain[0].Z-number_z_max - self.Z_range_sun[0] > 0:
+                                                        list_tree_planetary.append(meshing_chain[0].Z-number_z_max - self.Z_range_sun[0])
 
                                                     else:
                                                         valid_planet = False

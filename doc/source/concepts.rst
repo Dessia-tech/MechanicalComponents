@@ -2,7 +2,7 @@ Key Concepts
 ============
 .. toctree::
     :maxdepth:1
-    concepts_planetary_gears
+    concepts_planetary_gear
 
 Rack
 ----

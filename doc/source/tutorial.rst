@@ -6,4 +6,4 @@
 
    example
    example_objet
-   planetary_gears 
+   planetary_gear 
