@@ -7,7 +7,7 @@ Created on Mon Mar  9 12:43:48 2020
 """
 
 import matplotlib.pyplot as plt
-import mechanical_components.generator.planetary_gears as pg_generator
+import mechanical_components.planetary_gears_generator as pg_generator
 import mechanical_components.planetary_gears as pg
 import networkx as nx
 import numpy as npy
@@ -19,7 +19,7 @@ import volmdlr.primitives3D as p3d
 import volmdlr.primitives2D as p2d
 import mechanical_components.meshes as meshes
 import sys
-
+import time
 # volumic_mass=7800
 # data_coeff_YB_Iso={'data':[[0.0,1.0029325508401201],
 #                            [4.701492563229561,0.9310850480431024],
@@ -77,21 +77,26 @@ torque_solution=planetary_gears_1.torque_solve({sun:0,planet_carrier:500})
 speed_solution=planetary_gears_1.speed_solve({sun:200,planet_carrier:500})
 print(torque_solution)
 print(speed_solution)
-Generator_planet_structure=pg_generator.GeneratorPlanetStructure(3,0,2,1)
+debut=time.time()
+Generator_planet_structure=pg_generator.GeneratorPlanetsStructure(3,0,2,1,2)
 list_planet_structure=Generator_planet_structure.decision_tree()
-for planet_structure in list_planet_structure:
-    planet_structure.plot_kinematic_graph()
+# for planet_structure in list_planet_structure:
+#     planet_structure.plot_kinematic_graph()
 Generator_planetarie_gears=pg_generator.GeneratorPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250]])
 list_planetary_gears=Generator_planetarie_gears.decision_tree()
 # print(len(list_planetary_gears))
-for planetary_gears in list_planetary_gears:
-    planetary_gears.plot_kinematic_graph()
+# for planetary_gears in list_planetary_gears:
+#     planetary_gears.plot_kinematic_graph()
 #     print(planetary_gears)
 
 # for i in range(len(list_planetary_gears)):
 
-Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(list_planetary_gears[0],[[500,550],[600,650],[300,350],[200,250]],[7,80],[40,100],3)
-Generator_planetarie_gear_z.decision_tree()
+for planetary_gear in list_planetary_gears:
+    Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(planetary_gear,[[500,510],[600,610],[300,310],[200,210]],[7,80],[40,100],3)
+    Generator_planetarie_gear_z.decision_tree()
+
+fin=time.time()
+print(debut-fin)
 # for planetary_gear in list_planetary_gear:
 #     planetary_gear.plot_kinematic_graph()
 

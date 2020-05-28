@@ -93,7 +93,7 @@ Define a Connection
 Exemple of input data for a connection
 
 .. literalinclude:: ../../scripts/planetary_gears/planetary_gears_instantiation.py
-  :lines: 17-18
+  :lines: 17-21
 
 
 
@@ -110,7 +110,7 @@ Define a Planetary Gears
 Exemple of input data for a planetary_gears
 
 .. literalinclude:: ../../scripts/planetary_gears/planetary_gears_instantiation.py
-  :lines: 10-20
+  :lines: 10-24
 
 
 

@@ -9,10 +9,12 @@ Meshing Chain
 ----------------
 A meshing chain is a list of planetaries and/or planets linked by mesh.
 
+
 .. image:: images/planetary_gear_meshing_chain.png
   :height: 600px
   :alt: alternate text
   :align: center
+
 
 meshing_chain_1=[sun, planet_1, planet_2, ring]
 
@@ -23,6 +25,11 @@ In a planetary gears ,there is minimum 1 planetary in a meching chain and maximu
 If there is a ring in one side at the list, the  planetary at the other side  is necessarily a sun ( if there is an another one)
 
 It's use for the analyse to easily determinate the gearing plan. For the generator part, it's use to determinate the position and the form of the planetaries generated. 
+
+.. seealso::
+
+  .. autoclass:: mechanical_components.planetary_gears.PlanetaryGear
+     :members: meshing_chain
   
 .. _path:
 
@@ -45,6 +52,11 @@ path_1= [sun, gearing_1, planet_1, gearing_2, planet_2, double, planet_3, gearin
 path_2= [sun, gearing_1, planet_1, gearing_2, planet_2, gearing_4, ring]
 
 The path is use in planetary gears to calculate the reason and test the assembly condition between two planetaries. It's also use for the kinematic schema plot 
+
+.. seealso::
+
+  .. autoclass:: mechanical_components.planetary_gears.PlanetaryGear
+     :members: path_planetary_to_planetary
 
 .. _branch:
 
@@ -76,6 +88,10 @@ number of junction of a planet = number of branch connected to this planet -2
 
 The branch is use to generate the planets structures of planetary gear.
 
+.. seealso::
+
+  .. autoclass:: mechanical_components.planetary_gears_generator.GeneratorPlanetsStructure
+
 .. _junction:
 
 Junction
@@ -106,5 +122,9 @@ number of junction of a planet = number of branch connected to this planet -2
   :align: center
 
 The junction is use to generate the planets structures of  planetary gear.
+
+.. seealso::
+
+  .. autoclass:: mechanical_components.planetary_gears_generator.GeneratorPlanetsStructure
 
 

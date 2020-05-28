@@ -57,7 +57,7 @@ Generator Planet Structure
 
 .. seealso::
 
-  .. autoclass:: mechanical_components.generator.planetary_gears.GeneratorPlanetStructure
+  .. autoclass:: mechanical_components.planetary_gears_generator.GeneratorPlanetsStructure
 
 Vocabulary : :ref:`junction` , :ref:`branch`
 
@@ -66,7 +66,7 @@ Generator Planetary Gears Architecture
 
 .. seealso::
 
-  .. autoclass:: mechanical_components.generator.planetary_gears.GeneratorPlanetaryGearsArchitecture
+  .. autoclass:: mechanical_components.planetary_gears_generator.GeneratorPlanetaryGearsArchitecture
 
 Vocabulary: :ref:`meshing_chain` , :ref:`path`
 
@@ -75,7 +75,7 @@ Generator Planetary Gears Z Number
 
 .. seealso::
 
-  .. autoclass:: mechanical_components.generator.planetary_gears.GeneratorPlanetaryGearsZNumber
+  .. autoclass:: mechanical_components.planetary_gears_generator.GeneratorPlanetaryGearsZNumber
 
 Vocabulary: :ref:`meshing_chain` , :ref:`path`
 

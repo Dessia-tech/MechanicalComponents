@@ -61,23 +61,23 @@ pipes = [wf.Pipe(blockA.outputs[0], optimizeA.inputs[0]),
 
 workflow_combination_bearing = wf.Workflow(blocks, pipes, filter_analyze.outputs[0])
 
-# input_values = {workflow.index(blockA.inputs[0]): [500],
-#                 workflow.index(blockA.inputs[1]): [0],
-#                 workflow.index(blockA.inputs[2]): [1000],
-#                 workflow.index(blockA.inputs[3]): [1e6],
-#                 workflow.index(blockA.inputs[4]): 0.15,
-#                 workflow.index(blockA.inputs[5]): 0.4,
-#                 workflow.index(blockA.inputs[6]): 0.2,
-#                 workflow.index(blockA.inputs[7]): [bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)],
-#                 workflow.index(blockA.inputs[8]): [bearings.Mounting(left=True), bearings.Mounting(right=True), bearings.Mounting(left=True, right=True), bearings.Mounting()],
-#                 workflow.index(blockA.inputs[9]): [1, 2, 3],
-#                 workflow.index(blockA.inputs[10]): [bearings.RadialBallBearing,
-#                                                     bearings.AngularBallBearing,
-#                                                     bearings.TaperedRollerBearing,
-#                                                     bearings.NUP],
-#                 workflow.index(blockA.inputs[12]): schaeffler_catalog,
-#                 workflow.index(optimizeA.inputs[1]): 10,
-#                 }
+input_values = {workflow.index(blockA.inputs[0]): [500],
+                workflow.index(blockA.inputs[1]): [0],
+                workflow.index(blockA.inputs[2]): [1000],
+                workflow.index(blockA.inputs[3]): [1e6],
+                workflow.index(blockA.inputs[4]): 0.15,
+                workflow.index(blockA.inputs[5]): 0.4,
+                workflow.index(blockA.inputs[6]): 0.2,
+                workflow.index(blockA.inputs[7]): [bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)],
+                workflow.index(blockA.inputs[8]): [bearings.Mounting(left=True), bearings.Mounting(right=True), bearings.Mounting(left=True, right=True), bearings.Mounting()],
+                workflow.index(blockA.inputs[9]): [1, 2, 3],
+                workflow.index(blockA.inputs[10]): [bearings.RadialBallBearing,
+                                                    bearings.AngularBallBearing,
+                                                    bearings.TaperedRollerBearing,
+                                                    bearings.NUP],
+                workflow.index(blockA.inputs[12]): schaeffler_catalog,
+                workflow.index(optimizeA.inputs[1]): 10,
+                }
 
 
-# workflow_combination_bearing = workflow.run(input_values)
+workflow_combination_bearing = workflow.run(input_values)

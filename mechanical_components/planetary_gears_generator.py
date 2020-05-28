@@ -16,7 +16,7 @@ import time
 import math as m
 import copy
 
-class GeneratorPlanetStructure(DessiaObject):
+class GeneratorPlanetsStructure(DessiaObject):
     '''
     A geanerator of planet_structure
 
@@ -46,10 +46,10 @@ class GeneratorPlanetStructure(DessiaObject):
 
     _generic_eq = True
         
-    def __init__(self, number_max_planet: int, number_junction: int, number_max_junction_by_planet: int, min_planet_branch: int,
-                 name: str = ''):
+    def __init__(self, number_max_planet: int, number_junction: int, number_max_junction_by_planet: int, min_planet_branch: int, 
+                 number_max_meshing_plan: int ,name: str = ''):
         
-        
+        self.number_max_meshing_plan = number_max_meshing_plan
         self.number_max_planet = number_max_planet
         self.number_junction = number_junction
         self.number_max_junction_by_planet = number_max_junction_by_planet
@@ -583,9 +583,10 @@ class GeneratorPlanetStructure(DessiaObject):
 
 
     def solution_sort(self, new_planet_structure, planet_structures_check):
-
+        
         new_graph = new_planet_structure.graph()
-
+        if len(new_planet_structure.doubles)+1> self.number_max_meshing_plan:
+            return False
         for node in nx.nodes(new_graph):
 
             if len(list(nx.neighbors(new_graph, node))) == 1:
@@ -1249,9 +1250,9 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
 
             if len(node) == 1:
-
+                    
                     self.planetary_gear.planet_carrier.speed_input = self.input_speeds[node[0]]
-
+                    
                     input_speeds_2 = copy.copy(self.input_speeds)
                     input_speeds_2.remove(self.input_speeds[node[0]])
 
@@ -1262,20 +1263,21 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
 
             if len(node) == 2:
-
+                    print(self.planetary_gear.planet_carrier.speed_input)
                     possibility_speed = list_possibility_speed[node[1]]
                     for i, planetarie in enumerate(self.planetary_gear.planetaries):
                         planetarie.speed_input = possibility_speed[i]
 
-                    list_solution.append(copy.deepcopy(self.planetary_gear))
+                    list_solution.append(self.planetary_gear.copy(deep=True))
+                    print(list_solution[-1].planet_carrier.speed_input)
                     tree.SetCurrentNodeNumberPossibilities(0)
-
+                    
             node = tree.NextNode(True)
 
         return list_solution
     def decision_tree(self):
         list_planetary_gears_speed = self.decision_tree_speed_possibilities()
-
+        print(list_planetary_gears_speed[0].planet_carrier.speed_input)
 
         for i, planetary_gear in enumerate(list_planetary_gears_speed):
             print(i)

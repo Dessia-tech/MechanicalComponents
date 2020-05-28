@@ -14,10 +14,14 @@ planet_carrier = pg.PlanetCarrier('planet_carrier')
 planet_1 = pg.Planet( 12, 'planet_1')
 planet_2 = pg.Planet( 12, 'planet_2')
 planet_3 = pg.Planet( 16, 'planet_3')
-connection = [pg.Connection([sun, planet_1], 'GE'), pg.Connection([planet_1, planet_2], 'GE'), pg.Connection([planet_2, ring], 'GE'),
-             pg.Connection([planet_2, planet_3], 'D'), pg.Connection([planet_3, sun_2], 'GI')]
+connection = [pg.Connection([sun, planet_1], 'GE'), 
+              pg.Connection([planet_1, planet_2], 'GE'), 
+              pg.Connection([planet_2, ring], 'GE'),
+              pg.Connection([planet_2, planet_3], 'D'), 
+              pg.Connection([planet_3, sun_2], 'GI')]
 
-planetary_gears_1 = pg.PlanetaryGear([sun, ring, sun_2], [planet_1, planet_2, planet_3], planet_carrier, connection, 'pl_1')
+planetary_gears_1 = pg.PlanetaryGear([sun, ring, sun_2], [planet_1, planet_2, planet_3], \
+                                     \planet_carrier, connection, 'pl_1')
 
 
 
