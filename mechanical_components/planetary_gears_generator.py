@@ -617,7 +617,7 @@ class GeneratorPlanetsStructure(DessiaObject):
 
 
 
-    def decision_tree(self):
+    def decision_tree(self) -> List[PlanetsStructure]:
         tree = dt.DecisionTree()
 
 
@@ -1067,7 +1067,7 @@ class GeneratorPlanetaryGearsArchitecture(DessiaObject):
 
         return True
 
-    def decision_tree(self):
+    def decision_tree(self) -> List[PlanetaryGear]:
         tree = dt.DecisionTree()
 
 
@@ -1132,9 +1132,9 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
 
     '''
-    _standalone_in_db = True
+    # _standalone_in_db = True
 
-    _generic_eq = True
+    # _generic_eq = True
 
     def __init__(self, planetary_gear: PlanetaryGear, input_speeds: List[List[float]],
                  Z_range_sun: List[int], Z_range_ring: List[int], number_planet: int, name: str = ''):
@@ -1247,35 +1247,36 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
         node = tree.NextNode(True)
         list_solution = []
         while not tree.finished:
-
+            planetary_gear=copy.deepcopy(self.planetary_gear)
 
             if len(node) == 1:
                     
-                    self.planetary_gear.planet_carrier.speed_input = self.input_speeds[node[0]]
                     
-                    input_speeds_2 = copy.copy(self.input_speeds)
+                    input_speeds_2 = copy.deepcopy(self.input_speeds)
                     input_speeds_2.remove(self.input_speeds[node[0]])
 
                     list_possibility_speed = []
                     self.multiplication_possibility_speed(input_speeds_2, 0, [], list_possibility_speed)
-
+                    
                     tree.SetCurrentNodeNumberPossibilities(len(list_possibility_speed))
 
 
             if len(node) == 2:
-                    print(self.planetary_gear.planet_carrier.speed_input)
+                    
                     possibility_speed = list_possibility_speed[node[1]]
-                    for i, planetarie in enumerate(self.planetary_gear.planetaries):
+                    for i, planetarie in enumerate(planetary_gear.planetaries):
                         planetarie.speed_input = possibility_speed[i]
+                    planetary_gear.planet_carrier.speed_input=self.input_speeds[node[0]]
+                    
+                    list_solution.append(planetary_gear)
 
-                    list_solution.append(self.planetary_gear.copy(deep=True))
-                    print(list_solution[-1].planet_carrier.speed_input)
                     tree.SetCurrentNodeNumberPossibilities(0)
                     
             node = tree.NextNode(True)
 
         return list_solution
-    def decision_tree(self):
+    
+    def decision_tree(self) -> List[PlanetaryGear]:
         list_planetary_gears_speed = self.decision_tree_speed_possibilities()
         print(list_planetary_gears_speed[0].planet_carrier.speed_input)
 
