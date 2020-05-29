@@ -41,9 +41,9 @@ pipes = [wf.Pipe(block_planet_structure.outputs[0], generate_planet_structure.in
           wf.Pipe(block_planetary_gears_architecture.outputs[0], generate_planetary_gears_architecture.inputs[0]),
           wf.Pipe(generate_planet_structure.outputs[0], block_planetary_gears_architecture.inputs[0]),
          ]
-
+# wf.ForEach()
 workflow_generator_planet_structure = wf.Workflow(blocks, pipes, generate_planetary_gears_architecture.outputs[0])
-print()
+
 input_values = {workflow_generator_planet_structure.index(block_planet_structure.inputs[0]): 3,
                 workflow_generator_planet_structure.index(block_planet_structure.inputs[1]): 0,
                 workflow_generator_planet_structure.index(block_planet_structure.inputs[2]): 2,
@@ -59,4 +59,4 @@ a = workflow_generator_planet_structure.to_dict()
 obj = wf.Workflow.dict_to_object(a)
 # ##
 workflow_generator_planetary_gears_architecture = workflow_generator_planet_structure.run(input_values)
-print(workflow_generator_planet_structure)
+workflow_generator_planetary_gears_architecture.output_value[1].plot_kinematic_graph()
