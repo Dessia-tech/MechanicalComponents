@@ -1313,7 +1313,9 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
             flags_meshing_change = []
             list_solution = []
             flag_gcd = []
-
+            numbers_planetaries_by_meshing_chain=[]
+            
+            
             for i, meshing_chain in enumerate(meshing_chains_modif):
                 if isinstance(meshing_chain[-1], Planetary):
 
@@ -1327,19 +1329,26 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                         meshing_chains_modif[i] = meshing_chain[::-1]
                         meshing_chains[i] = meshing_chain[::-1]
                 meshing_chain_2 = copy.copy(meshing_chain)
-
+                number_planetaries=0
                 for element in meshing_chain_2:
-
+                    if isinstance(element, Planetary):
+                        number_planetaries+=1
                     if element in list_planet_remove:
 
                         meshing_chains_modif[i].remove(element)
-
-
+                numbers_planetaries_by_meshing_chain.append(number_planetaries)       
+            print(numbers_planetaries_by_meshing_chain)    
+            if numbers_planetaries_by_meshing_chain[0]==1:
+                if 2 in numbers_planetaries_by_meshing_chain:
+                    meshing_chain_1=meshing_chains_modif[numbers_planetaries_by_meshing_chain.index(2)]
+                    meshing_chains_modif[numbers_planetaries_by_meshing_chain.index(2)]=meshing_chains_modif[0]
+                    meshing_chains_modif[0]=meshing_chain_1
+                    
             for meshing_chain in meshing_chains_modif:
 
                 number_element_meshing_chain.append(len(meshing_chain))
                 flags_meshing_change.append(1)
-
+                
                 for i, element in enumerate(meshing_chain):
                     flag_gcd.append(2)
 
@@ -1391,7 +1400,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
                 valid = True
                 node = tree.current_node
-
+                
                 number_meshing_chain = numbers_meshing_chain[len(node)-1]
                 flag_meshing_change = flags_meshing_change[len(node)-1]
                 total_element_previous_meshing_chain = totals_element_previous_meshing_chain[len(node)-1]

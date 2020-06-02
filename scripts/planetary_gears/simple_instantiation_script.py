@@ -92,7 +92,7 @@ list_planetary_gears=Generator_planetarie_gears.decision_tree()
 # for i in range(len(list_planetary_gears)):
 
 for planetary_gear in list_planetary_gears:
-    Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(planetary_gear,[[500,550],[600,650],[300,350],[200,250]],[7,80],[40,100],3)
+    Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(planetary_gear,[[500,510],[600,610],[300,310],[200,210]],[7,80],[40,100],3)
     Generator_planetarie_gear_z.decision_tree()
 
 fin=time.time()

@@ -21,7 +21,7 @@ connection = [pg.Connection([sun, planet_1], 'GE'),
               pg.Connection([planet_3, sun_2], 'GI')]
 
 planetary_gears_1 = pg.PlanetaryGear([sun, ring, sun_2], [planet_1, planet_2, planet_3], \
-                                     \planet_carrier, connection, 'pl_1')
+                                      planet_carrier, connection, 'pl_1')
 
 
 
