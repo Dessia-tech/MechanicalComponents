@@ -89,7 +89,7 @@ class Planetary(Gears):
 
     '''
 
-    def __init__(self, Z: int, planetary_type: str, name: str = ''):
+    def __init__(self, Z: int, planetary_type: str, name: str = '', speed_input : List[float] = [0,0]):
         
 
 
@@ -99,7 +99,7 @@ class Planetary(Gears):
         self.speed = 0
         self.module = 0
         self.d = 0
-        self.speed_input = [0, 0]
+        self.speed_input = speed_input
         Gears.__init__(self, Z, name)
 
         if planetary_type == 'Sun':
@@ -142,11 +142,11 @@ class PlanetCarrier(DessiaObject):
 
     '''
 
-    def __init__(self, name: str = ''):
+    def __init__(self, name: str = '', speed_input : List[float]=[0,0]):
         
 
         self.speed = 0
-        self.speed_input = [0, 0]
+        self.speed_input = speed_input
         DessiaObject.__init__(self, name=name)
 
 
@@ -897,7 +897,7 @@ class PlanetaryGear(DessiaObject):
             path = self.path_planetary_to_planetary([input_1, input_2])
             reason = self.reason(path[0])
             index = self.matrix_position(self.planet_carrier)
-
+     
             coeff_input_1 = 2*(range_input_1[1]-range_input_1[0])/((range_input_1[1]-range_input_1[0])+(range_input_2[1]-range_input_2[0]))
             coeff_input_2 = 2*(range_input_2[1]-range_input_2[0])/((range_input_1[1]-range_input_1[0])+(range_input_2[1]-range_input_2[0]))
 
@@ -905,7 +905,7 @@ class PlanetaryGear(DessiaObject):
                 reason_abs = abs(reason)
                 speed_min = self.speed_solve({input_1 : input_1.speed_input[0], input_2 : input_2.speed_input[0]})[index]
                 speed_max = self.speed_solve({input_1 : input_1.speed_input[1], input_2 : input_2.speed_input[1]})[index]
-
+                
 
                 if speed_min < self.planet_carrier.speed_input[0]:
 
@@ -913,7 +913,7 @@ class PlanetaryGear(DessiaObject):
 
                     range_input_1[0] += coeff_input_1*speed_diff
                     range_input_2[0] += coeff_input_2*speed_diff
-
+                 
                 elif speed_min < self.planet_carrier.speed_input[1]:
                     range_planet_carrier[0] = speed_min
 
@@ -933,7 +933,7 @@ class PlanetaryGear(DessiaObject):
 
                 else:
                     return []
-
+                
 
             else:
 
@@ -983,17 +983,24 @@ class PlanetaryGear(DessiaObject):
 
                 else:
                     return []
+                
 
-            # print(range_input_1)
-            # print(range_input_2)
-            # print(range_planet_carrier)
+            
             list_planetary.remove(input_1)
             list_planetary.remove(input_2)
-
+            print(range_input_1)
+            print(range_input_2)
+            print(range_planet_carrier)
         else:
             if  isinstance(input_1, PlanetCarrier):
                 list_planetary.remove(input_2)
+                input_replace=input_1
                 input_1 = input_2
+                input_2= input_replace
+                
+                range_input_replace=range_input_1
+                range_input_1= copy.copy(range_input_2)
+                range_input_2=copy.copy(range_input_replace)
             else:
                 list_planetary.remove(input_1)
 
@@ -1008,7 +1015,7 @@ class PlanetaryGear(DessiaObject):
             reason = self.reason(path[0])
 
             index = self.matrix_position(planetary)
-            c = ((range_input_1[1]-range_input_1[0])+(range_planet_carrier[1]-range_planet_carrier[0]))
+            
             if range_input_1[1] == range_input_1[0] and range_planet_carrier[1] == range_planet_carrier[0]:
                 return []
 
@@ -1031,8 +1038,9 @@ class PlanetaryGear(DessiaObject):
 
                 elif speed_min < planetary.speed_input[1]:
                     range_output[planetary][0] = speed_min
-
+                    
                 else:
+                    
                     return[]
 
 
@@ -1044,6 +1052,7 @@ class PlanetaryGear(DessiaObject):
                 elif speed_max > planetary.speed_input[0]:
                     range_output[planetary][1] = speed_max
                 else:
+                    
                     return []
 
 
@@ -1067,7 +1076,7 @@ class PlanetaryGear(DessiaObject):
 
 
                     else:
-                        speed_diff = (planetary.speed_input[0]-speed_min)/(reason*coeff_input_1-coeff_input_planet_carrier*(reason-1))
+                        speed_diff = (planetary.speed_input[0]-speed_min)/(reason*coeff_input_1+coeff_input_planet_carrier*(reason-1))
                         range_input_1[0] += coeff_input_1*speed_diff
                         range_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
 
@@ -1075,6 +1084,7 @@ class PlanetaryGear(DessiaObject):
                     range_output[planetary][0] = speed_min
 
                 else:
+                    
                     return []
 
 
@@ -1086,24 +1096,30 @@ class PlanetaryGear(DessiaObject):
                         range_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
 
                     else:
-                        speed_diff = (speed_max-planetary.speed_input[1])/(reason*coeff_input_1-coeff_input_planet_carrier*(reason-1))
+                        speed_diff = (speed_max-planetary.speed_input[1])/(reason*coeff_input_1+coeff_input_planet_carrier*(reason-1))
                         range_input_1[1] -= coeff_input_1*speed_diff
                         range_planet_carrier[0] += coeff_input_planet_carrier*speed_diff
 
 
                 elif speed_max > planetary.speed_input[0]:
                     range_output[planetary][1] = speed_max
-
+                    
                 else:
+                    if not isinstance(input_1, PlanetCarrier) and not isinstance(input_2, PlanetCarrier):
+                        print(speed_max)
+                        print(planetary.speed_input)
+                        print(speed_min)
                     return []
 
 
         if not isinstance(input_1, PlanetCarrier) and not isinstance(input_2, PlanetCarrier):
-
+            print(range_input_1)
+            print(range_input_2)
+            print(range_planet_carrier)
             path = self.path_planetary_to_planetary([input_1, input_2])
             reason = self.reason(path[0])
             index = self.matrix_position(self.planet_carrier)
-
+ 
             if reason < 0:
 
                 speed_min = self.speed_solve({input_1:range_input_1[0], input_2:range_input_2[0]})[index]
@@ -1117,7 +1133,7 @@ class PlanetaryGear(DessiaObject):
 
                 speed_diff_max = (speed_max-range_planet_carrier[1])*(1+reason_abs)
                 range_input_2[1] -= speed_diff_max
-
+            
 
             else:
                 if reason < 1:
@@ -1149,11 +1165,10 @@ class PlanetaryGear(DessiaObject):
                     range_input_2[0] -= speed_diff_max
 
 
-
-
             range_output[input_1] = range_input_1
             range_output[input_2] = range_input_2
             range_output[self.planet_carrier] = range_planet_carrier
+
             return range_output
 
         range_output[input_1] = range_input_1

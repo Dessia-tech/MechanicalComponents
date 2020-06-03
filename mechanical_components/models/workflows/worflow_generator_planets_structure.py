@@ -42,8 +42,9 @@ workflow_generator_planetary_gears_architecture = wf.Workflow(blocks_generator_p
 #                                             workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[4]):2,
 #                                             workflow_generator_planetary_gears_architecture .index(block_planetary_gears_architecture.inputs[1]):[[500,550],[600,650],[300,350],[200,250]]}
 
-
 # workflow_generator_planetary_gears_architecture = workflow_generator_planetary_gears_architecture.run(input_values_planetar_gears_architecture )
+
+
 # workflow_generator_planetary_gears_architecture.output_value[1].plot_kinematic_graph()
 
 
@@ -96,9 +97,9 @@ block_generator_planetary_gears=[block_planet_structure , generate_planet_struct
                 generate_planetary_gears_architecture,block_for_each_planetary_gears_architecture]
 
 pipes_generator_planetary_gears=[wf.Pipe(block_planet_structure.outputs[0], generate_planet_structure.inputs[0]),
-                                 wf.Pipe(block_planetary_gears_architecture.outputs[0], generate_planetary_gears_architecture.inputs[0]),
-                                 wf.Pipe(generate_planet_structure.outputs[0], block_planetary_gears_architecture.inputs[0]),
-                                 wf.Pipe(generate_planetary_gears_architecture.outputs[0],block_for_each_planetary_gears_architecture.inputs[0])]
+                                  wf.Pipe(block_planetary_gears_architecture.outputs[0], generate_planetary_gears_architecture.inputs[0]),
+                                  wf.Pipe(generate_planet_structure.outputs[0], block_planetary_gears_architecture.inputs[0]),
+                                  wf.Pipe(generate_planetary_gears_architecture.outputs[0],block_for_each_planetary_gears_architecture.inputs[0])]
 
 
 

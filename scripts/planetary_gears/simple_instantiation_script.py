@@ -90,10 +90,18 @@ list_planetary_gears=Generator_planetarie_gears.decision_tree()
 #     print(planetary_gears)
 
 # for i in range(len(list_planetary_gears)):
+list_solution=[]
+# for planetary_gear in list_planetary_gears:
+Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(list_planetary_gears[0],[[500,510],[610,620],[310,320],[380,390]],[7,80],[40,100],3)
+list_solution=Generator_planetarie_gear_z.decision_tree()
 
-for planetary_gear in list_planetary_gears:
-    Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(planetary_gear,[[500,510],[600,610],[300,310],[200,210]],[7,80],[40,100],3)
-    Generator_planetarie_gear_z.decision_tree()
+print(len(list_solution))
+
+list_range_1=list_solution[7].speed_range(list_solution[7].planetaries[1],list_solution[7].planetaries[0],[])
+list_range_2=list_solution[7].speed_range(list_solution[7].planet_carrier,list_solution[7].planetaries[0],[])
+print(list_range_1)
+print(list_range_2)
+print(list_solution[7].speed_solve({list_solution[7].planet_carrier:list_range_2[list_solution[7].planet_carrier][0],list_solution[7].planetaries[0]:list_range_2[list_solution[7].planetaries[0]][1]}))
 
 fin=time.time()
 print(debut-fin)

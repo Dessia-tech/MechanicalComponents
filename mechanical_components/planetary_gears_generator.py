@@ -1187,7 +1187,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                             list_previous_planetary):
 
         range_speed = planetary_gear.speed_range(begin_meshing_chain, planetary_gear.planet_carrier, list_previous_planetary)
-
+        
         if not range_speed:
             return False
 
@@ -1210,18 +1210,65 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
             return []
 
         reason = planetary_gear.reason_abs(path[0])
+      
+        
+        if end_meshing_chain.speed_input[1]!=planetary_gear.planet_carrier.speed_input[1]:
+            reason_1 = abs((begin_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[1])/
+                           (end_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[1]))
+            
+        else:
+            if end_meshing_chain.speed_input[1]==int(end_meshing_chain.speed_input[1]):
+                replace_zero=0.001
+            else:    
+                replace_zero = (end_meshing_chain.speed_input[1]-int(end_meshing_chain.speed_input[1]))*0.001 
+                
+            reason_1 = abs((begin_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[1])/
+                           (replace_zero))
 
-        reason_1 = abs((begin_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[1])/
-                       (end_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[1]))
 
-        reason_2 = abs((begin_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0])/
-                       (end_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0]))
 
-        reason_3 = abs((begin_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[1])/
-                       (end_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[1]))
 
-        reason_4 = abs((begin_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0])/
-                       (end_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0]))
+        if end_meshing_chain.speed_input[0] != planetary_gear.planet_carrier.speed_input[0]:
+            reason_2 = abs((begin_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0])/
+                           (end_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0]))
+            
+        else:
+            if end_meshing_chain.speed_input[0]==int(end_meshing_chain.speed_input[0]):
+               replace_zero=0.001
+            else:    
+                replace_zero = (end_meshing_chain.speed_input[0]-int(end_meshing_chain.speed_input[0]))*0.001 
+                
+            reason_2 = abs((begin_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0])/
+                           (replace_zero))
+        
+        
+        
+        if end_meshing_chain.speed_input[0]!=planetary_gear.planet_carrier.speed_input[1]:
+            reason_3 = abs((begin_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[1])/
+                           (end_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[1]))
+            
+        else:
+            if end_meshing_chain.speed_input[0]==int(end_meshing_chain.speed_input[0]):
+               replace_zero=0.001
+            else:    
+                replace_zero = (end_meshing_chain.speed_input[0]-int(end_meshing_chain.speed_input[0]))*0.001
+                
+            reason_3 = abs((begin_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[1])/
+                           (replace_zero))   
+                           
+                           
+        if end_meshing_chain.speed_input[1]!=planetary_gear.planet_carrier.speed_input[0]:
+            reason_4 = abs((begin_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0])/
+                           (end_meshing_chain.speed_input[1]-planetary_gear.planet_carrier.speed_input[0]))
+        else:
+            if end_meshing_chain.speed_input[1]==int(end_meshing_chain.speed_input[1]):
+               replace_zero=0.001
+            else:    
+                replace_zero = (end_meshing_chain.speed_input[1]-int(end_meshing_chain.speed_input[1]))*0.001
+                
+            reason_4 = abs((begin_meshing_chain.speed_input[0]-planetary_gear.planet_carrier.speed_input[0])/
+                           (replace_zero))
+            
 
         reason_min = min(reason_1, reason_2, reason_3, reason_4)
         reason_max = max(reason_1, reason_2, reason_3, reason_4)
@@ -1238,7 +1285,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
             Z_min = 0
             Z_max = int(reason*element.Z/reason_min)+1
         Z_range_mini_maxi = [Z_min, Z_max]
-
+        
         return Z_range_mini_maxi
 
     def decision_tree_speed_possibilities(self):
@@ -1279,7 +1326,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
     def decision_tree(self) -> List[PlanetaryGear]:
         list_planetary_gears_speed = self.decision_tree_speed_possibilities()
         print(list_planetary_gears_speed[0].planet_carrier.speed_input)
-
+        list_solution = []
         for i, planetary_gear in enumerate(list_planetary_gears_speed):
             print(i)
             planet_double = []
@@ -1311,7 +1358,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
             totals_element_previous_meshing_chain = []
             total_element_previous_meshing_chain = 0
             flags_meshing_change = []
-            list_solution = []
+            
             flag_gcd = []
             numbers_planetaries_by_meshing_chain=[]
             
@@ -1696,8 +1743,8 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                             valid_planet = False
 
                                         if valid_planet and len(node_planet) == len(list_tree_planetary):
-                                            list_solution.append(planetary_gear)
-
+                                            list_solution.append(copy.deepcopy(planetary_gear))
+                                            
                                             print(planetary_gear)
                                             # if list_solution:
                                             #     return list_solution
@@ -1705,7 +1752,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                         tree_planet.NextNode(valid_planet)
 
                             else:
-                                list_solution.append(planetary_gear)
+                                list_solution.append(copy.deepcopy(planetary_gear))
                                 print(planetary_gear)
 
                         # if len(list_solution) > 30:
@@ -1723,4 +1770,5 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
             fin = time.time()
 
             print(fin-debut)
+           
         return list_solution
