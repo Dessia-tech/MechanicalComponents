@@ -96,9 +96,19 @@ Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(list_pla
 list_solution=Generator_planetarie_gear_z.decision_tree()
 
 print(len(list_solution))
-
-list_range_1=list_solution[7].speed_range(list_solution[7].planetaries[1],list_solution[7].planetaries[0],[])
-list_range_2=list_solution[7].speed_range(list_solution[7].planet_carrier,list_solution[7].planetaries[0],[])
+number=0
+for i,solution in enumerate(list_solution):
+    
+    list_range_1=solution.speed_range(solution.planetaries[1],solution.planetaries[0],[])
+    list_range_2=solution.speed_range(solution.planetaries[2],solution.planetaries[0],[])
+    list_range_3=solution.speed_range(solution.planetaries[1],solution.planetaries[2],[])
+    list_range_4=solution.speed_range(solution.planetaries[1],solution.planet_carrier,[])
+    list_range_5=solution.speed_range(solution.planetaries[2],solution.planet_carrier,[])
+    if not list_range_1 or not list_range_2 or not list_range_3 or not list_range_4 or not list_range_5 :
+        number+=1
+        
+print(number)
+list_range_2=list_solution[7].speed_range(list_solution[7].planetaries[0],list_solution[7].planet_carrier,[])
 print(list_range_1)
 print(list_range_2)
 print(list_solution[7].speed_solve({list_solution[7].planet_carrier:list_range_2[list_solution[7].planet_carrier][0],list_solution[7].planetaries[0]:list_range_2[list_solution[7].planetaries[0]][1]}))

@@ -862,7 +862,28 @@ class PlanetaryGear(DessiaObject):
 
         return reason
 
-    def speed_range(self, input_1, input_2, list_planetary=[]):
+    def speed_range_coeff_min_max(self,range_input_1,range_input_2,speed_diff):
+        if (range_input_1[1]-range_input_1[0])/speed_diff<2:
+            
+            coeff_min_1= 2- (range_input_1[1]-range_input_1[0])/speed_diff
+            coeff_max_2= (range_input_1[1]-range_input_1[0])/speed_diff
+            
+        else:
+            coeff_min_1=2
+            coeff_max_2=0
+            
+        
+        if (range_input_2[1]-range_input_2[0])/speed_diff<2:
+            coeff_max_1= (range_input_2[1]-range_input_2[0])/speed_diff
+            coeff_min_2= 2-(range_input_2[1]-range_input_2[0])/speed_diff
+            
+        else:
+            coeff_max_1=0
+            coeff_min_2=0
+            
+        return coeff_min_1,coeff_max_1,coeff_min_2,coeff_max_2
+
+    def speed_range(self, element_1, element_2, list_planetary=[]):
         '''
         
 
@@ -884,15 +905,32 @@ class PlanetaryGear(DessiaObject):
         :rtype: Dictionary
 
         '''
-
+        if isinstance(element_1,PlanetCarrier):
+            input_1=element_2
+            input_2=element_1
+        else:
+            input_1=element_1
+            input_2=element_2
+            
         if list_planetary == []:
             list_planetary = copy.copy(self.planetaries)
 
         range_input_1 = [input_1.speed_input[0], input_1.speed_input[1]]
         range_input_2 = [input_2.speed_input[0], input_2.speed_input[1]]
         range_planet_carrier = copy.copy(self.planet_carrier.speed_input)
-
+        ranges_input_1=[]
+        ranges_max_input_1=[]
+        ranges_min_input_1=[]
+        
+        ranges_planet_carrier=[]
+        ranges_max_planet_carrier=[]
+        ranges_min_planet_carrier=[]
+        
         if not isinstance(input_1, PlanetCarrier) and not isinstance(input_2, PlanetCarrier):
+            range_input_1_for=copy.copy(range_input_1)
+            range_planet_carrier_for=copy.copy(range_planet_carrier)
+            range_max_input_1=copy.copy(range_input_1)
+            range_min_input_1=copy.copy(range_input_1)
 
             path = self.path_planetary_to_planetary([input_1, input_2])
             reason = self.reason(path[0])
@@ -900,7 +938,6 @@ class PlanetaryGear(DessiaObject):
      
             coeff_input_1 = 2*(range_input_1[1]-range_input_1[0])/((range_input_1[1]-range_input_1[0])+(range_input_2[1]-range_input_2[0]))
             coeff_input_2 = 2*(range_input_2[1]-range_input_2[0])/((range_input_1[1]-range_input_1[0])+(range_input_2[1]-range_input_2[0]))
-
             if reason < 0:
                 reason_abs = abs(reason)
                 speed_min = self.speed_solve({input_1 : input_1.speed_input[0], input_2 : input_2.speed_input[0]})[index]
@@ -911,12 +948,20 @@ class PlanetaryGear(DessiaObject):
 
                     speed_diff = (self.planet_carrier.speed_input[0]-speed_min)*(1+reason_abs)/(coeff_input_2+coeff_input_1*reason_abs)
 
-                    range_input_1[0] += coeff_input_1*speed_diff
+                    range_input_1_for[0] += coeff_input_1*speed_diff
+                    
+                    coeff_min_1,coeff_max_1,coeff_min_2,coeff_max_2=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                    
+                    range_min_input_1[0]+=coeff_min_1*speed_diff
+                    
+                    range_max_input_1[0]+=coeff_max_1*speed_diff
+                    
+                    
                     range_input_2[0] += coeff_input_2*speed_diff
                  
                 elif speed_min < self.planet_carrier.speed_input[1]:
-                    range_planet_carrier[0] = speed_min
-
+                    range_planet_carrier_for[0] = speed_min
+                    
                 else:
                     return []
 
@@ -925,11 +970,15 @@ class PlanetaryGear(DessiaObject):
 
                     speed_diff = (speed_max-self.planet_carrier.speed_input[1])*(1+reason_abs)/(coeff_input_2+coeff_input_1*reason_abs)
 
-                    range_input_1[1] -= coeff_input_1*speed_diff
+                    range_input_1_for[1] -= coeff_input_1*speed_diff
+                    coeff_min_1,coeff_max_1,coeff_min_2,coeff_max_2=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                    range_min_input_1[1]-=coeff_min_1*speed_diff
+                    range_max_input_1[1]-=coeff_max_1*speed_diff
+                    
                     range_input_2[1] -= coeff_input_2*speed_diff
 
                 elif speed_max > self.planet_carrier.speed_input[0]:
-                    range_planet_carrier[1] = speed_max
+                    range_planet_carrier_for[1] = speed_max
 
                 else:
                     return []
@@ -952,15 +1001,23 @@ class PlanetaryGear(DessiaObject):
                     speed_diff = (self.planet_carrier.speed_input[0]-speed_min)*(1-reason)/(coeff_input_2+coeff_input_1*reason)
 
                     if reason < 1:
-                        range_input_1[1] -= coeff_input_1*speed_diff
+                        range_input_1_for[1] -= coeff_input_1*speed_diff  
+                        coeff_min_1,coeff_max_1,coeff_min_2,coeff_max_2=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                        range_min_input_1[1]-=coeff_min_1*speed_diff
+                        range_max_input_1[1]-=coeff_max_1*speed_diff
+                        
                         range_input_2[0] += coeff_input_2*speed_diff
 
                     else:
-                        range_input_1[0] -= coeff_input_1*speed_diff
+                        range_input_1_for[0] -= coeff_input_1*speed_diff
+                        coeff_min_1,coeff_max_1,coeff_min_2,coeff_max_2=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                        range_min_input_1[0]-=coeff_min_1*speed_diff
+                        range_max_input_1[0]-=coeff_max_1*speed_diff
+                        
                         range_input_2[1] += coeff_input_2*speed_diff
 
                 elif speed_min < self.planet_carrier.speed_input[1]:
-                    range_planet_carrier[0] = speed_min
+                    range_planet_carrier_for[0] = speed_min
 
                 else:
                     return []
@@ -971,46 +1028,64 @@ class PlanetaryGear(DessiaObject):
                     speed_diff = (speed_max-self.planet_carrier.speed_input[1])*(1-reason)/(coeff_input_2+coeff_input_1*reason)
 
                     if reason < 1:
-                        range_input_1[0] += coeff_input_1*speed_diff
+                        range_input_1_for[0] += coeff_input_1*speed_diff
+                        coeff_min_1,coeff_max_1,coeff_min_2,coeff_max_2=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                        range_min_input_1[0]+=coeff_min_1*speed_diff
+                        range_max_input_1[0]+=coeff_max_1*speed_diff
+                        
                         range_input_2[1] -= coeff_input_2*speed_diff
 
                     else:
-                        range_input_1[1] += coeff_input_1*speed_diff
+                        range_input_1_for[1] += coeff_input_1*speed_diff
+                        coeff_min_1,coeff_max_1,coeff_min_2,coeff_max_2=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                        range_min_input_1[1]+=coeff_min_1*speed_diff
+                        range_max_input_1[1]+=coeff_max_1*speed_diff
+                        
                         range_input_2[0] -= coeff_input_2*speed_diff
 
                 elif speed_max > self.planet_carrier.speed_input[0]:
-                    range_planet_carrier[1] = speed_max
+                    range_planet_carrier_for[1] = speed_max
 
                 else:
                     return []
                 
 
+            ranges_planet_carrier.append(range_planet_carrier_for)
+            ranges_min_planet_carrier.append(range_planet_carrier_for)
+            ranges_max_planet_carrier.append(range_planet_carrier_for)
+            
+            ranges_input_1.append(range_input_1_for)
+            ranges_max_input_1.append(range_max_input_1)
+            ranges_min_input_1.append(range_min_input_1)
             
             list_planetary.remove(input_1)
             list_planetary.remove(input_2)
+            input_1_for=input_1
             print(range_input_1)
             print(range_input_2)
             print(range_planet_carrier)
         else:
             if  isinstance(input_1, PlanetCarrier):
                 list_planetary.remove(input_2)
-                input_replace=input_1
-                input_1 = input_2
-                input_2= input_replace
+                input_1_for = input_2
                 
-                range_input_replace=range_input_1
                 range_input_1= copy.copy(range_input_2)
-                range_input_2=copy.copy(range_input_replace)
             else:
                 list_planetary.remove(input_1)
-
+                input_1_for = input_1
 
         range_output = {}
-
         for planetary in list_planetary:
-
+            range_for_planetary_input_1=copy.copy(range_input_1)
+            range_for_planetary_planet_carrier=copy.copy(range_planet_carrier)
             range_output[planetary] = [planetary.speed_input[0], planetary.speed_input[1]]
-            path = self.path_planetary_to_planetary([input_1, planetary])
+            
+            range_min_input_1=copy.copy(range_input_1)
+            range_max_input_1=copy.copy(range_input_1)
+            range_min_planet_carrier=copy.copy(range_planet_carrier)
+            range_max_planet_carrier=copy.copy(range_planet_carrier)
+            
+            path = self.path_planetary_to_planetary([input_1_for, planetary])
 
             reason = self.reason(path[0])
 
@@ -1021,11 +1096,11 @@ class PlanetaryGear(DessiaObject):
 
             coeff_input_1 = 2*(range_input_1[1]-range_input_1[0])/((range_input_1[1]-range_input_1[0])+(range_planet_carrier[1]-range_planet_carrier[0]))
             coeff_input_planet_carrier = 2*(range_planet_carrier[1]-range_planet_carrier[0])/((range_input_1[1]-range_input_1[0])+(range_planet_carrier[1]-range_planet_carrier[0]))
-
+            
             if reason < 0:
 
-                speed_min = self.speed_solve({input_1 : range_input_1[1], self.planet_carrier : range_planet_carrier[0]})[index]
-                speed_max = self.speed_solve({input_1 : range_input_1[0], self.planet_carrier : range_planet_carrier[1]})[index]
+                speed_min = self.speed_solve({input_1_for : range_input_1[1], self.planet_carrier : range_planet_carrier[0]})[index]
+                speed_max = self.speed_solve({input_1_for : range_input_1[0], self.planet_carrier : range_planet_carrier[1]})[index]
                 reason_abs = abs(reason)
 
 
@@ -1033,21 +1108,33 @@ class PlanetaryGear(DessiaObject):
 
                     speed_diff = (planetary.speed_input[0]-speed_min)/((1+reason_abs)*coeff_input_planet_carrier+reason_abs*coeff_input_1)
 
-                    range_input_1[1] -= coeff_input_1*speed_diff
-                    range_planet_carrier[0] += coeff_input_planet_carrier*speed_diff
+                    range_for_planetary_input_1[1] -= coeff_input_1*speed_diff
+                    range_for_planetary_planet_carrier[0] += coeff_input_planet_carrier*speed_diff
+                    coeff_min_1,coeff_max_1,coeff_min_planet_carrier,coeff_max_planet_carrier=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                    range_min_input_1[1]-=coeff_min_1*speed_diff
+                    range_max_input_1[1]-=coeff_max_1*speed_diff
+                    
+                    range_min_planet_carrier[0] += coeff_min_planet_carrier*speed_diff
+                    range_max_planet_carrier[0] += coeff_max_planet_carrier*speed_diff
 
                 elif speed_min < planetary.speed_input[1]:
                     range_output[planetary][0] = speed_min
                     
                 else:
-                    
+                                                          
                     return[]
 
 
                 if speed_max > planetary.speed_input[1]:
                     speed_diff = (speed_max-planetary.speed_input[1])/((1+reason_abs)*coeff_input_planet_carrier+reason_abs*coeff_input_1)
-                    range_input_1[0] += coeff_input_1*speed_diff
-                    range_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
+                    range_for_planetary_input_1[0] += coeff_input_1*speed_diff
+                    range_for_planetary_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
+                    coeff_min_1,coeff_max_1,coeff_min_planet_carrier,coeff_max_planet_carrier=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                    range_min_input_1[0]+=coeff_min_1*speed_diff
+                    range_max_input_1[0]+=coeff_max_1*speed_diff
+                    
+                    range_min_planet_carrier[1] -= coeff_min_planet_carrier*speed_diff
+                    range_max_planet_carrier[1] -= coeff_max_planet_carrier*speed_diff
 
                 elif speed_max > planetary.speed_input[0]:
                     range_output[planetary][1] = speed_max
@@ -1060,25 +1147,36 @@ class PlanetaryGear(DessiaObject):
 
                 if reason < 1:
 
-                    speed_min = self.speed_solve({input_1 : range_input_1[0], self.planet_carrier : range_planet_carrier[0]})[index]
-                    speed_max = self.speed_solve({input_1 : range_input_1[1], self.planet_carrier : range_planet_carrier[1]})[index]
+                    speed_min = self.speed_solve({input_1_for : range_input_1[0], self.planet_carrier : range_planet_carrier[0]})[index]
+                    speed_max = self.speed_solve({input_1_for : range_input_1[1], self.planet_carrier : range_planet_carrier[1]})[index]
 
                 else:
-                    speed_min = self.speed_solve({input_1 : range_input_1[0], self.planet_carrier : range_planet_carrier[1]})[index]
-                    speed_max = self.speed_solve({input_1 : range_input_1[1], self.planet_carrier : range_planet_carrier[0]})[index]
+                    speed_min = self.speed_solve({input_1_for : range_input_1[0], self.planet_carrier : range_planet_carrier[1]})[index]
+                    speed_max = self.speed_solve({input_1_for : range_input_1[1], self.planet_carrier : range_planet_carrier[0]})[index]
 
                 if speed_min < planetary.speed_input[0]:
 
                     if reason < 1:
                         speed_diff = (planetary.speed_input[0]-speed_min)/(coeff_input_1*reason+coeff_input_planet_carrier*(1-reason))
-                        range_input_1[0] += coeff_input_1*speed_diff
-                        range_planet_carrier[0] += coeff_input_planet_carrier*speed_diff
-
+                        range_for_planetary_input_1[0] += coeff_input_1*speed_diff
+                        range_for_planetary_planet_carrier[0] += coeff_input_planet_carrier*speed_diff
+                        coeff_min_1,coeff_max_1,coeff_min_planet_carrier,coeff_max_planet_carrier=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                        range_min_input_1[0]+=coeff_min_1*speed_diff
+                        range_max_input_1[0]+=coeff_max_1*speed_diff
+                        
+                        range_min_planet_carrier[0] += coeff_min_planet_carrier*speed_diff
+                        range_max_planet_carrier[0] += coeff_max_planet_carrier*speed_diff
 
                     else:
                         speed_diff = (planetary.speed_input[0]-speed_min)/(reason*coeff_input_1+coeff_input_planet_carrier*(reason-1))
-                        range_input_1[0] += coeff_input_1*speed_diff
-                        range_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
+                        range_for_planetary_input_1[0] += coeff_input_1*speed_diff
+                        range_for_planetary_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
+                        coeff_min_1,coeff_max_1,coeff_min_planet_carrier,coeff_max_planet_carrier=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                        range_min_input_1[0]+=coeff_min_1*speed_diff
+                        range_max_input_1[0]+=coeff_max_1*speed_diff
+                        
+                        range_min_planet_carrier[1] -= coeff_min_planet_carrier*speed_diff
+                        range_max_planet_carrier[1] -= coeff_max_planet_carrier*speed_diff
 
                 elif speed_min < planetary.speed_input[1]:
                     range_output[planetary][0] = speed_min
@@ -1092,26 +1190,104 @@ class PlanetaryGear(DessiaObject):
 
                     if reason < 1:
                         speed_diff = (speed_max-planetary.speed_input[1])/(coeff_input_1*reason+coeff_input_planet_carrier*(1-reason))
-                        range_input_1[1] -= coeff_input_1*speed_diff
-                        range_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
+                        range_for_planetary_input_1[1] -= coeff_input_1*speed_diff
+                        range_for_planetary_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
+                        coeff_min_1,coeff_max_1,coeff_min_planet_carrier,coeff_max_planet_carrier=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                        range_min_input_1[1]-=coeff_min_1*speed_diff
+                        range_max_input_1[1]-=coeff_max_1*speed_diff
+                        
+                        range_min_planet_carrier[1] -= coeff_min_planet_carrier*speed_diff
+                        range_max_planet_carrier[1] -= coeff_max_planet_carrier*speed_diff
 
                     else:
                         speed_diff = (speed_max-planetary.speed_input[1])/(reason*coeff_input_1+coeff_input_planet_carrier*(reason-1))
-                        range_input_1[1] -= coeff_input_1*speed_diff
-                        range_planet_carrier[0] += coeff_input_planet_carrier*speed_diff
+                        range_for_planetary_input_1[1] -= coeff_input_1*speed_diff
+                        range_for_planetary_planet_carrier[0] += coeff_input_planet_carrier*speed_diff
+                        coeff_min_1,coeff_max_1,coeff_min_planet_carrier,coeff_max_planet_carrier=self.speed_range_coeff_min_max(range_input_1,range_input_2,speed_diff)
+                        range_min_input_1[1]-=coeff_min_1*speed_diff
+                        range_max_input_1[1]-=coeff_max_1*speed_diff
+                        
+                        range_min_planet_carrier[0] += coeff_min_planet_carrier*speed_diff
+                        range_max_planet_carrier[0] += coeff_max_planet_carrier*speed_diff
 
 
                 elif speed_max > planetary.speed_input[0]:
                     range_output[planetary][1] = speed_max
                     
                 else:
-                    if not isinstance(input_1, PlanetCarrier) and not isinstance(input_2, PlanetCarrier):
-                        print(speed_max)
-                        print(planetary.speed_input)
-                        print(speed_min)
+                    
                     return []
+                
+            ranges_input_1.append(range_for_planetary_input_1)
+            ranges_planet_carrier.append(range_for_planetary_planet_carrier)
+            
+            ranges_min_planet_carrier.append(range_min_planet_carrier)
+            ranges_max_planet_carrier.append(range_max_planet_carrier)
+            
+            ranges_min_input_1.append(range_min_input_1)
+            ranges_max_input_1.append(range_max_input_1)
+        if not isinstance(input_1, PlanetCarrier) and not isinstance(input_2, PlanetCarrier):
+                    print(ranges_input_1)
+                    print(ranges_planet_carrier)
+        for i,range_input_1_for in enumerate(ranges_input_1):
+            
+            if range_input_1[0]>range_input_1_for[1] or range_input_1[1]<range_input_1_for[0]:
+                if range_input_1[0]>ranges_max_input_1[i][1] or range_input_1[1]<ranges_max_input_1[i][0]:
+                    return[]
+                else:
+                    if range_planet_carrier[0]>ranges_min_planet_carrier[i][1] or range_planet_carrier[1]<ranges_min_planet_carrier[i][0]:
+                        return[]
+                    else:
+                        print(range_input_1)
+                        print(range_planet_carrier)
+                        print(ranges_min_planet_carrier)
+                        print(ranges_max_input_1)
+                        if range_input_1[1]>ranges_max_input_1[i][1]:
+                            range_input_1[1]=ranges_max_input_1[i][1]
+                            
+                        if range_input_1[0]<ranges_max_input_1[i][0]:
+                            range_input_1[0]=ranges_max_input_1[i][0]
+                        range_planet_carrier=ranges_min_planet_carrier[i]
+                        if range_planet_carrier[1]>ranges_max_planet_carrier[i][1]:
+                            range_planet_carrier[1]=ranges_max_planet_carrier[i][1]
+                            
+                        if range_planet_carrier[0]<ranges_max_planet_carrier[i][0]:
+                            range_planet_carrier[0]=ranges_max_planet_carrier[i][0]
+                        print(range_input_1)
+                        print(range_planet_carrier)
+            elif range_input_1[1]>range_input_1_for[1]:
+                range_input_1[1]=range_input_1_for[1]
+                
+            elif range_input_1[0]<range_input_1_for[0]:
+                range_input_1[0]=range_input_1_for[0]
+                
 
+            
+        for i,range_planet_carrier_for in enumerate(ranges_planet_carrier):
+            
+            if range_planet_carrier[0]>range_planet_carrier_for[1] or range_planet_carrier[1]<range_planet_carrier_for[0]:
+                
+                
+                if range_planet_carrier[0]>ranges_max_planet_carrier[i][1] or range_planet_carrier[1]<ranges_max_planet_carrier[i][0]:
+                    if not isinstance(input_1, PlanetCarrier) and not isinstance(input_2, PlanetCarrier):
+                        print(ranges_max_planet_carrier)
+                    
+                    return[]
+                else:
+                    if range_input_1[0]>ranges_min_input_1[i][1] or range_input_1[1]<ranges_min_input_1[i][0]:
+                        return[]
+                    else:
+                        range_planet_carrier=ranges_max_input_1[i]
+                        range_input_1=ranges_min_planet_carrier[i]
+                        
+            elif range_planet_carrier[1]>range_planet_carrier_for[1]:
+                range_planet_carrier[1]=range_planet_carrier_for[1]
+                
+            elif range_planet_carrier[0]<range_planet_carrier_for[0]:
+                range_planet_carrier[0]=range_planet_carrier_for[0]
+                
 
+            
         if not isinstance(input_1, PlanetCarrier) and not isinstance(input_2, PlanetCarrier):
             print(range_input_1)
             print(range_input_2)
@@ -1171,7 +1347,7 @@ class PlanetaryGear(DessiaObject):
 
             return range_output
 
-        range_output[input_1] = range_input_1
+        range_output[input_1_for] = range_input_1
         range_output[self.planet_carrier] = range_planet_carrier
         return range_output
 

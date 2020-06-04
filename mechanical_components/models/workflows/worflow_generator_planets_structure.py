@@ -88,10 +88,10 @@ workflow_generator_planetary_gears_z_number= wf.Workflow(blocks_generator_planet
 # workflow_generator_planetary_gears_z_number = workflow_generator_planetary_gears_z_number.run(input_values_planetar_gears_z_number )
 
 
+block_workflow_generator_planetary_gears_z_number=wf.WorkflowBlock(workflow_generator_planetary_gears_z_number)
 
-
-block_for_each_planetary_gears_architecture= wf.ForEach(workflow_generator_planetary_gears_z_number,
-                                                        block_planetary_gears_z_number.inputs[0])
+block_for_each_planetary_gears_architecture= wf.ForEach(block_workflow_generator_planetary_gears_z_number,
+                                                        block_workflow_generator_planetary_gears_z_number.inputs[0])
 
 block_generator_planetary_gears=[block_planet_structure , generate_planet_structure, block_planetary_gears_architecture, 
                 generate_planetary_gears_architecture,block_for_each_planetary_gears_architecture]
