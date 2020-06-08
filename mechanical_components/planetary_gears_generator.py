@@ -1137,12 +1137,12 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
     # _generic_eq = True
 
     def __init__(self, planetary_gear: PlanetaryGear, input_speeds: List[List[float]],
-                 Z_range_sun: List[int], Z_range_ring: List[int], number_planet: int, name: str = ''):
+                 Z_range_sun: List[int], Z_range_ring: List[int], number_planet: int, precision: float = 0.1,name: str = ''):
         
         
         self.planetary_gear = planetary_gear
         self.input_speeds = input_speeds
-
+        self.precision=precision
         self.number_input = len(input_speeds)
         self.Z_range_sun = Z_range_sun
         self.Z_range_ring = Z_range_ring
@@ -1172,7 +1172,24 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
 
 
+    def test_speed_precision(self,planetary_gear):   
+        for planetary in planetary_gear.planetaries:  
+            range_speed = planetary_gear.speed_range(planetary, planetary_gear.planet_carrier, self.precision)
+            
+            if not range_speed:
+                return False
+        list_planetary=copy.copy(planetary_gear.planetaries)
+        for planetary in planetary_gear.planetaries:
+            list_planetary.remove(planetary)
+            for planetary_2 in list_planetary:
+                range_speed = planetary_gear.speed_range(planetary, planetary_2, self.precision)
+                range_speed_2 = planetary_gear.speed_range(planetary_2, planetary, self.precision)
+                if not range_speed or not range_speed_2:
+                    return False
+            
+        return True
 
+        
 
     def test_GCD(self, Z_1, Z_2):
 
@@ -1186,7 +1203,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
     def test_vitesse_and_assembly_condition(self, planetary_gear, begin_meshing_chain, end_meshing_chain,
                                             list_previous_planetary):
 
-        range_speed = planetary_gear.speed_range(begin_meshing_chain, planetary_gear.planet_carrier, list_previous_planetary)
+        range_speed = planetary_gear.speed_range(begin_meshing_chain, planetary_gear.planet_carrier, self.precision, list_previous_planetary)
         
         if not range_speed:
             return False
@@ -1770,5 +1787,11 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
             fin = time.time()
 
             print(fin-debut)
-           
+        
+        
+        a=0
+        for i in range(len(list_solution)):
+            if not self.test_speed_precision(list_solution[i+a]):
+                list_solution.pop(i+a)
+                a-=1
         return list_solution
