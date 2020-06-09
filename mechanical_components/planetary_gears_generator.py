@@ -1183,8 +1183,8 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
             list_planetary.remove(planetary)
             for planetary_2 in list_planetary:
                 range_speed = planetary_gear.speed_range(planetary, planetary_2, self.precision)
-                range_speed_2 = planetary_gear.speed_range(planetary_2, planetary, self.precision)
-                if not range_speed or not range_speed_2:
+                
+                if not range_speed :
                     return False
             
         return True
@@ -1487,7 +1487,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
                     if len(meshing_chains_modif[number_meshing_chain]) > 2 \
                     and meshing_chains_modif[number_meshing_chain][0].planetary_type == 'Ring':
-
+                        
                         number_max_z_previous_planets = 0
                         for i in range(len(node)-total_element_previous_meshing_chain-2):
                             previous_planet = meshing_chains_modif[number_meshing_chain][i+1]
@@ -1507,20 +1507,22 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                             if flag_impose_z_number:
 
                                 if element.Z != number_max_z_planet-number_max_z_previous_planets:
-
+                                        
                                         valid = False
 
 
                             else:
                                 if element.Z > number_max_z_planet-number_max_z_previous_planets:
+                                        
                                         valid = False
                         else:
-                            if element.Z > number_max_z_planet-number_max_z_previous_planets:
 
+                            if element.Z > number_max_z_planet-number_max_z_previous_planets:
+                                
                                 valid = False
                     else:
                         if element.Z > number_max_z_planet:
-
+                                
                                 valid = False
 
                     if flag_gcd[len(node)-1] == 2 and valid:
@@ -1551,7 +1553,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
                     if isinstance(element, Planetary) and element.planetary_type == 'Ring':
                         number_max_z_planet = element.Z
-
+                        
 
                     else:
                         number_max_z_planet = self.Z_range_sun[1]
@@ -1671,7 +1673,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                             if element.Z < Z_range_mini_maxi_2[0] or element.Z < Z_range_mini_maxi_2[1]:
 
                                                 valid = self.test_vitesse_and_assembly_condition(planetary_gear, begin_meshing_chain,
-                                                                                                 end_meshing_chain, number_planet,
+                                                                                                 end_meshing_chain,
                                                                                                  list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_meshing_chain)+1])
 
                                             else:
@@ -1679,7 +1681,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                 else:
 
                                     valid = self.test_vitesse_and_assembly_condition(planetary_gear, first_planetary,
-                                                                                     end_meshing_chain, number_planet,
+                                                                                     end_meshing_chain,
                                                                                      list_planetaries_Z_range_mini_maxi[0:list_planetaries_Z_range_mini_maxi.index(end_meshing_chain)+1])
 
 

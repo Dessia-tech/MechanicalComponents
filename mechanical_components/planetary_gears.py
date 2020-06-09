@@ -1036,9 +1036,9 @@ class PlanetaryGear(DessiaObject):
         :param input_2: The second input
         :type input_2: Planetary or PlanetCarrier
             
-        :param list_planetary: The list of planetary ( or planet_carrier) that we want to check the input speed condition. 
-         The default is all the planetaries and the planet_carrier.
-        :type list_planetary: List[Planetary, PlannetCarrier], optional
+        :param list_planetary: The list of planetary that we want to check the input speed condition. 
+         The default is all the planetaries.
+        :type list_planetary: List[Planetary], optional
 
         :return: A dictionary where all the planetary and planet_carrier are associated with their speed range
         :rtype: Dictionary
@@ -1394,7 +1394,7 @@ class PlanetaryGear(DessiaObject):
                 
             ranges_input_1.append(range_for_planetary_input_1)
             ranges_planet_carrier.append(range_for_planetary_planet_carrier)
-            
+          
             ranges_min_planet_carrier.append(range_min_planet_carrier)
             
             ranges_max_input_1.append(range_max_input_1)
