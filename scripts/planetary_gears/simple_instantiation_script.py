@@ -82,7 +82,7 @@ Generator_planet_structure=pg_generator.GeneratorPlanetsStructure(3,0,2,1,2)
 list_planet_structure=Generator_planet_structure.decision_tree()
 # for planet_structure in list_planet_structure:
 #     planet_structure.plot_kinematic_graph()
-Generator_planetarie_gears=pg_generator.GeneratorPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250],[200,250]])
+Generator_planetarie_gears=pg_generator.GeneratorPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250]])
 list_planetary_gears=Generator_planetarie_gears.decision_tree()
 # print(len(list_planetary_gears))
 # for planetary_gears in list_planetary_gears:
@@ -92,27 +92,28 @@ list_planetary_gears=Generator_planetarie_gears.decision_tree()
 # for i in range(len(list_planetary_gears)):
 list_solution=[]
 # for planetary_gear in list_planetary_gears:
-Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(list_planetary_gears[0],[[500,505],[610,615],[310,315],[380,385],[100,500]],[7,80],[40,100],3,0.01)
+Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(list_planetary_gears[2],[[500,510],[610,620],[310,320],[380,390]],[7,80],[40,100],3)
 list_solution=Generator_planetarie_gear_z.decision_tree()
 
 print(len(list_solution))
 number=0
 # solution=list_solution[7]
-for i,solution in enumerate(list_solution):
+# for i,solution in enumerate(list_solution):
     
-    list_range_1=solution.speed_range(solution.planetaries[0],solution.planetaries[1],0.01)
-    print(list_range_1)
-    list_range_2=solution.speed_range(solution.planetaries[0],solution.planetaries[2],0.01)
-    print(list_range_2)
-    list_range_3=solution.speed_range(solution.planetaries[1],solution.planetaries[2],0.01)
-    print(list_range_3)
-    list_range_4=solution.speed_range(solution.planetaries[1],solution.planet_carrier,0.01)
-    print(list_range_4)
-    list_range_5=solution.speed_range(solution.planetaries[2],solution.planet_carrier,0.01)
-    print(list_range_5)
-    if not list_range_4 or not list_range_5 or not list_range_1 or not list_range_2 or not list_range_3:
-        print(i)
-        number+=1
+#     list_range_1=solution.speed_range(solution.planetaries[0],solution.planetaries[1],0.01)
+#     print(list_range_1)
+#     list_range_2=solution.speed_range(solution.planetaries[0],solution.planetaries[2],0.01)
+#     print(list_range_2)
+#     list_range_3=solution.speed_range(solution.planetaries[1],solution.planetaries[2],0.01)
+#     print(list_range_3)
+#     list_range_4=solution.speed_range(solution.planetaries[1],solution.planet_carrier,0.01)
+#     print(list_range_4)
+#     list_range_5=solution.speed_range(solution.planetaries[2],solution.planet_carrier,0.01)
+#     print(list_range_5)
+#     if not list_range_4 or not list_range_5 or not list_range_1 or not list_range_2 or not list_range_3:
+        
+#         print(i)
+#         number+=1
         
 print(number)
 # list_range_2=list_solution[7].speed_range(list_solution[7].planetaries[0],list_solution[7].planet_carrier,[])
