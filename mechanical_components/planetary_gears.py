@@ -1237,6 +1237,7 @@ class PlanetaryGear(DessiaObject):
                 path = self.path_planetary_to_planetary([input_1_for, planetary])
         
                 reason = self.reason(path[0])
+                
             else:
                 path =list_path[i]
         
@@ -1324,13 +1325,7 @@ class PlanetaryGear(DessiaObject):
                         range_for_planetary_input_1[0] += coeff_input_1*speed_diff
                         range_for_planetary_planet_carrier[0] += coeff_input_planet_carrier*speed_diff
                         
-                        speed_diff_2_min = (planetary.speed_input[0]-speed_min)/(1-reason)
-                        if speed_diff_2_min>self.planet_carrier.speed_input[1]-self.planet_carrier.speed_input[0]-precision:
-                            speed_diff_2_min=self.planet_carrier.speed_input[1]-self.planet_carrier.speed_input[0]-precision
-                            speed_diff_1_max=(planetary.speed_input[0]-speed_min-(speed_diff_2_min)*(1-reason))/(reason)
-                            range_max_input_1[0]+=speed_diff_1_max
                         
-                        range_min_planet_carrier[0] += speed_diff_2_min
                         
 
                     else:
@@ -1338,13 +1333,7 @@ class PlanetaryGear(DessiaObject):
                         range_for_planetary_input_1[0] += coeff_input_1*speed_diff
                         range_for_planetary_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
                         
-                        speed_diff_2_min = (planetary.speed_input[0]-speed_min)/(reason-1)
-                        if speed_diff_2_min>self.planet_carrier.speed_input[1]-self.planet_carrier.speed_input[0]-precision:
-                            speed_diff_2_min=self.planet_carrier.speed_input[1]-self.planet_carrier.speed_input[0]-precision
-                            speed_diff_1_max=(planetary.speed_input[0]-speed_min-(speed_diff_2_min)*(reason-1))/(reason)
-                            range_max_input_1[0]+=speed_diff_1_max
-                            
-                        range_min_planet_carrier[1] -= speed_diff_2_min
+                        
                         
                         
 
@@ -1363,14 +1352,10 @@ class PlanetaryGear(DessiaObject):
                         range_for_planetary_input_1[1] -= coeff_input_1*speed_diff
                         range_for_planetary_planet_carrier[1] -= coeff_input_planet_carrier*speed_diff
                         
-                        speed_diff_2_min = (speed_max-planetary.speed_input[1])/(1-reason)
-                        if speed_diff_2_min>self.planet_carrier.speed_input[1]-self.planet_carrier.speed_input[0]-precision:
-                            speed_diff_2_min=self.planet_carrier.speed_input[1]-self.planet_carrier.speed_input[0]-precision
-                            speed_diff_1_max=(speed_max-planetary.speed_input[1]-(speed_diff_2_min)*(1-reason))/(reason)
-                            range_max_input_1[1]-=speed_diff_1_max
+                        
 
                             
-                        range_min_planet_carrier[1] -= speed_diff_2_min
+                        
                         
                         
                     else:
@@ -1378,14 +1363,10 @@ class PlanetaryGear(DessiaObject):
                         range_for_planetary_input_1[1] -= coeff_input_1*speed_diff
                         range_for_planetary_planet_carrier[0] += coeff_input_planet_carrier*speed_diff
                         
-                        speed_diff_2_min = (speed_max-planetary.speed_input[1])/(reason-1)
-                        if speed_diff_2_min>self.planet_carrier.speed_input[1]-self.planet_carrier.speed_input[0]-precision:
-                            speed_diff_2_min=self.planet_carrier.speed_input[1]-self.planet_carrier.speed_input[0]-precision
-                            speed_diff_1_max=(speed_max-planetary.speed_input[1]-(speed_diff_2_min)*(reason-1))/(reason)
-                            range_max_input_1[1]-=speed_diff_1_max  
+                        
                             
                         
-                        range_min_planet_carrier[0] += speed_diff_2_min
+                        
                         
 
 

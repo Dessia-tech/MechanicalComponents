@@ -1208,7 +1208,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
         list_previous_planetary_2.remove(begin_meshing_chain)
         
         
-        range_speed = planetary_gear.speed_range(begin_meshing_chain, planetary_gear.planet_carrier, 0, list_previous_planetary,1)
+        range_speed = planetary_gear.speed_range(begin_meshing_chain, planetary_gear.planet_carrier, 0, list_previous_planetary,1,list_path)
         
         if range_speed=='simplex':
             
