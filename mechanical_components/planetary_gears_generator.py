@@ -1601,12 +1601,12 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                   break
 
                             if flag_impose_z_number and number_planet==1:
-                                    if element.Z != number_max_z_planet-number_max_z_previous_planets:
+                                    if element.Z != (number_max_z_planet-number_max_z_previous_planets*2):
                                             
                                             valid = False
 
                             else:
-                                if element.Z > number_max_z_planet-number_max_z_previous_planets:
+                                if element.Z > (number_max_z_planet-number_max_z_previous_planets*2):
                                         
                                         valid = False
                         else:
@@ -1843,7 +1843,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                                         number_planet+=1
                                                         
                                                 if isinstance(meshing_chain[-1],Planetary) and number_planet==1:
-                                                    number_z_max = meshing_chain[0].Z - meshing_chain[-1].Z
+                                                    number_z_max = (meshing_chain[0].Z - meshing_chain[-1].Z)/2
                                                     
                                                     if number_z_max < self.Z_range_sun[0]:
                                                         list_planet_remove[i].Z = self.Z_range_sun[0]
@@ -1862,7 +1862,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
                                                 else:
                                                     if isinstance(meshing_chain[-1],Planetary):
-                                                        number_z_max=meshing_chain[0].Z- meshing_chain[-1].Z
+                                                        number_z_max=(meshing_chain[0].Z- meshing_chain[-1].Z)/2
                                                     else:
                                                         number_z_max=meshing_chain[0].Z
                                                     
@@ -1930,3 +1930,138 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
         #         list_solution.pop(i+a)
         #         a-=1
         return list_solution
+    
+    
+    
+class GenneratorPlanetaryGearsGeometry:
+    
+    def __init__ (self,planetary_gear,number_planet):
+        
+        self.planetary_gear=planetary_gear
+        self.number_planet=number_planet
+        
+        
+    
+        
+    def function_minimize_equation(self,planetary_gear,X,Y,M):
+        planet_double=[]
+        teta=2*m.pi/self.number_planet
+        f=[]
+        f2=[]
+        index_x=0
+        limit_x=[]
+        for double in planetary_gear.doubles:
+            planet_double.append(double.nodes)
+            
+            
+        for y,meshing_chain in enumerate(meshing_chains):    
+            for i,element in enumerate(meshing_chain):
+                if isinstance(element,Planet):
+                    index_planet= planetary_gears.planets.index(Planet)
+                    
+                    if i==1 and isinstance(meshing_chain[0],Planetary):
+                        if meshing_chain[0].planet_type=='Ring':
+                            f.append(X[index_planet]**2+Y[index_planet]**2-(M[y]*(meshing_chain[-1].Z-element.Z)/2)**2) 
+
+                        else:
+                            f.append(X[index_planet]**2+Y[index_planet]**2-(M[y]*(meshing_chain[-1].Z+element.Z)/2)**2)
+                        
+                        index_other_planet=planetary_gear.planets.index(meshing_chain[i-1])    
+                        f.append((X[index_planet]-X[index_other_planet])**2+(Y[index_planet]-Y[index_other_planet])**2-(M[y]*(meshing_chain[i-1].Z+element.Z)/2)**2)
+                        
+                            
+                    elif i==len(meshing_chain)-1 and isinstance(meshing_chain[-1],Planetary):
+                        if meshing_chain[0].planet_type=='Ring':
+                            f.append(X[index_planet]**2+Y[index_planet]**2-(M[y]*(meshing_chain[-1].Z-element.Z)/2)**2)                
+                        else:
+                            f.append(X[index_planet]**2+Y[index_planet]**2-(M[y]*(meshing_chain[-1].Z+element.Z)/2)**2)
+                        
+                    elif i==0 or i==len(meshing_chain):
+                        if i==0:
+                            index_other_planet=planetary_gear.planets.index(meshing_chain[1])
+                            f.append((X[index_planet]-X[index_other_planet])**2+(Y[index_planet]-Y[index_other_planet])**2-(M[y]*(meshing_chain[i+1].Z+element.Z)/2)**2)
+                    
+                    else:
+                        index_other_planet=planetary_gear.planets.index(meshing_chain[i+1])
+                        f.append((X[index_planet]-X[index_other_planet])**2+(Y[index_planet]-Y[index_other_planet])**2-(M[y]*(meshing_chain[i+1].Z+element.Z)/2)**2)
+                    
+                    for double in planet_double:
+                        if element in double:
+                            if element==double[0]:
+                                other_double_index=planetary_gear.planets.index(double[1])
+                            if element==double[1]:
+                                other_double_index=planetary_gear.planets.index(double[0])
+                            f.append(X[other_double_index]-X[index_planet])
+                            f.append(Y[other_double_index]-Y[index_planet])
+                            planet_double.remove(double)
+                    
+                    # X_prime[index_planet]=X[index_planet]*m.cos(teta)-Y[index_planet]*m.sin(teta)
+                    # Y_prime[index_planet]=X[index_planet]*m.sin(teta)+Y[index_planet]*m.cos(teta)
+        return f    
+            
+    def function_minimize_inequation_meshing_chain(self,x,meshing_chain,X,Y):
+        teta=2*m.pi/self.number_planet
+        X_prime=copy.deepcopy(X)
+        Y_prime=copy.deppcopy(Y)
+        index_x=0
+        for i,element in enumerate(meshing_chain):
+            if isinstance(element,Planet):
+                X_prime[index_planet]=X[index_planet]*m.cos(teta)-Y[index_planet]*m.sin(teta)
+                Y_prime[index_planet]=X[index_planet]*m.sin(teta)+Y[index_planet]*m.cos(teta) 
+        for i,element in enumerate(meshing_chain):
+            if isinstance(element,Planet):
+                index_planet=planetary_gear.planets.index(element)
+                for element_2 in meshing_chain[:i-1]:
+                    if isinstance(element_2,Planetary):
+                        f2.append((Y[index_planet])**2+(X[index_planet])**2-x[index_x])
+                        index_x+=1
+                    
+                    else:   
+                        index_other_planet=planetary_gear.planets.index(element_2)
+                        f2.append((Y[index_planet]-Y[index_other_planet])**2+(X[index_planet]-X[index_other_planet])**2-x[index_x])
+                        index_x+=1
+                
+                        
+                for i,x_prime in enumerate(X_prime):
+                    f2.append((Y_prime[i]-Y[index_planet])**2+(x_prime-X[index_planet])**2-x[index_x])
+                    index_x+=1
+            
+        return f2
+    
+    def function_minimize_inequation_meshing_chain(self,meshing_chain,M,):
+        max_x=[]
+        min_x=[]
+        index_x=0
+
+        for i,element in enumerate(meshing_chain):
+            if isinstance(element,Planet):
+                index_planet=planetary_gear.planets.index(element)
+                for element_2 in meshing_chain[:i-1]:
+                    if isinstance(element_2,Planetary):
+                        if element_2.planet_type=='Ring':
+                            max_x.append(((element_2.Z-element.Z)*M/2)**2)
+                            min_x.append(np.inf)
+                        else:
+                            min_x.append(((element_2.Z+element.Z)*M/2)**2)
+                            max_x.append(np.inf)
+                    
+                    else:   
+                        min_x.append(((element_2.Z+element.Z)*M/2)**2)
+                        max_x.append(np.inf)
+                    
+                
+                        
+                for element_3 in meshing_chain:
+                    if isinstance(element,Planet):
+                        min_x.append(((element_3.Z+element.Z)*M/2)**2)
+                        max_x.append(np.inf)
+                    
+            
+        return min_x,max_x
+             
+                    
+                
+                        
+                        
+                    
+                    
