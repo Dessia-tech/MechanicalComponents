@@ -16,7 +16,8 @@ import time
 import math as m
 import copy
 import scipy.optimize as op
-
+import numpy as np
+import matplotlib.pyplot as plt
 class GeneratorPlanetsStructure(DessiaObject):
     '''
     A geanerator of planet_structure
@@ -1933,132 +1934,325 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
     
     
     
-class GenneratorPlanetaryGearsGeometry:
+class GeneratorPlanetaryGearsGeometry:
     
-    def __init__ (self,planetary_gear,number_planet):
+    def __init__ (self,planetary_gear,number_planet,D_min,D_max):
         
         self.planetary_gear=planetary_gear
         self.number_planet=number_planet
+        self.D_min=D_min
+        self.D_max=D_max
         
         
     
         
-    def function_minimize_equation(self,planetary_gear,X,Y,M):
+    def function_minimize_equation(self,meshing_chain,X,Y,M):
         planet_double=[]
         teta=2*m.pi/self.number_planet
         f=[]
         f2=[]
         index_x=0
         limit_x=[]
-        for double in planetary_gear.doubles:
+        for double in self.planetary_gear.doubles:
             planet_double.append(double.nodes)
             
             
-        for y,meshing_chain in enumerate(meshing_chains):    
-            for i,element in enumerate(meshing_chain):
-                if isinstance(element,Planet):
-                    index_planet= planetary_gears.planets.index(Planet)
-                    
-                    if i==1 and isinstance(meshing_chain[0],Planetary):
-                        if meshing_chain[0].planet_type=='Ring':
-                            f.append(X[index_planet]**2+Y[index_planet]**2-(M[y]*(meshing_chain[-1].Z-element.Z)/2)**2) 
+         
+        for i,element in enumerate(meshing_chain):
+            if isinstance(element,Planet):
+                index_planet= self.planetary_gear.planets.index(element)
+                
+                if i==1 and isinstance(meshing_chain[0],Planetary):
+                    if meshing_chain[0].planetary_type=='Ring':
+                        f.append(X[index_planet]**2+Y[index_planet]**2-(M*(meshing_chain[0].Z-element.Z)/2)**2) 
 
-                        else:
-                            f.append(X[index_planet]**2+Y[index_planet]**2-(M[y]*(meshing_chain[-1].Z+element.Z)/2)**2)
-                        
-                        index_other_planet=planetary_gear.planets.index(meshing_chain[i-1])    
-                        f.append((X[index_planet]-X[index_other_planet])**2+(Y[index_planet]-Y[index_other_planet])**2-(M[y]*(meshing_chain[i-1].Z+element.Z)/2)**2)
-                        
-                            
-                    elif i==len(meshing_chain)-1 and isinstance(meshing_chain[-1],Planetary):
-                        if meshing_chain[0].planet_type=='Ring':
-                            f.append(X[index_planet]**2+Y[index_planet]**2-(M[y]*(meshing_chain[-1].Z-element.Z)/2)**2)                
-                        else:
-                            f.append(X[index_planet]**2+Y[index_planet]**2-(M[y]*(meshing_chain[-1].Z+element.Z)/2)**2)
-                        
-                    elif i==0 or i==len(meshing_chain):
-                        if i==0:
-                            index_other_planet=planetary_gear.planets.index(meshing_chain[1])
-                            f.append((X[index_planet]-X[index_other_planet])**2+(Y[index_planet]-Y[index_other_planet])**2-(M[y]*(meshing_chain[i+1].Z+element.Z)/2)**2)
-                    
                     else:
-                        index_other_planet=planetary_gear.planets.index(meshing_chain[i+1])
-                        f.append((X[index_planet]-X[index_other_planet])**2+(Y[index_planet]-Y[index_other_planet])**2-(M[y]*(meshing_chain[i+1].Z+element.Z)/2)**2)
+                        f.append(X[index_planet]**2+Y[index_planet]**2-(M*(meshing_chain[0].Z+element.Z)/2)**2)
                     
-                    for double in planet_double:
-                        if element in double:
-                            if element==double[0]:
-                                other_double_index=planetary_gear.planets.index(double[1])
-                            if element==double[1]:
-                                other_double_index=planetary_gear.planets.index(double[0])
-                            f.append(X[other_double_index]-X[index_planet])
-                            f.append(Y[other_double_index]-Y[index_planet])
-                            planet_double.remove(double)
+                    index_other_planet=self.planetary_gear.planets.index(meshing_chain[2])    
+                    f.append((X[index_planet]-X[index_other_planet])**2+(Y[index_planet]-Y[index_other_planet])**2-(M*(meshing_chain[2].Z+element.Z)/2)**2)
+                   
+                        
+                elif i==len(meshing_chain)-2 and isinstance(meshing_chain[-1],Planetary):
+                    if meshing_chain[-1].planetary_type=='Ring':
+                        f.append(X[index_planet]**2+Y[index_planet]**2-(M*(meshing_chain[-1].Z-element.Z)/2)**2)                
+                    else:
+                        f.append(X[index_planet]**2+Y[index_planet]**2-(M*(meshing_chain[-1].Z+element.Z)/2)**2)
                     
-                    # X_prime[index_planet]=X[index_planet]*m.cos(teta)-Y[index_planet]*m.sin(teta)
-                    # Y_prime[index_planet]=X[index_planet]*m.sin(teta)+Y[index_planet]*m.cos(teta)
+                elif i==0 or i==len(meshing_chain)-1:
+                    if i==0:
+                        index_other_planet=self.planetary_gear.planets.index(meshing_chain[1])
+                        f.append((X[index_planet]-X[index_other_planet])**2+(Y[index_planet]-Y[index_other_planet])**2-(M*(meshing_chain[i+1].Z+element.Z)/2)**2)
+                
+                else:
+     
+                    index_other_planet=self.planetary_gear.planets.index(meshing_chain[i+1])
+                    f.append((X[index_planet]-X[index_other_planet])**2+(Y[index_planet]-Y[index_other_planet])**2-(M*(meshing_chain[i+1].Z+element.Z)/2)**2)
+                
+                for double in planet_double:
+                    if element in double:
+                        if element==double[0]:
+                            other_double_index=self.planetary_gear.planets.index(double[1])
+                        if element==double[1]:
+                            other_double_index=self.planetary_gear.planets.index(double[0])
+                        f.append(X[other_double_index]-X[index_planet])
+                        f.append(Y[other_double_index]-Y[index_planet])
+                        planet_double.remove(double)
+                    
+        # for i in range(len(f)):
+        #     f[i]=20*f[i]
         return f    
             
     def function_minimize_inequation_meshing_chain(self,x,meshing_chain,X,Y):
         teta=2*m.pi/self.number_planet
         X_prime=copy.deepcopy(X)
-        Y_prime=copy.deppcopy(Y)
+        Y_prime=copy.deepcopy(Y)
         index_x=0
+        f2=[]
         for i,element in enumerate(meshing_chain):
             if isinstance(element,Planet):
+                index_planet=self.planetary_gear.planets.index(element)
                 X_prime[index_planet]=X[index_planet]*m.cos(teta)-Y[index_planet]*m.sin(teta)
                 Y_prime[index_planet]=X[index_planet]*m.sin(teta)+Y[index_planet]*m.cos(teta) 
         for i,element in enumerate(meshing_chain):
             if isinstance(element,Planet):
-                index_planet=planetary_gear.planets.index(element)
-                for element_2 in meshing_chain[:i-1]:
-                    if isinstance(element_2,Planetary):
-                        f2.append((Y[index_planet])**2+(X[index_planet])**2-x[index_x])
-                        index_x+=1
-                    
-                    else:   
-                        index_other_planet=planetary_gear.planets.index(element_2)
-                        f2.append((Y[index_planet]-Y[index_other_planet])**2+(X[index_planet]-X[index_other_planet])**2-x[index_x])
-                        index_x+=1
-                
+                index_planet=self.planetary_gear.planets.index(element)
+                if i>1: 
+                    for element_2 in meshing_chain[:i-1]:
                         
-                for i,x_prime in enumerate(X_prime):
-                    f2.append((Y_prime[i]-Y[index_planet])**2+(x_prime-X[index_planet])**2-x[index_x])
-                    index_x+=1
+                        if isinstance(element_2,Planetary):
+                            f2.append((Y[index_planet])**2+(X[index_planet])**2-x[index_x])
+                            index_x+=1
+                        
+                        else:   
+                            index_other_planet=self.planetary_gear.planets.index(element_2)
+                            f2.append((Y[index_planet]-Y[index_other_planet])**2+(X[index_planet]-X[index_other_planet])**2-x[index_x])
+                            index_x+=1
             
-        return f2
-    
-    def function_minimize_inequation_meshing_chain(self,meshing_chain,M,):
-        max_x=[]
-        min_x=[]
-        index_x=0
-
-        for i,element in enumerate(meshing_chain):
-            if isinstance(element,Planet):
-                index_planet=planetary_gear.planets.index(element)
-                for element_2 in meshing_chain[:i-1]:
-                    if isinstance(element_2,Planetary):
-                        if element_2.planet_type=='Ring':
-                            max_x.append(((element_2.Z-element.Z)*M/2)**2)
-                            min_x.append(np.inf)
-                        else:
-                            min_x.append(((element_2.Z+element.Z)*M/2)**2)
-                            max_x.append(np.inf)
-                    
-                    else:   
-                        min_x.append(((element_2.Z+element.Z)*M/2)**2)
-                        max_x.append(np.inf)
-                    
                 
                         
                 for element_3 in meshing_chain:
-                    if isinstance(element,Planet):
-                        min_x.append(((element_3.Z+element.Z)*M/2)**2)
-                        max_x.append(np.inf)
+                    if isinstance(element_3,Planet):
+                        index_other_planet=self.planetary_gear.planets.index(element_3)
+                        f2.append((Y_prime[index_other_planet]-Y[index_planet])**2+(X_prime[index_other_planet]-X[index_planet])**2-x[index_x])
+                        print(X_prime[index_other_planet])
+                        print(Y_prime[index_other_planet])
+                        print(f2)
+                        index_x+=1
+                
+            elif i==len(meshing_chain)-1:
+                    for element_2 in meshing_chain[:i-1]:
+                       if isinstance(element_2,Planet):   
+                           
+                            index_other_planet=self.planetary_gear.planets.index(element_2)
+                            f2.append((Y[index_other_planet])**2+(X[index_other_planet])**2-x[index_x])
+                            
+                            index_x+=1
+        
+        F=0 
+        
+        for f in f2:
+            F+=f**2
+       
+        return F
+    
+    def function_minimize_inequation_meshing_chain_min_max(self,meshing_chain,M):
+        min_x_max_x=[]
+        index_x=0
+        x0=[]
+        for i,element in enumerate(meshing_chain):
+            if isinstance(element,Planet):
+                index_planet=self.planetary_gear.planets.index(element)
+                if i>1:
+                    for element_2 in meshing_chain[:i-1]:
+                        if isinstance(element_2,Planetary):
+                            if element_2.planetary_type=='Ring':
+                                min_x_max_x.append([np.inf,((element_2.Z-element.Z)*M/2)**2])
+                                x0.append(((element_2.Z-element.Z)*M/2)**2)
+                            else:
+                                min_x_max_x.append([((element_2.Z+element.Z)*M/2)**2,np.inf])
+                                x0.append(((element_2.Z+element.Z)*M/2)**2)
+                        
+                        else:   
+                            min_x_max_x.append([((element_2.Z+element.Z)*M/2)**2,np.inf])
+                            x0.append(((element_2.Z+element.Z)*M/2)**2)    
+                            
+                for element_3 in meshing_chain:
+                    if isinstance(element_3,Planet):
+                        min_x_max_x.append([((element_3.Z+element.Z)*M/2)**2,np.inf])
+                        x0.append(((element_3.Z+element.Z)*M/2)**2)
+                        
+            elif i==len(meshing_chain)-1:
+                    for element_2 in meshing_chain[:i-1]:
+                       if isinstance(element_2,Planet):   
+                            if element.planetary_type== 'Ring':
+                                min_x_max_x.append([np.inf,((element.Z-element_2.Z)*M/2)**2])
+                                x0.append(((element.Z-element_2.Z)*M/2)**2)
+                            else:
+                                min_x_max_x.append([((element_2.Z+element.Z)*M/2)**2,np.inf])
+                                x0.append(((element_2.Z+element.Z)*M/2)**2)
+                       
                     
             
-        return min_x,max_x
-             
+        return min_x_max_x,x0
+    
+    def verification(self):
+        X=[0]*len(self.planetary_gear.planets)
+        Y=copy.copy(X)
+        meshing_chains=self.planetary_gear.meshing_chain()
+        M=[0]*len(meshing_chains)
+        
+        def function_verification(x,planetary_gear):
+            meshing_chains=planetary_gear.meshing_chain()
+            X=[0]*len(self.planetary_gear.planets)
+            Y=[0]*len(self.planetary_gear.planets)
+            M=[0]*len(meshing_chains)
+            index_x=0
+            f2=[]
+            for i,meshing_chain in enumerate(meshing_chains):
+                M[i]=x[index_x]
+                index_x+=1
+            X[0]=0
+            Y[0]=x[index_x]
+            index_x+=1
+            for i,planets in enumerate(planetary_gear.planets[1:]):
+                X[i+1]=x[index_x]
+                index_x+=1
+                Y[i+1]=x[index_x]
+                index_x+=1
+                
+            for i,meshing_chain in enumerate(meshing_chains):
+                
+                m2=M[i]
+                f2.extend(self.function_minimize_equation(meshing_chain,X,Y,m2))
+                
+                min_max_x,x0=self.function_minimize_inequation_meshing_chain_min_max(meshing_chain,m2)
+                
+                res_1=op.minimize(self.function_minimize_inequation_meshing_chain,x0,bounds=min_max_x,args=(meshing_chain,X,Y))
+                if res_1.fun>0.000000000001:
+                      f2.append(res_1.fun*10)
+                
+                if isinstance (meshing_chain[0],Planetary) and meshing_chain[0].planetary_type=='Ring':
+                     f2.append(x[index_x]-m2*meshing_chain[0].Z)
+                     index_x+=1
+                     
+                elif isinstance (meshing_chain[-1],Planetary) and meshing_chain[-1].planetary_type=='Ring':
+                     f2.append(x[index_x]-m2*meshing_chain[-1].Z)
+                     index_x+=1
+                
+                else:
+                     
+                    for element in meshing_chain:
+                        if isinstance(element,Planet):
+                            index_planet=planetary_gear.planets.index(element)
+                            f2.append(((x[index_x]/2)**2-(X[index_planet]**2+Y[index_planet]**2))/10000000)
+                            index_x+=1
+                    
+                
+            
+                
+            F=0
+            print(f2)
+            for f in f2:
+                F+= f**2
+                
+            return F
+        min_max_x_2=[]
+        x0=[]
+        for meshing_chain in meshing_chains:
+            min_max_x_2.append([0,np.inf])
+            x0.append(1)
+            
+        min_max_x_2.append([-np.inf,np.inf])
+        x0.append(1)
+        
+        for planets in self.planetary_gear.planets[1:]:
+            min_max_x_2.append([-np.inf,np.inf])
+            min_max_x_2.append([-np.inf,np.inf])
+            x0.append(1)
+            x0.append(1)
+          
+        
+        for i,meshing_chain in enumerate(meshing_chains):
+                if isinstance (meshing_chain[0],Planetary) and meshing_chain[0].planetary_type=='Ring':
+                     min_max_x_2.append([self.D_min,self.D_max])
+                     x0.append(self.D_min)
+                     
+                elif isinstance (meshing_chain[-1],Planetary) and meshing_chain[-1].planetary_type=='Ring':
+                     min_max_x_2.append([self.D_min,self.D_max])
+                     x0.append(self.D_min)
+                
+                else:
+                     
+                    for element in meshing_chain:
+                        if isinstance(element,Planet):
+                            min_max_x_2.append([self.D_min,self.D_max])
+                            x0.append(self.D_min)  
+        
+        
+        res_2=op.minimize(function_verification,x0,bounds=min_max_x_2,args=(self.planetary_gear))
+        print(res_2)
+        if res_2.fun>0.001:
+            
+            return False
+        
+        
+        x=res_2.x
+        X=[]
+        Y=[]
+        M=[]
+        index_x=0
+        teta=2*m.pi/self.number_planet
+        for meshing_chain in meshing_chains:
+            M.append(x[index_x])
+            index_x+=1
+        X.append(0)
+        Y.append(x[index_x])
+        index_x+=1
+        for planets in self.planetary_gear.planets[1:]:
+            X.append(x[index_x])
+            index_x+=1
+            Y.append(x[index_x])
+            index_x+=1
+        X_prime=[]
+        Y_prime=[]
+        for y in range(self.number_planet):
+            X_prime.append([])
+            Y_prime.append([])
+            for i,x in enumerate(X):
+                X_prime[y].append(X[i]*m.cos(y*teta)-Y[i]*m.sin(y*teta))
+                Y_prime[y].append(X[i]*m.sin(y*teta)+Y[i]*m.cos(y*teta)) 
+                
+           
+            
+        list_color = ['mediumblue', 'purple', 'green', 'k']
+        plt.figure()
+        ax=plt.subplot(aspect='equal')
+        for i,meshing_chain in enumerate(meshing_chains):
+            
+            m2=M[i]
+            color=list_color[i]
+                        
+            for i,planet in enumerate(self.planetary_gear.planets):
+                if planet in meshing_chain:
+                    ax.add_patch(plt.Circle([X[i],Y[i]], m2*planet.Z/2,color=color,fill=False))
+                    for y in range(self.number_planet):
+                        ax.add_patch(plt.Circle([X_prime[y][i],Y_prime[y][i]], m2*planet.Z/2,color=color,fill=False))
+                
+                    
+            for planetary in self.planetary_gear.planetaries:
+                if planetary in meshing_chain:
+                   ax.add_patch(plt.Circle([0,0], m2*planetary.Z/2,color=color,fill=False)) 
+
+        ax.relim()
+        ax.autoscale_view()
+        plt.show()
+        return True
+        
+            
+        
+    
+    
                     
                 
                         
