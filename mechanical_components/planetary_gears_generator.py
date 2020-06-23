@@ -18,6 +18,7 @@ import copy
 import scipy.optimize as op
 import numpy as np
 import matplotlib.pyplot as plt
+import random as random
 class GeneratorPlanetsStructure(DessiaObject):
     '''
     A geanerator of planet_structure
@@ -587,7 +588,7 @@ class GeneratorPlanetsStructure(DessiaObject):
     def solution_sort(self, new_planet_structure, planet_structures_check):
         
         new_graph = new_planet_structure.graph()
-        if len(new_planet_structure.doubles)+1> self.number_max_meshing_plan:
+        if len(new_planet_structure.doubles)+1!= self.number_max_meshing_plan:
             return False
         for node in nx.nodes(new_graph):
 
@@ -1863,7 +1864,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
                                                 else:
                                                     if isinstance(meshing_chain[-1],Planetary):
-                                                        number_z_max=(meshing_chain[0].Z- meshing_chain[-1].Z)/2
+                                                        number_z_max=int((meshing_chain[0].Z- meshing_chain[-1].Z)/2)+1
                                                     else:
                                                         number_z_max=meshing_chain[0].Z
                                                     
@@ -1879,6 +1880,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                                 list_tree_planetary.append(self.Z_range_sun[1]-self.Z_range_sun[0])
                                             break
                                 if list_tree_planetary and valid_planet:
+                                    
                                     tree_planet = dt.RegularDecisionTree(list_tree_planetary)
 
                                     while not tree_planet.finished:
@@ -1898,7 +1900,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                         if valid_planet and len(node_planet) == len(list_tree_planetary):
                                             list_solution.append(copy.deepcopy(planetary_gear))
                                             
-                                            #print(planetary_gear)
+                                            print(planetary_gear)
                                             # if list_solution:
                                             #     return list_solution
 
@@ -1968,9 +1970,9 @@ class GeneratorPlanetaryGearsGeometry:
 
                     else:
                         f.append(X[index_planet]**2+Y[index_planet]**2-(M*(meshing_chain[0].Z+element.Z)/2)**2)
-                    
-                    index_other_planet=self.planetary_gear.planets.index(meshing_chain[2])    
-                    f.append((X[index_planet]-X[index_other_planet])**2+(Y[index_planet]-Y[index_other_planet])**2-(M*(meshing_chain[2].Z+element.Z)/2)**2)
+                    if len(meshing_chain)>2:
+                        index_other_planet=self.planetary_gear.planets.index(meshing_chain[2])    
+                        f.append((X[index_planet]-X[index_other_planet])**2+(Y[index_planet]-Y[index_other_planet])**2-(M*(meshing_chain[2].Z+element.Z)/2)**2)
                    
                         
                 elif i==len(meshing_chain)-2 and isinstance(meshing_chain[-1],Planetary):
@@ -2009,6 +2011,7 @@ class GeneratorPlanetaryGearsGeometry:
         Y_prime=copy.deepcopy(Y)
         index_x=0
         f2=[]
+        
         for i,element in enumerate(meshing_chain):
             if isinstance(element,Planet):
                 index_planet=self.planetary_gear.planets.index(element)
@@ -2035,9 +2038,9 @@ class GeneratorPlanetaryGearsGeometry:
                     if isinstance(element_3,Planet):
                         index_other_planet=self.planetary_gear.planets.index(element_3)
                         f2.append((Y_prime[index_other_planet]-Y[index_planet])**2+(X_prime[index_other_planet]-X[index_planet])**2-x[index_x])
-                        print(X_prime[index_other_planet])
-                        print(Y_prime[index_other_planet])
-                        print(f2)
+                        # print(X_prime[index_other_planet])
+                        # print(Y_prime[index_other_planet])
+                        # print(f2)
                         index_x+=1
                 
             elif i==len(meshing_chain)-1:
@@ -2067,7 +2070,7 @@ class GeneratorPlanetaryGearsGeometry:
                     for element_2 in meshing_chain[:i-1]:
                         if isinstance(element_2,Planetary):
                             if element_2.planetary_type=='Ring':
-                                min_x_max_x.append([np.inf,((element_2.Z-element.Z)*M/2)**2])
+                                min_x_max_x.append([-np.inf,((element_2.Z-element.Z)*M/2)**2])
                                 x0.append(((element_2.Z-element.Z)*M/2)**2)
                             else:
                                 min_x_max_x.append([((element_2.Z+element.Z)*M/2)**2,np.inf])
@@ -2086,7 +2089,7 @@ class GeneratorPlanetaryGearsGeometry:
                     for element_2 in meshing_chain[:i-1]:
                        if isinstance(element_2,Planet):   
                             if element.planetary_type== 'Ring':
-                                min_x_max_x.append([np.inf,((element.Z-element_2.Z)*M/2)**2])
+                                min_x_max_x.append([-np.inf,((element.Z-element_2.Z)*M/2)**2])
                                 x0.append(((element.Z-element_2.Z)*M/2)**2)
                             else:
                                 min_x_max_x.append([((element_2.Z+element.Z)*M/2)**2,np.inf])
@@ -2109,6 +2112,7 @@ class GeneratorPlanetaryGearsGeometry:
             M=[0]*len(meshing_chains)
             index_x=0
             f2=[]
+           
             for i,meshing_chain in enumerate(meshing_chains):
                 M[i]=x[index_x]
                 index_x+=1
@@ -2152,23 +2156,24 @@ class GeneratorPlanetaryGearsGeometry:
             
                 
             F=0
-            print(f2)
+            # print(f2)
             for f in f2:
                 F+= f**2
-                
+            print(f2)
+            print(F)
             return F
         min_max_x_2=[]
         x0=[]
         for meshing_chain in meshing_chains:
-            min_max_x_2.append([0,np.inf])
+            min_max_x_2.append([0,2])
             x0.append(1)
             
-        min_max_x_2.append([-np.inf,np.inf])
+        min_max_x_2.append([-self.D_min/2,self.D_min/2])
         x0.append(1)
         
         for planets in self.planetary_gear.planets[1:]:
-            min_max_x_2.append([-np.inf,np.inf])
-            min_max_x_2.append([-np.inf,np.inf])
+            min_max_x_2.append([-self.D_min/2,self.D_min/2])
+            min_max_x_2.append([-self.D_min/2,self.D_min/2])
             x0.append(1)
             x0.append(1)
           
@@ -2189,9 +2194,16 @@ class GeneratorPlanetaryGearsGeometry:
                             min_max_x_2.append([self.D_min,self.D_max])
                             x0.append(self.D_min)  
         
-        
-        res_2=op.minimize(function_verification,x0,bounds=min_max_x_2,args=(self.planetary_gear))
+        # for i in range(5):
+        #     for i,x in enumerate(x0):
+        #         x0_1=random.random()
+        #         x0[i]=(min_max_x_2[i][1]-min_max_x_2[i][0])*x0_1 + min_max_x_2[i][0]
+        #     print(x0)
+        res_2=op.minimize(function_verification,x0,bounds=min_max_x_2, method='L-BFGS-B' , args=(self.planetary_gear), options={'ftol':1e-6,'maxiter':1000000})
         print(res_2)
+            # if res_2.success==True and res_2.fun<0.001:
+            #     break
+        # print(res_2)
         if res_2.fun>0.001:
             
             return False

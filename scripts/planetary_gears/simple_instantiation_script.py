@@ -56,24 +56,32 @@ import time
 
 # # volumemodel = vm.Contour2D(meshes_1.Contour(1) )
 # # volumemodel.MPLPlot() 
-sun=pg.Planetary(36,'Sun','sun')
-sun_2=pg.Planetary(60,'Sun','sun_2')
-ring= pg.Planetary(84,'Ring','ring')
-planet_carrier= pg.PlanetCarrier('planet_carrier')
-planet_1=pg.Planet(14,'planet_1')
+# sun=pg.Planetary(36,'Sun','sun')
+# sun_2=pg.Planetary(60,'Ring','sun_2')
+# sun_3=pg.Planetary(60,'Sun','sun_2')
+# ring= pg.Planetary(84,'Ring','ring')
+# planet_carrier= pg.PlanetCarrier('planet_carrier')
+# planet_1=pg.Planet(20,'planet_1')
 
 
 
-planet_2=pg.Planet(12,'planet_2')
-planet_3=pg.Planet(12,'planet_3')
-planet_4=pg.Planet(7,'planet_4')
-planet_5=pg.Planet(7,'planet_5')
-planet_6=pg.Planet(7,'planet_5')
-connections=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'),pg.Connection([planet_2,planet_4],'GE'),pg.Connection([planet_4,ring],'GE'),pg.Connection([planet_2,planet_3],'D'),pg.Connection([planet_3,planet_5],'GI'),pg.Connection([planet_5,planet_6],'GI'),pg.Connection([planet_6,sun_2],'GI')]
-planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2], [planet_1,planet_2,planet_3,planet_4,planet_5,planet_6], planet_carrier,connections,'pl_1')
+# planet_2=pg.Planet(12,'planet_2')
+# planet_3=pg.Planet(20,'planet_3')
+# planet_4=pg.Planet(7,'planet_4')
+# planet_5=pg.Planet(7,'planet_5')
+# planet_6=pg.Planet(7,'planet_5')
+# planet_7=pg.Planet(7,'planet_5')
+# connections=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'),pg.Connection([planet_2,ring],'GE'),
+#              pg.Connection([planet_2,planet_3],'D'),
+#              pg.Connection([planet_3,sun_2],'GI')]
 
-generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_1,10,10,100)
-print(generatorgeometry.verification())
+# connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'),pg.Connection([planet_2,planet_4],'GE'),
+#                pg.Connection([planet_4,planet_5],'GE'), pg.Connection([planet_5,planet_6],'GE'), pg.Connection([planet_6,planet_3],'GE'), pg.Connection([planet_3,ring],'GE')]
+
+# planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3], planet_carrier,connections,'pl_1')
+# planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2,planet_4,planet_5,planet_6,planet_3], planet_carrier,connections_2,'pl_1')
+# generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_1,3,10,100)
+# print(generatorgeometry.verification())
 
 # print([sun,ring,sun_2])
 # torque_solution=planetary_gears_1.torque_solve({sun:0,planet_carrier:500})
@@ -81,12 +89,14 @@ print(generatorgeometry.verification())
 # print(torque_solution)
 # print(speed_solution)
 # debut=time.time()
-# Generator_planet_structure=pg_generator.GeneratorPlanetsStructure(3,0,2,1,2)
-# list_planet_structure=Generator_planet_structure.decision_tree()
+Generator_planet_structure=pg_generator.GeneratorPlanetsStructure(3,0,2,1,2)
+list_planet_structure=Generator_planet_structure.decision_tree()
+# print(len(list_planet_structure))
 # for planet_structure in list_planet_structure:
 #     planet_structure.plot_kinematic_graph()
-# Generator_planetarie_gears=pg_generator.GeneratorPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250]])
-# list_planetary_gears=Generator_planetarie_gears.decision_tree()
+Generator_planetarie_gears=pg_generator.GeneratorPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250]])
+list_planetary_gears=Generator_planetarie_gears.decision_tree()
+
 # print(len(list_planetary_gears))
 # for planetary_gears in list_planetary_gears:
 #     planetary_gears.plot_kinematic_graph()
@@ -95,9 +105,23 @@ print(generatorgeometry.verification())
 # for i in range(len(list_planetary_gears)):
 # list_solution=[]
 # for planetary_gear in list_planetary_gears:
-# Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(list_planetary_gears[2],[[500,505],[610,615],[310,315],[380,385]],[7,80],[40,100],3)
-# list_solution=Generator_planetarie_gear_z.decision_tree()
+Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(list_planetary_gears[2],[[500,505],[610,615],[310,315],[380,385]],[7,80],[40,100],3)
+list_solution=Generator_planetarie_gear_z.decision_tree()
+for planetary_gear in list_solution:
+    generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gear,3,10,100)
+    print(generatorgeometry.verification())
 
+Z_planetary=[]
+# for planetary_gears in list_solution:
+#     Z=[]
+#     for planetary in planetary_gears.planetaries:
+#        Z.append(planetary.Z)
+#     if not Z  in Z_planetary:
+#         Z_planetary.append(Z)
+    
+
+# print(len(Z_planetary))
+            
 # print(len(list_solution))
 # number=0
 # solution=list_solution[7]
