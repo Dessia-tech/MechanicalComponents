@@ -1135,9 +1135,9 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
 
     '''
-    # _standalone_in_db = True
+    _standalone_in_db = True
 
-    # _generic_eq = True
+    _generic_eq = True
 
     def __init__(self, planetary_gear: PlanetaryGear, input_speeds: List[List[float]],
                  Z_range_sun: List[int], Z_range_ring: List[int], number_planet: int,name: str = ''):
@@ -2098,7 +2098,54 @@ class GeneratorPlanetaryGearsGeometry:
                     
             
         return min_x_max_x,x0
-    
+    def function_inequation_constrain(self,x,planetary_gear):
+        meshing_chains=planetary_gear.meshing_chain()
+        X=[0]*len(self.planetary_gear.planets)
+        Y=[0]*len(self.planetary_gear.planets)
+        M=[0]*len(meshing_chains)
+        index_x=0
+        f2=[]
+        # print(x)
+        for i,meshing_chain in enumerate(meshing_chains):
+            M[i]=x[index_x]
+            index_x+=1
+        X[0]=0
+        Y[0]=x[index_x]
+        index_x+=1
+        for i,planets in enumerate(planetary_gear.planets[1:]):
+            X[i+1]=x[index_x]
+            index_x+=1
+            Y[i+1]=x[index_x]
+            index_x+=1
+        for i,meshing_chain in enumerate(meshing_chains):
+            m2=M[i]
+            if isinstance (meshing_chain[0],Planetary) and meshing_chain[0].planetary_type=='Ring':
+                     f2.append(self.D_max-m2*meshing_chain[0].Z)
+                     f2.append(-self.D_min+m2*meshing_chain[0].Z)
+                     
+                     
+            elif isinstance (meshing_chain[-1],Planetary) and meshing_chain[-1].planetary_type=='Ring':
+                 f2.append(self.D_max-m2*meshing_chain[-1].Z)
+                 f2.append(-self.D_min+m2*meshing_chain[-1].Z)
+                 
+            
+            else:
+                 
+                for element in meshing_chain:
+                    if isinstance(element,Planet):
+                        index_planet=planetary_gear.planets.index(element)
+                        f2.append((self.D_max/2)**2-(X[index_planet]**2+Y[index_planet]**2))
+                        f2.append(-(self.D_min/2)**2+(X[index_planet]**2+Y[index_planet]**2))
+        F=0
+        # print(f2)
+        for f in f2:
+            F+= f-abs(f)  
+        # if F==0:
+        #     F=1
+        
+        return F 
+                            
+            
     def verification(self):
         X=[0]*len(self.planetary_gear.planets)
         Y=copy.copy(X)
@@ -2136,21 +2183,21 @@ class GeneratorPlanetaryGearsGeometry:
                 if res_1.fun>0.000000000001:
                       f2.append(res_1.fun*10)
                 
-                if isinstance (meshing_chain[0],Planetary) and meshing_chain[0].planetary_type=='Ring':
-                     f2.append(x[index_x]-m2*meshing_chain[0].Z)
-                     index_x+=1
+                # if isinstance (meshing_chain[0],Planetary) and meshing_chain[0].planetary_type=='Ring':
+                #      f2.append(x[index_x]-m2*meshing_chain[0].Z)
+                #      index_x+=1
                      
-                elif isinstance (meshing_chain[-1],Planetary) and meshing_chain[-1].planetary_type=='Ring':
-                     f2.append(x[index_x]-m2*meshing_chain[-1].Z)
-                     index_x+=1
+                # elif isinstance (meshing_chain[-1],Planetary) and meshing_chain[-1].planetary_type=='Ring':
+                #      f2.append(x[index_x]-m2*meshing_chain[-1].Z)
+                #      index_x+=1
                 
-                else:
+                # else:
                      
-                    for element in meshing_chain:
-                        if isinstance(element,Planet):
-                            index_planet=planetary_gear.planets.index(element)
-                            f2.append(((x[index_x]/2)**2-(X[index_planet]**2+Y[index_planet]**2))/10000000)
-                            index_x+=1
+                #     for element in meshing_chain:
+                #         if isinstance(element,Planet):
+                #             index_planet=planetary_gear.planets.index(element)
+                #             f2.append(((x[index_x]/2)**2-(X[index_planet]**2+Y[index_planet]**2))/10000000)
+                #             index_x+=1
                     
                 
             
@@ -2158,9 +2205,10 @@ class GeneratorPlanetaryGearsGeometry:
             F=0
             # print(f2)
             for f in f2:
-                F+= f**2
-            print(f2)
-            print(F)
+                F+= abs(f)
+            # print(f2)
+            # print(x)
+            # print(F)
             return F
         min_max_x_2=[]
         x0=[]
@@ -2178,33 +2226,35 @@ class GeneratorPlanetaryGearsGeometry:
             x0.append(1)
           
         
-        for i,meshing_chain in enumerate(meshing_chains):
-                if isinstance (meshing_chain[0],Planetary) and meshing_chain[0].planetary_type=='Ring':
-                     min_max_x_2.append([self.D_min,self.D_max])
-                     x0.append(self.D_min)
+        # for i,meshing_chain in enumerate(meshing_chains):
+        #         if isinstance (meshing_chain[0],Planetary) and meshing_chain[0].planetary_type=='Ring':
+        #              min_max_x_2.append([self.D_min,self.D_max])
+        #              x0.append(self.D_min)
                      
-                elif isinstance (meshing_chain[-1],Planetary) and meshing_chain[-1].planetary_type=='Ring':
-                     min_max_x_2.append([self.D_min,self.D_max])
-                     x0.append(self.D_min)
+        #         elif isinstance (meshing_chain[-1],Planetary) and meshing_chain[-1].planetary_type=='Ring':
+        #              min_max_x_2.append([self.D_min,self.D_max])
+        #              x0.append(self.D_min)
                 
-                else:
+        #         else:
                      
-                    for element in meshing_chain:
-                        if isinstance(element,Planet):
-                            min_max_x_2.append([self.D_min,self.D_max])
-                            x0.append(self.D_min)  
+        #             for element in meshing_chain:
+        #                 if isinstance(element,Planet):
+        #                     min_max_x_2.append([self.D_min,self.D_max])
+        #                     x0.append(self.D_min)  
         
-        # for i in range(5):
-        #     for i,x in enumerate(x0):
-        #         x0_1=random.random()
-        #         x0[i]=(min_max_x_2[i][1]-min_max_x_2[i][0])*x0_1 + min_max_x_2[i][0]
-        #     print(x0)
-        res_2=op.minimize(function_verification,x0,bounds=min_max_x_2, method='L-BFGS-B' , args=(self.planetary_gear), options={'ftol':1e-6,'maxiter':1000000})
-        print(res_2)
-            # if res_2.success==True and res_2.fun<0.001:
-            #     break
+        for i in range(100):
+            for i,x in enumerate(x0):
+                x0_1=random.random()
+                x0[i]=(min_max_x_2[i][1]-min_max_x_2[i][0])*x0_1 + min_max_x_2[i][0]
+            print(x0)
+        
+            constraint={'type':'ineq','fun':self.function_inequation_constrain,'args':(self.planetary_gear,)}
+            res_2=op.minimize(function_verification,x0,bounds=min_max_x_2, method='COBYLA' , args=(self.planetary_gear),constraints=constraint,tol=0.0001, options={'ftol':1e-10,'maxiter':1000})
+            print(res_2)
+            if res_2.success==True and res_2.fun<0.001:
+                break
         # print(res_2)
-        if res_2.fun>0.001:
+        if res_2.fun>0.01:
             
             return False
         
