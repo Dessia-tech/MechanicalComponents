@@ -9,6 +9,7 @@ import mechanical_components.planetary_gears_generator as pg_generator
 import dessia_common.workflow as wf
 from dessia_common.workflow import Filter
 import mechanical_components.planetary_gears as pg
+from dessia_api_client import Client
 block_planet_structure = wf.InstanciateModel(pg_generator.GeneratorPlanetsStructure, name='GeneratorPlanetsStructure')
 generate_planet_structure = wf.ModelMethod(pg_generator.GeneratorPlanetsStructure,  'decision_tree', name='GeneratorPlanetsStructure-decision_tree')
 
@@ -18,6 +19,11 @@ generate_planetary_gears_architecture = wf.ModelMethod(pg_generator.GeneratorPla
 block_planetary_gears_z_number = wf.InstanciateModel(pg_generator.GeneratorPlanetaryGearsZNumber, name='GeneratorPlanetaryGearsZNumber')
 generate_planetary_gears_z_number = wf.ModelMethod(pg_generator.GeneratorPlanetaryGearsZNumber,  'decision_tree', name='GeneratorPlanetaryGearsZNumber')
 
+block_planetary_gears_geometry = wf.InstanciateModel(pg_generator.GeneratorPlanetaryGearsGeometry, name='GeneratorPlanetaryGearsGeometry')
+generate_planetary_gears_geometry = wf.ModelMethod(pg_generator.GeneratorPlanetaryGearsGeometry,  'verification', name='GeneratorPlanetaryGearsGeometry')
+
+block_solution_sort = wf.InstanciateModel(pg_generator.SolutionSort, name='SolutionSort')
+solution_sort=wf.ModelMethod(pg_generator.SolutionSort,  'solution_sort', name='solution_sort')
 
 input_values = {}
 blocks_generator_planetary_gears_architecture = []
@@ -58,7 +64,7 @@ blocks_generator_planetary_gears_z_number.extend([block_planetary_gears_z_number
 pipes_generator_planetary_gears_z_number=[wf.Pipe(block_planetary_gears_z_number.outputs[0], generate_planetary_gears_z_number.inputs[0])]
 
 
-workflow_generator_planetary_gears_z_number= wf.Workflow(blocks_generator_planetary_gears_z_number, pipes_generator_planetary_gears_z_number, generate_planet_structure.outputs[0])
+workflow_generator_planetary_gears_z_number= wf.Workflow(blocks_generator_planetary_gears_z_number, pipes_generator_planetary_gears_z_number, generate_planetary_gears_z_number.outputs[0])
 
 # sun = pg.Planetary(36, 'Sun', 'sun')
 # sun_2 = pg.Planetary(60, 'Sun', 'sun_2')
@@ -87,40 +93,71 @@ workflow_generator_planetary_gears_z_number= wf.Workflow(blocks_generator_planet
 
 # workflow_generator_planetary_gears_z_number = workflow_generator_planetary_gears_z_number.run(input_values_planetar_gears_z_number )
 
+blocks_generator_planetary_gears_geometry=[]
+blocks_generator_planetary_gears_geometry.extend([block_planetary_gears_geometry,generate_planetary_gears_geometry])
+
+
+pipes_generator_planetary_gears_geometry=[wf.Pipe(block_planetary_gears_geometry.outputs[0], generate_planetary_gears_geometry.inputs[0])]
+
+workflow_generator_planetary_gears_geometry = wf.Workflow(blocks_generator_planetary_gears_geometry, pipes_generator_planetary_gears_geometry, generate_planetary_gears_geometry.outputs[0])
+
+block_workflow_generator_planetary_gears_geometry=wf.WorkflowBlock(workflow_generator_planetary_gears_geometry)
+
+ 
+
+block_for_each_planetary_gears_geometry= wf.ForEach(block_workflow_generator_planetary_gears_geometry,block_workflow_generator_planetary_gears_geometry.inputs[0])
+
 
 block_workflow_generator_planetary_gears_z_number=wf.WorkflowBlock(workflow_generator_planetary_gears_z_number)
+
+
+
+
 
 block_for_each_planetary_gears_architecture= wf.ForEach(block_workflow_generator_planetary_gears_z_number,
                                                         block_workflow_generator_planetary_gears_z_number.inputs[0])
 
+
 block_generator_planetary_gears=[block_planet_structure , generate_planet_structure, block_planetary_gears_architecture, 
-                generate_planetary_gears_architecture,block_for_each_planetary_gears_architecture]
+                generate_planetary_gears_architecture,block_for_each_planetary_gears_architecture,block_solution_sort,solution_sort,block_for_each_planetary_gears_geometry]
 
 pipes_generator_planetary_gears=[wf.Pipe(block_planet_structure.outputs[0], generate_planet_structure.inputs[0]),
                                   wf.Pipe(block_planetary_gears_architecture.outputs[0], generate_planetary_gears_architecture.inputs[0]),
                                   wf.Pipe(generate_planet_structure.outputs[0], block_planetary_gears_architecture.inputs[0]),
-                                  wf.Pipe(generate_planetary_gears_architecture.outputs[0],block_for_each_planetary_gears_architecture.inputs[0])]
+                                  wf.Pipe(generate_planetary_gears_architecture.outputs[0],block_for_each_planetary_gears_architecture.inputs[0]),
+                                  wf.Pipe(block_for_each_planetary_gears_architecture.outputs[0],block_solution_sort.inputs[0]),
+                                  wf.Pipe(block_solution_sort.outputs[0],solution_sort.inputs[0]),
+                                  wf.Pipe(solution_sort.outputs[0],block_for_each_planetary_gears_geometry.inputs[0])]
+                                  
 
 
 
 workflow_generator_planetary_gears=wf.Workflow(block_generator_planetary_gears,
                                               pipes_generator_planetary_gears,block_for_each_planetary_gears_architecture.outputs[0])
 
+
+
 input_values = {workflow_generator_planetary_gears_architecture.index(block_planet_structure.inputs[0]): 3,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[1]): 0,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[2]): 2,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[3]): 1,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[4]):2,
-                workflow_generator_planetary_gears_architecture .index(block_planetary_gears_architecture.inputs[1]):[[500,550],[600,650],[300,350],[200,250]],
+                workflow_generator_planetary_gears_architecture .index(block_planetary_gears_architecture.inputs[1]):[[500,505],[610,615],[310,315],[380,385]],
 
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_architecture.inputs[1]):[[500,550],[600,650],[300,350],[200,250]] , 
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_architecture.inputs[2]):[7, 80] ,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_architecture.inputs[3]):[40,100] ,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_architecture.inputs[4]):3}
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_architecture.inputs[1]):[[500,501],[610,611],[310,311],[380,381]] , 
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_architecture.inputs[2]):[7, 60] ,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_architecture.inputs[3]):[60,100] ,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_architecture.inputs[4]):4,
+                
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[1]):4,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[2]):10,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):100}
 
 # a = workflow_generator_planetary_gears.to_dict()
 # obj = wf.Workflow.dict_to_object(a)
 # ##
+workflow_generator_run = workflow_generator_planetary_gears.run(input_values)
+c = Client(api_url = 'http://localhost:5000')
+r = c.create_object_from_python_object(workflow_generator_run)
 
-workflow_generator_planetary_gears = workflow_generator_planetary_gears.run(input_values)
-workflow_generator_planetary_gears.output_value[1].plot_kinematic_graph()
+# workflow_generator_planetary_gears.output_value[1].plot_kinematic_graph()

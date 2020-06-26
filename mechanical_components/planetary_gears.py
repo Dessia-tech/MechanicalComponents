@@ -26,50 +26,65 @@ class Gears(DessiaObject):
 
     def __init__(self, Z: int, name: str = ''):
         self.Z = Z
-
+        
+       
+        
         DessiaObject.__init__(self, name=name)
+        
+    # def voldmr_volume_model(self):
+    #     model = self.volume_model()
+    #     return model
 
-    def volume_plot(self, xy_position, z_position, module, lenght):
-         self.module = module
-         self.d = module*self.Z
-         radius = self.Z*module
-         x = vm.Vector3D((1, 0, 0))
-         y = vm.Vector3D((0, 1, 0))
-         z = vm.Vector3D((0, 0, 1))
-         rack = meshes.Rack(0.34, module)
-         meshes_1 = meshes.Mesh(self.Z, radius, 0.01, rack)
-         Gears3D = {0:meshes_1.Contour(3)}
-         export = []
-         center_2 = (xy_position[0], xy_position[1])
-         center = vm.Point2D(center_2)
-         model_trans = Gears3D[0][0].Translation(center)
-         model_trans_rot = model_trans.Rotation(center, 0.1)
-         Gears3D_Rotate = [model_trans_rot]
+    # def volume_model(self):
+    #      # self.module = module
+    #      # self.d = module*self.Z
+    #      # radius = self.Z*module
+    #      # x = vm.Vector3D((1, 0, 0))
+    #      # y = vm.Vector3D((0, 1, 0))
+    #      # z = vm.Vector3D((0, 0, 1))
+    #      # rack = meshes.Rack(0.34, module)
+    #      # meshes_1 = meshes.Mesh(self.Z, radius, 0.01, rack)
+    #      # Gears3D = {0:meshes_1.Contour(3)}
+    #      # export = []
+    #      # center_2 = (xy_position[0], xy_position[1])
+    #      # center = vm.Point2D(center_2)
+    #      # model_trans = Gears3D[0][0].Translation(center)
+    #      # model_trans_rot = model_trans.Rotation(center, 0.1)
+    #      # Gears3D_Rotate = [model_trans_rot]
 
-         export = []
+    #      # export = []
 
-         for (i, center, k) in zip([Gears3D[0]], [center_2], [-1]):
+    #      # for (i, center, k) in zip([Gears3D[0]], [center_2], [-1]):
 
-                        model_export = []
+    #      #                model_export = []
 
-                        for m in i:
+    #      #                for m in i:
 
-                            center = vm.Point2D(center)
-                            model_trans = m.Translation(center)
-                            model_trans_rot = model_trans.Rotation(center, k)
-                            model_export.append(model_trans_rot)
+    #      #                    center = vm.Point2D(center)
+    #      #                    model_trans = m.Translation(center)
+    #      #                    model_trans_rot = model_trans.Rotation(center, k)
+    #      #                    model_export.append(model_trans_rot)
 
-                        export.append(model_export)
+    #      #                export.append(model_export)
 
-         Gears3D_Rotate = export
-         vect_x = z_position*z
-         extrusion_vector1 = lenght*z
-         C1 = vm.Contour2D(Gears3D_Rotate[0])
-         t1 = p3d.ExtrudedProfile(vm.Vector3D(vect_x), x, y, C1, [], vm.Vector3D(extrusion_vector1))
-
-         return t1
+    #      # Gears3D_Rotate = export
+    #      # vect_x = z_position*z
+    #      # extrusion_vector1 = lenght*z
+    #      # C1 = vm.Contour2D(Gears3D_Rotate[0])
+    #      # t1 = p3d.ExtrudedProfile(vm.Vector3D(vect_x), x, y, C1, [], vm.Vector3D(extrusion_vector1))
+    #      if module==0:
+    #          return None
+         
+    #      pos=vm.Point3D(self.position)
+    #      axis=vm.vector3D((0,0,1))
+    #      radius=(self.module*self.Z)/2
+    #      cylinder=vm.cylinder(pos,axis,radius,self.length)
+    #      return cylinder
 
 class Planetary(Gears):
+    # _standalone_in_db = True
+
+    # _generic_eq = True
     '''
         
     Define a planetary
@@ -89,7 +104,7 @@ class Planetary(Gears):
 
     '''
 
-    def __init__(self, Z: int, planetary_type: str, name: str = '', speed_input : List[float] = [0,0]):
+    def __init__(self, Z: int, planetary_type: str, name: str = '', speed_input : List[float] ='',position : List[float] = '',module:float=0):
         
 
 
@@ -97,18 +112,56 @@ class Planetary(Gears):
         self.planetary_type = planetary_type
         self.p = 0
         self.speed = 0
-        self.module = 0
+        self.module = module
         self.d = 0
         self.speed_input = speed_input
-        Gears.__init__(self, Z, name)
-
+        self.position=position
+        Gears.__init__(self,Z=Z, name=name)
+        self.length=0.4
+        self.Z=Z
+        self.name=name
         if planetary_type == 'Sun':
+            
             self.p = 1
 
         else:
+            
             self.p = -1
+    
+    def voldmr_volume_model(self):
+        model = self.volume_model()
+        return model
+
+    def volume_model(self):
+        # if self.module==0:
+        #      return None
+        if self.planetary_type=='Sun':
+            pos=vm.Point3D(self.position)
+            axis=vm.Vector3D((0,0,1))
+            radius=(self.module*self.Z)/2
+            print(pos,axis,radius,self.length)
+            cylinder=p3d.Cylinder(pos,axis,radius,self.length)
+            return cylinder
+        
+        radius=(self.module*self.Z )/2
+        p1 = vm.Point2D((radius,self.position[2]+self.length/2))
+        p2 = vm.Point2D((radius+radius*0.1, self.position[2]+self.length/2))
+        p3 = vm.Point2D((radius,self.position[2]-self.length/2))
+        p4 = vm.Point2D((radius+radius*0.1, self.position[2]-self.length/2))
+        points1 = [p1, p2, p3, p4 ]
+        c1 = vm.Polygon2D(points1)
+        self.position[2]
+        vector_1=vm.Point3D((0,0,0))
+        
+        profile1 = p3d.RevolvedProfile(vector_1, vm.Y3D, vm.Z3D, c1, vm.O3D, vm.Z3D)
+        
+        return profile1
+         
 
 class Planet(Gears):
+    # _standalone_in_db = True
+
+    # _generic_eq = True
     '''
     Define a planet
 
@@ -120,17 +173,41 @@ class Planet(Gears):
 
     '''
 
-    def __init__(self, Z: int, name: str = ''):
+    def __init__(self, Z: int, name: str = '',positions: List[float] ='',module:float =0):
         
 
        
-
+        self.length=0.2
         self.speed = 0
-        self.module = 0
+        self.module = module
         self.speed_input = [0, 0]
-
+        self.Z=Z
+        self.name=name
+        self.positions=positions
         Gears.__init__(self, Z, name)
+    def voldmr_volume_model(self):
+        model = self.volume_model()
+        return model
 
+    def volume_model(self):
+        # if self.module==0:
+        #      return None
+        model=[]
+        for position in self.positions:
+            pos=vm.Point3D(position)
+            
+            axis=vm.Vector3D((0,0,1))
+            radius=(self.module*self.Z)/2
+            
+            cylinder=p3d.Cylinder(pos,axis,radius,self.length)
+            print(self.length)
+            model.append(cylinder)
+        
+        return model
+    
+         
+        
+        
 class PlanetCarrier(DessiaObject):
     '''
     Define a planet carrier
@@ -235,22 +312,47 @@ class Fixed(DessiaObject):
         return matrix, rhs
 
 class Double(DessiaObject):
+    # _standalone_in_db = True
 
+    # _generic_eq = True
     def __init__(self, nodes: List[Planet], name: str = ''):
 
         self.nodes = nodes
+        
         DessiaObject.__init__(self, name=name)
     def speed_system_equations(self):
         matrix = npy.array([1, -1])
         rhs = npy.array([0])
         return matrix, rhs
 
-    def volume_plot(self, xy_position, z_position, radius, lenght):
+    def voldmr_volume_model(self):
+        model = self.volume_model()
+        return model
 
-         pos = vm.Point3D((xy_position[0], xy_position[1], z_position))
-         axis = vm.Vector3D((0, 0, 1))
-         cylinder = p3d.Cylinder(pos, axis, radius, lenght)
-         return cylinder
+    def volume_model(self):
+         position_planet_1=self.nodes[0].positions
+         position_planet_2=self.nodes[1].positions
+         model=[]
+         axis=vm.Vector3D((0,0,1))
+         for i in range(len(position_planet_1)):
+             if position_planet_2[i][2]>position_planet_1[i][2]:
+                 if position_planet_2[i][2]>0:
+                     position=(position_planet_1[i][0],position_planet_1[i][1],(position_planet_2[i][2]-position_planet_1[i][2])/2)
+                 else:
+                     position=(position_planet_1[i][0],position_planet_1[i][1],(position_planet_1[i][2]-position_planet_2[i][2])/2)
+             else:
+                 if position_planet_1[i][2]>0:
+                     position=(position_planet_1[i][0],position_planet_1[i][1],(position_planet_1[i][2]-position_planet_2[i][2])/2)
+                 else:
+                     position=(position_planet_1[i][0],position_planet_1[i][1],(position_planet_2[i][2]-position_planet_1[i][2])/2)
+             pos=vm.Point3D(position)
+             print(position_planet_1[i])
+             print(pos)
+             print(position_planet_2[i][2])
+             print(abs(position_planet_1[i][2]-position_planet_2[i][2]))
+             cylinder = p3d.Cylinder(pos, axis, 0.2, abs(position_planet_1[i][2]-position_planet_2[i][2]))
+             model.append(cylinder)
+         return model
 
 class ImposeSpeed(DessiaObject):
     A = TypeVar('A', Gears, PlanetCarrier)
@@ -269,6 +371,9 @@ class ImposeSpeed(DessiaObject):
 
 
 class Connection(DessiaObject):
+    # _standalone_in_db = True
+
+    # _generic_eq = True
     '''
     Define a connection
 
@@ -300,9 +405,9 @@ class Connection(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
 class PlanetaryGear(DessiaObject):
-    # _standalone_in_db = True
+    _standalone_in_db = True
 
-    # _generic_eq = True
+    _generic_eq = True
     '''
     Define a Planetary Gears
     
@@ -334,7 +439,7 @@ class PlanetaryGear(DessiaObject):
         self.meshings = []
         self.doubles = []
         DessiaObject.__init__(self, name=name)
-
+        self.position=False
         for i, connection in  enumerate(connections):
 
           ## Check to be sure that all the object in connection are in planetaries,
@@ -758,6 +863,22 @@ class PlanetaryGear(DessiaObject):
 
 
 
+    
+    def volmdlr_primitives(self,frame=vm.OXYZ):
+        print('A')
+        # if self.position==False:
+        #     return None
+        components=self.planetaries+self.planets+self.doubles
+        li_box = []
+        for component in components:
+            shell=component.volume_model()
+            if isinstance(component,Planet) or isinstance(component,Double):
+                for shell_planet in shell:
+                    li_box.append(shell_planet)
+            else:
+                li_box.append(shell)
+        print(li_box)       
+        return li_box
 
 
     def path_planetary_to_planetary(self, planetaries=[]):
@@ -1620,6 +1741,60 @@ class PlanetaryGear(DessiaObject):
         list_possibilities = self.meshing_chain_recursive_function(0, self.planetaries[0], graph_planetary_gear, [], [], 0, 0, [])
 
         return list_possibilities
+    
+    def meshing_chain_position_z(self,meshing_chains):
+        z=[0]*len(meshing_chains)
+        
+        z[0]=0
+        z_ini=0
+        doubles=copy.copy(self.doubles)
+        orientation=[0]*len(meshing_chains)
+        orientation[0]=0
+        for i,meshing_chain in enumerate(meshing_chains):
+            number_double=0
+            
+            for double in doubles:
+                if double.nodes[0] in meshing_chain :
+                     for j,meshing_chain in enumerate(meshing_chains):
+                         if double.nodes[1] in meshing_chain:
+                             
+                             if orientation[i]==0:
+                                 
+                                 if number_double==0:
+                                     z[j]=z[i]+2
+                                     number_double+=1
+                                     orientation[j]=1
+                                 else:
+                                     z[j]=z[i]-2
+                                     orientation[j]=-1
+                                     
+                             else:
+                                 z[j]=z[i]+orientation[i]*2
+                                 orientation[j]=orientation[i]
+                     doubles.remove(double)
+                                 
+                elif double.nodes[1] in meshing_chain :
+                            
+                         for j,meshing_chain in enumerate(meshing_chains):
+                                 if double.nodes[0] in meshing_chain:
+                                     
+                                     if orientation[i]==0:
+                                         
+                                         if number_double==0:
+                                             z[j]=z[i]+2
+                                             number_double+=1
+                                             orientation[j]=1
+                                         else:
+                                             z[j]=z[i]-2
+                                             orientation[j]=-1
+                                             
+                                     else:
+                                         z[j]=z[i]+orientation[i]*2
+                                         orientation[j]=orientation[i]
+                         
+                         doubles.remove(double)    
+        return z    
+        
 
 
 

@@ -62,7 +62,7 @@ sun_2=pg.Planetary(60,'Ring','sun_2')
 sun_3=pg.Planetary(60,'Sun','sun_2')
 ring= pg.Planetary(84,'Ring','ring')
 planet_carrier= pg.PlanetCarrier('planet_carrier')
-planet_1=pg.Planet(20,'planet_1')
+planet_1=pg.Planet(19,'planet_1')
 
 
 
@@ -81,24 +81,39 @@ connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet
 
 planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3], planet_carrier,connections,'pl_1')
 planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2,planet_4,planet_5,planet_6,planet_3], planet_carrier,connections_2,'pl_1')
-generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_2,3,10,100)
-print(generatorgeometry.verification())
+input_torque_and_composant={sun:100,sun_2:100}
+result_torque=planetary_gears_1.torque_solve(input_torque_and_composant)
+result_speed=planetary_gears_1.speed_solve(input_torque_and_composant)
+print(result_torque)
+print(result_speed)
+component=[sun,ring,sun_2,planet_1,planet_2,planet_3,planet_carrier]
+puissance=[]
+for i,element in enumerate(component):
+    puissance.append(result_speed[i]*result_torque[element])
+print(puissance)
+# generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_1,3,10,100)
+# planetary_gears_1=generatorgeometry.verification()
 
+# c = Client(api_url = 'http://localhost:5000')
+# r = c.create_object_from_python_object(planetary_gears_1)
+
+# li_box=planetary_gears_1.volmdlr_primitives()
+# planetary_gears_1.babylonjs()
 # print([sun,ring,sun_2])
 # torque_solution=planetary_gears_1.torque_solve({sun:0,planet_carrier:500})
-# speed_solution=planetary_gears_1.speed_solve({sun:200,planet_carrier:500})
+# speed_solution=planetary_gears_1.speed_èsolve({sun:200,planet_carrier:500})
 # print(torque_solution)
 # print(speed_solution)
 # debut=time.time()
-Generator_planet_structure=pg_generator.GeneratorPlanetsStructure(3,0,2,1,2)
-list_planet_structure=Generator_planet_structure.decision_tree()
+# Generator_planet_structure=pg_generator.GeneratorPlanetsStructure(3,0,2,1,2)
+# list_planet_structure=Generator_planet_structure.decision_tree()
 # print(len(list_planet_structure))
 # for planet_structure in list_planet_structure:
 #     planet_structure.plot_kinematic_graph()
 # c = Client(api_url = 'http://localhost:5000')
 # r = c.create_object_from_python_object(Generator_planet_structure)
-Generator_planetarie_gears=pg_generator.GeneratorPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250]])
-list_planetary_gears=Generator_planetarie_gears.decision_tree()
+# Generator_planetarie_gears=pg_generator.GeneratorPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250]])
+# list_planetary_gears=Generator_planetarie_gears.decision_tree()
 
 # print(len(list_planetary_gears))
 # for planetary_gears in list_planetary_gears:

@@ -6,7 +6,7 @@ Created on Thu May 14 16:31:51 2020
 @author: launay
 """
 import mechanical_components.planetary_gears as pg
-
+from dessia_api_client import Client
 sun = pg.Planetary(36, 'Sun', 'sun')
 sun_2 = pg.Planetary(60, 'Sun', 'sun_2')
 ring = pg.Planetary(84, 'Ring', 'ring')
