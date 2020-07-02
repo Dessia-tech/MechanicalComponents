@@ -861,7 +861,7 @@ class RadialBallBearing(RadialBearing):
 #
 #        if quote:
 #            plot_datas.extend(self.PlotDataQuote(pos))
-
+        
         return plot_datas
 
     @classmethod

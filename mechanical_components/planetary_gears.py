@@ -20,6 +20,7 @@ import volmdlr.primitives2D as p2d
 import mechanical_components.meshes as meshes
 from dessia_common import DessiaObject
 from typing import TypeVar, List
+import numpy as np
 
 class Gears(DessiaObject):
 
@@ -104,11 +105,11 @@ class Planetary(Gears):
 
     '''
 
-    def __init__(self, Z: int, planetary_type: str, name: str = '', speed_input : List[float] ='',position : List[float] = '',module:float=0):
+    def __init__(self, Z: int, planetary_type: str, name: str = '', speed_input : List[float] ='',position : List[float] = '', module:float=0, position_min_max:List[float]=[0,0], module_min_max:List[float]=[0,0] ):
         
 
 
-
+        self.min_max='None'
         self.planetary_type = planetary_type
         self.p = 0
         self.speed = 0
@@ -117,9 +118,12 @@ class Planetary(Gears):
         self.speed_input = speed_input
         self.position=position
         Gears.__init__(self,Z=Z, name=name)
-        self.length=0.4
+        self.length=20
         self.Z=Z
         self.name=name
+        self.position_min_max=position_min_max
+        self.module_min_max=module_min_max
+
         if planetary_type == 'Sun':
             
             self.p = 1
@@ -133,24 +137,31 @@ class Planetary(Gears):
         return model
 
     def volume_model(self):
-        # if self.module==0:
-        #      return None
+        if self.min_max=='Min':
+            position=self.position_min_max[0]
+            module=self.module_min_max[0]
+        elif self.min_max=='Max':
+            position=self.position_min_max[1]
+            module=self.module_min_max[1]
+        else:
+            position=self.position
+            module=self.module
+            
         if self.planetary_type=='Sun':
-            pos=vm.Point3D(self.position)
+            pos=vm.Point3D(position)
             axis=vm.Vector3D((0,0,1))
-            radius=(self.module*self.Z)/2
-            print(pos,axis,radius,self.length)
+            radius=(module*self.Z)/2
+            
             cylinder=p3d.Cylinder(pos,axis,radius,self.length)
             return cylinder
         
-        radius=(self.module*self.Z )/2
-        p1 = vm.Point2D((radius,self.position[2]+self.length/2))
-        p2 = vm.Point2D((radius+radius*0.1, self.position[2]+self.length/2))
-        p3 = vm.Point2D((radius,self.position[2]-self.length/2))
-        p4 = vm.Point2D((radius+radius*0.1, self.position[2]-self.length/2))
+        radius=(module*self.Z )/2
+        p1 = vm.Point2D((radius,position[2]+self.length/2))
+        p2 = vm.Point2D((radius+radius*0.1, position[2]+self.length/2))
+        p3 = vm.Point2D((radius,position[2]-self.length/2))
+        p4 = vm.Point2D((radius+radius*0.1, position[2]-self.length/2))
         points1 = [p1, p2, p3, p4 ]
         c1 = vm.Polygon2D(points1)
-        self.position[2]
         vector_1=vm.Point3D((0,0,0))
         
         profile1 = p3d.RevolvedProfile(vector_1, vm.Y3D, vm.Z3D, c1, vm.O3D, vm.Z3D)
@@ -173,11 +184,11 @@ class Planet(Gears):
 
     '''
 
-    def __init__(self, Z: int, name: str = '',positions: List[float] ='',module:float =0):
+    def __init__(self, Z: int,name: str = '',positions: List[float] ='',module:float =0,positions_min_max:List[float]=[0,0], module_min_max:List[float]=[0,0]):
         
 
        
-        self.length=0.2
+        self.length=20
         self.speed = 0
         self.module = module
         self.speed_input = [0, 0]
@@ -185,22 +196,33 @@ class Planet(Gears):
         self.name=name
         self.positions=positions
         Gears.__init__(self, Z, name)
+        self.positions_min_max=positions_min_max
+        self.module_min_max=module_min_max
+        self.min_max='None'
     def voldmr_volume_model(self):
         model = self.volume_model()
         return model
 
     def volume_model(self):
-        # if self.module==0:
-        #      return None
+        print(self.positions_min_max)
+        if self.min_max=='Min':
+            positions=self.positions_min_max[0]
+            module=self.module_min_max[0]
+        elif self.min_max=='Max':
+            positions=self.positions_min_max[1]
+            module=self.module_min_max[1]
+        else:
+            positions=self.positions
+            module=self.module
         model=[]
-        for position in self.positions:
+        for position in positions:
             pos=vm.Point3D(position)
             
             axis=vm.Vector3D((0,0,1))
-            radius=(self.module*self.Z)/2
+            radius=(module*self.Z)/2
             
             cylinder=p3d.Cylinder(pos,axis,radius,self.length)
-            print(self.length)
+            
             model.append(cylinder)
         
         return model
@@ -346,11 +368,7 @@ class Double(DessiaObject):
                  else:
                      position=(position_planet_1[i][0],position_planet_1[i][1],(position_planet_2[i][2]-position_planet_1[i][2])/2)
              pos=vm.Point3D(position)
-             print(position_planet_1[i])
-             print(pos)
-             print(position_planet_2[i][2])
-             print(abs(position_planet_1[i][2]-position_planet_2[i][2]))
-             cylinder = p3d.Cylinder(pos, axis, 0.2, abs(position_planet_1[i][2]-position_planet_2[i][2]))
+             cylinder = p3d.Cylinder(pos, axis, (self.nodes[0].Z*self.nodes[0].module)/10, abs(position_planet_1[i][2]-position_planet_2[i][2]))
              model.append(cylinder)
          return model
 
@@ -423,10 +441,10 @@ class PlanetaryGear(DessiaObject):
     :type name: str,optional
     '''
     def __init__(self, planetaries: List[Planetary], planets: List[Planet],
-                 planet_carrier: PlanetCarrier, connections: List[Connection], name: str = ''):
+                 planet_carrier: PlanetCarrier, connections: List[Connection], min_max:str= 'None', name: str = ''):
 
-
-
+ 
+        self.d_min=0
         self.planetaries = planetaries
         self.planets = planets
         self.planet_carrier = planet_carrier
@@ -434,12 +452,42 @@ class PlanetaryGear(DessiaObject):
         self.elements_name = []
         for element in self.elements:
             self.elements_name.append(element.name)
-
+            
+        self.min_max=min_max
+        self.sum_Z_planetary=0
+        self.sum_speed_planetary=0
+        self.max_Z_planetary=0
+        self.min_Z_planetary=100000
+        for planetary in self.planetaries:
+            self.sum_Z_planetary+=planetary.Z
+            d=planetary.module*planetary.Z
+            if d>self.d_min:
+                 self.d_min=d
+            if self.max_Z_planetary<planetary.Z:
+                self.max_Z_planetary=planetary.Z
+                
+            if self.min_Z_planetary>planetary.Z:
+                self.min_Z_planetary=planetary.Z
+            if planetary.speed_input:
+                self.sum_speed_planetary+=planetary.speed_input[0]
+        if planet_carrier.speed_input:
+            self.speed_planet_carrer= planet_carrier.speed_input[0]
+            
+        for planet in self.planets:
+            if planet.positions:
+                d=planet.module*planet.Z+ 2*((planet.positions[0][0])**2+(planet.positions[0][1])**2)**0.5
+                       
+            if d>self.d_min:
+                self.d_min=d
         self.connections = connections
         self.meshings = []
         self.doubles = []
         DessiaObject.__init__(self, name=name)
         self.position=False
+
+
+            
+        
         for i, connection in  enumerate(connections):
 
           ## Check to be sure that all the object in connection are in planetaries,
@@ -865,9 +913,9 @@ class PlanetaryGear(DessiaObject):
 
     
     def volmdlr_primitives(self,frame=vm.OXYZ):
-        print('A')
-        # if self.position==False:
-        #     return None
+        for element in self.planets+self.planetaries:
+            element.min_max=self.min_max
+
         components=self.planetaries+self.planets+self.doubles
         li_box = []
         for component in components:
@@ -877,8 +925,45 @@ class PlanetaryGear(DessiaObject):
                     li_box.append(shell_planet)
             else:
                 li_box.append(shell)
-        print(li_box)       
+               
         return li_box
+    
+    def plot_data(self):
+        plot_data=[]
+        primitive_2D=[]
+        meshing_chains=self.meshing_chain()
+        list_color = ['blue', 'red', 'green', 'black']
+        if self.d_min==0:
+            planetary_gear=PlanetaryGear(self.planetaries,self.planets,self.planet_carrier,self.connections)
+            self.d_min=planetary_gear.d_min
+        for planetary in self.planetaries:
+            for i,meshing_chain in enumerate(meshing_chains):
+                if planetary in meshing_chain:
+                    color=list_color[i]
+            position=vm.Point2D((0, 0))
+            
+            d=planetary.module*planetary.Z
+            
+            circle=vm.Circle2D(position,d/2)
+            
+            contour=vm.Contour2D([circle],True)        
+            plot_data.append(contour.plot_data('contour',stroke_width=self.d_min,color=color)) 
+        for planet in self.planets:
+            d=planet.module*planet.Z
+            # for i,meshing_chain in enumerate(meshing_chains):
+            #     if planet in meshing_chain:
+            #         color=list_color[i]
+            for position in planet.positions:
+                position_2=vm.Point2D((position[0], position[1]))
+                
+                circle=vm.Circle2D(position_2,d/2)
+
+                contour=vm.Contour2D([circle],True)        
+                plot_data.append(contour.plot_data('contour',stroke_width=self.d_min,color=color))        
+        print(plot_data) 
+        return plot_data
+                
+    
 
 
     def path_planetary_to_planetary(self, planetaries=[]):
@@ -1744,7 +1829,7 @@ class PlanetaryGear(DessiaObject):
     
     def meshing_chain_position_z(self,meshing_chains):
         z=[0]*len(meshing_chains)
-        
+        length=30
         z[0]=0
         z_ini=0
         doubles=copy.copy(self.doubles)
@@ -1761,15 +1846,15 @@ class PlanetaryGear(DessiaObject):
                              if orientation[i]==0:
                                  
                                  if number_double==0:
-                                     z[j]=z[i]+2
+                                     z[j]=z[i]+length
                                      number_double+=1
                                      orientation[j]=1
                                  else:
-                                     z[j]=z[i]-2
+                                     z[j]=z[i]-length
                                      orientation[j]=-1
                                      
                              else:
-                                 z[j]=z[i]+orientation[i]*2
+                                 z[j]=z[i]+orientation[i]*length
                                  orientation[j]=orientation[i]
                      doubles.remove(double)
                                  
@@ -1781,20 +1866,35 @@ class PlanetaryGear(DessiaObject):
                                      if orientation[i]==0:
                                          
                                          if number_double==0:
-                                             z[j]=z[i]+2
+                                             z[j]=z[i]+length
                                              number_double+=1
                                              orientation[j]=1
                                          else:
-                                             z[j]=z[i]-2
+                                             z[j]=z[i]-length
                                              orientation[j]=-1
                                              
                                      else:
-                                         z[j]=z[i]+orientation[i]*2
+                                         z[j]=z[i]+orientation[i]*length
                                          orientation[j]=orientation[i]
                          
                          doubles.remove(double)    
         return z    
         
+    
+    def speed_max_planets(self):
+        speed_max=0
+        for planetary in self.planetaries:
+            if planetary.planetary_type=='Ring':
+                speed_max_planetary=self.speed_solve({planetary:planetary.speed_input[1],self.planet_carrier:self.planet_carrier.speed_input[0]})
+            else:
+                speed_max_planetary=self.speed_solve({planetary:planetary.speed_input[0],self.planet_carrier:self.planet_carrier.speed_input[1]})
+            for planet in self.planets:
+
+                if abs(speed_max_planetary[planet])>speed_max:
+                    speed_max=abs(speed_max_planetary[planet])
+        
+
+        return speed_max
 
 
 
@@ -1952,16 +2052,24 @@ class PlanetaryGear(DessiaObject):
         system_matrix, vector_b = self.speed_system_equations()
         n_equations = len(self.relations)
         n_variables = len(self.elements)
-
-        system_matrix_speed_solve_0 = npy.zeros((2, n_variables))
-        vector_b_speed_solve_0 = npy.zeros(2)
+        
+        system_matrix_speed_solve_0 = npy.zeros((len(input_speeds_and_composants), n_variables))
+        vector_b_speed_solve_0 = npy.zeros(len(input_speeds_and_composants))
 
         system_matrix = npy.concatenate((system_matrix, system_matrix_speed_solve_0), axis=0)
         vector_b = npy.concatenate((vector_b, vector_b_speed_solve_0), axis=0)
         impose_speeds = []
 
         for i, composant in enumerate(input_speeds_and_composants):
-            impose_speeds.append(ImposeSpeed(composant, input_speeds_and_composants[composant], 'ImposeSpeed'+str(i)))
+            if isinstance(input_speeds_and_composants[composant],PlanetCarrier) or isinstance(input_speeds_and_composants[composant],Planetary):
+                position_element_1 = self.matrix_position(composant)
+                position_element_2 = self.matrix_position(input_speeds_and_composants[composant])
+                system_matrix[n_equations][position_element_1] = 1
+                system_matrix[n_equations][position_element_2] = 1
+                vector_b[n_equations] = 0
+                n_equations += 1
+            else:
+                impose_speeds.append(ImposeSpeed(composant, input_speeds_and_composants[composant], 'ImposeSpeed'+str(i)))
 
         for impose_speed in impose_speeds:
             position_element = self.matrix_position(impose_speed.node)
@@ -1971,11 +2079,12 @@ class PlanetaryGear(DessiaObject):
 
 
         solution = solve(system_matrix, vector_b)
-
+        element_association={}
         for i in range(len(self.elements)):
             self.elements[i].speed = solution[i]
-
-        return solution
+            element_association[self.elements[i]]=solution[i]
+            
+        return element_association
 
     def torque_system_equation(self):
         n_meshing_planetary = 0
@@ -2090,8 +2199,13 @@ class PlanetaryGear(DessiaObject):
         for composant in input_torque_and_composant:
             matrix_input = npy.zeros((1, system_matrix.shape[1]))
             matrix_input[0][element_association[composant]] = 1
+            if isinstance(input_torque_and_composant[composant],Planetary) or isinstance(input_torque_and_composant[composant],PlanetCarrier):
+                 matrix_input[0][element_association[input_torque_and_composant[composant]]] = 1
+                 vector_b = npy.concatenate((vector_b, [0]))
+            else:
+                vector_b = npy.concatenate((vector_b, [input_torque_and_composant[composant]]))
+                
             system_matrix = npy.concatenate((system_matrix, matrix_input))
-            vector_b = npy.concatenate((vector_b, [input_torque_and_composant[composant]]))
 
 
         solution = solve(system_matrix, vector_b)
@@ -2108,6 +2222,36 @@ class PlanetaryGear(DessiaObject):
 
         torque_element_association[self.planet_carrier] = solution[-1]
         return torque_element_association
+
+
+
+class PlanetaryGearResult(DessiaObject):
+    _standalone_in_db = True
+
+    _generic_eq = True
+    
+    def __init__(self,planetary_gear: PlanetaryGear):
+        self.planetary_gear=planetary_gear
+        
+        self.speed_max_planet=self.planetary_gear.speed_max_planets()
+        
+        self.d_min=self.planetary_gear.d_min
+        self.sum_Z_planetary=self.planetary_gear.sum_Z_planetary
+        self.sum_speed_planetary=self.planetary_gear.sum_speed_planetary
+        
+        self.max_Z_planetary=self.planetary_gear.max_Z_planetary
+        self.min_Z_planetary=self.planetary_gear.min_Z_planetary
+        self.speed_planet_carrer=self.planetary_gear.speed_planet_carrer
+        DessiaObject.__init__(self, name=self.planetary_gear.name)
+    
+    def volmdlr_primitives(self):
+        li_box=self.planetary_gear.volmdlr_primitives()
+        return li_box
+    
+    def plot_data(self):
+        plot_data=self.planetary_gear.plot_data()
+        return plot_data
+
 
 
 
