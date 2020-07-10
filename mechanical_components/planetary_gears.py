@@ -19,8 +19,12 @@ import volmdlr.primitives3D as p3d
 import volmdlr.primitives2D as p2d
 import mechanical_components.meshes as meshes
 from dessia_common import DessiaObject
-from typing import TypeVar, List
+from typing import Tuple, List, TypeVar
 import numpy as np
+import mechanical_components.genmechanics2 as genmechanics
+import mechanical_components.genmechanics2.linkages as linkages
+import mechanical_components.genmechanics2.loads as loads
+
 
 class Gears(DessiaObject):
 
@@ -105,11 +109,11 @@ class Planetary(Gears):
 
     '''
 
-    def __init__(self, Z: int, planetary_type: str, name: str = '', speed_input : List[float] ='',position : List[float] = '', module:float=0, position_min_max:List[float]=[0,0], module_min_max:List[float]=[0,0] ):
+    def __init__(self, Z: int, planetary_type: str, name: str = '', speed_input : List[float] ='',position : List[float] = '', module:float=0):
         
 
 
-        self.min_max='None'
+
         self.planetary_type = planetary_type
         self.p = 0
         self.speed = 0
@@ -121,8 +125,6 @@ class Planetary(Gears):
         self.length=20
         self.Z=Z
         self.name=name
-        self.position_min_max=position_min_max
-        self.module_min_max=module_min_max
 
         if planetary_type == 'Sun':
             
@@ -137,15 +139,8 @@ class Planetary(Gears):
         return model
 
     def volume_model(self):
-        if self.min_max=='Min':
-            position=self.position_min_max[0]
-            module=self.module_min_max[0]
-        elif self.min_max=='Max':
-            position=self.position_min_max[1]
-            module=self.module_min_max[1]
-        else:
-            position=self.position
-            module=self.module
+        position=self.position
+        module=self.module
             
         if self.planetary_type=='Sun':
             pos=vm.Point3D(position)
@@ -184,7 +179,7 @@ class Planet(Gears):
 
     '''
 
-    def __init__(self, Z: int,name: str = '',positions: List[float] ='',module:float =0,positions_min_max:List[float]=[0,0], module_min_max:List[float]=[0,0]):
+    def __init__(self, Z: int,name: str = '',positions: List[float] ='',module:float =0):
         
 
        
@@ -196,24 +191,15 @@ class Planet(Gears):
         self.name=name
         self.positions=positions
         Gears.__init__(self, Z, name)
-        self.positions_min_max=positions_min_max
-        self.module_min_max=module_min_max
-        self.min_max='None'
+
     def voldmr_volume_model(self):
         model = self.volume_model()
         return model
 
     def volume_model(self):
-        print(self.positions_min_max)
-        if self.min_max=='Min':
-            positions=self.positions_min_max[0]
-            module=self.module_min_max[0]
-        elif self.min_max=='Max':
-            positions=self.positions_min_max[1]
-            module=self.module_min_max[1]
-        else:
-            positions=self.positions
-            module=self.module
+
+        positions=self.positions
+        module=self.module
         model=[]
         for position in positions:
             pos=vm.Point3D(position)
@@ -280,7 +266,11 @@ class MeshingPlanetary(Meshing):
         return matrix, rhs
 
     def torque_system_equations(self):
-
+        # for node in self.nodes:
+        #     if isinstance(node, Planet):
+        #         Z_planet = node.Z
+        #     else:
+        #         Z_planetary = node.Z
         matrix = npy.array([[-1/self.Z_planetary, 1/self.Z_planet],
                             [1/self.Z_planetary, 1/self.Z_planet]])
         rhs = npy.array([0, 0])
@@ -426,6 +416,7 @@ class PlanetaryGear(DessiaObject):
     _standalone_in_db = True
 
     _generic_eq = True
+    # _non_serializable_attributes =
     '''
     Define a Planetary Gears
     
@@ -441,7 +432,7 @@ class PlanetaryGear(DessiaObject):
     :type name: str,optional
     '''
     def __init__(self, planetaries: List[Planetary], planets: List[Planet],
-                 planet_carrier: PlanetCarrier, connections: List[Connection], min_max:str= 'None', name: str = ''):
+                 planet_carrier: PlanetCarrier, connections: List[Connection], name: str = ''):
 
  
         self.d_min=0
@@ -453,7 +444,7 @@ class PlanetaryGear(DessiaObject):
         for element in self.elements:
             self.elements_name.append(element.name)
             
-        self.min_max=min_max
+       
         self.sum_Z_planetary=0
         self.sum_speed_planetary=0
         self.max_Z_planetary=0
@@ -913,9 +904,7 @@ class PlanetaryGear(DessiaObject):
 
     
     def volmdlr_primitives(self,frame=vm.OXYZ):
-        for element in self.planets+self.planetaries:
-            element.min_max=self.min_max
-
+        print('A')
         components=self.planetaries+self.planets+self.doubles
         li_box = []
         for component in components:
@@ -2029,7 +2018,7 @@ class PlanetaryGear(DessiaObject):
 
                 rhs[i] = rhs_relation[0]
 
-
+        
         return system_matrix, rhs
 
     def speed_solve(self, input_speeds_and_composants):
@@ -2065,7 +2054,7 @@ class PlanetaryGear(DessiaObject):
                 position_element_1 = self.matrix_position(composant)
                 position_element_2 = self.matrix_position(input_speeds_and_composants[composant])
                 system_matrix[n_equations][position_element_1] = 1
-                system_matrix[n_equations][position_element_2] = 1
+                system_matrix[n_equations][position_element_2] = -1
                 vector_b[n_equations] = 0
                 n_equations += 1
             else:
@@ -2077,15 +2066,19 @@ class PlanetaryGear(DessiaObject):
             vector_b[n_equations] = impose_speed.speed_system_equations()[1]
             n_equations += 1
 
-
+       
         solution = solve(system_matrix, vector_b)
+       
         element_association={}
         for i in range(len(self.elements)):
             self.elements[i].speed = solution[i]
             element_association[self.elements[i]]=solution[i]
             
         return element_association
-
+    
+    
+    # def path_planetary_to_double(self):
+    #     graph_planetary_gears = self.graph()
     def torque_system_equation(self):
         n_meshing_planetary = 0
         for meshing in self.meshings:
@@ -2152,10 +2145,12 @@ class PlanetaryGear(DessiaObject):
 
             for association in element_association[double.nodes[0]]:
                     matrix_association_element[0][association] = 1
+            
 
             for association in element_association[double.nodes[1]]:
                     matrix_association_element[0][association] = 1
 
+                
             system_matrix = npy.concatenate((system_matrix, matrix_association_element))
             rhs = npy.concatenate((rhs, [0]))
 
@@ -2178,9 +2173,197 @@ class PlanetaryGear(DessiaObject):
 
                 system_matrix = npy.concatenate((system_matrix, matrix_association_element))
                 rhs = npy.concatenate((rhs, [0]))
-
+        print(system_matrix)
         return system_matrix, rhs, element_association
+        
 
+    def torque_resolution_PFS(self,input_torque_and_composant,meshing_chains=[]):
+        Ca=0
+        Cr=0
+        Cf=0
+        Cwb=0# Speed coeff for bearings
+        Cvgs=0# Speed coeff for gear sets
+        
+        alpha_gs1=20/360*2*3.1415
+        beta_gs1=25/360*2*3.1415
+        
+        egs1=[ 0,1.57079633 ,-1.57 ]
+        
+        
+        
+        part_planets=[]
+        part_planetaries=[]
+        part_planet_carrier=genmechanics.Part('planet_carrier')
+        
+        ground=genmechanics.Part('ground')
+        planet_carrier_a=linkages.BallLinkage(ground,part_planet_carrier,[0,0,0],[0,0,0],Ca,Cr,Cwb,'planet_carrier_a')
+        planet_carrier_b=linkages.LinearAnnularLinkage(ground,part_planet_carrier,[0,0,0.1],[0,0,0],Cr,Cwb,'planet_carrier_b')
+        link_planetaries_ball=[]
+        link_planetaries_linear_annular=[]
+        pivot_planets=[]
+        flag_double=0
+        for i,planet in enumerate(self.planets):
+            for double in self.doubles:
+                if planet in double.nodes:
+                    pivot_planets.append(0)
+                    part_planets.append(0)
+                    flag_double=1
+                    break
+            if not flag_double:
+                part_planets.append(genmechanics.Part('planet'+str(i)))
+                pivot_planets.append(linkages.FrictionlessRevoluteLinkage(part_planet_carrier,part_planets[-1],np.array(planet.positions[0]),[0,0,0],'pivot'+str(i)))
+            flag_double=0
+                
+            
+        previous_nodes=[]
+     
+        for i,double in  enumerate(self.doubles):
+            if double.nodes[0] in previous_nodes:
+                planet_double=part_planets[self.planets.index(double.nodes[0])]
+                link=pivot_planets[self.planets.index(double.nodes[0])]
+                part_planets[self.planets.index(double.nodes[1])]=planet_double
+                pivot_planets[self.planets.index(double.nodes[1])]=link
+                
+            
+            elif double.nodes[1] in previous_nodes:
+                planet_double=part_planets[self.planets.index(double.nodes[1])]
+                link=pivot_planets[self.planets.index(double.nodes[1])]
+                part_planets[self.planets.index(double.nodes[0])]=planet_double
+                pivot_planets[self.planets.index(double.nodes[0])]=link
+                
+                
+            
+            else:
+                 planet_double=  genmechanics.Part('planet_double'+str(i))
+                 link= linkages.FrictionlessRevoluteLinkage(part_planet_carrier,planet_double,np.array(planet.positions[0]),[0,0,0],'pivot'+str(i))
+                 part_planets[self.planets.index(double.nodes[0])]=planet_double
+                 part_planets[self.planets.index(double.nodes[1])]=planet_double
+                 pivot_planets[self.planets.index(double.nodes[0])]=link
+                 pivot_planets[self.planets.index(double.nodes[1])]=link
+               
+            previous_nodes.extend(double.nodes)
+     
+        
+        
+            
+        for i,planetary in enumerate(self.planetaries):
+            part_planetaries.append(genmechanics.Part('planetary'+str(i)))
+            link_planetaries_ball.append(linkages.BallLinkage(ground,part_planetaries[-1],np.array(planetary.position),[0,0,0],Ca,Cr,Cwb,'planetary_ball'+str(i)))
+            link_planetaries_linear_annular.append(linkages.LinearAnnularLinkage(ground,part_planetaries[-1],
+                                                                                 np.array([planetary.position[0],planetary.position[1],planetary.position[2]+0.1]),
+                                                                                 [0,0,0],Cr,Cwb,'planetary_linear_angular'+str(i)))
+            
+        
+        
+        if not meshing_chains:
+            meshing_chains=self.meshing_chain()
+        gearings=[]
+        for j,meshing_chain in enumerate(meshing_chains):
+            previous_element=meshing_chain[0]
+            if isinstance(previous_element,Planet):
+                previous_position=np.array(previous_element.positions[0])
+                previous_part=part_planets[self.planets.index(previous_element)]
+            else:
+                previous_position=np.array(previous_element.position[0])
+                previous_part=part_planetaries[self.planetaries.index(previous_element)]
+            
+            for i,element in enumerate(meshing_chain):
+                if i>0:
+                    if isinstance(element,Planetary) :
+                        position=np.array(element.position)
+                        part=part_planetaries[self.planetaries.index(element)]
+                        
+                        if element.planetary_type=='Ring':
+                            orientation_gearing=previous_position-position
+                            angular=m.atan(orientation_gearing[1]/orientation_gearing[0])
+                            position_gearing=np.array([previous_position[0]+previous_element.Z*previous_element.module*m.cos(angular),
+                                                       previous_position[1]+previous_element.Z*previous_element.module*m.sin(angular),previous_position[2]])
+                            
+                            
+                            
+                        else:
+                            
+                            position_gearing=(position-previous_position)/2 +previous_position
+                            
+                        
+                            
+                            
+                        
+                        
+                    else:
+                        position=np.array(element.positions[0])
+                        part=part_planets[self.planets.index(element)]
+                        
+                        if isinstance(previous_element,Planetary) and previous_element.planetary_type=='Ring':
+                            orientation_gearing=position-previous_position
+                            angular=m.atan(orientation_gearing[1]/orientation_gearing[0])
+                            position_gearing=np.array([position[0]+element.Z*element.module*m.cos(angular),
+                                                       position[1]+element.Z*element.module*m.sin(angular),position[2]])
+                            
+                            
+                        else:
+                           
+                            position_gearing=(position-previous_position)/2 +previous_position
+                           
+                        
+                        
+                        
+                    gearings.append(linkages.GearSetLinkage(previous_part,part,position_gearing,egs1,alpha_gs1,beta_gs1,Cf,Cvgs,'Gear set '+str(i) + str(j)))
+                    previous_element=element
+                    if isinstance(previous_element,Planet):
+                        previous_position=np.array(previous_element.positions[0])
+                        previous_part=part_planets[self.planets.index(previous_element)]
+                    else:
+                        previous_position=np.array(previous_element.position[0])
+                        previous_part=part_planetaries[self.planetaries.index(previous_element)]
+                        
+                        
+        list_all_input=self.planetaries+[self.planet_carrier]
+        loads_known=[]
+        for i,input_composant in enumerate(input_torque_and_composant):
+            list_all_input.remove(input_composant)
+            if input_composant==self.planet_carrier:
+                loads_known.append(loads.KnownLoad(part_planet_carrier,[0,0,0],[0,0,0],[0,0,0],[0,0,input_torque_and_composant[input_composant]],'input torque'+str(i)))
+            
+            else:
+                
+                loads_known.append(loads.KnownLoad(part_planetaries[self.planetaries.index(input_composant)],[0,0,0],[0,0,0],[0,0,0],[0,0,input_torque_and_composant[input_composant]],'input torque'+str(i)))
+        loads_unknown=[]
+        for i, unknow_input in enumerate(list_all_input):
+            if unknow_input==self.planet_carrier:
+                loads_unknown.append(loads.SimpleUnknownLoad(part_planet_carrier,[0,0,0],[0,0,0],[],[0],'output torque'+str(i)))
+            else:
+                loads_unknown.append(loads.SimpleUnknownLoad(part_planetaries[self.planetaries.index(unknow_input)],[0,0,0],[0,0,0],[],[0],'output torque'+str(i)))
+        
+        pivot_planets_without_double=[]
+        for pivot in pivot_planets:
+            if not pivot in pivot_planets_without_double:
+                 pivot_planets_without_double.append(pivot)
+        
+        list_parts=gearings+pivot_planets_without_double+link_planetaries_ball+ link_planetaries_linear_annular+ [planet_carrier_a] + [planet_carrier_b]
+        print(list_parts)
+        imposed_speeds=[(link_planetaries_ball[0],0,200),(planet_carrier_a,0,200)]
+        print(loads_known)
+        print(loads_unknown)
+        mech=genmechanics.Mechanism(list_parts,ground,imposed_speeds,loads_known,loads_unknown)
+        
+        for l,lv in mech.static_results.items():
+    
+            for d,v in lv.items():
+                print(l.name,d,v)
+
+         
+        
+        
+                
+                        
+                    
+                    
+                    
+                    
+                    
+        
+    
     def torque_solve(self, input_torque_and_composant):
         '''
         A function which give the torque of all the elements(Planetary, Planet, PlanetCarrier) of planetary gear
@@ -2198,18 +2381,25 @@ class PlanetaryGear(DessiaObject):
 
         for composant in input_torque_and_composant:
             matrix_input = npy.zeros((1, system_matrix.shape[1]))
-            matrix_input[0][element_association[composant]] = 1
-            if isinstance(input_torque_and_composant[composant],Planetary) or isinstance(input_torque_and_composant[composant],PlanetCarrier):
+            if isinstance(composant,PlanetCarrier):
+                matrix_input[0][-1] = 1
+            else:
+                matrix_input[0][element_association[composant]] = 1
+            if isinstance(input_torque_and_composant[composant],Planetary):
                  matrix_input[0][element_association[input_torque_and_composant[composant]]] = 1
                  vector_b = npy.concatenate((vector_b, [0]))
+            elif isinstance(input_torque_and_composant[composant],PlanetCarrier):
+                matrix_input[0][-1] = 1
+                vector_b = npy.concatenate((vector_b, [0]))
             else:
                 vector_b = npy.concatenate((vector_b, [input_torque_and_composant[composant]]))
                 
             system_matrix = npy.concatenate((system_matrix, matrix_input))
 
-
+        
         solution = solve(system_matrix, vector_b)
-
+        print(solution)
+        print(element_association)
         torque_element_association = {}
 
         for element in element_association:
@@ -2224,14 +2414,105 @@ class PlanetaryGear(DessiaObject):
         return torque_element_association
 
 
+    def torque_solve_2(self, input_torque_and_composant):
+        '''
+        A function which give the torque of all the elements(Planetary, Planet, PlanetCarrier) of planetary gear
+        whith n-2 input elements and torques (whith n= number of planetary + planet carrier )
+
+        :param input_torque_and_composant: A dictionary where the element input are associated with their torque input
+        :type input_torque_and_composant: Dictionary{ Planetary, Planet, PlanetCarrier : float}
+
+        :return:  A dictionary where all the element are associated with their torque calculated
+        :rtype: Dictionary{ Planetary, Planet, PlanetCarrier : float}
+
+
+        '''
+        
+        system_matrix, vector_b, element_association = self.torque_system_equation()
+        
+        for composant in input_torque_and_composant:
+            matrix_input = npy.zeros((1, system_matrix.shape[1]))
+            matrix_input[0][element_association[composant]] = 1
+            if isinstance(input_torque_and_composant[composant],Planetary) or isinstance(input_torque_and_composant[composant],PlanetCarrier):
+                 matrix_input[0][element_association[input_torque_and_composant[composant]]] = 1
+                 vector_b = npy.concatenate((vector_b, [0]))
+            else:
+                vector_b = npy.concatenate((vector_b, [input_torque_and_composant[composant]]))
+                
+            system_matrix = npy.concatenate((system_matrix, matrix_input))
+            
+        
+
+          
+        solution = solve(system_matrix, vector_b)
+
+        torque_element_association = {}
+        print(solution)
+        for element in element_association:
+            torque_element_association[element] = solution[element_association[element]]
+
+        torque_element_association[self.planet_carrier] = solution[-1]
+        return torque_element_association
+
+
+
+class PositionMinMaxPlanetaryGear(DessiaObject):
+     def __init__(self,planetary_gear : PlanetaryGear,name : str='',positions_min_max:List[float]= '',modules_min_max:List[float]=''):
+        
+         self.planetary_gear=planetary_gear
+         self.positions_min_max=positions_min_max
+         self.modules_min_max=modules_min_max
+         if self.positions_min_max=='' and self.modules_min_max=='':
+             self.positions_min_max=[]
+             self.modules_min_max=[]
+         DessiaObject.__init__(self, name=self.planetary_gear.name+'PostionMinMax')
+         element_list=planetary_gear.planets+ planetary_gear.planetaries
+         for element in element_list:
+             self.positions_min_max.append([0,0])
+             self.modules_min_max.append([0,0])
+         
+     def enter_position(self,position,element,min_max):
+        element_list=self.planetary_gear.planets+ self.planetary_gear.planetaries
+        if min_max=='Min':
+            self.positions_min_max[element_list.index(element)][0]=position
+        if min_max=='Max':
+            self.positions_min_max[element_list.index(element)][1]=position
+            
+     def enter_module(self,module,element,min_max):
+        element_list=self.planetary_gear.planets+ self.planetary_gear.planetaries
+        if min_max=='Min':
+            self.modules_min_max[element_list.index(element)][0]=module
+        if min_max=='Max':
+            self.modules_min_max[element_list.index(element)][1]=module
+            
+     def get_position(self,element,planetary_gear,min_max):
+        element_list=planetary_gear.planets+ planetary_gear.planetaries
+        if min_max=='Min':
+            return self.positions_min_max[element_list.index(element)][0]
+        if min_max=='Max':
+            return self.positions_min_max[element_list.index(element)][1]
+        
+     def get_module(self,element,planetary_gear,min_max):
+        element_list=planetary_gear.planets+ planetary_gear.planetaries
+        if min_max=='Min':
+            return self.modules_min_max[element_list.index(element)][0]
+        if min_max=='Max':
+            return self.modules_min_max[element_list.index(element)][1]
+        
+        
+        
+
 
 class PlanetaryGearResult(DessiaObject):
     _standalone_in_db = True
 
     _generic_eq = True
     
-    def __init__(self,planetary_gear: PlanetaryGear):
+    def __init__(self,planetary_gear: PlanetaryGear,position_min_max : PositionMinMaxPlanetaryGear, geometry_min_max : str = 'Max'):
         self.planetary_gear=planetary_gear
+        self.geometry_min_max=geometry_min_max
+        self.position_min_max=position_min_max
+        
         
         self.speed_max_planet=self.planetary_gear.speed_max_planets()
         
@@ -2242,13 +2523,30 @@ class PlanetaryGearResult(DessiaObject):
         self.max_Z_planetary=self.planetary_gear.max_Z_planetary
         self.min_Z_planetary=self.planetary_gear.min_Z_planetary
         self.speed_planet_carrer=self.planetary_gear.speed_planet_carrer
-        DessiaObject.__init__(self, name=self.planetary_gear.name)
+        DessiaObject.__init__(self, name=self.planetary_gear.name+'Result')
     
-    def volmdlr_primitives(self):
+    def volmdlr_primitives(self,frame=vm.OXYZ):
+        print(self.position_min_max.positions_min_max)
+        if self.geometry_min_max:
+            for planet in self.planetary_gear.planets:
+                planet.positions=self.position_min_max.get_position(planet,self.planetary_gear,self.geometry_min_max)
+                planet.module=self.position_min_max.get_module(planet,self.planetary_gear,self.geometry_min_max)
+            for planetary in self.planetary_gear.planetaries:
+                planetary.position=self.position_min_max.get_position(planetary,self.planetary_gear,self.geometry_min_max)
+                planetary.module=self.position_min_max.get_module(planetary,self.planetary_gear,self.geometry_min_max)
+              
         li_box=self.planetary_gear.volmdlr_primitives()
         return li_box
     
     def plot_data(self):
+        # if self.geometry_min_max:
+        #     for planet in self.planetary_gear.planets:
+        #         planet.positions=self.position_min_max.get_position(planet,self.geometry_min_max)
+        #         planet.module=self.position_min_max.get_module(planet,self.geometry_min_max)
+        #     for planetary in self.planetary_gear.planetaries:
+        #         planetary.position=self.position_min_max.get_position(planetary,self.geometry_min_max)
+        #         planetary.module=self.position_min_max.module(planetary,self.geometry_min_max)
+        
         plot_data=self.planetary_gear.plot_data()
         return plot_data
 

@@ -77,25 +77,27 @@ connections=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2
               pg.Connection([planet_2,planet_3],'D'),
               pg.Connection([planet_3,sun_2],'GI')]
 
-connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'),pg.Connection([planet_2,planet_4],'GE'),
-                pg.Connection([planet_4,planet_5],'GE'), pg.Connection([planet_5,planet_6],'GE'), pg.Connection([planet_6,planet_3],'GE'), pg.Connection([planet_3,ring],'GE')]
+connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'), pg.Connection([planet_2,ring],'GE')]
 
 planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3], planet_carrier,connections,'pl_1')
-planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2,planet_4,planet_5,planet_6,planet_3], planet_carrier,connections_2,'pl_1')
+planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2], planet_carrier,connections_2,'pl_1')
 
-input_torque_and_composant={sun:150,sun_2:planet_carrier}
-result_torque=planetary_gears_1.torque_solve(input_torque_and_composant)
-result_speed=planetary_gears_1.speed_solve(input_torque_and_composant)
-print(result_torque)
-print(result_speed)
-component=[sun,ring,sun_2,planet_1,planet_2,planet_3,planet_carrier]
-puissance=[]
-for i,element in enumerate(component):
-    puissance.append(result_speed[element]*result_torque[element])
-print(puissance)
+# input_torque_and_composant={sun:100,ring:100}
+# input_speed={sun:150,ring:100}
+# result_torque=planetary_gears_1.torque_solve(input_torque_and_composant)
+# result_speed=planetary_gears_1.speed_solve(input_speed)
+# print(result_torque)
+# print(result_speed)
+# component=[sun,ring,sun_2,planet_1,planet_2,planet_3,planet_carrier]
+# puissance=[]
+# for i,element in enumerate(component):
+#     puissance.append(result_speed[element]*result_torque[element])
+# print(puissance)
 generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_1,3,100,1000)
 planetary_gears_1=generatorgeometry.verification()
-vmp.plot_d3(planetary_gears_1.plot_data())
+input_torque_and_composant={planetary_gears_1.planetaries[0]:100,planetary_gears_1.planetaries[1]:200}
+planetary_gears_1.torque_resolution_PFS(input_torque_and_composant)
+# vmp.plot_d3(planetary_gears_1.plot_data())
 # c = Client(api_url = 'http://localhost:5000')
 # r = c.create_object_from_python_object(planetary_gears_1)
 
