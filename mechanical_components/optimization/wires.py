@@ -13,9 +13,12 @@
 try:
     _open_source = True
     import mechanical_components.optimization.wires_protected as protected_module
+
 except (ModuleNotFoundError, ImportError) as e:
-#    from  mechanical_components.optimization.common import RoutingOptimizer
     _open_source = False
+
+from  mechanical_components.optimization.common import RoutingOptimizer
+
 
 class WiringOptimizer(protected_module.WiringOptimizer if _open_source==True else RoutingOptimizer):
     def __init__(self, waypoints, routes):
