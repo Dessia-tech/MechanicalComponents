@@ -194,13 +194,14 @@ input_values = {workflow_generator_planetary_gears_architecture.index(block_plan
                 workflow_generator_planetary_gears_architecture .index(block_planetary_gears_architecture.inputs[1]):[[500,501],[610,611],[310,315],[380,385]],
 
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[1]):[[500,505],[610,615],[310,315],[380,385]] , 
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[2]):[7, 80] ,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[3]):[40,100] ,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[4]):3,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[2]):[[0.1,50],[-3.2,-0.1],[-0.8,-0.1],[1,16]],
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[3]):[7, 80] ,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[4]):[40,100] ,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[5]):3,
                 
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[1]):3,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[2]):100,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):1000,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[2]):1,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):10,
                 
                 workflow_generator_planetary_gears.index(block_parallel_plot.inputs[1]):pareto_settings}
 
@@ -230,10 +231,10 @@ workflow_generator_run = workflow_generator_planetary_gears.run(input_values)
 #                   pareto_settings=pareto_settings,
 #                   name='Planetary_gears')
 
-print(workflow_generator_run.output_value[0].volmdlr_primitives())
-
-c = Client(api_url = 'http://localhost:5000')
-r = c.create_object_from_python_object(workflow_generator_run)
+planetary_gear=workflow_generator_run.output_value[0]
+print(planetary_gear.torque_max_planet)
+# c = Client(api_url = 'http://localhost:5000')
+# r = c.create_object_from_python_object(workflow_generator_run)
 
 # r2= c.create_object_from_python_object(catalog)
 

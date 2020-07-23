@@ -64,7 +64,7 @@ dgs1=npy.cross(p1b-p1a,p2a-p1a)
 egs1=genmechanics.geometry.Direction2Euler(dgs1,dir_axis)
 dgs2=npy.cross(p3b-p2a,p3a-p2a)
 egs2=genmechanics.geometry.Direction2Euler(dgs2,dir_axis)
-
+print(egs1)
 bearing1a=linkages.BallLinkage(ground,shaft1,p1a,[0,0,0],Ca,Cr,Cwb,'bearing1a')
 bearing1b=linkages.LinearAnnularLinkage(ground,shaft1,p1b,[0,0,0],Cr,Cwb,'bearing1b')
 bearing2a=linkages.BallLinkage(ground,shaft2,p2a,[0,0,0],Ca,Cr,Cwb,'bearing2a')
@@ -74,10 +74,10 @@ bearing3b=linkages.LinearAnnularLinkage(ground,shaft3,p3b,[0,0,0],Cr,Cwb,'bearin
 
 
 gearset12=linkages.GearSetLinkage(shaft1,shaft2,pgs1,egs1,alpha_gs1,beta_gs1,Cf,Cvgs,'Gear set 1')
-gearset23=linkages.GearSetLinkage(shaft2,shaft3,pgs2,egs2,alpha_gs2,beta_gs2,Cf,Cvgs,'Gear set 2')
+gearset23=linkages.GearSetLinkage(shaft2,shaft3,pgs2,egs1,alpha_gs2,beta_gs2,Cf,Cvgs,'Gear set 2')
 
 load1=loads.KnownLoad(shaft1,[-Lb/2,0,0],[0,0,0],[0,0,0],[C,0,0],'input torque')
-load2=loads.SimpleUnknownLoad(shaft3,[2*(Lgs+Lb),y2,z2],[0,0,0],[],[0],'output torque')
+load2=loads.SimpleUnknownLoad(shaft3,[2*(Lgs+Lb),0,0],[0,0,0],[],[0],'output torque')
 
 imposed_speeds=[(bearing1a,0,w)]
 

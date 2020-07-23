@@ -582,24 +582,35 @@ class Mechanism:
                         w,v=0,0
                     for i,fct in zip(linkage.static_behavior_nonlinear_eq_indices,linkage.static_behavior_nonlinear_eq):
                         nonlinear_eq[neq+i]=lambda x,v=v,w=w,fct=fct:fct(x,w,v)
+                       
+                        
                 else:
                     if linkage.static_require_kinematic:
                         # Absolute speed in this case in local coordinate system
                         s=self.Speeds(linkage.position,self.ground,linkage.part1)
                         w=npy.dot(linkage.P.T,s[:3])
                         v=npy.dot(linkage.P.T,s[3:])
+                        
+                        
                     else:
                         w,v=0,0
 
                     for i,fct in zip(linkage.static_behavior_nonlinear_eq_indices,linkage.static_behavior_nonlinear_eq):
+                        # if  neq+i==38 or neq+i==39:
+                        #     w=[ 5.60091118e-15,-2.64007629e+02,1.72537808e+02]
+                        #     v= [-19.97209784 -20.9663205  -32.08148188]
                         nonlinear_eq[neq+i]=lambda x,v=v,w=w,fct=fct:fct(x,w,v)
+                        if  neq+i==37:
+                            print(linkage.name)
+                            print(neq+i)
+                            print(w,v)
 
                 # Updating counters
                 neq+=neq_linkage
                 neq_linear+=neq_linear_linkage
 
 
-
+        print(nonlinear_eq)
         # behavior equations of unknowns loads
         for load in self.unknown_static_loads:
             neq_load=load.static_behavior_occurence_matrix.shape[0]
@@ -609,7 +620,7 @@ class Mechanism:
                 for indof,ndof in enumerate(self.sdof[load]):
                     Me[:,ndof]+=load.static_behavior_occurence_matrix[:,indof]
                 M=npy.vstack([M,Me])
-                ptinr(M)
+                
                 # Adding linear equations to System matrix K
                 neq_linear_load=load.static_behavior_linear_eq.shape[0]
                 if neq_linear_load>0:
@@ -630,16 +641,19 @@ class Mechanism:
                     w,v=0,0
                 for i,fct in zip(load.static_behavior_nonlinear_eq_indices,load.static_behavior_nonlinear_eq):
                     nonlinear_eq[neq+i]=lambda x,v=v,w=w,fct=fct:fct(x,w,v)
+                  
 
                 # Updating counters
                 neq+=neq_load
                 neq_linear+=neq_linear_load
 
-        
+      
         solvable,solvable_var,resolution_order=tools.EquationsSystemAnalysis(M,None)
 #        print(resolution_order)
         if not solvable:
             raise ModelError('Overconstrained system')
+        
+     
         for eqs,variables in resolution_order:
 #            print(eqs,variables)
             linear=True
@@ -650,35 +664,57 @@ class Mechanism:
                     linear=False
                 except KeyError:
                     linear_eqs.append(eq)
+            
+          
             if linear:
                 eqs_r=npy.array([indices_r[eq] for eq in eqs])
                 other_vars=npy.array([i for i in range(self.n_sdof) if i not in variables])
                 Kr=K[eqs_r[:,None],npy.array(variables)]
                 Fr=F[eqs_r]-npy.dot(K[eqs_r[:,None],other_vars],q[other_vars])
-
+                
                 q[variables]=linalg.solve(Kr,Fr)
+                
+               
+                
             else:
+                
                 nl_eqs=[]
                 other_vars=npy.array([i for i in range(self.n_sdof) if i not in variables])
+                
                 for eq in eqs:
                     try:
+                       
                         f1=nonlinear_eq[eq]
+                    
                         vars_func=[i for i in range(self.n_sdof) if M[eq,i]]
+                        
                         def f2(x,f1=f1,vars_func=vars_func,variables=variables,q=q):
                             x2=[]
                             for variable in vars_func:
                                 try:
                                     x2.append(x[variables.index(variable)])
+                                    # print(x[variables.index(variable)])
                                 except ValueError:
                                     x2.append(q[variable])
+                            # print(x2)
                             return f1(x2)
                         nl_eqs.append(f2)
                     except KeyError:
                         # lambdification of linear equations
                         f2=lambda x,indices_r=indices_r,K=K,F=F,eq=eq,q=q,other_vars=other_vars:npy.dot(K[indices_r[eq],variables],x)-F[indices_r[eq]]+npy.dot(K[indices_r[eq],other_vars],q[other_vars])
+                        
                         nl_eqs.append(f2)
                 f=lambda x:[fi(x) for fi in nl_eqs]
-                xs=fsolve(f,npy.zeros(len(variables)),full_output=0)
+                xs=fsolve(f,npy.zeros(len(variables)),full_output=0,xtol=1.49012e-22)
+                print(eqs)
+                print(vars_func)
+                # print(Kr)
+                # print(Fr)
+                print(q[variables])
+                print(nl_eqs)
+                print(xs)
+                print(f(xs))
+                print(npy.sum(npy.abs(f(xs))))
                 if npy.sum(npy.abs(f(xs)))>1e-4:
                     raise ModelError('No convergence of nonlinear phenomena solving'+str(npy.sum(npy.abs(f(xs)))))
                 q[variables]=xs

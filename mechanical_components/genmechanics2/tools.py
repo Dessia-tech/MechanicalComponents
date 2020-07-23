@@ -48,7 +48,7 @@ def EquationsSystemAnalysis(Mo,vars_to_solve,overconstrain_stop=True):
                
     for Gi in (G.subgraph(c).copy() for c in nx.connected_components(G)):
         M=nx.bipartite.maximum_matching(Gi)
-        print(M)
+     
     #    print('M',M,len(M))
         
         for n1,n2 in M.items():
@@ -59,12 +59,11 @@ def EquationsSystemAnalysis(Mo,vars_to_solve,overconstrain_stop=True):
 #    plt.figure()
 #    nx.draw(Gp,pos)
 #    nx.draw_networkx_labels(Gp,pos)
-    print(list(Gp.edges))
+    
     sinks=[]
     sources=[]
     for node in Gp.nodes():
-        print(node)
-        print(Gp.in_degree(node))
+     
         if Gp.out_degree(node)==0:
             sinks.append(node)
         elif Gp.in_degree(node)==0:
@@ -74,18 +73,18 @@ def EquationsSystemAnalysis(Mo,vars_to_solve,overconstrain_stop=True):
     G2=sources[:]
    
     for node in sources:
-        print(nx.descendants(Gp,node))
+        
         for node2 in nx.descendants(Gp,node):
             if node2 not in G2:
                 G2.append(node2)
-    print(G2)
+ 
     if overconstrain_stop:
         if G2!=[]:
 #            print('G2 (sur-contraint): ',G2)
 #            eG2=[int(elem[1:]) for elem in G2 if elem[0]=='e']
 #            vG2=[int(elem[1:]) for elem in G2 if elem[0]=='v']
 #            print(Mo[eG2,vG2])
-            print(G2)
+           
             return (False,[],None)
 
     

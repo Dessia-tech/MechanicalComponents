@@ -388,9 +388,11 @@ class FrictionlessGearSetLinkage(NonHolonomicLinkage):
         static_matrix2=npy.array([[cos(beta)*cos(alpha),0],[sin(beta),0],[0,-1],[0,0],[0,0],[0,0]])
         static_matrix1=-static_matrix2
         static_behavior_occurence_matrix=npy.array([[1,1,1]])
-        static_behavior_nonlinear_eq_indices=[0]
+        # static_behavior_nonlinear_eq_indices=[0]
+        static_behavior_nonlinear_eq_indices=[]
         static_behavior_linear_eq=npy.array([])
-        static_behavior_nonlinear_eq=[lambda x,w,v:abs(sin(beta)*cos(alpha)*abs(x[0]))+x[1]]
+        # static_behavior_nonlinear_eq=[lambda x,w,v:abs(sin(beta)*cos(alpha)*abs(x[0]))+x[1]]
+        static_behavior_nonlinear_eq=[]
         directions=[npy.array([1,0,0])]
         static_require_kinematic=True
         NonHolonomicLinkage.__init__(self,part1,part2,position,euler_angles,
