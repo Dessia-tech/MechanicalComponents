@@ -2755,8 +2755,8 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                                         f2[-1] = f2[-1]*100000000
                                     index_x += 1
                                     
-                    for planet in self.planetary_gears.planets:
-                        planet.position
+                    # for planet in self.planetary_gears.planets:
+                    #     planet.position
                         
 
 
