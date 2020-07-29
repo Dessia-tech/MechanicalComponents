@@ -21,9 +21,9 @@ import mechanical_components.meshes as meshes
 from dessia_common import DessiaObject
 from typing import Tuple, List, TypeVar
 import numpy as np
-import genmechanics
-import genmechanics.linkages as linkages
-import genmechanics.loads as loads
+import mechanical_components.genmechanics2 as genmechanics
+import mechanical_components.genmechanics2.linkages as linkages
+import mechanical_components.genmechanics2.loads as loads
 import volmdlr.plot_data as vmp
 import scipy.optimize as op
 
@@ -440,9 +440,9 @@ class PlanetaryGear(DessiaObject):
     :type name: str,optional
     '''
     def __init__(self, planetaries: List[Planetary], planets: List[Planet],
-                 planet_carrier: PlanetCarrier, connections: List[Connection], name: str = ''):
+                 planet_carrier: PlanetCarrier, connections: List[Connection], number_branch_planet: int = 3,name: str = ''):
 
-
+        self.number_branch_planet=number_branch_planet
         self.d_min = 0
         self.planetaries = planetaries
         self.planets = planets
@@ -457,7 +457,7 @@ class PlanetaryGear(DessiaObject):
         self.sum_speed_planetary = 0
         self.max_Z_planetary = 0
         self.min_Z_planetary = 100000
-
+        
         for planetary in self.planetaries:
             self.sum_Z_planetary += planetary.Z
             d = planetary.module*planetary.Z
@@ -953,7 +953,7 @@ class PlanetaryGear(DessiaObject):
             circle = vm.Circle2D(position, d/2)
 
             contour = vm.Contour2D([circle], True)
-            plot_data.append(contour.plot_data('contour', stroke_width=self.d_min, color=color))
+            plot_data.append(contour.plot_data('contour', stroke_width=2, color=color))
 
         for planet in self.planets:
             d = planet.module*planet.Z
@@ -966,7 +966,7 @@ class PlanetaryGear(DessiaObject):
                 circle = vm.Circle2D(position_2, d/2)
 
                 contour = vm.Contour2D([circle], True)
-                plot_data.append(contour.plot_data('contour', stroke_width=self.d_min, color=color))
+                plot_data.append(contour.plot_data('contour', stroke_width=2, color=color))
         if positions_gearing:
             
             for position in positions_gearing:
@@ -1634,16 +1634,16 @@ class PlanetaryGear(DessiaObject):
             list_planetary.remove(element1)
             list_path=self.path_planetary_to_planetary([element1]+list_planetary)
             for path in list_path:
-                reason=self.reason(path[0])
+                reason=self.reason(path)
                 if reason<0:
-                    element1_signe.append(-1)
-                    element2_signe.append(1)
-                else:
                     element1_signe.append(1)
+                    element2_signe.append(-1)
+                else:
+                    element1_signe.append(-1)
                     if reason<1:
-                        element2_signe.append(1)
-                    else:
                         element2_signe.append(-1)
+                    else:
+                        element2_signe.append(1)
         else:
             list_planetary=copy.copy(self.planetaries)
             list_planetary.remove(element1)
@@ -1656,9 +1656,9 @@ class PlanetaryGear(DessiaObject):
                 reason=self.reason(path[0])
                 
                 if (reason+reason_1*(1-reason)/(reason_1-1))<0:
-                    element1_signe.append(-1)
-                else:
                     element1_signe.append(1)
+                else:
+                    element1_signe.append(-1)
                     
                 if  ((1-reason)/(reason_1-1))<0:
                     element2_signe.append(-1)
@@ -1668,10 +1668,10 @@ class PlanetaryGear(DessiaObject):
             
             
             if reason_1/(reason_1-1)<0:
-                element1_signe.append(-1)
+                element1_signe.append(1)
             
             else:
-                element1_signe.append(1)
+                element1_signe.append(-1)
             
             if 1/(reason_1-1)<0:
                 element2_signe.append(-1)
@@ -1736,7 +1736,7 @@ class PlanetaryGear(DessiaObject):
     
             b.extend([element1.torque_input[1], -element1.torque_input[0], element2.torque_input[1], -element2.torque_input[0]])
          
-            for i, planetary in enumerate(list_previous_planetaries):
+            for i, planetary in enumerate(list_planetary):
                 reason_planetary = self.reason(list_path[i][0])
     
                 coefficient_1 = -(reason_planetary+(1-reason_planetary)*reason_second_planetary/(reason_second_planetary-1))
@@ -1812,8 +1812,9 @@ class PlanetaryGear(DessiaObject):
     
             b.extend([element1.torque_input[1], -element1.torque_input[0], element2.torque_input[1], -element2.torque_input[0]])
          
-            for i, planetary in enumerate(list_previous_planetaries):
-                reason_planetary = self.reason(list_path[i][0])
+            for i, planetary in enumerate(list_planetary):
+                
+                reason_planetary = self.reason(list_path[i])
     
                 coefficient_1 = -reason_planetary
                 if coefficient_1 < 0:
@@ -2040,9 +2041,9 @@ class PlanetaryGear(DessiaObject):
             
         # # first_input[self.planet_carrier]=self.planet_carrier.torque_input[1]
         # print(first_input)
-        
-        first_input[self.planetaries[2]]=2
-        first_input[self.planetaries[1]]=-5
+        for i in range(len(self.planetaries)-1):
+            first_input[self.planetaries[i]]=self.planetaries[i].torque_input[0]
+            
         print(self.torque_resolution_PFS(first_input))
         
         power = []
@@ -2065,9 +2066,9 @@ class PlanetaryGear(DessiaObject):
         
         for planetary in planetary_input:
             if planetary.torque_signe==-1:
-                max_input[planetary]=planetary.torque_input[0]
+                max_input[planetary]=planetary.torque_input[0]/self.number_branch_planet
             else:
-                max_input[planetary]=planetary.torque_input[1]
+                max_input[planetary]=planetary.torque_input[1]/self.number_branch_planet
         
 
         print(self.torque_resolution_PFS(max_input))        
@@ -2544,13 +2545,13 @@ class PlanetaryGear(DessiaObject):
 
 
   
-        # fig, ax = plt.subplots()
-        # ax.set_xlim(-1, 1)
-        # ax.set_ylim(-1, 1)
-        # new_position_gearing=[]
-        # for position in position_gearings:
-        #     new_position_gearing.append([position[0],position[1]-decalage,position[2]-decalage])
-        # vmp.plot(self.plot_data(new_position_gearing),ax)
+        fig, ax = plt.subplots()
+        ax.set_xlim(-100, 100)
+        ax.set_ylim(-100, 100)
+        new_position_gearing=[]
+        for position in position_gearings:
+            new_position_gearing.append([position[0],position[1]-decalage,position[2]-decalage])
+        vmp.plot(self.plot_data(new_position_gearing),ax)
         list_all_input = self.planetaries+[self.planet_carrier]
         loads_known = []
         load_planet_carrier = 0
@@ -2599,7 +2600,7 @@ class PlanetaryGear(DessiaObject):
         
         for i,gearing_planetary in enumerate(gearings_planetary):
             
-            power = mech.TransmittedLinkagePower(gearing_planetary, 0)    
+            power = mech.TransmittedLinkagePower(gearing_planetary, 4)    
             
             if gearing_planetary.part1 in part_planetaries:
                 index=part_planetaries.index(gearing_planetary.part1)
@@ -2632,8 +2633,7 @@ class PlanetaryGear(DessiaObject):
                 
 
         mech.GlobalSankey()
-        mech.DrawPowerGraph()
-
+        
         return torque_max_planet 
 
 
@@ -2696,6 +2696,213 @@ class PlanetaryGear(DessiaObject):
 
         torque_element_association[self.planet_carrier] = solution[-1]
         return torque_element_association
+    
+    def recirculation_power_recursive_function(self,l,node,circle,circles):
+        flag_node=0
+        flag_append_circle=0
+        for nodes in l:
+            if nodes[0]==node:
+                flag_node=1
+                circle2=copy.copy(circle)
+                if nodes[1] in circle2:
+                    index=circle2.index(nodes[1])
+                    if not circle2[index:] in circles:
+                        flag_similiti=0
+                        for circle in circles:
+                            if circle2[index:][0] in circle:
+                                len_simili=0
+                                for node2 in circle2[index:]:
+                                    if node2 in circle:
+                                        len_simili+=1
+                                if len_similiti==len(circle):
+                                    flag_similiti=1
+                                    
+                        if not flag_similiti:
+                            flag_append_circle=1
+                            circles.append(circle2[index:])
+
+                    
+                else:
+                    circle2.append(nodes[1])
+                   
+                    l2=[]
+                    for li in circle2:
+                        
+                        l2.append(li.name)
+                    
+                    self.recirculation_power_recursive_function(l,nodes[1],circle2,circles)
+        if not flag_node and not flag_append_circle:
+            for node2 in circle:
+                for nodes in l:
+                    if node2==nodes[1] and nodes[0] not in circle:
+                        circle2=copy.copy(circle)
+                      
+                        index=circle2.index(nodes[1])
+                        
+                        circle2=circle2[:index+1]
+                        circle2.append(nodes[0])
+                        # print(node2.name)
+
+                        self.recirculation_power_recursive_function_inverse(l,nodes[0],circle2,circles) 
+        return circles
+    
+    def recirculation_power_recursive_function_inverse(self,l,node,circle,circles):
+        flag_node=0
+        flag_append_circle=0
+        for nodes in l:
+            if nodes[1]==node:
+                flag_node=1
+                circle2=copy.copy(circle)
+                if nodes[0] in circle2:
+                    index=circle2.index(nodes[0])
+                    if not circle2[index:] in circles:
+                        
+                        flag_similiti=0
+                        for circle in circles:
+                            
+                            if circle2[index:][0] in circle:
+                                len_simili=0
+                                for node2 in circle2[index:]:
+                                    if node2 in circle:
+                                        len_simili+=1
+                                if len_simili==len(circle):
+                                    flag_similiti=1
+                        
+                        if not flag_similiti:
+                            flag_append_circle=1
+                            circles.append(circle2[index:])
+                    
+                else:
+                    circle2.append(nodes[0])
+                  
+                    l2=[]
+                    for li in circle2:
+                        
+                        l2.append(li.name)
+                   
+                    self.recirculation_power_recursive_function_inverse(l,nodes[0],circle2,circles)
+        # if not flag_node and not flag_append_circle:
+        #     for node2 in circle:
+        #         for nodes in l:
+        #             if node2==nodes[0] and nodes[1] not in circle:
+        #                 circle2=copy.copy(circle)
+                      
+        #                 index=circle2.index(nodes[0])
+                        
+        #                 circle2=circle2[:index+1]
+        #                 circle2.append(nodes[1])
+        #                 # print(node2.name)
+        #                 if len(circle2)>3:
+        #                     return circles
+        #                 self.recirculation_power_recursive_function(l,nodes[1],circle2,circles) 
+                        
+        return circles
+                
+            
+        
+    
+    def recirculation_power(self):
+        if not self.mech:
+            self.torque_resolution_PFS({self.planetaries[0]:1/self.number_branch_planet, self.planetaries[1]:2/self.number_branch_planet})
+        G=self.mech.DrawPowerGraph()
+        
+        G2=G.copy()
+        G2.remove_node(self.mech.ground)
+        
+        l=list(nx.edge_bfs(G2,list(G2.nodes)[0]))
+        l_name=[]
+        for node in l:
+            l_name.append([node[0].name,node[1].name])
+            
+        
+        circles=[]
+        for node in list(G2.nodes):
+            l=list(nx.edge_bfs(G2,node))
+            self.recirculation_power_recursive_function(l,node,[node],circles)
+          
+        circle_name=[]
+        for circle in circles:
+            circle_name=[]
+            for name in circle:
+                circle_name.append(name.name)
+                
+            print(circle_name)
+            
+        power_circles=[]    
+        for circle in circles:
+            power_list=[]
+            for node in circle:
+                if isinstance(node,linkages.Linkage):
+                    
+                    power_list.append(abs(self.mech.TransmittedLinkagePower(node, 0))  )
+                    
+                
+            min_power=min(power_list)
+            max_power=max(power_list)
+            power_circles.append([min_power,max_power])
+                    
+                    
+        power_input=[]
+        # for loads in self.mech.known_static_loads:
+            
+        #     torque = loads.torques[0]
+            
+        #     for linkage in self.mech.linkages:
+        #         if (linkage.part1==loads.part and linkage.part2==self.mech.ground )or (linkage.part2==loads.part and linkage.part1==self.mech.ground):
+        #             speed=self.mech.kinematic_results[linkage][0]
+        #             print(speed)
+        #             break
+               
+                
+            
+        #     if speed*torque>0:
+        #         power_input+=speed*torque
+                
+        # for loads in self.mech.unknown_static_loads:
+            
+        #     torque = self.mech.static_results[loads][0]
+            
+        #     for linkage in self.mech.linkages:
+        #         if (linkage.part1==loads.part and linkage.part2==self.mech.ground )or (linkage.part2==loads.part and linkage.part1==self.mech.ground):
+        #             speed=self.mech.kinematic_results[linkage][0]
+                    
+        #             break
+               
+                
+            
+        #     if speed*torque>0:
+        #         power_input+=speed*torque
+        
+        for circle in circles:
+            power_input.append(0)
+            for node in circle:
+                neighbors=list(G2.neighbors(node))
+                for neighbor in neighbors:
+                    if  not neighbor in circle:
+                        print(neighbor.name)
+                        if isinstance(neighbor,loads.KnownLoad)or isinstance(neighbor,loads.SimpleUnknownLoad) :
+                            power=self.mech.LoadPower(neighbor)
+                            
+                        else:  
+                            if neighbor.part1==node:
+                                power=self.mech.TransmittedLinkagePower(neighbor,0)
+                            else:
+                                power=self.mech.TransmittedLinkagePower(neighbor,1)
+                        print(power)
+                        if power>0:
+                            power_input[-1]+=power
+                
+                    
+            
+
+        
+        power_difference=[]
+        for i,power in enumerate(power_circles):
+            power_difference.append([(power[0]/power_input[i])*100,(power[1]/power_input[i])*100])
+        
+        print(power_difference)
+        return power_difference
+      
 
 
 
@@ -2763,7 +2970,10 @@ class PlanetaryGearResult(DessiaObject):
         self.planetaries=planetary_gear.planetaries
         self.planets=planetary_gear.planets
         self.planet_carrier=planetary_gear.planet_carrier
-
+        self.connections=planetary_gear.connections
+        self.doubles=planetary_gear.doubles
+        
+        
         self.speed_max_planet = self.planetary_gear.speed_max_planets()
         self.torque_max_planet=self.planetary_gear.torque_max_planets()
         
@@ -2776,6 +2986,41 @@ class PlanetaryGearResult(DessiaObject):
         self.speed_planet_carrer = self.planetary_gear.speed_planet_carrer
 
         DessiaObject.__init__(self, name=self.planetary_gear.name+'Result')
+        
+        
+    def __str__(self):
+
+        Z_planets = {}
+
+        for planet in self.planets:
+            Z_planets[planet.name] = planet.Z
+
+        Z_planetaries = {}
+        number_ring = 0
+        number_sun = 0
+
+        for planetary in self.planetaries:
+            Z_planetaries[planetary.name] = planetary.Z
+
+            if planetary.planetary_type == 'Sun':
+                number_sun += 1
+
+            else:
+                number_ring += 1
+        connections_name = []
+        for i in range(len(self.connections)):
+            connections_name.append([self.connections[i].nodes[0].name, self.connections[i].nodes[1].name,
+                                     self.connections[i].connection_type])
+
+        return 'Name:' + self.name + '\n\n' + \
+               'Planetary Number:' + str(len(self.planetaries)) + '\n' + \
+               'Ring Number:'+ str(number_ring) + '\n' + \
+               'Sun_Number:' + str(number_sun) + '\n' + \
+               'Z_planetaries:' + str(Z_planetaries) + '\n\n' + \
+               'Planets_Number:' + str(len(self.planets)) + '\n' + \
+               'Planets_Double_Number:' + str(len(self.doubles)) + '\n' + \
+               'Z_Planets:' + str(Z_planets) + '\n\n' + \
+                str(connections_name) + '\n\n\n'
 
 
 
@@ -2834,15 +3079,15 @@ class PlanetaryGearResult(DessiaObject):
                 element_list_2.remove(element)
         
                 
-        element1=element_list_2[0]
-        element_list_3.remove(element1)
+        element_1=element_list_2[0]
+        element_list_3.remove(element_1)
         if len(element_list_2)>1:
-            element2=element_list_2[1]
-            element_list_3.remove(element2)
+            element_2=element_list_2[1]
+            element_list_3.remove(element_2)
         else:
-            element2=self.planet_carrier
+            element_2=self.planet_carrier
         
-        element1_signe,element2_signe=self.planetary_gear.torque_min_max_signe_input(element1,element2)
+        element1_signe,element2_signe=self.planetary_gear.torque_min_max_signe_input(element_1,element_2)
         max_input_1={}
         min_input_1={}
         max_input_2={}
@@ -2864,8 +3109,8 @@ class PlanetaryGearResult(DessiaObject):
                 max_input_2[element]=element.torque_input[0]
                 min_input_2[element]=element.torque_input[1]
                 
-        if len(element_list_3)==len(self.planetaries)-1:
-             if element1_signe[-1]==1:
+        if len(element_list_3)==len(self.planetaries)-2:
+            if element1_signe[-1]==1:
                max_input_1[self.planet_carrier]=self.planet_carrier.torque_input[1]
                min_input_1[self.planet_carrier]=self.planet_carrier.torque_input[0]
                
@@ -2880,6 +3125,8 @@ class PlanetaryGearResult(DessiaObject):
             else:
                 max_input_2[self.planet_carrier]=self.planet_carrier.torque_input[0]
                 min_input_2[self.planet_carrier]=self.planet_carrier.torque_input[1]
+                
+        print(min_input_1)
                 
         res_min_1=self.planetary_gear.torque_solve(min_input_1)
         
@@ -2902,9 +3149,9 @@ class PlanetaryGearResult(DessiaObject):
         
         return self.planetary_gear.speed_range(element_1,element_2)
     
-    def torque_range(self,element_1,element_2):
+    def torque_range(self,elements):
         
-        return self.planetary_gear.torque_range(element_1,element_2)
+        return self.planetary_gear.torque_range(elements)
         
    
         
@@ -2914,21 +3161,6 @@ class PlanetaryGearResult(DessiaObject):
           self.update_geometry()
           
           self.torque_max_planet=self.planetary_gear.torque_max_planets()
-          
-    # def update_torque(self,input_torque_and composant):
-        
-        
-          
-
-
-
-
-
-
-
-
-
-
 
 
 

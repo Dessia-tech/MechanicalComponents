@@ -2,7 +2,7 @@
 """
 
 """
-
+import copy
 from itertools import combinations
 import numpy as npy
 import networkx as nx
@@ -259,6 +259,7 @@ class Mechanism:
         widths=[6*w/max_widths for w in widths]
 #        edges[linkage,part]=e
         plt.figure()
+        
         pos=nx.spring_layout(G)
         nx.draw_networkx_nodes(G,pos,nodelist=self.linkages,node_color='grey')
         nx.draw_networkx_nodes(G,pos,nodelist=self.parts)
@@ -268,6 +269,20 @@ class Mechanism:
         nx.draw_networkx_labels(G,pos,labels)
         nx.draw_networkx_edges(G,pos,edges,width=widths,edge_color='blue')
         nx.draw_networkx_edges(G,pos)
+        # G2=G.copy()
+        # G2.remove_node(self.ground)
+        # G3=nx.find_cycle(G2,orientation= 'ignore')
+        # circles=[G3]
+        
+        # for node in G3:
+        #     G3=G2.copy()
+        #     G3.remove(node[0])
+        #     print(node[0].name)
+        #     if nx.find_cycle(G3,orientation= 'ignore'):
+                
+            
+        
+        return G
 #        nx.draw_networkx_labels(G,pos,labels)
 
     def ChangeImposedSpeeds(self, imposed_speeds):
@@ -600,17 +615,14 @@ class Mechanism:
                         #     w=[ 5.60091118e-15,-2.64007629e+02,1.72537808e+02]
                         #     v= [-19.97209784 -20.9663205  -32.08148188]
                         nonlinear_eq[neq+i]=lambda x,v=v,w=w,fct=fct:fct(x,w,v)
-                        if  neq+i==37:
-                            print(linkage.name)
-                            print(neq+i)
-                            print(w,v)
+                      
 
                 # Updating counters
                 neq+=neq_linkage
                 neq_linear+=neq_linear_linkage
 
 
-        print(nonlinear_eq)
+       
         # behavior equations of unknowns loads
         for load in self.unknown_static_loads:
             neq_load=load.static_behavior_occurence_matrix.shape[0]
@@ -649,13 +661,13 @@ class Mechanism:
 
       
         solvable,solvable_var,resolution_order=tools.EquationsSystemAnalysis(M,None)
-#        print(resolution_order)
+#        
         if not solvable:
             raise ModelError('Overconstrained system')
         
      
         for eqs,variables in resolution_order:
-#            print(eqs,variables)
+#            
             linear=True
             linear_eqs=[]
             for eq in eqs:
@@ -693,10 +705,10 @@ class Mechanism:
                             for variable in vars_func:
                                 try:
                                     x2.append(x[variables.index(variable)])
-                                    # print(x[variables.index(variable)])
+                                    
                                 except ValueError:
                                     x2.append(q[variable])
-                            # print(x2)
+                            
                             return f1(x2)
                         nl_eqs.append(f2)
                     except KeyError:
@@ -706,15 +718,7 @@ class Mechanism:
                         nl_eqs.append(f2)
                 f=lambda x:[fi(x) for fi in nl_eqs]
                 xs=fsolve(f,npy.zeros(len(variables)),full_output=0,xtol=1.49012e-22)
-                print(eqs)
-                print(vars_func)
-                # print(Kr)
-                # print(Fr)
-                print(q[variables])
-                print(nl_eqs)
-                print(xs)
-                print(f(xs))
-                print(npy.sum(npy.abs(f(xs))))
+               
                 if npy.sum(npy.abs(f(xs)))>1e-4:
                     raise ModelError('No convergence of nonlinear phenomena solving'+str(npy.sum(npy.abs(f(xs)))))
                 q[variables]=xs

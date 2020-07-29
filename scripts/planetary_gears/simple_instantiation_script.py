@@ -65,22 +65,31 @@ ring= pg.Planetary(50,'Ring','ring')
 planet_carrier= pg.PlanetCarrier('planet_carrier')
 planet_1=pg.Planet(12,'planet_1')
 
+sun.speed_input=[10,100]
+sun_2.speed_input=[10,100]
+ring.speed_input=[10,100]
+planet_carrier.speed_input=[10,100]
 
+sun.torque_input=[10,100]
+sun_2.torque_input=[12,100]
+ring.torque_input=[13,100]
+planet_carrier.torque_input=[10,100]
 
 planet_2=pg.Planet(10,'planet_2')
-planet_3=pg.Planet(17,'planet_3')
+planet_3=pg.Planet(14,'planet_3')
 planet_4=pg.Planet(5,'planet_4')
 planet_5=pg.Planet(5,'planet_5')
 planet_6=pg.Planet(5,'planet_5')
 planet_7=pg.Planet(5,'planet_5')
 connections=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'),pg.Connection([planet_2,ring],'GE'),
               pg.Connection([planet_2,planet_3],'D'),
-              pg.Connection([planet_3,sun_2],'GI')]
+              pg.Connection([planet_3,planet_4],'GI'),
+              pg.Connection([planet_4,sun_2],'GI')]
 
 connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'), pg.Connection([planet_2,ring],'GE')]
 
-planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3], planet_carrier,connections,'pl_1')
-planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2], planet_carrier,connections_2,'pl_1')
+planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3,planet_4], planet_carrier,connections,3,'pl_1')
+planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2], planet_carrier,connections_2,3,'pl_1')
 
 # input_torque_and_composant={sun:100,ring:100}
 # input_speed={sun:150,ring:100}
@@ -95,8 +104,14 @@ planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2], planet_carr
 # print(puissance)
 generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_1,3,1,10)
 planetary_gears_1=generatorgeometry.verification()
+generatorgeometry.optimize_max()
+generatorgeometry.optimize_min()
+planetary_gear_result=pg.PlanetaryGearResult(planetary_gears_1,generatorgeometry.position_min_max)
+
 input_torque_and_composant={planetary_gears_1.planetaries[2]:2,planetary_gears_1.planetaries[1]:-5}
 link=planetary_gears_1.torque_resolution_PFS(input_torque_and_composant)
+print(planetary_gears_1.recirculation_power())
+
 
 print(link)
 result_torque=planetary_gears_1.torque_solve(input_torque_and_composant)
@@ -104,6 +119,7 @@ print(result_torque)
 input_speed_and_composant={planetary_gears_1.planetaries[0]:300,planetary_gears_1.planetaries[2]:200}
 result_speed=planetary_gears_1.speed_solve(input_speed_and_composant)
 print(result_speed)
+
 # vmp.plot_d3(planetary_gears_1.plot_data())
 # c = Client(api_url = 'http://localhost:5000')
 # r = c.create_object_from_python_object(planetary_gears_1)

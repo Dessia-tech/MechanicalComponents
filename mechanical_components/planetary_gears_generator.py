@@ -911,7 +911,7 @@ class GeneratorPlanetaryGearsArchitecture(DessiaObject):
                                 connection_2.append(Connection([planet_1, planet_2], planetary_connection[2]))
 
 
-            planetary_gear = PlanetaryGear(planetaries, planets_structure.planets, planet_carrier, connection_2, 'PlanetaryGear'+str(i))
+            planetary_gear = PlanetaryGear(planetaries, planets_structure.planets, planet_carrier, connection_2, 3,'PlanetaryGear'+str(i))
             list_path = planetary_gear.path_planetary_to_planetary()
             list_planets = []
             # print(planetary_gear.planets)
@@ -1150,6 +1150,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
 
         self.planetary_gear = planetary_gear
+        self.planetary_gear.number_planet_branch=number_planet
         self.input_speeds = input_speeds
         self.input_torques = input_torques
         self.speed_max_planet = speed_max_planet
@@ -2039,8 +2040,8 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                                     list_solution.append(copy.deepcopy(planetary_gear))
                                     print(planetary_gear)
 
-                        # if len(list_solution) > 30:
-                        #     return list_solution
+                        if len(list_solution) > 30:
+                            return list_solution
 
                 else:
 
@@ -2753,12 +2754,16 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                                     if f2[-1] < 0:
                                         f2[-1] = f2[-1]*100000000
                                     index_x += 1
+                                    
+                    for planet in self.planetary_gears.planets:
+                        planet.position
+                        
 
 
 
 
 
-
+                    
                     F = 0
                     # print(f2)
                     for f in f2:
