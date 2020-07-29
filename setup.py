@@ -61,7 +61,7 @@ setup(name='mechanical_components',
       keywords='',
       url='',
       zip_safe=False,# To ensure static files can be loaded
-      author='DessIA Technologies',
+      author='DessiA Technologies',
       author_email='root@dessia.tech',
       packages=['mechanical_components', 'mechanical_components.catalogs',
                 'mechanical_components.models',
