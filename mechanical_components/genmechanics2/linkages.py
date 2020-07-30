@@ -8,8 +8,9 @@ Created on Wed Nov 16 13:14:34 2016
 import numpy as npy
 from math import cos,sin
 import genmechanics.geometry as geometry
-
+from dessia_common import DessiaObject
 class Linkage:
+   
     def __init__(self,
                  part1, part2, position,
                  euler_angles,

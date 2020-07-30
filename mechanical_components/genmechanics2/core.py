@@ -57,6 +57,8 @@ class Part(DessiaObject):
             return lines
 
 class Mechanism:
+    
+    
     def __init__(self,
                  linkages,
                  ground,
@@ -74,8 +76,8 @@ class Mechanism:
 
         self._utd_kinematic_results = False
         self._utd_static_results = False
-
-        self._holonomic_paths = {}
+        
+        # self._holonomic_paths = {}
 
 
     def _get_parts(self):

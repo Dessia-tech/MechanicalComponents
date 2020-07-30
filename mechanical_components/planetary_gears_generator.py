@@ -2582,8 +2582,19 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                                     index_x += 1
 
 
-
-
+                    # index_x = 0
+                    # planetary_gear.planets[0].positions[0][1]=x[index_x]
+                    # for i, planets in enumerate(planetary_gear.planets[1:]):
+                    #     planets.positions[0][2] = x[index_x]
+                    #     index_x += 1
+                    #     planets.positions[0][1] = x[index_x]
+                    #     index_x += 1
+                    # planetary_gear.update_position_mech()
+                    # power_recirculation=planetary_gear.recirculation_power()
+                    # for power in power_rcirculation:
+                    #     if power>100:
+                    #         f2.append(power/100)
+                            
 
 
                     F = 0

@@ -183,7 +183,7 @@ class Planet(Gears):
 
     '''
 
-    def __init__(self, Z: int, name: str = '', positions: List[float] = '', module: float = 0):
+    def __init__(self, Z: int, name: str = '', positions: List[Tuple[float,float,float]] = None, module: float = 0):
 
 
 
@@ -422,7 +422,7 @@ class Connection(DessiaObject):
 
 class PlanetaryGear(DessiaObject):
     _standalone_in_db = True
-
+    _non_serializable_attributes=['mech', 'mech_dict']
     _generic_eq = True
     # _non_serializable_attributes =
     '''
@@ -453,6 +453,7 @@ class PlanetaryGear(DessiaObject):
             self.elements_name.append(element.name)
 
         self.mech=0
+        self.mech_dict=0
         self.sum_Z_planetary = 0
         self.sum_speed_planetary = 0
         self.max_Z_planetary = 0
@@ -2041,10 +2042,39 @@ class PlanetaryGear(DessiaObject):
             
         # # first_input[self.planet_carrier]=self.planet_carrier.torque_input[1]
         # print(first_input)
-        for i in range(len(self.planetaries)-1):
-            first_input[self.planetaries[i]]=self.planetaries[i].torque_input[0]
+        if not self.mech:
+            for i in range(len(self.planetaries)-1):
+                first_input[self.planetaries[i]]=self.planetaries[i].torque_input[0]
+                
+            self.torque_resolution_PFS(first_input)
+        
+        torque_max_planet = 0
+        
+        for i,gearing_planetary in enumerate(self.mech_dict['gearings_planetary']):
             
-        print(self.torque_resolution_PFS(first_input))
+            power = self.mech.TransmittedLinkagePower(gearing_planetary, 4)    
+            
+            if gearing_planetary.part1 in self.mech_dict['part_planetaries']:
+                index=self.mech_dict['part_planetaries'].index(gearing_planetary.part1)
+            else:
+                index=self.mech_dict['part_planetaries'].index(gearing_planetary.part2)
+            speed = self.mech.kinematic_results[self.mech_dict['link_planetaries_ball'][index]][0]
+            print(speed)
+            print(power)
+            self.planetaries[index].torque_signe = (power/speed)/abs(power/speed)
+            self.planetaries[index].power = power
+   
+        if self.mech_dict['flag_load_planet_carrier_unknow']:
+    
+            torque = self.mech.static_results[self.mech_dict['load_planet_carrier']][0]
+        else:
+            torque = self.mech_dict['input_torque_and_composant'][self.planet_carrier]
+        
+        
+        # print(mech.kinematic_results)
+        speed = self.mech.kinematic_results[self.mech_dict['planet_carrier_a']][0]
+        self.planet_carrier.torque_signe=torque/abs(torque)
+        self.planet_carrier.power=torque*speed
         
         power = []
         power_element = []
@@ -2071,8 +2101,18 @@ class PlanetaryGear(DessiaObject):
                 max_input[planetary]=planetary.torque_input[1]/self.number_branch_planet
         
 
-        print(self.torque_resolution_PFS(max_input))        
-        return  self.torque_resolution_PFS(max_input)
+        self.torque_resolution_PFS(max_input)
+        
+        for pivot in self.mech_dict['pivot_planets_without_double']:
+            power = self.mech.TransmittedLinkagePower(pivot, 1)
+            speed = self.mech.kinematic_results[pivot][0]
+            torque = power/speed
+            
+            # print(torque)
+            if abs(torque) > torque_max_planet:
+                torque_max_planet = abs(torque)
+     
+        return  torque_max_planet 
         
             
     def test_assembly_condition(self, number_planet, planetaries=[]):
@@ -2371,7 +2411,8 @@ class PlanetaryGear(DessiaObject):
         Cf = 0
         Cwb = 0# Speed coeff for bearings
         Cvgs = 0# Speed coeff for gear sets
-        decalage=0
+        self.mech_dict={}
+        
         alpha_gs1 = 15/360*2*3.1415
         beta_gs1 = 0
 
@@ -2381,10 +2422,10 @@ class PlanetaryGear(DessiaObject):
         part_planets = []
         part_planetaries = []
         part_planet_carrier = genmechanics.Part('planet_carrier')
-
+        self.mech_dict['part_planet_carrier']=part_planet_carrier
         ground = genmechanics.Part('ground')
-        planet_carrier_a = linkages.FrictionlessBallLinkage(ground, part_planet_carrier, [0, decalage, decalage], [0, 0, 0], 'planet_carrier_a')
-        planet_carrier_b = linkages.FrictionlessLinearAnnularLinkage(ground, part_planet_carrier, [0.1, decalage, decalage], [0, 0, 0], 'planet_carrier_b')
+        planet_carrier_a = linkages.FrictionlessBallLinkage(ground, part_planet_carrier, [0, 0,0], [0, 0, 0], 'planet_carrier_a')
+        planet_carrier_b = linkages.FrictionlessLinearAnnularLinkage(ground, part_planet_carrier, [0.1, 0, 0], [0, 0, 0], 'planet_carrier_b')
         link_planetaries_ball = []
         link_planetaries_linear_annular = []
         pivot_planets = []
@@ -2399,13 +2440,13 @@ class PlanetaryGear(DessiaObject):
                     break
             if not flag_double:
                 part_planets.append(genmechanics.Part('planet'+str(i)))
-                position=[planet.positions[0][0],planet.positions[0][1]+decalage,planet.positions[0][2]+decalage]
+                position=[planet.positions[0][0],planet.positions[0][1],planet.positions[0][2]]
                 pivot_planets.append(linkages.FrictionlessRevoluteLinkage(part_planet_carrier, part_planets[-1],
                                                                           np.array(position), [0, 0, 0], 'pivot'+str(i)))
 
             flag_double = 0
 
-
+        self.mech_dict['part_planets']=part_planets
         previous_nodes = []
 
         for i, double in  enumerate(self.doubles):
@@ -2426,7 +2467,7 @@ class PlanetaryGear(DessiaObject):
 
             else:
                  planet_double = genmechanics.Part('planet_double'+str(i))
-                 position=[planet.positions[0][0],planet.positions[0][1]+decalage,planet.positions[0][2]+decalage]
+                 position=[planet.positions[0][0],planet.positions[0][1],planet.positions[0][2]]
                  link = linkages.FrictionlessRevoluteLinkage(part_planet_carrier, planet_double,
                                                              np.array(position), [0, 0, 0], 'pivot_double'+str(i))
 
@@ -2443,13 +2484,15 @@ class PlanetaryGear(DessiaObject):
         for i, planetary in enumerate(self.planetaries):
             print(planetary.module)
             part_planetaries.append(genmechanics.Part('planetary'+str(i)))
-            position=[planetary.position[0],planetary.position[1]+decalage,planetary.position[2]+decalage]
+            position=[planetary.position[0],planetary.position[1],planetary.position[2]]
             link_planetaries_ball.append(linkages.FrictionlessBallLinkage(ground, part_planetaries[-1], np.array(position),
                                                               [0, 0, 0], 'planetary_ball'+str(i)))
             link_planetaries_linear_annular.append(linkages.FrictionlessLinearAnnularLinkage(ground, part_planetaries[-1],
                                                                                  np.array([position[0]+0.1, position[1], position[2]]),
                                                                                  [0, 0, 0], 'planetary_linear_angular'+str(i)))
-
+        self.mech_dict['part_planetaries']=part_planetaries
+        
+        
 
 
 
@@ -2462,11 +2505,11 @@ class PlanetaryGear(DessiaObject):
         for j, meshing_chain in enumerate(meshing_chains):
             previous_element = meshing_chain[0]
             if isinstance(previous_element, Planet):
-                new_position=[previous_element.positions[0][0],previous_element.positions[0][1]+decalage,previous_element.positions[0][2]+decalage]
+                new_position=[previous_element.positions[0][0],previous_element.positions[0][1],previous_element.positions[0][2]]
                 previous_position = np.array(new_position)
                 previous_part = part_planets[self.planets.index(previous_element)]
             else:
-                new_position=[previous_element.position[0],previous_element.position[1]+decalage,previous_element.position[2]+decalage]
+                new_position=[previous_element.position[0],previous_element.position[1],previous_element.position[2]]
                 previous_position = np.array(new_position)
                 previous_part = part_planetaries[self.planetaries.index(previous_element)]
 
@@ -2474,7 +2517,7 @@ class PlanetaryGear(DessiaObject):
             for i, element in enumerate(meshing_chain):
                 if i > 0:
                     if isinstance(element, Planetary):
-                        new_position2=[element.position[0],element.position[1]+decalage,element.position[2]+decalage]
+                        new_position2=[element.position[0],element.position[1],element.position[2]]
                         position = np.array(new_position2)
                         part = part_planetaries[self.planetaries.index(element)]
                         
@@ -2502,7 +2545,7 @@ class PlanetaryGear(DessiaObject):
 
 
                     else:
-                        new_position2=[element.positions[0][0],element.positions[0][1]+decalage,element.positions[0][2]+decalage]
+                        new_position2=[element.positions[0][0],element.positions[0][1],element.positions[0][2]]
                         position = np.array(new_position2)
                         part = part_planets[self.planets.index(element)]
                         
@@ -2535,11 +2578,11 @@ class PlanetaryGear(DessiaObject):
                     previous_element = element
                 
                     if isinstance(previous_element, Planet):
-                        new_position=[previous_element.positions[0][0],previous_element.positions[0][1]+decalage,previous_element.positions[0][2]+decalage]
+                        new_position=[previous_element.positions[0][0],previous_element.positions[0][1],previous_element.positions[0][2]]
                         previous_position = np.array(new_position)
                         previous_part = part_planets[self.planets.index(previous_element)]
                     else:
-                        new_position=[previous_element.position[0],previous_element.position[1]+decalage,previous_element.position[2]+decalage]
+                        new_position=[previous_element.position[0],previous_element.position[1],previous_element.position[2]]
                         previous_position = np.array(new_position)
                         previous_part = part_planetaries[self.planetaries.index(previous_element)]
 
@@ -2550,7 +2593,7 @@ class PlanetaryGear(DessiaObject):
         ax.set_ylim(-100, 100)
         new_position_gearing=[]
         for position in position_gearings:
-            new_position_gearing.append([position[0],position[1]-decalage,position[2]-decalage])
+            new_position_gearing.append([position[0],position[1],position[2]])
         vmp.plot(self.plot_data(new_position_gearing),ax)
         list_all_input = self.planetaries+[self.planet_carrier]
         loads_known = []
@@ -2582,9 +2625,25 @@ class PlanetaryGear(DessiaObject):
         for pivot in pivot_planets:
             if not pivot in pivot_planets_without_double:
                  pivot_planets_without_double.append(pivot)
-
+                 
+        self.mech_dict['pivot_planets_without_double']=pivot_planets_without_double
+        self.mech_dict['gearings_planetary']=gearings_planetary
+        self.mech_dict['part_planetaries']=part_planetaries
+        self.mech_dict['load_planet_carrier']=load_planet_carrier
+        self.mech_dict['link_planetaries_ball']=link_planetaries_ball
+        self.mech_dict['planet_carrier_a']=planet_carrier_a
+        self.mech_dict['input_torque_and_composant']=input_torque_and_composant
+        self.mech_dict['flag_load_planet_carrier_unknow']=flag_load_planet_carrier_unknow
+        
+        
         list_parts = gearings+pivot_planets_without_double+link_planetaries_ball+ link_planetaries_linear_annular+ [planet_carrier_a] + [planet_carrier_b]
-        print(list_parts)
+        
+        for i,planet in enumerate(self.planets):
+            self.mech_dict[planet]=pivot_planets[i]
+        self.mech_dict['gearing_end']=list_parts.index(gearings[-1])
+                                
+        
+       
 
 
         imposed_speeds = [(link_planetaries_ball[0], 0, 300), (link_planetaries_ball[-1], 0, 200)]
@@ -2596,45 +2655,115 @@ class PlanetaryGear(DessiaObject):
 
             for d, v in lv.items():
                 print(l.name, d, v)
-        torque_max_planet = 0
+        # torque_max_planet = 0
         
-        for i,gearing_planetary in enumerate(gearings_planetary):
+        # for i,gearing_planetary in enumerate(gearings_planetary):
             
-            power = mech.TransmittedLinkagePower(gearing_planetary, 4)    
+        #     power = mech.TransmittedLinkagePower(gearing_planetary, 4)    
             
-            if gearing_planetary.part1 in part_planetaries:
-                index=part_planetaries.index(gearing_planetary.part1)
-            else:
-                index=part_planetaries.index(gearing_planetary.part2)
-            speed = mech.kinematic_results[link_planetaries_ball[index]][0]
-            print(speed)
-            print(power)
-            self.planetaries[index].torque_signe = (power/speed)/abs(power/speed)
-            self.planetaries[index].power = power
+        #     if gearing_planetary.part1 in part_planetaries:
+        #         index=part_planetaries.index(gearing_planetary.part1)
+        #     else:
+        #         index=part_planetaries.index(gearing_planetary.part2)
+        #     speed = mech.kinematic_results[link_planetaries_ball[index]][0]
+        #     print(speed)
+        #     print(power)
+        #     self.planetaries[index].torque_signe = (power/speed)/abs(power/speed)
+        #     self.planetaries[index].power = power
    
-        if flag_load_planet_carrier_unknow:
+        # if flag_load_planet_carrier_unknow:
     
-            torque = mech.static_results[load_planet_carrier][0]
-        else:
-            torque = input_torque_and_composant[self.planet_carrier]
-        # print(mech.kinematic_results)
-        speed = mech.kinematic_results[planet_carrier_a][0]
-        self.planet_carrier.torque_signe=torque/abs(torque)
-        self.planet_carrier.power=torque*speed
+        #     torque = mech.static_results[load_planet_carrier][0]
+        # else:
+        #     torque = input_torque_and_composant[self.planet_carrier]
+        # # print(mech.kinematic_results)
+        # speed = mech.kinematic_results[planet_carrier_a][0]
+        # self.planet_carrier.torque_signe=torque/abs(torque)
+        # self.planet_carrier.power=torque*speed
         
-        for pivot in pivot_planets_without_double:
-            power = mech.TransmittedLinkagePower(pivot, 1)
-            speed = mech.kinematic_results[pivot][0]
-            torque = power/speed
+        # for pivot in pivot_planets_without_double:
+        #     power = mech.TransmittedLinkagePower(pivot, 1)
+        #     speed = mech.kinematic_results[pivot][0]
+        #     torque = power/speed
             
-            # print(torque)
-            if abs(torque) > torque_max_planet:
-                torque_max_planet = abs(torque)
+        #     # print(torque)
+        #     if abs(torque) > torque_max_planet:
+        #         torque_max_planet = abs(torque)
                 
 
         mech.GlobalSankey()
         
-        return torque_max_planet 
+        
+        
+    def update_position_mech(self):
+        
+        for planet in self.planets:
+            self.mech.linkages[linkages.index(self.mech_dict[planet])].position=planet.positions[0]
+            
+        for i in range(self.mech_dict['gearing_end']):
+            gearing=self.mech.linkages[i]
+            part1=gearing.part1
+            part2=gearing.part2
+            previous_position=[part1.position[0],part1.position[1],part1.position[2]]
+            if part1 in self.mech_dict['part_planetaries']:
+                previous_element=self.planetaries[self.mech_dict['part_planetaries'].index(part1)]
+            else:
+                previous_element=self.planets[self.mech_dict['part_planets'].index(part1)]
+            
+            if part2 in self.mech_dict['part_planetaries']:
+                new_position2=[part2.position[0],part2.position[1],part2.position[2]]
+                position = np.array(new_position2)
+                element=self.planetaries[self.mech_dict['part_planetaries'].index(part2)]
+                
+                if element.planetary_type == 'Ring':
+                    orientation_gearing = previous_position-position
+                    angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
+                    signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
+                    position_gearing = np.array([previous_position[0],
+                                                 previous_position[1]+previous_element.Z*previous_element.module*m.cos(angular)*0.5*signe,
+                                                 previous_position[2]+previous_element.Z*previous_element.module*m.sin(angular)*0.5*signe])
+
+
+
+                else:
+                    orientation_gearing = (position-previous_position)
+                    angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
+                    signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
+                    position_gearing = np.array([previous_position[0],
+                                                 previous_position[1]+previous_element.Z*previous_element.module*m.cos(angular)*0.5*signe,
+                                                 previous_position[2]+previous_element.Z*previous_element.module*m.sin(angular)*0.5*signe])
+
+
+
+
+
+
+            else:
+                new_position2=[element.positions[0][0],element.positions[0][1],element.positions[0][2]]
+                position = np.array(new_position2)
+                part = part_planets[self.planets.index(element)]
+                element=self.planets[self.mech_dict['part_planets'].index(part2)]
+                if isinstance(previous_element, Planetary) and previous_element.planetary_type == 'Ring':
+                    orientation_gearing = position-previous_position
+                    angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
+                    signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
+                    position_gearing = np.array([position[0],
+                                                 position[1]+element.Z*element.module*m.cos(angular)*0.5*signe,
+                                                 position[2]+element.Z*element.module*m.sin(angular)*0.5*signe])
+
+
+
+                else:
+
+                    orientation_gearing = (position-previous_position)
+                    angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
+                    signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
+                    position_gearing = np.array([previous_position[0],
+                                                 previous_position[1]+previous_element.Z*previous_element.module*m.cos(angular)*0.5*signe,
+                                                 previous_position[2]+previous_element.Z*previous_element.module*m.sin(angular)*0.5*signe])
+                    
+            gearing.position=position_gearing
+            
 
 
 

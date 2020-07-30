@@ -235,8 +235,8 @@ workflow_generator_run = workflow_generator_planetary_gears.run(input_values)
 planetary_gear=workflow_generator_run.output_value[0]
 planetary_gear.update_geometry()
 print(planetary_gear.planetary_gear.recirculation_power())
-# c = Client(api_url = 'http://localhost:5000')
-# r = c.create_object_from_python_object(workflow_generator_run)
+c = Client(api_url = 'http://localhost:5000')
+r = c.create_object_from_python_object(workflow_generator_run)
 
 # r2= c.create_object_from_python_object(catalog)
 

@@ -8,10 +8,12 @@ Created on Thu Mar 16 15:15:09 2017
 
 from numpy import array,zeros
 import genmechanics.geometry as geometry
-
+from dessia_common import DessiaObject
 import math
+from typing import  List, Tuple
 
 class KnownLoad:
+
     def __init__(self,part,position,euler_angles,forces,torques,name=''):
         self.part=part
         self.position=position
@@ -23,6 +25,7 @@ class KnownLoad:
         self.P=geometry.Euler2TransferMatrix(*self.euler_angles) 
         
 class UnknownLoad:
+    
     """
     :param force_directions: a list of directions for force (0,1,2)
     :param torque_directions: a list of directions for torque (0,1,2)
