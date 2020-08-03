@@ -145,8 +145,6 @@ block_for_each_planetary_gears_z_number= wf.ForEach(block_workflow_generator_pla
 
 filters = [
           {'attribute' : 'sum_Z_planetary', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'sum_speed_planetary', 'operator' : 'gt', 'bound' : -100000},
-          {'attribute' : 'speed_planet_carrer', 'operator' : 'gt', 'bound' : -100000},
           {'attribute' : 'min_Z_planetary', 'operator' : 'gt', 'bound' : -100},
           {'attribute' : 'max_Z_planetary', 'operator' : 'gt', 'bound' : -100},
           {'attribute' : 'd_min', 'operator' : 'gt', 'bound' : -100},
@@ -154,22 +152,34 @@ filters = [
           
 filter_analyze= wf.Filter(filters)
 
-list_attribute=['sum_Z_planetary','sum_speed_planetary','speed_planet_carrer','min_Z_planetary','max_Z_planetary','d_min','speed_max_planet']
+list_attribute=['sum_Z_planetary','min_Z_planetary','max_Z_planetary','d_min','speed_max_planet']
 
-block_parallel_plot=wf.ParallelPlot(list_attribute, 'Parallel_Plot')
-minimized_attributes = {'sum_Z_planetary':True,'d_min': True,'sum_speed_planetary':False,'speed_planet_carrer':False,'min_Z_planetary':True,'max_Z_planetary':True,'speed_max_planet': True}
+block_parallel_plot=wf.ParallelPlot(list_attribute, 1 ,name = 'Parallel_Plot')
+minimized_attributes = {'sum_Z_planetary':True,'d_min': True,'min_Z_planetary':True,'max_Z_planetary':True,'speed_max_planet': True}
 
 pareto_settings = ParetoSettings(minimized_attributes=minimized_attributes,
                                   enabled=True)
 
+
+display_architecture_planets_structure=wf.Display(2,'Display planet structure')
+
+display_architecture_planetary_gear=wf.Display(3,'Display Architecture planetary gear')
+
+# display_planetary_gear=wf.Display(4,'Display planetary gear')
+
 block_generator_planetary_gears=[block_planet_structure , generate_planet_structure, block_planetary_gears_architecture, 
                 generate_planetary_gears_architecture,block_for_each_planetary_gears_z_number,block_solution_sort,solution_sort,
-                block_for_each_planetary_gears_geometry,filter_analyze,block_parallel_plot]
+                block_for_each_planetary_gears_geometry,filter_analyze,block_parallel_plot,display_architecture_planets_structure,
+                display_architecture_planetary_gear]
+
+
 
 pipes_generator_planetary_gears=[wf.Pipe(block_planet_structure.outputs[0], generate_planet_structure.inputs[0]),
                                   wf.Pipe(block_planetary_gears_architecture.outputs[0], generate_planetary_gears_architecture.inputs[0]),
                                   wf.Pipe(generate_planet_structure.outputs[0], block_planetary_gears_architecture.inputs[0]),
+                                  wf.Pipe(generate_planet_structure.outputs[0], display_architecture_planets_structure.inputs[0]),
                                   wf.Pipe(generate_planetary_gears_architecture.outputs[0],block_for_each_planetary_gears_z_number.inputs[0]),
+                                  wf.Pipe(generate_planetary_gears_architecture.outputs[0],display_architecture_planetary_gear.inputs[0]),
                                   wf.Pipe(block_for_each_planetary_gears_z_number.outputs[0],block_solution_sort.inputs[0]),
                                   wf.Pipe(block_solution_sort.outputs[0],solution_sort.inputs[0]),
                                   wf.Pipe(solution_sort.outputs[0],block_for_each_planetary_gears_geometry.inputs[0]),
@@ -182,26 +192,27 @@ pipes_generator_planetary_gears=[wf.Pipe(block_planet_structure.outputs[0], gene
 
 
 workflow_generator_planetary_gears=wf.Workflow(block_generator_planetary_gears,
-                                              pipes_generator_planetary_gears,block_parallel_plot.outputs[0])
+                                              pipes_generator_planetary_gears,filter_analyze.outputs[0])
 
 
 
-input_values = {workflow_generator_planetary_gears_architecture.index(block_planet_structure.inputs[0]): 4,
+input_values = {workflow_generator_planetary_gears_architecture.index(block_planet_structure.inputs[0]): 3,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[1]): 0,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[2]): 2,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[3]): 1,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[4]):2,
-                workflow_generator_planetary_gears_architecture .index(block_planetary_gears_architecture.inputs[1]):[[500,501],[610,611],[310,315],[-380,-385]],
+                workflow_generator_planetary_gears_architecture .index(block_planetary_gears_architecture.inputs[1]):[[500,501],[610,611],[310,315],[380,385]],
 
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[1]):[[500,505],[610,615],[310,315],[380,385]] , 
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[2]):[[0.1,50],[-3.2,-0.1],[-0.8,-0.1],[1,16]],
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[2]):[[10,60],[-70,-10],[-80,-10],[100,200]],
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[3]):[7, 80] ,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[4]):[40,100] ,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[5]):3,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[6]):1000,
                 
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[1]):3,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[2]):10,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):100,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[2]):1,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):10,
                 
                 workflow_generator_planetary_gears.index(block_parallel_plot.inputs[1]):pareto_settings}
 
@@ -233,8 +244,8 @@ workflow_generator_run = workflow_generator_planetary_gears.run(input_values)
 #                   name='Planetary_gears')
 
 planetary_gear=workflow_generator_run.output_value[0]
-planetary_gear.update_geometry()
-print(planetary_gear.planetary_gear.recirculation_power())
+
+
 c = Client(api_url = 'http://localhost:5000')
 r = c.create_object_from_python_object(workflow_generator_run)
 

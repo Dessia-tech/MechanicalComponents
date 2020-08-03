@@ -260,27 +260,29 @@ class MeshingPlanetary(Meshing):
         self.type = 'GI'
         Meshing.__init__(self, nodes, name)
 
-        for node in self.nodes:
-            if isinstance(node, Planet):
-                self.Z_planet = node.Z
-            else:
-                self.Z_planetary = node.p*node.Z
+        
 
 
     def speed_system_equations(self):
+        
+        for node in self.nodes:
+            if isinstance(node, Planet):
+                Z_planet = node.Z
+            else:
+                Z_planetary = node.p*node.Z
 
-        matrix = npy.array([self.Z_planetary, self.Z_planet, -self.Z_planetary])
+        matrix = npy.array([Z_planetary, Z_planet, -Z_planetary])
         rhs = npy.array([0])
         return matrix, rhs
 
     def torque_system_equations(self):
-        # for node in self.nodes:
-        #     if isinstance(node, Planet):
-        #         Z_planet = node.Z
-        #     else:
-        #         Z_planetary = node.Z
-        matrix = npy.array([[-1/self.Z_planetary, 1/self.Z_planet],
-                            [1/self.Z_planetary, 1/self.Z_planet]])
+        for node in self.nodes:
+            if isinstance(node, Planet):
+                Z_planet = node.Z
+            else:
+                Z_planetary = node.p*node.Z
+        matrix = npy.array([[-1/Z_planetary, 1/Z_planet],
+                            [1/Z_planetary, 1/Z_planet]])
         rhs = npy.array([0, 0])
         return matrix, rhs
 
@@ -293,17 +295,16 @@ class MeshingPlanet(Meshing):
             Meshing.__init__(self, nodes, name)
             self.Z_planets = []
 
-            for node in self.nodes:
-                     self.Z_planets.append(node.Z)
+            
 
         def speed_system_equations(self):
 
-            matrix = npy.array([self.Z_planets[0], self.Z_planets[1]])
+            matrix = npy.array([self.nodes[0].Z, self.nodes[1].Z])
             rhs = npy.array([0])
             return matrix, rhs
 
         def torque_system_equations(self):
-            matrix = npy.array([-1/self.Z_planets[0], 1/self.Z_planets[1]])
+            matrix = npy.array([-1/self.nodes[0].Z, 1/self.nodes[1].Z])
             rhs = npy.array([0])
             return matrix, rhs
 
@@ -441,7 +442,7 @@ class PlanetaryGear(DessiaObject):
     '''
     def __init__(self, planetaries: List[Planetary], planets: List[Planet],
                  planet_carrier: PlanetCarrier, connections: List[Connection], number_branch_planet: int = 3,name: str = ''):
-
+        
         self.number_branch_planet=number_branch_planet
         self.d_min = 0
         self.planetaries = planetaries
@@ -455,39 +456,31 @@ class PlanetaryGear(DessiaObject):
         self.mech=0
         self.mech_dict=0
         self.sum_Z_planetary = 0
-        self.sum_speed_planetary = 0
+      
         self.max_Z_planetary = 0
         self.min_Z_planetary = 100000
         
         for planetary in self.planetaries:
             self.sum_Z_planetary += planetary.Z
-            d = planetary.module*planetary.Z
-            if d > self.d_min:
-                 self.d_min = d
+            
             if self.max_Z_planetary < planetary.Z:
                 self.max_Z_planetary = planetary.Z
 
             if self.min_Z_planetary > planetary.Z:
                 self.min_Z_planetary = planetary.Z
-            if planetary.speed_input:
-                self.sum_speed_planetary += planetary.speed_input[0]
+      
 
-        if planet_carrier.speed_input:
-            self.speed_planet_carrer = planet_carrier.speed_input[0]
 
-        for planet in self.planets:
-            if planet.positions:
-                d = planet.module*planet.Z+ 2*((planet.positions[0][0])**2+(planet.positions[0][1])**2)**0.5
 
-            if d > self.d_min:
-                self.d_min = d
+
+           
 
         self.connections = connections
         self.meshings = []
         self.doubles = []
         DessiaObject.__init__(self, name=name)
         self.position = False
-
+        
 
 
 
@@ -530,6 +523,11 @@ class PlanetaryGear(DessiaObject):
              self.doubles.append(Double([connection.nodes[0], connection.nodes[1]], 'Double'+str(i)))
 
         self.relations = self.meshings + self.doubles
+        
+        if self.planet_carrier.speed_input[0]==self.planet_carrier.speed_input[1] and self.planet_carrier.speed_input[0]==0:
+            self.speed_max_planet=0
+        else:
+            self.speed_max_planet=self.speed_max_planets()
 
     def __str__(self):
 
@@ -564,6 +562,12 @@ class PlanetaryGear(DessiaObject):
                'Planets_Double_Number:' + str(len(self.doubles)) + '\n' + \
                'Z_Planets:' + str(Z_planets) + '\n\n' + \
                 str(connections_name) + '\n\n\n'
+                
+                
+
+       
+                
+            
 
 
     def matrix_position(self, element):
@@ -614,43 +618,68 @@ class PlanetaryGear(DessiaObject):
 
 
     def plot_kinematic_graph_gear(self, coordinate, lenght, diameter,
-                                  diameter_pivot, lenght_pivot, color):
+                                  diameter_pivot, lenght_pivot, color,plot_data):
 
-        list_color = ['mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k',
-                      'mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k']
+        list_color = ['red', 'blue', 'green', 'red', 'blue', 'green',
+                      'red', 'blue', 'green']
 
-        x = npy.array([coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0],
-                       coordinate[0], coordinate[0]+lenght/2, coordinate[0]-lenght/2])
+        x = [coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0],
+                       coordinate[0], coordinate[0]+lenght/2, coordinate[0]-lenght/2]
 
-        y = npy.array([coordinate[1]+diameter_pivot/2, coordinate[1]+diameter_pivot/2, coordinate[1]+diameter_pivot/2,
-                       coordinate[1]+diameter/2, coordinate[1]+diameter/2, coordinate[1]+diameter/2])
+        y = [coordinate[1]+diameter_pivot/2, coordinate[1]+diameter_pivot/2, coordinate[1]+diameter_pivot/2,
+                       coordinate[1]+diameter/2, coordinate[1]+diameter/2, coordinate[1]+diameter/2]
 
-        plt.plot(x, y, list_color[color])
+        # plt.plot(x, y, list_color[color])
+        
+        for i in range(len(x)-1):
+                
+                point1=vm.Point2D((x[i],y[i]))
+                point2=vm.Point2D((x[i+1],y[i+1]))
+                line=vm.LineSegment2D(point1,point2)
+                plot_data.append(line.plot_data('line',color=list_color[color]))
 
-        x = npy.array([coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0],
-                       coordinate[0], coordinate[0]+lenght/2, coordinate[0]-lenght/2])
+        x = [coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0],
+                       coordinate[0], coordinate[0]+lenght/2, coordinate[0]-lenght/2]
 
-        y = npy.array([coordinate[1]-diameter_pivot/2, coordinate[1]-diameter_pivot/2, coordinate[1]-diameter_pivot/2,
-                       coordinate[1]-diameter/2, coordinate[1]-diameter/2, coordinate[1]-diameter/2])
+        y = [coordinate[1]-diameter_pivot/2, coordinate[1]-diameter_pivot/2, coordinate[1]-diameter_pivot/2,
+                       coordinate[1]-diameter/2, coordinate[1]-diameter/2, coordinate[1]-diameter/2]
 
-        plt.plot(x, y, list_color[color])
+        # plt.plot(x, y, list_color[color])
+        
+        for i in range(len(x)-1):
+                point1=vm.Point2D((x[i],y[i]))
+                point2=vm.Point2D((x[i+1],y[i+1]))
+                line=vm.LineSegment2D(point1,point2)
+                plot_data.append(line.plot_data('line',color=list_color[color]))
 
-    def plot_kinematic_graph_double(self, coordinate, diameter, lenght, color):
+    def plot_kinematic_graph_double(self, coordinate, diameter, lenght, color,plot_data):
 
-        list_color = ['mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k',
-                      'mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k']
+        list_color = ['red', 'blue', 'green', 'red', 'blue', 'green',
+                      'red', 'blue', 'green']
 
-        x = npy.array([coordinate[0], coordinate[0]+lenght])
-        y = npy.array([coordinate[1]+diameter/2, coordinate[1]+diameter/2])
+        x = [coordinate[0], coordinate[0]+lenght]
+        y = [coordinate[1]+diameter/2, coordinate[1]+diameter/2]
 
-        plt.plot(x, y, list_color[color])
+        # plt.plot(x, y, list_color[color])
+        
+        for i in range(len(x)-1):
+                point1=vm.Point2D((x[i],y[i]))
+                point2=vm.Point2D((x[i+1],y[i+1]))
+                line=vm.LineSegment2D(point1,point2)
+                plot_data.append(line.plot_data('line',color=list_color[color]))
 
-        x = npy.array([coordinate[0], coordinate[0]+lenght])
-        y = npy.array([coordinate[1]-diameter/2, coordinate[1]-diameter/2])
+        x =[coordinate[0], coordinate[0]+lenght]
+        y = [coordinate[1]-diameter/2, coordinate[1]-diameter/2]
+        
+        for i in range(len(x)-1):
+                point1=vm.Point2D((x[i],y[i]))
+                point2=vm.Point2D((x[i+1],y[i+1]))
+                line=vm.LineSegment2D(point1,point2)
+                plot_data.append(line.plot_data('line',color=list_color[color]))
 
-        plt.plot(x, y, list_color[color])
+        # plt.plot(x, y, list_color[color])
 
-    def plot_kinematic_graph_planet_carrier(self, coordinates, planet_carrier_x, planet_carrier_y):
+    def plot_kinematic_graph_planet_carrier(self, coordinates, planet_carrier_x, planet_carrier_y,plot_data):
 
         coordinate_y_min = 0
         coordinate_y_max = 0
@@ -672,24 +701,42 @@ class PlanetaryGear(DessiaObject):
         for coordinate in coordinates:
             x = [coordinate[0]-planet_carrier_x, coordinate_planet_carrier[0]]
             y = [coordinate[1], coordinate[1]]
-            plt.plot(x, y, 'r')
+            
+            for i in range(len(x)-1):
+                point1=vm.Point2D((x[i],y[i]))
+                point2=vm.Point2D((x[i+1],y[i+1]))
+                line=vm.LineSegment2D(point1,point2)
+                plot_data.append(line.plot_data('line'))
+            
+            # plt.plot(x, y, 'r')
 
         x = [coordinate_planet_carrier[0]+planet_carrier_x, coordinate_planet_carrier[0], coordinate_planet_carrier[0]]
         y = [coordinate_planet_carrier[1], coordinate_planet_carrier[1], coordinate_y_max]
-        plt.plot(x, y, 'r')
+        for i in range(len(x)-1):
+            point1=vm.Point2D((x[i],y[i]))
+            point2=vm.Point2D((x[i+1],y[i+1]))
+            line=vm.LineSegment2D(point1,point2)
+            plot_data.append(line.plot_data('line'))
+        # plt.plot(x, y, 'r')
 
         return coordinate_planet_carrier
 
-    def plot_kinematic_graph_ring(self, coordinate, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color):
+    def plot_kinematic_graph_ring(self, coordinate, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color,plot_data):
 
-        list_color = ['steelblue', 'orchid', 'darkorange', 'palegreen', 'steelblue', 'orchid', 'darkorange', 'palegreen',
-                      'steelblue', 'orchid', 'darkorange', 'palegreen', 'steelblue', 'orchid', 'darkorange', 'palegreen']
+        list_color = ['red', 'blue', 'green', 'red', 'blue', 'green',
+                      'red', 'blue', 'green']
 
         x = [coordinate[0]-lenght_gear/2, coordinate[0]+lenght_gear/2, coordinate[0], coordinate[0],
              coordinate_planet_carrier[0]+lenght_ring, coordinate_planet_carrier[0]+lenght_ring]
         y = [coordinate[1], coordinate[1], coordinate[1], diameter_ring/2, diameter_ring/2, coordinate_planet_carrier[1]]
+        
+        for i in range(len(x)-1):
+            point1=vm.Point2D((x[i],y[i]))
+            point2=vm.Point2D((x[i+1],y[i+1]))
+            line=vm.LineSegment2D(point1,point2)
+            plot_data.append(line.plot_data('line',color=list_color[color]))
 
-        plt.plot(x, y, list_color[color])
+        # plt.plot(x, y, list_color[color])
         coordinate[1] -= (abs(coordinate[1]-coordinate_planet_carrier[1]))*2
 
 
@@ -727,7 +774,7 @@ class PlanetaryGear(DessiaObject):
 
 
         '''
-
+        plot_data=[]
 
         graph_path = self.path_planetary_to_planetary()
 
@@ -744,7 +791,7 @@ class PlanetaryGear(DessiaObject):
         coordinate = [0, 0]
         index_coordinate_planet = []
         flag_first_planet = 0
-        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, 0)
+        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, 0,plot_data)
         for path in graph_path:
 
 
@@ -799,11 +846,11 @@ class PlanetaryGear(DessiaObject):
 
                         if flag_way_inv_double:
 
-                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, lenght_double/(1+i*0.2), color)
+                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, lenght_double/(1+i*0.2), color,plot_data)
                             coordinate = [coordinate[0]+lenght_double/(1+i*0.2), coordinate[1]]
 
                         else:
-                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
+                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color,plot_data)
                             coordinate = [coordinate[0]-lenght_double/(1+i*0.2), coordinate[1]]
                             inverse_relation_double.append(element)
 
@@ -815,12 +862,12 @@ class PlanetaryGear(DessiaObject):
                         if not element in previous_relation_double:
 
                             if previous_relation_double and previous_relation_double[-1] in inverse_relation_double:
-                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
+                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color,plot_data)
                                 inverse_relation_double.append(element)
                                 coordinate = [coordinate[0]-lenght_double/(1+i*0.2), coordinate[1]]
 
                             else:
-                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color)
+                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color,plot_data)
                                 coordinate = [coordinate[0]+lenght_double/(1+i*0.2), coordinate[1]]
                         else:
 
@@ -871,13 +918,13 @@ class PlanetaryGear(DessiaObject):
                         else:
 
                             index_coordinate_planet.append(element.nodes[0])
-                        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, color)
+                        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, color,plot_data)
 
 
                     previous_element = element
 
 
-        coordinate_planet_carrier = self.plot_kinematic_graph_planet_carrier(coordinate_planet, planet_carrier_x, planet_carrier_y)
+        coordinate_planet_carrier = self.plot_kinematic_graph_planet_carrier(coordinate_planet, planet_carrier_x, planet_carrier_y,plot_data)
         lenght_ring_ini = 5
         for meshing in self.meshings:
 
@@ -895,7 +942,7 @@ class PlanetaryGear(DessiaObject):
                     planetary_diameter = ((coordinate_planet[index][1]-diameter_gear/2)-coordinate_planet_carrier[1])*2
 
                     self.plot_kinematic_graph_gear([coordinate_planet[index][0], coordinate_planet_carrier[1]], lenght_gear,
-                                                   planetary_diameter, diameter_pivot, lenght_pivot, color)
+                                                   planetary_diameter, diameter_pivot, lenght_pivot, color,plot_data)
 
                 else:
                     if isinstance(meshing.nodes[0], Planetary):
@@ -907,7 +954,10 @@ class PlanetaryGear(DessiaObject):
                     diameter_ring = diameter_ring_ini-(((coordinate_planet[index][0])*10+100)/50)
                     coordinate_ring = [coordinate_planet[index][0], coordinate_planet[index][1]+diameter_gear/2]
 
-                    self.plot_kinematic_graph_ring(coordinate_ring, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color)
+                    self.plot_kinematic_graph_ring(coordinate_ring, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color,plot_data)
+                    
+        
+        return plot_data
 
 
 
@@ -930,51 +980,56 @@ class PlanetaryGear(DessiaObject):
         return li_box
 
     def plot_data(self,positions_gearing = 0):
-        plot_data = []
-        primitive_2D = []
-        meshing_chains = self.meshing_chain()
-        list_color = ['blue', 'red', 'green', 'black']
-
-        if self.d_min == 0:
-            planetary_gear = PlanetaryGear(self.planetaries, self.planets, self.planet_carrier, self.connections)
-            self.d_min = planetary_gear.d_min
-
-
-        for planetary in self.planetaries:
-
-            for i, meshing_chain in enumerate(meshing_chains):
-                if planetary in meshing_chain:
-                    color = list_color[i]
-
-
-            position = vm.Point2D((0, 0))
-
-            d = planetary.module*planetary.Z
-
-            circle = vm.Circle2D(position, d/2)
-
-            contour = vm.Contour2D([circle], True)
-            plot_data.append(contour.plot_data('contour', stroke_width=2, color=color))
-
-        for planet in self.planets:
-            d = planet.module*planet.Z
-            # for i,meshing_chain in enumerate(meshing_chains):
-            #     if planet in meshing_chain:
-            #         color=list_color[i]
-            for position in planet.positions:
-                position_2 = vm.Point2D((position[1], position[2]))
-
-                circle = vm.Circle2D(position_2, d/2)
-
+        if self.planets[0].positions:
+            plot_data = []
+            primitive_2D = []
+            meshing_chains = self.meshing_chain()
+            list_color = ['blue', 'red', 'green', 'black']
+    
+            if self.d_min == 0:
+                planetary_gear = PlanetaryGear(self.planetaries, self.planets, self.planet_carrier, self.connections)
+                self.d_min = planetary_gear.d_min
+    
+    
+            for planetary in self.planetaries:
+    
+                for i, meshing_chain in enumerate(meshing_chains):
+                    if planetary in meshing_chain:
+                        color = list_color[i]
+    
+    
+                position = vm.Point2D((0, 0))
+    
+                d = planetary.module*planetary.Z
+    
+                circle = vm.Circle2D(position, d/2)
+    
                 contour = vm.Contour2D([circle], True)
                 plot_data.append(contour.plot_data('contour', stroke_width=2, color=color))
-        if positions_gearing:
+    
+            for planet in self.planets:
+                d = planet.module*planet.Z
+                # for i,meshing_chain in enumerate(meshing_chains):
+                #     if planet in meshing_chain:
+                #         color=list_color[i]
+                for position in planet.positions:
+                    position_2 = vm.Point2D((position[1], position[2]))
+    
+                    circle = vm.Circle2D(position_2, d/2)
+    
+                    contour = vm.Contour2D([circle], True)
+                    plot_data.append(contour.plot_data('contour', stroke_width=2, color=color))
+            if positions_gearing:
+                
+                for position in positions_gearing:
+                    point=vm.Point2D((position[1], position[2]))
+                    plot_data.append(point.plot_data('.', size=5, color=color))
+            print(plot_data)
+            return plot_data
+        
+        else:
+            return self.plot_kinematic_graph()
             
-            for position in positions_gearing:
-                point=vm.Point2D((position[1], position[2]))
-                plot_data.append(point.plot_data('.', size=5, color=color))
-        print(plot_data)
-        return plot_data
 
 
 
@@ -2028,8 +2083,9 @@ class PlanetaryGear(DessiaObject):
                 speed_max_planetary = self.speed_solve({planetary:planetary.speed_input[0], self.planet_carrier:self.planet_carrier.speed_input[1]})
 
             for planet in self.planets:
-
+                
                 if abs(speed_max_planetary[planet]) > speed_max:
+                    
                     speed_max = abs(speed_max_planetary[planet])
 
 
@@ -2044,7 +2100,7 @@ class PlanetaryGear(DessiaObject):
         # print(first_input)
         if not self.mech:
             for i in range(len(self.planetaries)-1):
-                first_input[self.planetaries[i]]=self.planetaries[i].torque_input[0]
+                first_input[self.planetaries[i]]=self.planetaries[i].torque_input[0]/self.number_branch_planet
                 
             self.torque_resolution_PFS(first_input)
         
@@ -2059,8 +2115,7 @@ class PlanetaryGear(DessiaObject):
             else:
                 index=self.mech_dict['part_planetaries'].index(gearing_planetary.part2)
             speed = self.mech.kinematic_results[self.mech_dict['link_planetaries_ball'][index]][0]
-            print(speed)
-            print(power)
+ 
             self.planetaries[index].torque_signe = (power/speed)/abs(power/speed)
             self.planetaries[index].power = power
    
@@ -2084,7 +2139,7 @@ class PlanetaryGear(DessiaObject):
         power.append(self.planet_carrier.power)
         power_element.append(self.planet_carrier)
         planetary_input=[]
-        print(power)
+ 
         for i in range(len(self.planetaries)-1):
             power_max=max(power)
             planetary_input.append(power_element[power.index(power_max)])
@@ -2093,7 +2148,7 @@ class PlanetaryGear(DessiaObject):
 
             
         max_input={}
-        
+   
         for planetary in planetary_input:
             if planetary.torque_signe==-1:
                 max_input[planetary]=planetary.torque_input[0]/self.number_branch_planet
@@ -2246,7 +2301,7 @@ class PlanetaryGear(DessiaObject):
 
                 rhs[i] = rhs_relation[0]
 
-
+        
         return system_matrix, rhs
 
     def speed_solve(self, input_speeds_and_composants):
@@ -2588,13 +2643,13 @@ class PlanetaryGear(DessiaObject):
 
 
   
-        fig, ax = plt.subplots()
-        ax.set_xlim(-100, 100)
-        ax.set_ylim(-100, 100)
-        new_position_gearing=[]
-        for position in position_gearings:
-            new_position_gearing.append([position[0],position[1],position[2]])
-        vmp.plot(self.plot_data(new_position_gearing),ax)
+        # fig, ax = plt.subplots()
+        # ax.set_xlim(-100, 100)
+        # ax.set_ylim(-100, 100)
+        # new_position_gearing=[]
+        # for position in position_gearings:
+        #     new_position_gearing.append([position[0],position[1],position[2]])
+        # vmp.plot(self.plot_data(new_position_gearing),ax)
         list_all_input = self.planetaries+[self.planet_carrier]
         loads_known = []
         load_planet_carrier = 0
@@ -2696,25 +2751,34 @@ class PlanetaryGear(DessiaObject):
         
         
     def update_position_mech(self):
+        if not self.mech:
+            self.torque_max_planets()
         
         for planet in self.planets:
-            self.mech.linkages[linkages.index(self.mech_dict[planet])].position=planet.positions[0]
+            
+           
+            self.mech.linkages[self.mech.linkages.index(self.mech_dict[planet])].position=npy.array(planet.positions[0])
             
         for i in range(self.mech_dict['gearing_end']):
             gearing=self.mech.linkages[i]
             part1=gearing.part1
             part2=gearing.part2
-            previous_position=[part1.position[0],part1.position[1],part1.position[2]]
+           
             if part1 in self.mech_dict['part_planetaries']:
                 previous_element=self.planetaries[self.mech_dict['part_planetaries'].index(part1)]
+                previous_position=previous_element.position
             else:
                 previous_element=self.planets[self.mech_dict['part_planets'].index(part1)]
+                previous_position=previous_element.positions[0]
+                
+            
             
             if part2 in self.mech_dict['part_planetaries']:
-                new_position2=[part2.position[0],part2.position[1],part2.position[2]]
-                position = np.array(new_position2)
-                element=self.planetaries[self.mech_dict['part_planetaries'].index(part2)]
                 
+                
+                element=self.planetaries[self.mech_dict['part_planetaries'].index(part2)]
+                new_position2=element.position
+                position = np.array(new_position2)
                 if element.planetary_type == 'Ring':
                     orientation_gearing = previous_position-position
                     angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
@@ -2739,10 +2803,11 @@ class PlanetaryGear(DessiaObject):
 
 
             else:
-                new_position2=[element.positions[0][0],element.positions[0][1],element.positions[0][2]]
-                position = np.array(new_position2)
-                part = part_planets[self.planets.index(element)]
+               
+              
                 element=self.planets[self.mech_dict['part_planets'].index(part2)]
+                new_position2=element.positions[0]
+                position = np.array(new_position2)
                 if isinstance(previous_element, Planetary) and previous_element.planetary_type == 'Ring':
                     orientation_gearing = position-previous_position
                     angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
@@ -2931,8 +2996,11 @@ class PlanetaryGear(DessiaObject):
         
     
     def recirculation_power(self):
+        first_input={}
         if not self.mech:
-            self.torque_resolution_PFS({self.planetaries[0]:1/self.number_branch_planet, self.planetaries[1]:2/self.number_branch_planet})
+            for i in range(len(self.planetaries)-1):
+               first_input[self.planetaries[i]]=self.planetaries[i].torque_input[0]/self.number_branch_planet
+            self.torque_resolution_PFS(first_input)
         G=self.mech.DrawPowerGraph()
         
         G2=G.copy()
@@ -2954,8 +3022,11 @@ class PlanetaryGear(DessiaObject):
             circle_name=[]
             for name in circle:
                 circle_name.append(name.name)
+            # print(circle_name)
                 
-            print(circle_name)
+       
+                
+            
             
         power_circles=[]    
         for circle in circles:
@@ -3008,7 +3079,7 @@ class PlanetaryGear(DessiaObject):
                 neighbors=list(G2.neighbors(node))
                 for neighbor in neighbors:
                     if  not neighbor in circle:
-                        print(neighbor.name)
+                        
                         if isinstance(neighbor,loads.KnownLoad)or isinstance(neighbor,loads.SimpleUnknownLoad) :
                             power=self.mech.LoadPower(neighbor)
                             
@@ -3017,7 +3088,7 @@ class PlanetaryGear(DessiaObject):
                                 power=self.mech.TransmittedLinkagePower(neighbor,0)
                             else:
                                 power=self.mech.TransmittedLinkagePower(neighbor,1)
-                        print(power)
+                        
                         if power>0:
                             power_input[-1]+=power
                 
@@ -3029,7 +3100,7 @@ class PlanetaryGear(DessiaObject):
         for i,power in enumerate(power_circles):
             power_difference.append([(power[0]/power_input[i])*100,(power[1]/power_input[i])*100])
         
-        print(power_difference)
+        
         return power_difference
       
 
@@ -3038,6 +3109,8 @@ class PlanetaryGear(DessiaObject):
 
 
 class PositionMinMaxPlanetaryGear(DessiaObject):
+
+     # _non_serializable_attributes=['planetary_gear']
      def __init__(self, planetary_gear: PlanetaryGear, name: str = '', positions_min_max: List[float] = '', modules_min_max: List[float] = ''):
 
          self.planetary_gear = planetary_gear
@@ -3048,22 +3121,22 @@ class PositionMinMaxPlanetaryGear(DessiaObject):
              self.positions_min_max = []
              self.modules_min_max = []
 
-         DessiaObject.__init__(self, name=self.planetary_gear.name+'PostionMinMax')
+         DessiaObject.__init__(self, name=planetary_gear.name+'PostionMinMax')
 
          element_list = planetary_gear.planets+ planetary_gear.planetaries
          for element in element_list:
              self.positions_min_max.append([0, 0])
              self.modules_min_max.append([0, 0])
 
-     def enter_position(self, position, element, min_max):
-        element_list = self.planetary_gear.planets+ self.planetary_gear.planetaries
+     def enter_position(self, position,planetary_gear, element, min_max):
+        element_list = planetary_gear.planets+ planetary_gear.planetaries
         if min_max == 'Min':
             self.positions_min_max[element_list.index(element)][0] = position
         if min_max == 'Max':
             self.positions_min_max[element_list.index(element)][1] = position
 
-     def enter_module(self, module, element, min_max):
-        element_list = self.planetary_gear.planets+ self.planetary_gear.planetaries
+     def enter_module(self, module,planetary_gear, element, min_max):
+        element_list = planetary_gear.planets+ planetary_gear.planetaries
         if min_max == 'Min':
             self.modules_min_max[element_list.index(element)][0] = module
         if min_max == 'Max':
@@ -3091,8 +3164,8 @@ class PlanetaryGearResult(DessiaObject):
     _standalone_in_db = True
 
     _generic_eq = True
-
-    def __init__(self, planetary_gear: PlanetaryGear, position_min_max: PositionMinMaxPlanetaryGear, geometry_min_max: str = 'Max'):
+    _non_serializable_attributes=['planetaries', 'planets','planet_carrier','connections','doubles']
+    def __init__(self, planetary_gear: PlanetaryGear, position_min_max: PositionMinMaxPlanetaryGear, geometry_min_max: str = 'Min'):
         self.planetary_gear = planetary_gear
         self.geometry_min_max = geometry_min_max
         self.position_min_max = position_min_max
@@ -3102,19 +3175,37 @@ class PlanetaryGearResult(DessiaObject):
         self.connections=planetary_gear.connections
         self.doubles=planetary_gear.doubles
         
-        
-        self.speed_max_planet = self.planetary_gear.speed_max_planets()
-        self.torque_max_planet=self.planetary_gear.torque_max_planets()
+        if not self.planetary_gear.speed_max_planet:
+            self.speed_max_planet = self.planetary_gear.speed_max_planets()
+            self.planetary_gear.speed_max_planet=self.speed_max_planet
+        else:
+            self.speed_max_planet =self.planetary_gear.speed_max_planet
+            
+        # self.torque_max_planet=0
         
         self.d_min = self.planetary_gear.d_min
         self.sum_Z_planetary = self.planetary_gear.sum_Z_planetary
-        self.sum_speed_planetary = self.planetary_gear.sum_speed_planetary
+        # self.sum_speed_planetary = self.planetary_gear.sum_speed_planetary
 
         self.max_Z_planetary = self.planetary_gear.max_Z_planetary
         self.min_Z_planetary = self.planetary_gear.min_Z_planetary
-        self.speed_planet_carrer = self.planetary_gear.speed_planet_carrer
+        # self.speed_planet_carrer = self.planetary_gear.speed_planet_carrer
 
         DessiaObject.__init__(self, name=self.planetary_gear.name+'Result')
+        self.update_geometry()
+        for planetary in self.planetaries:
+            d = planetary.module*planetary.Z
+            if d > self.d_min:
+                 self.d_min = d
+                 
+        for planet in self.planets:
+            if planet.positions:
+                d = planet.module*planet.Z+ 2*((planet.positions[0][0])**2+(planet.positions[0][1])**2)**0.5
+
+            if d > self.d_min:
+                self.d_min = d
+          
+        
         
         
     def __str__(self):
@@ -3202,7 +3293,9 @@ class PlanetaryGearResult(DessiaObject):
     def update_torque(self, input_torques_and_composants):
         element_list_2=copy.copy(self.planetaries)
         element_list_3=copy.copy(self.planetaries)
+        
         for element in input_torques_and_composants:
+            print(input_torques_and_composants[element])
             element.torque_input=input_torques_and_composants[element]
             if element in element_list_2:
                 element_list_2.remove(element)
@@ -3227,6 +3320,7 @@ class PlanetaryGearResult(DessiaObject):
                min_input_1[element]=element.torque_input[0]
                
             else:
+                print(element.torque_input)
                 max_input_1[element]=element.torque_input[0]
                 min_input_1[element]=element.torque_input[1]
                 
@@ -3468,41 +3562,62 @@ class PlanetsStructure(DessiaObject):
 
 
 
-    def plot_kinematic_graph_gear(self, coordinate, lenght, diameter, diameter_pivot, lenght_pivot, color):
-        list_color = ['mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k',
-                      'mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k']
+    def plot_kinematic_graph_gear(self, coordinate, lenght, diameter, diameter_pivot, lenght_pivot, color,plot_data):
+        list_color = ['red', 'blue', 'green', 'red', 'blue', 'green',
+                      'red', 'blue', 'green']
 
-        x = npy.array([coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0],
-                       coordinate[0], coordinate[0]+lenght/2, coordinate[0]-lenght/2])
+        x = [coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0],
+                       coordinate[0], coordinate[0]+lenght/2, coordinate[0]-lenght/2]
 
-        y = npy.array([coordinate[1]+diameter_pivot/2, coordinate[1]+diameter_pivot/2, coordinate[1]+diameter_pivot/2,
-                       coordinate[1]+diameter/2, coordinate[1]+diameter/2, coordinate[1]+diameter/2])
+        y = [coordinate[1]+diameter_pivot/2, coordinate[1]+diameter_pivot/2, coordinate[1]+diameter_pivot/2,
+                       coordinate[1]+diameter/2, coordinate[1]+diameter/2, coordinate[1]+diameter/2]
+        
+        for i in range(len(x)-1):
+            point1=vm.Point2D((x[i],y[i]))
+            point2=vm.Point2D((x[i+1],y[i+1]))
+            line=vm.LineSegment2D(point1,point2)
+            plot_data.append(line.plot_data('line',color=list_color[color]))
 
-        plt.plot(x, y, list_color[color])
+        # plt.plot(x, y, list_color[color])
 
-        x = npy.array([coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0], coordinate[0],
-                       coordinate[0]+lenght/2, coordinate[0]-lenght/2])
+        x = [coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0], coordinate[0],
+                       coordinate[0]+lenght/2, coordinate[0]-lenght/2]
 
-        y = npy.array([coordinate[1]-diameter_pivot/2, coordinate[1]-diameter_pivot/2, coordinate[1]-diameter_pivot/2,
-                       coordinate[1]-diameter/2, coordinate[1]-diameter/2, coordinate[1]-diameter/2])
+        y = [coordinate[1]-diameter_pivot/2, coordinate[1]-diameter_pivot/2, coordinate[1]-diameter_pivot/2,
+                       coordinate[1]-diameter/2, coordinate[1]-diameter/2, coordinate[1]-diameter/2]
+        for i in range(len(x)-1):
+            point1=vm.Point2D((x[i],y[i]))
+            point2=vm.Point2D((x[i+1],y[i+1]))
+            line=vm.LineSegment2D(pont1,point2)
+            plot_data.append(line.plot_data('line',color=list_color[color]))
+        # plt.plot(x, y, list_color[color])
 
-        plt.plot(x, y, list_color[color])
+    def plot_kinematic_graph_double(self, coordinate, diameter, lenght, color,plot_data):
+        list_color = ['red', 'blue', 'green', 'red', 'blue', 'green',
+                      'red', 'blue', 'green']
+        line=[]
+        x = [coordinate[0], coordinate[0]+lenght]
+        y = [coordinate[1]+diameter/2, coordinate[1]+diameter/2]
+        for i in range(len(x)-1):
+            point1=vm.Point2D((x[i],y[i]))
+            point2=vm.Point2D((x[i+1],y[i+1]))
+            line=vm.LineSegment2D(point1,point2)
+            plot_data.append(line.plot_data('line',color=list_color[color]))
+            
+        
+        # plt.plot(x, y, list_color[color])
 
-    def plot_kinematic_graph_double(self, coordinate, diameter, lenght, color):
-        list_color = ['mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k',
-                      'mediumblue', 'purple', 'green', 'k', 'mediumblue', 'purple', 'green', 'k']
+        x = [coordinate[0], coordinate[0]+lenght]
+        y = [coordinate[1]-diameter/2, coordinate[1]-diameter/2]
+        for i in range(len(x)-1):
+            point1=vm.Point2D((x[i],y[i]))
+            point2=vm.Point2D((x[i+1],y[i+1]))
+            line=vm.LineSegment2D(point1,point2)
+            plot_data.append(line.plot_data('line',color=list_color[color]))
 
-        x = npy.array([coordinate[0], coordinate[0]+lenght])
-        y = npy.array([coordinate[1]+diameter/2, coordinate[1]+diameter/2])
+        # plt.plot(x, y, list_color[color])
 
-        plt.plot(x, y, list_color[color])
-
-        x = npy.array([coordinate[0], coordinate[0]+lenght])
-        y = npy.array([coordinate[1]-diameter/2, coordinate[1]-diameter/2])
-
-        plt.plot(x, y, list_color[color])
-
-    def plot_kinematic_graph_planet_carrier(self, coordinates, planet_carrier_x, planet_carrier_y):
+    def plot_kinematic_graph_planet_carrier(self, coordinates, planet_carrier_x, planet_carrier_y,plot_data):
         coordinate_y_min = 0
         coordinate_y_max = 0
         coordinate_x_max = 0
@@ -3519,17 +3634,28 @@ class PlanetsStructure(DessiaObject):
         for coordinate in coordinates:
             x = [coordinate[0]-planet_carrier_x, coordinate_planet_carrier[0]]
             y = [coordinate[1], coordinate[1]]
-            plt.plot(x, y, 'r')
+            for i in range(len(x)-1):
+                point1=vm.Point2D((x[i],y[i]))
+                point2=vm.Point2D((x[i+1],y[i+1]))
+                line=vm.LineSegment2D(point1,point2)
+                plot_data.append(line.plot_data('line',color=list_color[color]))
+            # plt.plot(x, y, 'r')
 
         x = [coordinate_planet_carrier[0]+planet_carrier_x, coordinate_planet_carrier[0], coordinate_planet_carrier[0]]
         y = [coordinate_planet_carrier[1], coordinate_planet_carrier[1], coordinate_y_max]
-        plt.plot(x, y, 'r')
+        
+        for i in range(len(x)-1):
+            point1=vm.Point2D((x[i],y[i]))
+            point2=vm.Point2D((x[i+1],y[i+1]))
+            line=vm.LineSegment2D(point1,point2)
+            plot_data.append(line.plot_data('line',color=list_color[color]))
+        # plt.plot(x, y, 'r')
 
 
 
 
 
-    def plot_kinematic_graph(self, lenght_gear=0.1, diameter_gear=1, lenght_double=2, diameter_pivot=0.2,
+    def plot_data(self, lenght_gear=0.1, diameter_gear=1, lenght_double=2, diameter_pivot=0.2,
                              lenght_pivot=0.5, planet_carrier_x=2, planet_carrier_y=2):
         '''
 
@@ -3573,10 +3699,10 @@ class PlanetsStructure(DessiaObject):
         coordinate_planet = [[0, 0]]
         coordinate = [0, 0]
 
-        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, 0)
+        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, 0, plot_data)
         for path in graph_path:
 
-
+            plot_data=[]
             flag_way_inv_meshing = 0
             flag_way_inv_double = 0
             coordinate = [0, 0]
@@ -3618,12 +3744,12 @@ class PlanetsStructure(DessiaObject):
 
                         if flag_way_inv_double:
 
-                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color)
+                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color,plot_data)
                             coordinate = [coordinate[0]+lenght_double/(1+i*0.2), coordinate[1]]
 
                         else:
 
-                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
+                            self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color,plot_data)
                             coordinate = [coordinate[0]-lenght_double/(1+i*0.2), coordinate[1]]
                             inverse_relation_double.append(element)
 
@@ -3636,13 +3762,13 @@ class PlanetsStructure(DessiaObject):
 
                             if previous_relation_double and previous_relation_double[-1] in inverse_relation_double:
 
-                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color)
+                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, -lenght_double/(1+i*0.2), color, plot_data)
                                 inverse_relation_double.append(element)
                                 coordinate = [coordinate[0]-lenght_double/(1+i*0.2), coordinate[1]]
 
 
                             else:
-                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color)
+                                self.plot_kinematic_graph_double(coordinate, diameter_pivot, +lenght_double/(1+i*0.2), color, plot_data)
                                 coordinate = [coordinate[0]+lenght_double/(1+i*0.2), coordinate[1]]
                         else:
 
@@ -3704,12 +3830,14 @@ class PlanetsStructure(DessiaObject):
 
                     if  not coordinate in coordinate_planet:
                         coordinate_planet.append(coordinate)
-                        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, color)
+                        self.plot_kinematic_graph_gear(coordinate, lenght_gear, diameter_gear, diameter_pivot, lenght_pivot, color, plot_data)
 
                     previous_element = element
 
 
-        self.plot_kinematic_graph_planet_carrier(coordinate_planet, planet_carrier_x, planet_carrier_y)
+        self.plot_kinematic_graph_planet_carrier(coordinate_planet, planet_carrier_x, planet_carrier_y, plot_data)
+        
+        return plot_data
 
 
 
