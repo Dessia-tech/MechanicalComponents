@@ -425,7 +425,7 @@ class PlanetaryGear(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes=['mech', 'mech_dict']
     _generic_eq = True
-    # _non_serializable_attributes =
+    
     '''
     Define a Planetary Gears
 
@@ -441,7 +441,11 @@ class PlanetaryGear(DessiaObject):
     :type name: str,optional
     '''
     def __init__(self, planetaries: List[Planetary], planets: List[Planet],
-                 planet_carrier: PlanetCarrier, connections: List[Connection], number_branch_planet: int = 3,name: str = ''):
+                 planet_carrier: PlanetCarrier, connections: List[Connection], number_branch_planet: int = 3,name: str = '', number_group_solution_planet_structure: int =0,
+                 number_group_solution_architecture:int =0):
+        
+        self.number_group_solution_planet_structure=number_group_solution_planet_structure
+        self.number_group_solution_architecture=number_group_solution_architecture
         
         self.number_branch_planet=number_branch_planet
         self.d_min = 0
@@ -528,6 +532,15 @@ class PlanetaryGear(DessiaObject):
             self.speed_max_planet=0
         else:
             self.speed_max_planet=self.speed_max_planets()
+            
+        self.number_ring=0
+        self.number_sun=0
+            
+        for planetary in self.planetaries:
+            if planetary.planetary_type=='Ring':
+                self.number_ring+=1
+            else:
+                self.number_sun+=1
 
     def __str__(self):
 
@@ -2998,9 +3011,11 @@ class PlanetaryGear(DessiaObject):
     def recirculation_power(self):
         first_input={}
         if not self.mech:
-            for i in range(len(self.planetaries)-1):
-               first_input[self.planetaries[i]]=self.planetaries[i].torque_input[0]/self.number_branch_planet
-            self.torque_resolution_PFS(first_input)
+            # for i in range(len(self.planetaries)-1):
+            #    first_input[self.planetaries[i]]=self.planetaries[i].torque_input[0]/self.number_branch_planet
+            # self.torque_resolution_PFS(first_input)
+            
+            self.torque_max_planets
         G=self.mech.DrawPowerGraph()
         
         G2=G.copy()
@@ -3419,17 +3434,18 @@ class PlanetsStructure(DessiaObject):
 
 
     '''
+    _standalone_in_db = True
 
-    def __init__(self, planets: List[Planet], connections: List[Connection], name: str = ''):
-
+    _generic_eq = True
+    def __init__(self, planets: List[Planet], connections: List[Connection], name: str = '',number_group_solution_planet_structure: int =0):
+        self.number_group_solution_planet_structure=number_group_solution_planet_structure
         self.planets = planets
         self.connections = connections
 
         self.meshings = []
         self.doubles = []
         DessiaObject.__init__(self, name=name)
-
-
+        
         for i, connection in  enumerate(self.connections):
 
           if connection.connection_type != 'D':
@@ -3440,6 +3456,9 @@ class PlanetsStructure(DessiaObject):
              self.doubles.append(Double([connection.nodes[0], connection.nodes[1]], 'Double'+str(i)))
 
         self.relations = self.meshings + self.doubles
+        
+        self.number_double=len(self.doubles)
+        self.number_meshing=len(self.meshings)
 
     def graph(self):
 

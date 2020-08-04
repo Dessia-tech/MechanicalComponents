@@ -679,7 +679,9 @@ class GeneratorPlanetsStructure(DessiaObject):
                 planet_structure = list_possibilities[node[2]]
                 # planet_structure.plot_kinematic_graph()
                 if self.solution_sort(planet_structure, list_solution):
+                    planet_structure.number_group_solution_planet_structure=len(list_solution)
                     list_solution.append(planet_structure)
+                    
 
                 tree.SetCurrentNodeNumberPossibilities(0)
 
@@ -1100,6 +1102,9 @@ class GeneratorPlanetaryGearsArchitecture(DessiaObject):
             if len(node) == 1:
              planet_architecture = self.planet_structures[node[0]]
              list_planetary_gears = self.planetaries_possibilities(planetaries, planet_architecture, planet_carrier)
+             for planetary_gear in list_planetary_gears:
+                 planetary_gear.number_group_solution_planet_structure=node[0]
+                 
              tree.SetCurrentNodeNumberPossibilities(len(list_planetary_gears))
              list_check = []
 
@@ -1109,6 +1114,7 @@ class GeneratorPlanetaryGearsArchitecture(DessiaObject):
 
 
                 if self.solution_sort(planetary_gear, list_check):
+                    planetary_gear.number_group_solution_architecture=len(list_solution)
                     list_solution.append(planetary_gear)
                     list_check.append(planetary_gear)
                 tree.SetCurrentNodeNumberPossibilities(0)
@@ -2555,7 +2561,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
 
                         m2 = M[i]
                         
-                        f2.extend(self.function_minimize_equation(meshing_chain, X, Y, m2))
+                        f2.extend(self.function_minimize_equation(meshing_chain, X, Y, m2)*100)
 
                         min_max_x, x0 = self.function_minimize_inequation_meshing_chain_min_max(meshing_chain, m2)
 
@@ -2588,19 +2594,20 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                                     index_x += 1
 
 
-                    # index_x = 0
-                    # planetary_gear.planets[0].positions[0]=[planetary_gear.planets[0].positions[0][0],x[index_x],0]
-                    # for i, planets in enumerate(planetary_gear.planets[1:]):
-                    #     positionz= x[index_x]
-                    #     index_x += 1
-                    #     positiony = x[index_x]
-                    #     index_x += 1
-                    #     planets.positions[0]=[planets.positions[0][0],positiony,positionz]
-                    # planetary_gear.update_position_mech()
-                    # power_recirculation=planetary_gear.recirculation_power()
-                    # for power in power_recirculation:
-                    #     if power[1]>100:
-                    #         f2.append(power[1]/10000)
+                    index_x = 0
+                    planetary_gear.planets[0].positions[0]=[planetary_gear.planets[0].positions[0][0],x[index_x],0]
+                    for i, planets in enumerate(planetary_gear.planets[1:]):
+                        positionz= x[index_x]
+                        index_x += 1
+                        positiony = x[index_x]
+                        index_x += 1
+                        planets.positions[0]=[planets.positions[0][0],positiony,positionz]
+                    planetary_gear.update_position_mech()
+                    power_recirculation=planetary_gear.recirculation_power()
+                    for power in power_recirculation:
+                        if power[1]>100:
+                            
+                            f2.append(power[1]/100)
                             
 
 
@@ -2894,12 +2901,78 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
 class SolutionSort():
 
     def __init__(self, planetary_gears_list: List[List[PlanetaryGear]]):
+        
         self.planetary_gears_list = planetary_gears_list
+        
+    def list_planetary_gears(self):
+        planetary_gears=[]
+        list_solution = []
+        Z_planetary = []
+        for planetary_gear in self.planetary_gears_list:
+            planetary_gears.extend(planetary_gear)
+        for planetary_gear in planetary_gears:
+            Z = []
+            for planetary in planetary_gear.planetaries:
+                Z.append(planetary.Z)
+            if not Z  in Z_planetary:
+                Z_planetary.append(Z)
+                list_solution.append(planetary_gear)
+                if len(list_solution) > 100:
+                    
+                    return list_solution
+        return list_solution
+                
+                
+                
+        # for planetary_gear in self.planetary_gears_list:
+        #     if len(planetary_gear)>10:
+        #          for planetary in planetary_gear:
+        #             planetary.sum_Z_planetary = 0
+  
+        #             planetary.max_Z_planetary = 0
+        #             planetary.min_Z_planetary = 100000
+                    
+        #             for planetary2 in planetary.planetaries:
+        #                 planetary.sum_Z_planetary += planetary2.Z
+                        
+        #                 if planetary.max_Z_planetary < planetary2.Z:
+        #                     planetary.max_Z_planetary = planetary2.Z
+            
+        #                 if planetary.min_Z_planetary > planetary2.Z:
+        #                     planetary.min_Z_planetary = planetary2.Z
+                    
+        #          planetary_gears.extend((planetary_gear[:10]))
+        #          for planetary in planetary_gears:
+        #              print(planetary)
+                 
+                 
+        #     else:
+        #         for planetary in planetary_gear:
+        #             planetary.sum_Z_planetary = 0
+      
+        #             planetary.max_Z_planetary = 0
+        #             planetary.min_Z_planetary = 100000
+                    
+        #             for planetary2 in planetary.planetaries:
+        #                 planetary.sum_Z_planetary += planetary2.Z
+                        
+        #                 if planetary.max_Z_planetary < planetary2.Z:
+        #                     planetary.max_Z_planetary = planetary2.Z
+            
+        #                 if planetary.min_Z_planetary > planetary2.Z:
+        #                     planetary.min_Z_planetary = planetary2.Z
+
+        #         planetary_gears.extend(copy.deepcopy(planetary_gear))
+                
+            
+        #     if len(planetary_gears)>10:
+        #         return planetary_gears
+        
+        # return planetary_gears
 
     def solution_sort(self):
         planetary_gears_list = self.planetary_gears_list
-        print(1)
-        print(len(self.planetary_gears_list))
+      
         list_solution = []
         Z_planetary = []
         planetary_gears = []
@@ -2912,13 +2985,10 @@ class SolutionSort():
             if not Z  in Z_planetary:
                 Z_planetary.append(Z)
                 list_solution.append(planetary_gear)
-                if len(list_solution) > 1:
+                if len(list_solution) > 39:
                     print(len(planetary_gears))
                     return list_solution
-        print(1)
-        print(1)
-        print(planetary_gears)
-        print(len(list_solution))
+        
         return list_solution
 
 

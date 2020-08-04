@@ -42,6 +42,7 @@ block_planetary_gear_result=wf.InstanciateModel(pg.PlanetaryGearResult, name='Pl
 
 block_solution_sort = wf.InstanciateModel(pg_generator.SolutionSort, name='SolutionSort')
 solution_sort=wf.ModelMethod(pg_generator.SolutionSort,  'solution_sort', name='solution_sort')
+list_planetary_gears=wf.ModelMethod(pg_generator.SolutionSort,  'list_planetary_gears', name='list_planetary_gears')
 
 
 
@@ -154,23 +155,26 @@ filter_analyze= wf.Filter(filters)
 
 list_attribute=['sum_Z_planetary','min_Z_planetary','max_Z_planetary','d_min','speed_max_planet']
 
-block_parallel_plot=wf.ParallelPlot(list_attribute, 1 ,name = 'Parallel_Plot')
-minimized_attributes = {'sum_Z_planetary':True,'d_min': True,'min_Z_planetary':True,'max_Z_planetary':True,'speed_max_planet': True}
+block_parallel_plot=wf.ParallelPlot(list_attribute, 4 ,name = 'Parallel_Plot')
+minimized_attributes = {'sum_Z_planetary':False,'d_min': True,'min_Z_planetary':True,'max_Z_planetary':True,'speed_max_planet': True}
 
 pareto_settings = ParetoSettings(minimized_attributes=minimized_attributes,
                                   enabled=True)
 
 
-display_architecture_planets_structure=wf.Display(2,'Display planet structure')
+list_attribute2=['number_meshing','number_double', 'number_group_solution_planet_structure']
+display_architecture_planets_structure=wf.ParallelPlot(list_attribute2,1,name='Display planet structure')
 
-display_architecture_planetary_gear=wf.Display(3,'Display Architecture planetary gear')
+list_attribute3=['number_ring','number_sun','number_group_solution_planet_structure','number_group_solution_architecture']
+display_architecture_planetary_gear=wf.ParallelPlot(list_attribute3,2,name='Display Architecture planetary gear')
 
-# display_planetary_gear=wf.Display(4,'Display planetary gear')
+list_attribute4=['sum_Z_planetary','min_Z_planetary','max_Z_planetary','speed_max_planet','number_group_solution_architecture']
+display_planetary_gear_Z=wf.ParallelPlot(list_attribute4,3,'Display planetary gear Z')
 
 block_generator_planetary_gears=[block_planet_structure , generate_planet_structure, block_planetary_gears_architecture, 
                 generate_planetary_gears_architecture,block_for_each_planetary_gears_z_number,block_solution_sort,solution_sort,
                 block_for_each_planetary_gears_geometry,filter_analyze,block_parallel_plot,display_architecture_planets_structure,
-                display_architecture_planetary_gear]
+                display_architecture_planetary_gear,list_planetary_gears,display_planetary_gear_Z]
 
 
 
@@ -182,6 +186,8 @@ pipes_generator_planetary_gears=[wf.Pipe(block_planet_structure.outputs[0], gene
                                   wf.Pipe(generate_planetary_gears_architecture.outputs[0],display_architecture_planetary_gear.inputs[0]),
                                   wf.Pipe(block_for_each_planetary_gears_z_number.outputs[0],block_solution_sort.inputs[0]),
                                   wf.Pipe(block_solution_sort.outputs[0],solution_sort.inputs[0]),
+                                  wf.Pipe(block_solution_sort.outputs[0],list_planetary_gears.inputs[0]),
+                                  wf.Pipe(list_planetary_gears.outputs[0],display_planetary_gear_Z.inputs[0]),
                                   wf.Pipe(solution_sort.outputs[0],block_for_each_planetary_gears_geometry.inputs[0]),
                                   wf.Pipe(block_for_each_planetary_gears_geometry.outputs[0],filter_analyze.inputs[0]),
                                   wf.Pipe(filter_analyze.outputs[0],block_parallel_plot.inputs[0])]

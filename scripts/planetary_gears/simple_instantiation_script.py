@@ -89,9 +89,9 @@ connections=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2
 connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'), pg.Connection([planet_2,ring],'GE')]
 
 planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3,planet_4], planet_carrier,connections,3,'pl_1')
-print(planetary_gears_1.plot_data())
+
 vmp.plot(planetary_gears_1.plot_data())
-planetary_gears_1= pg.PlanetaryGear([sun,ring], [planet_1,planet_2], planet_carrier,connections_2,3,'pl_1')
+planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2], planet_carrier,connections_2,3,'pl_1')
 
 # input_torque_and_composant={sun:100,ring:100}
 # input_speed={sun:150,ring:100}
@@ -109,16 +109,17 @@ planetary_gears_1=generatorgeometry.verification()
 # generatorgeometry.optimize_max()
 generatorgeometry.optimize_min()
 planetary_gear_result=pg.PlanetaryGearResult(planetary_gears_1,generatorgeometry.position_min_max)
-print(sun.torque_input)
-planetary_gear_result.update_torque({sun:[10,100]})
-planetary_gear_result.update_torque_max()
+planetary_gear_result.update_geometry()
+print(planetary_gear_result.planetary_gear.recirculation_power())
+# planetary_gear_result.update_torque({sun:[10,100]})
+# planetary_gear_result.update_torque_max()
 # print(planetary_gears_1.mech)
 # c = Client(api_url = 'http://localhost:5000')
 # r = c.create_object_from_python_object(planetary_gears_1)
 
 # input_torque_and_composant={planetary_gears_1.planetaries[2]:2,planetary_gears_1.planetaries[1]:-5}
 # link=planetary_gears_1.torque_resolution_PFS(input_torque_and_composant)
-print(planetary_gears_1.recirculation_power())
+print(planetary_gear_result.planetary_gear.recirculation_power())
 
 
 # print(link)
