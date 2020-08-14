@@ -18,7 +18,7 @@ import volmdlr as vm
 import volmdlr.primitives3D as p3d
 import volmdlr.primitives2D as p2d
 import mechanical_components.meshes as meshes
-from dessia_common import DessiaObject
+from dessia_common import DessiaObject,list_eq
 from typing import Tuple, List, TypeVar
 import numpy as np
 import mechanical_components.genmechanics2 as genmechanics
@@ -89,9 +89,7 @@ class Gears(DessiaObject):
     #      return cylinder
 
 class Planetary(Gears):
-    # _standalone_in_db = True
 
-    # _generic_eq = True
     '''
 
     Define a planetary
@@ -111,7 +109,7 @@ class Planetary(Gears):
 
     '''
 
-    def __init__(self, Z: int, planetary_type: str, name: str = '', speed_input: List[float] = '',torque_input: List[float] = '', position: List[float] = '', module: float = 0):
+    def __init__(self, Z: int, planetary_type: str, name: str = '', speed_input: List[float] = None,torque_input: List[float] = None, position: List[Tuple[float,float,float]] = None, module: float = 0):
 
 
 
@@ -169,9 +167,7 @@ class Planetary(Gears):
 
 
 class Planet(Gears):
-    # _standalone_in_db = True
 
-    # _generic_eq = True
     '''
     Define a planet
 
@@ -221,6 +217,7 @@ class Planet(Gears):
 
 
 class PlanetCarrier(DessiaObject):
+
     '''
     Define a planet carrier
 
@@ -245,6 +242,7 @@ class PlanetCarrier(DessiaObject):
 
 
 class Meshing(DessiaObject):
+
 
 
     def __init__(self, nodes: List[Gears], name: str = ''):
@@ -333,9 +331,7 @@ class Fixed(DessiaObject):
         return matrix, rhs
 
 class Double(DessiaObject):
-    # _standalone_in_db = True
 
-    # _generic_eq = True
     def __init__(self, nodes: List[Planet], name: str = ''):
 
         self.nodes = nodes
@@ -388,9 +384,9 @@ class ImposeSpeed(DessiaObject):
 
 
 class Connection(DessiaObject):
-    # _standalone_in_db = True
+    
 
-    # _generic_eq = True
+   
     '''
     Define a connection
 
@@ -420,11 +416,40 @@ class Connection(DessiaObject):
         self.nodes = nodes
         self.connection_type = connection_type
         DessiaObject.__init__(self, name=name)
+        
+    # def __eq__(self,other):
+    #     if isinstance(other,Connection):
+    #         if self.connection_type==other.connection_type:
+    #             nodeZ_1=[]
+    #             nodeZ_2=[]
+    #             node_name1=[]
+    #             node_name2=[]
+    #             for node in self.nodes:
+    #                 nodeZ_1.append(node.Z)
+                    
+    #             for node in other.nodes:
+    #                 nodeZ_2.append(node.Z)
+                    
+
+    #             if nodeZ_1==nodeZ_2:
+    #                 return True
+    #     return False
+    
+    # def __hash__(self):
+    #     nodeZ_1=[]
+    #     for node in self.nodes:
+    #         nodeZ_1.append(node.Z)
+    #     return node.Z
+            
+                
+            
+        
 
 class PlanetaryGear(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes=['mech', 'mech_dict']
-    _generic_eq = True
+    # _generic_eq=True
+   
     
     '''
     Define a Planetary Gears
@@ -489,24 +514,28 @@ class PlanetaryGear(DessiaObject):
 
 
         for i, connection in  enumerate(connections):
+    
 
           ## Check to be sure that all the object in connection are in planetaries,
           ## planets, or planet_carrier ##
+        
           if not connection.nodes[1] in self.elements:
 
-                if isinstance(connection.nodes[1], Planetary):
+                 if isinstance(connection.nodes[1], Planetary):
 
-                    self.elements[self.elements_name.index(connection.nodes[1].name)].planetary_type = connection.nodes[1].planetary_type
-                    self.elements[self.elements_name.index(connection.nodes[1].name)].p = connection.nodes[1].p
+                     self.elements[self.elements_name.index(connection.nodes[1].name)].planetary_type = connection.nodes[1].planetary_type
+                     self.elements[self.elements_name.index(connection.nodes[1].name)].p = connection.nodes[1].p
 
-                connection.nodes[1] = self.elements[self.elements_name.index(connection.nodes[1].name)]
+                 connection.nodes[1] = self.elements[self.elements_name.index(connection.nodes[1].name)]
+                 
+                
 
           if not connection.nodes[0] in self.elements:
-                if isinstance(connection.nodes[0], Planetary):
-                    self.elements[self.elements_name.index(connection.nodes[0].name)].planetary_type = connection.nodes[0].planetary_type
-                    self.elements[self.elements_name.index(connection.nodes[0].name)].p = connection.nodes[0].p
-                connection.nodes[0] = self.elements[self.elements_name.index(connection.nodes[0].name)]
-
+                 if isinstance(connection.nodes[0], Planetary):
+                     self.elements[self.elements_name.index(connection.nodes[0].name)].planetary_type = connection.nodes[0].planetary_type
+                     self.elements[self.elements_name.index(connection.nodes[0].name)].p = connection.nodes[0].p
+                 connection.nodes[0] = self.elements[self.elements_name.index(connection.nodes[0].name)]
+                
 
 
 
@@ -524,7 +553,7 @@ class PlanetaryGear(DessiaObject):
 
 
           else:
-             self.doubles.append(Double([connection.nodes[0], connection.nodes[1]], 'Double'+str(i)))
+              self.doubles.append(Double([connection.nodes[0], connection.nodes[1]], 'Double'+str(i)))
 
         self.relations = self.meshings + self.doubles
         
@@ -576,6 +605,29 @@ class PlanetaryGear(DessiaObject):
                'Z_Planets:' + str(Z_planets) + '\n\n' + \
                 str(connections_name) + '\n\n\n'
                 
+    def __eq__(self,other):
+        
+        if isinstance(other,PlanetaryGear):
+            connection_Z=self.connections_Z()
+            if list_eq(other.connections_Z(),connection_Z):
+                return True
+        return False
+    
+    def __hash__(self):
+        Z=0
+        for planetary in self.planetaries:
+            Z+=planetary.Z
+        for planet in self.planets:
+            Z+=planet.Z
+        return Z
+    
+    
+    def connections_Z(self):
+        connections_Z=[]
+        for connection in self.connections:
+            connections_Z.append([connection.nodes[0].Z,connection.nodes[1].Z,connection.connection_type])
+        return connections_Z
+                
                 
 
        
@@ -593,7 +645,7 @@ class PlanetaryGear(DessiaObject):
         :rtype: int
 
         '''
-
+        
         return self.elements.index(element)
 
     def graph(self):
@@ -601,7 +653,7 @@ class PlanetaryGear(DessiaObject):
         graph_planetary_gear = nx.Graph()
 
         for relation in self.relations:
-
+           
             graph_planetary_gear.add_edge(str(relation.nodes[0]), str(relation))
             graph_planetary_gear.add_edge(str(relation), str(relation.nodes[1]))
 
@@ -616,8 +668,10 @@ class PlanetaryGear(DessiaObject):
             graph_planetary_gear.add_edge(str(self.planet_carrier), 'Pv'+str(k))
             graph_planetary_gear.add_edge('Pv'+str(k), str(planet))
             nx.set_node_attributes(graph_planetary_gear, 'Pv'+str(k), 'Pv'+str(k))
+            
 
-
+        # plt.figure()
+        # nx.draw_kamada_kawai(graph_planetary_gear, with_labels=True)
         return graph_planetary_gear
 
     # def plot_graph(self):
@@ -979,7 +1033,7 @@ class PlanetaryGear(DessiaObject):
 
 
     def volmdlr_primitives(self, frame=vm.OXYZ):
-        print('A')
+        
         components = self.planetaries+self.planets+self.doubles
         li_box = []
         for component in components:
@@ -1037,7 +1091,7 @@ class PlanetaryGear(DessiaObject):
                 for position in positions_gearing:
                     point=vm.Point2D((position[1], position[2]))
                     plot_data.append(point.plot_data('.', size=5, color=color))
-            print(plot_data)
+            
             return plot_data
         
         else:
@@ -1065,11 +1119,14 @@ class PlanetaryGear(DessiaObject):
         '''
         if not planetaries:
             planetaries = self.planetaries
+            
         graph_planetary_gears = self.graph()
         graph_planetary_gears.remove_node(str(self.planet_carrier))
         list_path = []
-
+    
         for planetary in planetaries[1:]:
+            
+            
             list_path.append(nx.shortest_path(graph_planetary_gears,
                                               str(planetaries[0]), str(planetary)))
 
@@ -2026,6 +2083,7 @@ class PlanetaryGear(DessiaObject):
 
         """
         graph_planetary_gear = self.graph()
+        
         list_possibilities = self.meshing_chain_recursive_function(0, self.planetaries[0], graph_planetary_gear, [], [], 0, 0, [])
 
         return list_possibilities
@@ -2118,7 +2176,8 @@ class PlanetaryGear(DessiaObject):
             self.torque_resolution_PFS(first_input)
         
         torque_max_planet = 0
-        
+        speed_planetaries=[0]*len(self.planetaries)
+        torque_planetaries=[0]*len(self.planetaries)
         for i,gearing_planetary in enumerate(self.mech_dict['gearings_planetary']):
             
             power = self.mech.TransmittedLinkagePower(gearing_planetary, 4)    
@@ -2128,9 +2187,12 @@ class PlanetaryGear(DessiaObject):
             else:
                 index=self.mech_dict['part_planetaries'].index(gearing_planetary.part2)
             speed = self.mech.kinematic_results[self.mech_dict['link_planetaries_ball'][index]][0]
- 
-            self.planetaries[index].torque_signe = (power/speed)/abs(power/speed)
-            self.planetaries[index].power = power
+            
+            if speed==0:
+                torque_planetaries[index]=0
+            else:
+                torque_planetaries[index]= (power/speed)
+            speed_planetaries[index] = speed
    
         if self.mech_dict['flag_load_planet_carrier_unknow']:
     
@@ -2141,46 +2203,89 @@ class PlanetaryGear(DessiaObject):
         
         # print(mech.kinematic_results)
         speed = self.mech.kinematic_results[self.mech_dict['planet_carrier_a']][0]
-        self.planet_carrier.torque_signe=torque/abs(torque)
-        self.planet_carrier.power=torque*speed
+        planet_carrier_torque=torque
+        planet_carrier_speed=speed
         
-        power = []
+        powers = []
         power_element = []
-        for planetary in self.planetaries:
-            power.append(planetary.power)
+        torques=[]
+        for i,planetary in enumerate(self.planetaries):
+            if planetary.torque_input[1]<0:
+                powers.append(speed_planetaries[i]*planetary.torque_input[0])
+            else:
+                powers.append(speed_planetaries[i]*planetary.torque_input[1])
             power_element.append(planetary)
-        power.append(self.planet_carrier.power)
+        
+        if self.planet_carrier.torque_input[1]<0:
+                powers.append(planet_carrier_speed*self.planet_carrier.torque_input[0])
+        else:
+                powers.append(planet_carrier_speed*self.planet_carrier.torque_input[1])    
+        
+        
         power_element.append(self.planet_carrier)
+        speed_planetaries.append(planet_carrier_speed)
+
         planetary_input=[]
- 
-        for i in range(len(self.planetaries)-1):
-            power_max=max(power)
-            planetary_input.append(power_element[power.index(power_max)])
-            power_element.remove(power_element[power.index(power_max)])
-            power.remove(power_max)
+        torques=[]
+     
+        power_max=max(powers)
+        power_tot=power_max
+        planetary_input.append(power_element[powers.index(power_max)])
+        if speed_planetaries[powers.index(power_max)]!=0:
+            torques.append(power_max/speed_planetaries[powers.index(power_max)])
+        else:
+            torques.append(0)
+        power_element.remove(power_element[powers.index(power_max)])
+        speed_planetaries.remove(speed_planetaries[powers.index(power_max)])
+        powers.remove(power_max)
+
+        for i in range(len(self.planetaries)-2):
+            power_max=0
+            for y,planetary in enumerate(power_element):
+                if power_tot+powers[y]>power_max:
+                    index_planetary=y
+                    power_max=power_tot+powers[y]
+            
+            power_tot=power_max
+            planetary_input.append(power_element[index_planetary])
+            if speed_planetaries[index_planetary]!=0:
+                torques.append(power_max/speed_planetaries[index_planetary])
+            else:
+                torques.append(0)
+            
+            power_element.remove(power_element[index_planetary])
+            speed_planetaries.remove(speed_planetaries[index_planetary])
+            powers.remove(powers[index_planetary])
+            
+            
+            
 
             
         max_input={}
    
-        for planetary in planetary_input:
-            if planetary.torque_signe==-1:
-                max_input[planetary]=planetary.torque_input[0]/self.number_branch_planet
-            else:
-                max_input[planetary]=planetary.torque_input[1]/self.number_branch_planet
+        for i,planetary in enumerate(planetary_input):
         
+            max_input[planetary]=planetary.torque_input[i]/self.number_branch_planet
+            
 
         self.torque_resolution_PFS(max_input)
         
         for pivot in self.mech_dict['pivot_planets_without_double']:
-            power = self.mech.TransmittedLinkagePower(pivot, 1)
+            try:
+                power = self.mech.TransmittedLinkagePower(pivot, 1)
+            except genmechanics.ModelError:
+                power=100000000000
             speed = self.mech.kinematic_results[pivot][0]
-            torque = power/speed
+            if speed==0:
+                torque=0
+            else:
+                torque = power/speed
             
             # print(torque)
             if abs(torque) > torque_max_planet:
                 torque_max_planet = abs(torque)
      
-        return  torque_max_planet 
+        return  max_input
         
             
     def test_assembly_condition(self, number_planet, planetaries=[]):
@@ -2362,8 +2467,9 @@ class PlanetaryGear(DessiaObject):
             vector_b[n_equations] = impose_speed.speed_system_equations()[1]
             n_equations += 1
 
-
+       
         solution = solve(system_matrix, vector_b)
+       
 
         element_association = {}
         for i in range(len(self.elements)):
@@ -2550,7 +2656,7 @@ class PlanetaryGear(DessiaObject):
 
 
         for i, planetary in enumerate(self.planetaries):
-            print(planetary.module)
+            
             part_planetaries.append(genmechanics.Part('planetary'+str(i)))
             position=[planetary.position[0],planetary.position[1],planetary.position[2]]
             link_planetaries_ball.append(linkages.FrictionlessBallLinkage(ground, part_planetaries[-1], np.array(position),
@@ -2591,8 +2697,15 @@ class PlanetaryGear(DessiaObject):
                         
                         if element.planetary_type == 'Ring':
                             orientation_gearing = previous_position-position
-                            angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
-                            signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
+                            if orientation_gearing[1]==0:
+                                if orientation_gearing[2]==0:
+                                    angular=0
+                                else:
+                                    angular=(orientation_gearing[2]/abs(orientation_gearing[2]))*m.pi/2
+                                signe =1
+                            else:
+                                angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
+                                signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
                             position_gearing = np.array([previous_position[0],
                                                          previous_position[1]+previous_element.Z*previous_element.module*m.cos(angular)*0.5*signe,
                                                          previous_position[2]+previous_element.Z*previous_element.module*m.sin(angular)*0.5*signe])
@@ -2630,8 +2743,16 @@ class PlanetaryGear(DessiaObject):
                         else:
 
                             orientation_gearing = (position-previous_position)
-                            angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
-                            signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
+                            if orientation_gearing[1]==0:
+                                if orientation_gearing[2]==0:
+                                    angular=0
+                                else:
+                                    angular=(orientation_gearing[2]/abs(orientation_gearing[2]))*m.pi/2
+                                signe =1
+                            else:
+                                angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
+                                signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
+                                
                             position_gearing = np.array([previous_position[0],
                                                          previous_position[1]+previous_element.Z*previous_element.module*m.cos(angular)*0.5*signe,
                                                          previous_position[2]+previous_element.Z*previous_element.module*m.sin(angular)*0.5*signe])
@@ -2714,15 +2835,16 @@ class PlanetaryGear(DessiaObject):
        
 
 
-        imposed_speeds = [(link_planetaries_ball[0], 0, 300), (link_planetaries_ball[-1], 0, 200)]
+        imposed_speeds = [(link_planetaries_ball[0], 0, self.planetaries[0].speed_input[0]), (link_planetaries_ball[-1], 0, self.planetaries[-1].speed_input[0])]
 
 
         mech = genmechanics.Mechanism(list_parts, ground, imposed_speeds, loads_known, loads_unknown)
+        # mech.DrawPowerGraph()
         self.mech=mech
-        for l, lv in mech.static_results.items():
+        # for l, lv in mech.static_results.items():
 
-            for d, v in lv.items():
-                print(l.name, d, v)
+        #     for d, v in lv.items():
+        #         print(l.name, d, v)
         # torque_max_planet = 0
         
         # for i,gearing_planetary in enumerate(gearings_planetary):
@@ -2759,7 +2881,53 @@ class PlanetaryGear(DessiaObject):
         #         torque_max_planet = abs(torque)
                 
 
-        mech.GlobalSankey()
+        # mech.GlobalSankey()
+        
+    def power_graph(self):
+        labels={}
+        widths=[]
+        edges=[]
+        G=self.mech.DrawPowerGraph()
+        plt.figure()
+        for part in self.mech.parts:
+  
+
+            labels[part]=part.name
+
+        for linkage in self.mech.linkages:
+           
+            labels[linkage]=linkage.name
+
+            widths.append(abs(self.mech.TransmittedLinkagePower(linkage,0)))
+            print(self.mech.TransmittedLinkagePower(linkage,0))
+            edges.append((linkage,linkage.part1))
+  
+            widths.append(abs(self.mech.TransmittedLinkagePower(linkage,1)))
+            print(self.mech.TransmittedLinkagePower(linkage,1))
+            edges.append((linkage,linkage.part2))
+
+        for load in self.mech.unknown_static_loads+self.mech.known_static_loads:
+
+            widths.append(abs(self.mech.LoadPower(load)))
+            labels[load]=load.name
+            edges.append((load,load.part))
+            
+        max_widths=max(widths)
+        widths=[6*w/max_widths for w in widths]
+        
+        pos=nx.spring_layout(G)
+        nx.draw_networkx_nodes(G,pos,nodelist=self.mech.linkages,node_color='grey')
+        nx.draw_networkx_nodes(G,pos,nodelist=self.mech.parts)
+        nx.draw_networkx_nodes(G,pos,nodelist=self.mech.unknown_static_loads,node_color='red')
+        nx.draw_networkx_nodes(G,pos,nodelist=self.mech.known_static_loads,node_color='green')
+        nx.draw_networkx_nodes(G,pos,nodelist=self.mech.parts,node_color='cyan')
+        nx.draw_networkx_labels(G,pos,labels)
+        nx.draw_networkx_edges(G,pos,edges,width=widths,edge_color='blue')
+        nx.draw_networkx_edges(G,pos)
+        G2=G.copy()
+        G2.remove_node(self.mech.ground)
+        G3=nx.find_cycle(G2,orientation= 'ignore')
+        circles=[G3]
         
         
         
@@ -2794,8 +2962,15 @@ class PlanetaryGear(DessiaObject):
                 position = np.array(new_position2)
                 if element.planetary_type == 'Ring':
                     orientation_gearing = previous_position-position
-                    angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
-                    signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
+                    if orientation_gearing[1]==0:
+                            if orientation_gearing[2]==0:
+                                angular=0
+                            else:
+                                angular=(orientation_gearing[2]/abs(orientation_gearing[2]))*m.pi/2
+                            signe =1
+                    else:
+                        angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
+                        signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
                     position_gearing = np.array([previous_position[0],
                                                  previous_position[1]+previous_element.Z*previous_element.module*m.cos(angular)*0.5*signe,
                                                  previous_position[2]+previous_element.Z*previous_element.module*m.sin(angular)*0.5*signe])
@@ -2834,13 +3009,58 @@ class PlanetaryGear(DessiaObject):
                 else:
 
                     orientation_gearing = (position-previous_position)
-                    angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
-                    signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
+                    if orientation_gearing[1]==0:
+                            if orientation_gearing[2]==0:
+                                angular=0
+                            else:
+                                angular=(orientation_gearing[2]/abs(orientation_gearing[2]))*m.pi/2
+                            signe =1
+                    else:
+                        angular = m.atan(orientation_gearing[2]/orientation_gearing[1])
+                        signe = (orientation_gearing[1]/abs(orientation_gearing[1]))
                     position_gearing = np.array([previous_position[0],
                                                  previous_position[1]+previous_element.Z*previous_element.module*m.cos(angular)*0.5*signe,
                                                  previous_position[2]+previous_element.Z*previous_element.module*m.sin(angular)*0.5*signe])
                     
             gearing.position=position_gearing
+            
+            
+            
+    def update_load_mech(self,input_torque_and_composant):
+        list_all_input = self.planetaries+[self.planet_carrier]
+        loads_known = []
+        load_planet_carrier = 0
+        part_planet_carrier=self.mech_dict['part_planet_carrier']
+        part_planetaries=self.mech_dict['part_planetaries']
+        for i, input_composant in enumerate(input_torque_and_composant):
+            list_all_input.remove(input_composant)
+            if input_composant == self.planet_carrier:
+                loads_known.append(loads.KnownLoad(part_planet_carrier, [0, 0, 0], [0, 0, 0], [0, 0, 0],
+                                                   [input_torque_and_composant[input_composant], 0, 0], 'input torque'+str(i)))
+                load_planet_carrier=loads_known[-1]
+
+            else:
+
+                loads_known.append(loads.KnownLoad(part_planetaries[self.planetaries.index(input_composant)], [0, 0, 0], [0, 0, 0],
+                                                   [0, 0, 0], [input_torque_and_composant[input_composant], 0, 0], 'input torque'+str(i)))
+        loads_unknown = []
+        flag_load_planet_carrier_unknow=0
+        for i, unknow_input in enumerate(list_all_input):
+            if unknow_input == self.planet_carrier:
+                loads_unknown.append(loads.SimpleUnknownLoad(part_planet_carrier, [0, 0, 0], [0, 0, 0], [], [0], 'output torque'+str(i)))
+                load_planet_carrier=loads_unknown[-1]
+                flag_load_planet_carrier_unknow=1
+            else:
+                
+                loads_unknown.append(loads.SimpleUnknownLoad(part_planetaries[self.planetaries.index(unknow_input)],
+                                                             [0, 0, 0], [0, 0, 0], [], [0], 'output torque'+str(i)))
+                
+        self.mech_dict['load_planet_carrier']=load_planet_carrier  
+        self.mech_dict['flag_load_planet_carrier_unknow']=flag_load_planet_carrier_unknow
+        self.mech_dict['input_torque_and_composant']=input_torque_and_composant
+        self.mech.ChangeLoads(loads_known,loads_unknown)
+        self.mech.static_results
+        
             
 
 
@@ -3010,14 +3230,16 @@ class PlanetaryGear(DessiaObject):
     
     def recirculation_power(self):
         first_input={}
-        if not self.mech:
-            # for i in range(len(self.planetaries)-1):
-            #    first_input[self.planetaries[i]]=self.planetaries[i].torque_input[0]/self.number_branch_planet
-            # self.torque_resolution_PFS(first_input)
-            
-            self.torque_max_planets
-        G=self.mech.DrawPowerGraph()
-        
+        # if not self.mech:
+        #     # for i in range(len(self.planetaries)-1):
+        #     #    first_input[self.planetaries[i]]=self.planetaries[i].torque_input[0]/self.number_branch_planet
+        #     # self.torque_resolution_PFS(first_input)
+        try:    
+            self.torque_max_planets()
+            G=self.mech.DrawPowerGraph()
+        except genmechanics.ModelError:
+            return [[0,1000000]]
+      
         G2=G.copy()
         G2.remove_node(self.mech.ground)
         
@@ -3113,7 +3335,10 @@ class PlanetaryGear(DessiaObject):
         
         power_difference=[]
         for i,power in enumerate(power_circles):
-            power_difference.append([(power[0]/power_input[i])*100,(power[1]/power_input[i])*100])
+            if power_input[i]!=0:
+                power_difference.append([(power[0]/power_input[i])*100,(power[1]/power_input[i])*100])
+            else:
+                power_difference.append([(power[0]/0.00000001)*100,(power[1]/0.000000001)*100])
         
         
         return power_difference
@@ -3190,6 +3415,7 @@ class PlanetaryGearResult(DessiaObject):
         self.connections=planetary_gear.connections
         self.doubles=planetary_gear.doubles
         
+        self.recircle_power=self.planetary_gear.recirculation_power()[0][1]
         if not self.planetary_gear.speed_max_planet:
             self.speed_max_planet = self.planetary_gear.speed_max_planets()
             self.planetary_gear.speed_max_planet=self.speed_max_planet
@@ -3219,6 +3445,8 @@ class PlanetaryGearResult(DessiaObject):
 
             if d > self.d_min:
                 self.d_min = d
+                
+        self.recirculation_power=planetary_gear.recirculation_power()
           
         
         
@@ -3310,7 +3538,7 @@ class PlanetaryGearResult(DessiaObject):
         element_list_3=copy.copy(self.planetaries)
         
         for element in input_torques_and_composants:
-            print(input_torques_and_composants[element])
+         
             element.torque_input=input_torques_and_composants[element]
             if element in element_list_2:
                 element_list_2.remove(element)
@@ -3335,7 +3563,7 @@ class PlanetaryGearResult(DessiaObject):
                min_input_1[element]=element.torque_input[0]
                
             else:
-                print(element.torque_input)
+                
                 max_input_1[element]=element.torque_input[0]
                 min_input_1[element]=element.torque_input[1]
                 
@@ -3364,7 +3592,7 @@ class PlanetaryGearResult(DessiaObject):
                 max_input_2[self.planet_carrier]=self.planet_carrier.torque_input[0]
                 min_input_2[self.planet_carrier]=self.planet_carrier.torque_input[1]
                 
-        print(min_input_1)
+
                 
         res_min_1=self.planetary_gear.torque_solve(min_input_1)
         
@@ -3403,7 +3631,7 @@ class PlanetaryGearResult(DessiaObject):
 
 
     def volmdlr_primitives(self, frame=vm.OXYZ):
-        print(self.position_min_max.positions_min_max)
+        
         self.update_geometry()
 
         li_box = self.planetary_gear.volmdlr_primitives()

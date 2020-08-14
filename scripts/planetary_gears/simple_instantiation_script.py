@@ -21,6 +21,7 @@ import volmdlr.primitives2D as p2d
 import mechanical_components.meshes as meshes
 import sys
 import time
+import dessia_common
 from dessia_api_client import Client
 # volumic_mass=7800
 # data_coeff_YB_Iso={'data':[[0.0,1.0029325508401201],
@@ -58,6 +59,7 @@ from dessia_api_client import Client
 
 # # volumemodel = vm.Contour2D(meshes_1.Contour(1) )
 # # volumemodel.MPLPlot() 
+
 sun=pg.Planetary(20,'Sun','sun')
 sun_2=pg.Planetary(60,'Ring','sun_2')
 sun_3=pg.Planetary(60,'Sun','sun_2')
@@ -65,7 +67,7 @@ ring= pg.Planetary(50,'Ring','ring')
 planet_carrier= pg.PlanetCarrier('planet_carrier')
 planet_1=pg.Planet(12,'planet_1')
 
-sun.speed_input=[10,100]
+sun.speed_input=[12,100]
 sun_2.speed_input=[10,100]
 ring.speed_input=[10,100]
 planet_carrier.speed_input=[10,100]
@@ -74,7 +76,9 @@ sun.torque_input=[10,100]
 sun_2.torque_input=[12,100]
 ring.torque_input=[13,100]
 planet_carrier.torque_input=[10,100]
-
+list1= [5,1,3]
+list2= [1,5,3]
+print(dessia_common.list_eq(list1,list2))
 planet_2=pg.Planet(10,'planet_2')
 planet_3=pg.Planet(13,'planet_3')
 planet_4=pg.Planet(5,'planet_4')
@@ -86,11 +90,18 @@ connections=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2
               pg.Connection([planet_3,planet_4],'GI'),
               pg.Connection([planet_4,sun_2],'GI')]
 
+connections3=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'),pg.Connection([planet_2,ring],'GE'),
+              pg.Connection([planet_2,planet_3],'D'),pg.Connection([planet_4,sun_2],'GI'),
+              pg.Connection([planet_3,planet_4],'GI')]
+
 connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'), pg.Connection([planet_2,ring],'GE')]
 
 planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3,planet_4], planet_carrier,connections,3,'pl_1')
+planetary_gears_2= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3,planet_4], planet_carrier,connections3,3,'pl_1')
+print(planetary_gears_1==planetary_gears_2)
+print(planetary_gears_1.meshing_chain())
 
-vmp.plot(planetary_gears_1.plot_data())
+# vmp.plot(planetary_gears_1.plot_data())
 planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2], planet_carrier,connections_2,3,'pl_1')
 
 # input_torque_and_composant={sun:100,ring:100}
@@ -104,13 +115,26 @@ planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2], planet_carr
 # for i,element in enumerate(component):
 #     puissance.append(result_speed[element]*result_torque[element])
 # print(puissance)
-generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_1,3,1,10)
-planetary_gears_1=generatorgeometry.verification()
-# generatorgeometry.optimize_max()
+generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_1,3,1,10,150)
+generatorgeometry.verification()
+debut=time.time()
+# generatorgeometry.verification_2()
+# # generatorgeometry.optimize_max()
+# generatorgeometry.optimize_min_recirculation_2()
+# generatorgeometry.planetary_gear.babylonjs()
+# planetary_gears_1.babylonjs()
+# print(planetary_gears_1.recirculation_power())
+
+# planetary_gear_result=pg.PlanetaryGearResult(planetary_gears_1,generatorgeometry.position_min_max)
+# planetary_gear_result.planetary_gear.babylonjs()
+# planetary_gear_result.babylonjs()
+
 generatorgeometry.optimize_min()
 planetary_gear_result=pg.PlanetaryGearResult(planetary_gears_1,generatorgeometry.position_min_max)
 planetary_gear_result.update_geometry()
 print(planetary_gear_result.planetary_gear.recirculation_power())
+fin=time.time()
+print(debut-fin)
 # planetary_gear_result.update_torque({sun:[10,100]})
 # planetary_gear_result.update_torque_max()
 # print(planetary_gears_1.mech)
@@ -119,7 +143,7 @@ print(planetary_gear_result.planetary_gear.recirculation_power())
 
 # input_torque_and_composant={planetary_gears_1.planetaries[2]:2,planetary_gears_1.planetaries[1]:-5}
 # link=planetary_gears_1.torque_resolution_PFS(input_torque_and_composant)
-print(planetary_gear_result.planetary_gear.recirculation_power())
+# print(planetary_gear_result.planetary_gear.recirculation_power())
 
 
 # print(link)

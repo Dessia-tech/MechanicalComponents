@@ -276,11 +276,7 @@ class Mechanism:
         # G3=nx.find_cycle(G2,orientation= 'ignore')
         # circles=[G3]
         
-        # for node in G3:
-        #     G3=G2.copy()
-        #     G3.remove(node[0])
-        #     print(node[0].name)
-        #     if nx.find_cycle(G3,orientation= 'ignore'):
+    
                 
             
         
@@ -302,7 +298,9 @@ class Mechanism:
         """
         Speeds from point belonging to part with part_ref as reference
         """
+      
         q=self.kinematic_vector#force kdof computation
+        
         path=nx.shortest_path(self.holonomic_graph,part_ref,part)
         V=npy.zeros((3,self.n_kdof))
         W=npy.zeros((3,self.n_kdof))
@@ -416,7 +414,10 @@ class Mechanism:
 
     def TransmittedLinkagePower(self,linkage,num_part):
         if num_part==1:
+        
             s=self.Speeds(linkage.position,self.ground,linkage.part2)
+                
+        
         else:
             s=self.Speeds(linkage.position,self.ground,linkage.part1)
         f=self.GlobalLinkageForces(linkage,num_part)
@@ -443,7 +444,9 @@ class Mechanism:
 
     def _get_kinematic_vector(self):
         if not self._utd_kinematic_results:
+            
             self._kinematic_results,self._kinematic_vector=self._KinematicAnalysis()
+            
             self._utd_kinematic_results=True
         return self._kinematic_vector
 
@@ -868,7 +871,7 @@ class Mechanism:
                 results[link] = rlink
             return results, q
         else:
-            raise ModelError
+            raise ModelError('e')
 
     def GlobalSankey(self):
         from matplotlib.sankey import Sankey

@@ -153,7 +153,7 @@ filters = [
           
 filter_analyze= wf.Filter(filters)
 
-list_attribute=['sum_Z_planetary','min_Z_planetary','max_Z_planetary','d_min','speed_max_planet']
+list_attribute=['sum_Z_planetary','min_Z_planetary','max_Z_planetary','d_min','speed_max_planet', 'recircle_power']
 
 block_parallel_plot=wf.ParallelPlot(list_attribute, 4 ,name = 'Parallel_Plot')
 minimized_attributes = {'sum_Z_planetary':False,'d_min': True,'min_Z_planetary':True,'max_Z_planetary':True,'speed_max_planet': True}
@@ -219,8 +219,9 @@ input_values = {workflow_generator_planetary_gears_architecture.index(block_plan
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[1]):3,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[2]):1,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):10,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[4]):250}
                 
-                workflow_generator_planetary_gears.index(block_parallel_plot.inputs[1]):pareto_settings}
+                # workflow_generator_planetary_gears.index(block_parallel_plot.inputs[1]):pareto_settings
 
 # a = workflow_generator_planetary_gears.to_dict()
 # obj = wf.Workflow.dict_to_object(a)
