@@ -122,5 +122,5 @@ input_values = {workflow_generator_planetary_gears_architecture.index(block_plan
 # obj = wf.Workflow.dict_to_object(a)
 # ##
 
-workflow_generator_planetary_gears = workflow_generator_planetary_gears.run(input_values)
-workflow_generator_planetary_gears.output_value[1].plot_kinematic_graph()
+# workflow_generator_planetary_gears = workflow_generator_planetary_gears.run(input_values)
+# workflow_generator_planetary_gears.output_value[1].plot_kinematic_graph()
