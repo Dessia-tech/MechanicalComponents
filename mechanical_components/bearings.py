@@ -827,7 +827,7 @@ class RadialBallBearing(RadialBearing):
 
     def plot_data(self, pos=0, stroke_width=1):
         plot_datas = []
-        hatching = plot_data.HatchingSet(1)
+        hatching = plot_data.HatchingSet(0.5, 3)
         color_surface = plot_data.ColorSurfaceSet(color='white')
 
         be_sup = self.external_ring_contour()
@@ -1444,7 +1444,7 @@ class RadialRollerBearing(RadialBearing):
 
 
     def plot_data(self, pos=0, quote=True, constructor=True, direction=1, stroke_width=1):
-        hatching = plot_data.HatchingSet(1)
+        hatching = plot_data.HatchingSet(0.5, 3)
         color_surface = plot_data.ColorSurfaceSet(color='white')
 
         plot_datas = []
@@ -2004,7 +2004,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         return vm.Contour2D(rol.primitives)
 
     def plot_data(self, pos=0, direction=1, quote=True, constructor=True, stroke_width=1):
-        hatching = plot_data.HatchingSet(1)
+        hatching = plot_data.HatchingSet(0.5, 3)
         color_surface = plot_data.ColorSurfaceSet(color='white')
 
         plot_datas = []
@@ -2779,33 +2779,33 @@ class BearingCombination(DessiaObject):
 
     def plot_data(self, pos=0, box=False, typ=None, bearing_combination_result=None, quote=False, constructor=True):
 
-        hatching = plot_data.HatchingSet(1)
         color_surface = plot_data.ColorSurfaceSet(color='white')
-        stroke_width = 1
+        stroke_width = 1.5
+        color_line = 'blue'
         export_data = []
 
         if box:
             box_sup = self.bearing_box(1).Translation(vm.Vector2D((pos, 0)), True)
-            plot_data_state = plot_data.PlotDataState(name='box_sup', stroke_width=stroke_width)
+            plot_data_state = plot_data.PlotDataState(name='box_sup', stroke_width=stroke_width, color_line=color_line)
             export_data.append(box_sup.plot_data(plot_data_states=[plot_data_state]))
             # export_data.append(box_sup.plot_data('box_sup', fill = 'none', color='red', stroke_width = 0.3, opacity = 0.3))
             box_inf = self.bearing_box(-1).Translation(vm.Vector2D((pos, 0)), True)
-            plot_data_state = plot_data.PlotDataState(name='box_inf', stroke_width=stroke_width)
+            plot_data_state = plot_data.PlotDataState(name='box_inf', stroke_width=stroke_width, color_line=color_line)
             export_data.append(box_inf.plot_data(plot_data_states=[plot_data_state]))
             # export_data.append(box_inf.plot_data('box_inf', fill = 'none', color = 'red', stroke_width = 0.3, opacity = 0.3))
 
 
-        plot_data_state = plot_data.PlotDataState(name='be_sup', hatching=hatching, stroke_width=stroke_width)
+        plot_data_state = plot_data.PlotDataState(name='be_sup', stroke_width=stroke_width)
         be_sup = self.external_bearing(sign = 1).Translation(vm.Vector2D((pos, 0)), True)
         export_data.append(be_sup.plot_data(plot_data_states=[plot_data_state]))
         be_inf = self.external_bearing(sign = -1).Translation(vm.Vector2D((pos, 0)), True)
-        plot_data_state = plot_data.PlotDataState(name='be_inf', hatching=hatching, stroke_width=stroke_width)
+        plot_data_state = plot_data.PlotDataState(name='be_inf', stroke_width=stroke_width)
         export_data.append(be_inf.plot_data(plot_data_states=[plot_data_state]))
         bi_sup = self.internal_bearing(sign = 1).Translation(vm.Vector2D((pos, 0)), True)
-        plot_data_state = plot_data.PlotDataState(name='bi_sup', hatching=hatching, stroke_width=stroke_width)
+        plot_data_state = plot_data.PlotDataState(name='bi_sup', stroke_width=stroke_width)
         export_data.append(bi_sup.plot_data(plot_data_states=[plot_data_state]))
         bi_inf = self.internal_bearing(sign = -1).Translation(vm.Vector2D((pos, 0)), True)
-        plot_data_state = plot_data.PlotDataState(name='bi_inf', hatching=hatching, stroke_width=stroke_width)
+        plot_data_state = plot_data.PlotDataState(name='bi_inf', stroke_width=stroke_width)
         export_data.append(bi_inf.plot_data(plot_data_states=[plot_data_state]))
 
 #        contour = []
@@ -3346,7 +3346,6 @@ class BearingAssembly(DessiaObject):
         return [irc]
 
     def plot_data(self, box=True, typ=None, constructor=False):
-        hatching = plot_data.HatchingSet(1)
         color_surface = plot_data.ColorSurfaceSet(color='white')
         stroke_width = 1
 
