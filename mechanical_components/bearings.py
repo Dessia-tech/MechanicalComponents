@@ -470,7 +470,7 @@ class RadialBearing(DessiaObject):
         # TODO: enhance this but without querying CAD volumes!
         return 7800 * math.pi*self.B*(self.D-self.d) * (self.d+self.D)
 
-    def cad_volumes(self, center = vm.O3D, axis = vm.X3D):
+    def volmdlr_primitives(self, center = vm.O3D, axis = vm.X3D):
         # TODO: mutualization of this in parent class?
         axis.Normalize()
 
@@ -480,7 +480,7 @@ class RadialBearing(DessiaObject):
         #Internal Ring
         IRC = self.internal_ring_contour()
         irc = primitives3D.RevolvedProfile(center, axis, z, IRC, center,
-                                         axis, angle=2*math.pi, name='Internal Ring')
+                                           axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
         ERC=self.external_ring_contour()
         erc=primitives3D.RevolvedProfile(center, axis, z, ERC, center,
@@ -597,88 +597,11 @@ class RadialBearing(DessiaObject):
         elif typ == 'Load':
             self.PlotLoad(a)
 
-    def volume_model(self, center = vm.O3D, axis = vm.X3D):
-        model=vm.VolumeModel(self.cad_volumes(center, axis), self.name)
-
-        return model
-    
-    def volmdlr_volume_model(self):
-        model = self.volume_model()
-        return model
-
-#    mass = property(Mass)
-
-#    def Dict(self, stringify_keys=True):
-#        """Export dictionary
-#        """
-#        d = {}
-#        d['d'] = self.d
-#        d['D'] = self.D
-#        d['B'] = self.B
-#        d['alpha'] = self.alpha
-#        d['i'] = self.i
-#        d['Z'] = self.Z
-#        d['Dw'] = self.Dw
-#        if hasattr(self, 'Cr'):
-#            d['Cr'] = self.Cr
-#        if hasattr(self, 'C0r'):
-#            d['C0r'] = self.C0r
-#
-#        d['name'] = self.name
-#        d['contact_type'] = self.contact_type
-#        d['class_name'] = self.class_name
-#        d['material'] = self.material.Dict()
-#        d['mass'] = self.mass
-#
-#        if 'load_bearing_results' in d:
-#            load_bearing_results = []
-#            for bg_result in self.load_bearing_results:
-#                load_bearing_results.append(bg_result.Dict())
-#            d['load_bearing_results'] = load_bearing_results
-#
-#        if stringify_keys:
-#            return StringifyDictKeys(d)
-#
-#        return d
-
-#    @classmethod
-#    def DictToObject(cls, d):
-#        if 'RadialBallBearing' in d['class_name']:
-#            return RadialBallBearing.DictToObject(d)
-#        elif 'AngularBallBearing' in d['class_name']:
-#            return AngularBallBearing.DictToObject(d)
-#        elif 'SphericalBallBearing' in d['class_name']:
-#            return SphericalBallBearing.DictToObject(d)
-#        elif d['class_name'] == 'N':
-#            return N.DictToObject(d)
-#        elif d['class_name'] == 'NU':
-#            return NU.DictToObject(d)
-#        elif d['class_name'] == 'NUP':
-#            return NUP.DictToObject(d)
-#        elif d['class_name'] == 'NF':
-#            return NF.DictToObject(d)
-#        elif d['class_name'] == 'TaperedRollerBearing':
-#            return TaperedRollerBearing.DictToObject(d)
-#        else:
-#            print(d['class_name'])
-#            raise ValueError
-
     def to_shaft(self):
         return shafts_assembly.Shaft(self.plot_contour(), name=self.name)
 
 
-# =============================================================
-# Object générique roulement cylindrique
-# =============================================================
-#class ThrustBallBearings(persistent.Persistent):
-#    #Butée axiale à bille
-#
-#class ThrustRollerBearings(persistent.Persistent):
-#    #Butée axiale à rouleaux
-#
-#class ThrustNeedleRollerBearings(ThrustRollerBearings,persistent.Persistent):
-#    #Butée axiale à rouleaux avec cage intégrée
-#
+
 class RadialBallBearing(RadialBearing):
     _standalone_in_db = True
     _non_serializable_attributes = []
@@ -785,8 +708,7 @@ class RadialBallBearing(RadialBearing):
         pbe4 = vm.Point2D((self.B/2., self.D/2.))
         pbe5 = vm.Point2D((self.B/2., self.D1/2.))
         pbe6 = pbe5.Translation(vm.Vector2D((-self.h, 0)))
-#        betest = primitives2D.RoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],{}, False)
-#        betest.MPLPlot()
+
 
         be1 = primitives2D.OpenedRoundedLineSegments2D([pbe6, pbe5, pbe4, pbe3, pbe2, pbe1],
                                                  {1: self.radius,
@@ -1967,7 +1889,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 
         return vm.Contour2D(be1.primitives)
 
-    def cad_volumes(self, center = vm.O3D, axis = vm.X3D):
+    def volmdlr_primitives(self, center = vm.O3D, axis = vm.X3D):
         axis.Normalize()
 
         y = axis.RandomUnitNormalVector()
@@ -3086,12 +3008,12 @@ class BearingCombination(DessiaObject):
         if typ == 'Graph':
             list_graph = []
             pos_m = -self.B/2.
-            for bg_ref, bg_simu in zip(self.bearings, bearing_combination_result):
-                graph = bg_simu.PlotGraph(d = bg_ref.d, D = bg_ref.D,
-                                     B = bg_ref.B, d1 = bg_ref.d1, D1 = bg_ref.D1)
-                graph = graph.Translation(vm.Vector2D((pos_m + bg_ref.B/2., 0)), True)
-                pos_m += bg_ref.B
-                list_graph.append(graph)
+            # for bg_ref, bg_simu in zip(self.bearings, bearing_combination_result):
+            #     graph = bg_simu.PlotGraph(d = bg_ref.d, D = bg_ref.D,
+            #                          B = bg_ref.B, d1 = bg_ref.d1, D1 = bg_ref.D1)
+            #     graph = graph.Translation(vm.Vector2D((pos_m + bg_ref.B/2., 0)), True)
+            #     pos_m += bg_ref.B
+            #     list_graph.append(graph)
             list_graph = vm.Contour2D(list_graph)
             list_graph = list_graph.Translation(vm.Vector2D((pos, 0)), True)
             list_graph.MPLPlot(a, 'b', True)
@@ -3127,7 +3049,7 @@ class BearingCombination(DessiaObject):
 #        position = self.axial_positions
         center_bearing = center+0.5*(self.bearings[0].B -self.B)*axis
         for bearing in self.bearings:
-            groups.extend(bearing.cad_volumes(center=center_bearing))
+            groups.extend(bearing.volmdlr_primitives(center=center_bearing))
             center_bearing += bearing.B*axis
         model=vm.VolumeModel(groups, self.name)
         return model
@@ -3346,6 +3268,7 @@ class BearingAssembly(DessiaObject):
         return [irc]
 
     def plot_data(self, box=True, typ=None, constructor=False):
+
         color_surface = plot_data.ColorSurfaceSet(color='white')
         stroke_width = 1
 
@@ -3354,6 +3277,7 @@ class BearingAssembly(DessiaObject):
         plot_data_state = plot_data.PlotDataState(name='contour_shaft', stroke_width=stroke_width)
         export_data = [contour_shaft.plot_data(plot_data_states=[plot_data_state])]
 
+
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
             export_data.extend(assembly_bg.plot_data(pos, box, quote = False, constructor = constructor))
         return export_data
@@ -3361,8 +3285,8 @@ class BearingAssembly(DessiaObject):
     def plot(self, box=True, typ=None, ind_load_case=0):
 
         shaft = self.shaft()
-        contour_shaft = vm.Contour2D([shaft])
-        f, a = contour_shaft.MPLPlot()
+        # contour_shaft = vm.Contour2D([shaft])
+        f, a = shaft.MPLPlot()
 
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
             assembly_bg.plot(pos, a, box, typ, ind_load_case)
@@ -3560,356 +3484,7 @@ class BearingAssembly(DessiaObject):
         except unidimensional.ModelConvergenceError:
             print('Convergence Error')
             pass
-#            sm.PlotGraph()
-#            sm.Plot()
-#            raise unidimensional.ModelConvergenceError()
 
-
-    def volume_model(self, center = (0,0,0), axis = (1,0,0)):
-        groups = []
-
-        for combination, combination_position in zip(self.bearing_combinations, self.axial_positions):
-            position = combination_position
-
-            for bearing in combination.bearings:
-                groups.extend(bearing.cad_volumes(center=vm.Point3D((position, 0, 0))))
-                position += bearing.B
-        groups.extend(self.cad_shaft())
-        model=vm.VolumeModel(groups, self.name)
-        return model
-    
-    def volmdlr_volume_model(self):
-        model = self.volume_model()
-        return model
-
-    def FreeCADExport(self, fcstd_filepath='An unamed bearing assembly', python_path='python',
-                      freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
-        model = self.VolumeModel()
-        model.FreeCADExport(fcstd_filepath, python_path=python_path,
-                            freecad_lib_path=freecad_lib_path, export_types=export_types)
-
-#    def Dict(self, subobjects_id = {}, stringify_keys=True):
-#        """
-#        Export dictionary
-#        """
-#        d={}
-#        for k,v in self.__dict__.items():
-#            tv=type(v)
-#            if tv == npy.int64:
-#                d[k]=int(v)
-#            elif tv == npy.float64:
-#                d[k]=round(float(v), 5)
-#            else:
-#                d[k]=v
-#
-#        li_bg = []
-#        for bearing_combination in self.bearing_combinations:
-#            if bearing_combination in subobjects_id:
-#                li_bg.append(subobjects_id[bearing_combination])
-#            else:
-#                li_bg.append(bearing_combination.Dict())
-#        d['bearing_combinations'] = li_bg
-#        d['axial_positions'] = list(self.axial_positions)
-#
-#        if stringify_keys:
-#            return StringifyDictKeys(d)
-#
-#        return d
-#
-#    @classmethod
-#    def DictToObject(cls, d):
-#        li_bg = []
-#        for li in d['bearing_combinations']:
-#            BA = BearingCombination.DictToObject(li)
-#            li_bg.append(BA)
-#
-#        obj = cls(bearing_combinations = li_bg, pre_load = d['pre_load'],
-#                  axial_positions = d['axial_positions'])
-#        if 'axial_pos' in d.keys():
-#            obj.Update(axial_positions = d['axial_positions'],
-#                       internal_diameters = d['internal_diameters'],
-#                       axial_pos = d['axial_pos'],
-#                       external_diameters = d['external_diameters'],
-#                       length = d['length'])
-#        return obj
-
-#class DetailedRadialRollerBearing(RadialRollerBearing):
-#    #Roulement à rouleaux
-#    def __init__(self, d, D, B, i, Z, Dw, d1=None, D1=None, Lw=None, radius=None, E=None, F=None,
-#                 alpha=0, bm=1.1, oil=oil_iso_vg_1500, material=material_iso, direction=1, typ='N'):
-#        RadialRollerBearing.__init__(self, d, D, B, i, Z, Dw, alpha ,
-#                                oil = oil, material = material, contact_type = 'linear_contact',
-#                                direction = direction, typ = typ)
-#
-#        #diametre rouleau moyen
-#        self.Dwe = Dw
-#        self.bm = bm
-#
-#        if d1 is not None:
-#            self.d1 = d1
-#        if D1 is not None:
-#            self.D1 = D1
-#        if Lw is not None:
-#            self.Lw = Lw
-#        if E is not None:
-#            self.E = E
-#        if F is not None:
-#            self.F = F
-#        if radius is not None:
-#            self.radius = radius
-#
-#        self.Dpw, self.Lwe, self.slack, self.ep = self.DefParam()
-#        self.mass = self.Mass()
-#
-#    def __str__(self):
-#        s = '{}\n'.format(self.__class__.__name__)
-#        s += 'Dimensions d:{} D:{} B:{} Dw:{} Z:{}'.format(self.d, self.D, self.B, self.Dw, self.Z)
-##        s += 'L10: {} Lnm: {}
-#        return s
-#
-#    def Update(self, d1, D1, E, F, Z):
-#        self.d1 = d1
-#        self.D1 = D1
-#        self.E = E
-#        self.F = F
-#        self.Z = Z
-#        self.Dpw,self.Lwe,self.slack,self.ep = self.DefParam()
-#        self.mass = self.Mass()
-#
-#    def DefParam(self):
-#        Dpw = (self.E+self.F)/2.
-#        Lwe = self.Lw-2*self.radius
-#        slack = (self.E-self.F-2*self.Dw)/4.
-#        ep = (self.B-self.Lw-2*slack)/2.
-#        return Dpw,Lwe,slack,ep
-#
-#    def Mass(self):
-#        rho = 7800
-#        m = self.Z*math.pi*(self.Dw)**2/4.*self.Lw*rho
-#        m += (math.pi*(self.D)**2/4.-math.pi*(self.E)**2/4.)*self.B*rho
-#        m += (math.pi*(self.F)**2/4.-math.pi*(self.d)**2/4.)*self.B*rho
-#        return m
-#
-#    def BaseStaticLoad(self):
-#        #Charge radiale statique de base
-#        #besoin de convertir les dimensions en mm pour les formules ISO
-#        C0r = 44*(1-(self.Dw*1e3*math.cos(self.alpha))/(self.Dpw*1e3))*self.i*self.Z \
-#                *self.Lwe*1e3*self.Dw*1e3*math.cos(self.alpha)
-#        return C0r
-#
-#    def BaseDynamicLoad(self):
-#        #Charge radiale dynamique de base
-#        mu = float((self.Dwe*1e3)*math.cos(self.alpha)/(self.Dpw*1e3))
-#        fc = 0.377*self.material.mu_delta*1/((2**((self.material.weibull_c\
-#                +self.material.weibull_h-1)/(self.material.weibull_c-self.material.weibull_h+1)))\
-#                *(0.5**(2*self.material.weibull_e/(self.material.weibull_c-self.material.weibull_h+1))))\
-#                *self.material.B1*((1-mu)**((self.material.weibull_c+self.material.weibull_h-3)/\
-#                (self.material.weibull_c-self.material.weibull_h+1))/((1+mu)**(2*self.material.weibull_e\
-#                /(self.material.weibull_c-self.material.weibull_h+1))))\
-#                *(mu**(2/(self.material.weibull_c-self.material.weibull_h+1)))\
-#                *(1+(1.04*((1-mu)/(1+mu))**((self.material.weibull_c+self.material.weibull_h\
-#                +2*self.material.weibull_e-3)/(self.material.weibull_c-self.material.weibull_h+1)))\
-#                **((self.material.weibull_c-self.material.weibull_h+1)/2.))\
-#                **(-2/(self.material.weibull_c-self.material.weibull_h+1))
-#        Cr = fc*self.bm*self.i*((self.Lwe*1e3)*math.cos(self.alpha))\
-#                **((self.material.weibull_c-self.material.weibull_h-1)/(self.material.weibull_c\
-#                -self.material.weibull_h+1))*self.Z**((self.material.weibull_c\
-#                -self.material.weibull_h-2*self.material.weibull_e+1)/(self.material.weibull_c\
-#                -self.material.weibull_h+1))*(self.Dwe*1e3)**((self.material.weibull_c\
-#                -self.material.weibull_h-3)/(self.material.weibull_c-self.material.weibull_h+1))
-#        return Cr
-#
-#    def Dict(self):
-#
-#        d = {}
-#        for k,v in self.__dict__.items():
-#            tv = type(v)
-#            if tv == npy.int64:
-#                d[k] = int(v)
-#            elif tv == npy.float64:
-#                d[k] = round(float(v), 5)
-#            else:
-#                d[k] = v
-#
-#        d['oil'] = self.oil.Dict()
-#        d['material'] = self.material.Dict()
-#        return d
-
-#class DetailedDrawnCupNeedleRollerBearing(DetailedRadialRollerBearing):
-#    #Douille à aiguilles
-#
-#    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
-#                 alpha,bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
-#                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
-#                 oil_name='iso_vg_100'):
-#        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
-#                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
-#                                     weibull_h, B1, mu_delta, c_gamma, oil_name)
-#
-#class DetailedNeedleRollerBearing(DetailedRadialRollerBearing):
-#    #Cage à aiguilles
-#    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
-#                 alpha, bm=1, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
-#                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
-#                 oil_name='iso_vg_100'):
-#        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
-#                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
-#                                     weibull_h, B1, mu_delta, c_gamma, oil_name)
-#
-#class DetailedSphericalRollerBearing(DetailedRadialRollerBearing):
-#    #Roulement à rotule à rouleaux
-#    def __init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E, F, Z, i,
-#                 alpha,bm=1.15, weibull_e=9/8., weibull_c=31/3., weibull_h=7/3.,
-#                 B1=551.13373/0.483, mu_delta=0.83, c_gamma=0.05,
-#                 oil_name='iso_vg_100'):
-#        DetailedRadialRollerBearing.__init__(self, typ, B, d, D, d1, D1, Lw, Dw, radius, E,
-#                                     F, Z, i, alpha, bm, weibull_e, weibull_c,
-#                                     weibull_h, B1, mu_delta, c_gamma,
-#                                     oil_name)
-
-
-#class BearingAssemblyOptimizationResults:
-#
-#    dessia_db_attributes = [{'name':'bearing_assemblies',
-#                             'class':'mechanical_components.bearings.BearingAssembly',
-#                             'type':'list'}]
-#
-#    def __init__(self, loads, speeds, times,
-#                 internal_diameters, axial_positions, external_diameters, length,
-#                 linkage_types, mounting_types, bearing_numbers,
-#                 sort, sort_arg, number_solutions, bearing_assemblies, results):
-#        self.loads = loads
-#        self.speeds = speeds
-#        self.times = times
-#        self.internal_diameters = internal_diameters
-#        self.axial_positions = axial_positions
-#        self.external_diameters = external_diameters
-#        self.length = length
-#        self.linkage_types = linkage_types
-#        self.mounting_types = mounting_types
-#        self.bearing_numbers = bearing_numbers
-#        self.sort = sort
-#        self.sort_arg = sort_arg
-#        self.number_solutions = number_solutions
-#        self.bearing_assemblies = bearing_assemblies
-#        self.results = results
-#
-##    def PlotData(self):
-##        plot_data = []
-##        for ba in self.bearing_assemblies:
-##            data = {}
-##            data['bearing_assemblies'] = {'plot_data': [ba.PlotData()]}
-##            data['bearing_assemblies']['bearing_combinations'] = {'plot_data': []}
-##            data['bearing_assemblies']['bearing_combinations']['bearings'] = {'plot_data': []}
-##            for num_bc, bc in enumerate(ba.bearing_combinations):
-##                bc_result = self.results[ba][0]['bearing_combinations'][num_bc]
-##                plot_data.append(bc.PlotData(typ='Load', bearing_combination_result = bc_result))
-##                li_data = []
-##                for bg in bc.bearings:
-##                    li_data.append(bg.PlotData())
-##                data['bearing_assemblies']['bearing_combinations']['bearings']['plot_data'].append(li_data)
-##            plot_data.append(data)
-#
-#
-##        return plot_data
-#
-#    def Dict(self, subobjects_id={}, stringify_keys=True):
-#
-#        """
-#        Export dictionary
-#        """
-#        d={}
-#        for k,v in self.__dict__.items():
-#            tv=type(v)
-#            if tv==npy.int64:
-#                d[k]=int(v)
-#            elif tv==npy.float64:
-#                d[k]=round(float(v), 5)
-#            else:
-#                d[k]=v
-#
-#        d['bearing_assemblies'] = []
-#        for bearing_assembly in self.bearing_assemblies:
-#            if bearing_assembly in subobjects_id:
-#                d['bearing_assemblies'].append(subobjects_id[bearing_assembly])
-#            else:
-#                d['bearing_assemblies'].append(bearing_assembly.Dict())
-#
-#        dict_result = {}
-#        for ba, results in self.results.items():
-#            key_ba = self.bearing_assemblies.index(ba)
-#            dict_result[int(key_ba)] = []
-#            for result in results:
-#                di_result_1 = {}
-#                di_result_1['loads'] = result['loads']
-#                di_result_1['axial_loads'] = result['axial_loads']
-#                di_result_1['radial_loads'] = result['radial_loads']
-#                di_result_1['positions'] = result['positions']
-#                li_bcs = []
-#                for num_bc, bc in enumerate(result['bearing_combinations']):
-#                    li_bgs = []
-#                    for bg in bc:
-#                        li_bgs.append(bg.Dict())
-#                    li_bcs.append(li_bgs)
-#                di_result_1['bearing_combinations'] = li_bcs
-#            dict_result[key_ba].append(di_result_1)
-#        d['results'] = dict_result
-#
-#        if 'max' in d['sort']:
-#            del d['sort']['max']
-#
-#        if stringify_keys:
-#            return StringifyDictKeys(d)
-#        return d
-#
-#    @classmethod
-#    def DictToObject(cls, d):
-#
-#        li_ba = []
-#        for bearing_assembly in d['bearing_assemblies']:
-#            li_ba.append(BearingAssembly.DictToObject(bearing_assembly))
-#        res = {}
-#        for key_ba, results in d['results'].items():
-#            res[li_ba[int(key_ba)]] = []
-#            for result in results:
-#                dict_temp = {}
-#                dict_temp['loads'] = result['loads']
-#                dict_temp['axial_loads'] = result['axial_loads']
-#                dict_temp['radial_loads'] = result['radial_loads']
-#                dict_temp['positions'] = result['positions']
-#                dict_temp['bearing_combinations'] = []
-#                for num_bc, bc in enumerate(result['bearing_combinations']):
-#                    bgs = []
-#                    for bg in bc:
-#                        bgs.append(LoadBearing.DictToObject(bg))
-#                    dict_temp['bearing_combinations'].append(bgs)
-#                res[li_ba[int(key_ba)]].append(dict_temp)
-#        obj = cls(loads = d['loads'],
-#                  speeds = d['speeds'],
-#                  times = d['times'],
-#                  internal_diameters = d['internal_diameters'],
-#                  axial_positions = d['axial_positions'],
-#                  external_diameters = d['external_diameters'],
-#                  length = d['length'],
-#                  linkage_types = d['linkage_types'],
-#                  mounting_types = d['mounting_types'],
-#                  bearing_numbers = d['bearing_numbers'],
-#                  sort = d['sort'],
-#                  sort_arg = d['sort_arg'],
-##                  path = d['path'],
-#                 number_solutions = d['number_solutions'],
-#                  bearing_assemblies = li_ba, results = res)
-#
-#        return obj
-#
-##    def DefOptimizer(self):
-##        obj = BearingAssemblyOptimizer.DefOptimizer(self.list_pos_unknown,
-##                 self.loads,
-##                 self.torques, self.speeds, self.list_time,
-##                 self.internal_diameters, self.axial_positions, self.external_diameters, self.length,
-##                 self.linkage_type, self.mounting_type, self.bearing_numbers,
-##                 self.sort, self.sort_arg, self.path, self.nb_sol)
-##        return obj
 
 class BearingSimulationResult(DessiaObject):
     _standalone_in_db = True
@@ -3931,40 +3506,7 @@ class BearingSimulationResult(DessiaObject):
         self.L10 = L10
         DessiaObject.__init__(self, name=name)
 
-#    def __eq__(self, other_eb):
-#        equal = (self.axial_load == other_eb.axial_load
-#                 and self.radial_load == other_eb.radial_load
-#                 and self.L10 == other_eb.L10)
-#        return equal
-#
-#    def __hash__(self):
-#        h = int(self.L10 % 230)
-#        return h
 
-#    def Dict(self, subobjects_id = {}, stringify_keys=True):
-#        """Export dictionary
-#        """
-#        d = {}
-#        for k,v in self.__dict__.items():
-#            tv = type(v)
-#            if tv == npy.int64:
-#                d[k] = int(v)
-#            elif tv==npy.float64:
-#                d[k]=round(float(v), 5)
-#            else:
-#                d[k] = v
-#
-#        if stringify_keys:
-#            return StringifyDictKeys(d)
-#
-#        return d
-#
-#    @classmethod
-#    def DictToObject(cls, d):
-#        obj = cls(axial_load = d['axial_load'],
-#                  radial_load = d['radial_load'],
-#                  L10 = d['L10'])
-#        return obj
 
 class BearingCombinationSimulationResult(DessiaObject):
     _standalone_in_db = True
@@ -4011,61 +3553,7 @@ class BearingCombinationSimulationResult(DessiaObject):
             max_radial_load = max(max_radial_load, max(bearing_simulation_result.radial_load))
         return max_radial_load
 
-#    def __eq__(self, other_eb):
-#        equal = (self.axial_loads == other_eb.axial_loads
-#                 and self.radial_loads == other_eb.radial_loads)
-#        if hasattr(self, 'speeds') and hasattr(other_eb, 'speeds'):
-#            equal = equal and self.speeds == other_eb.speeds
-#        elif hasattr(self, 'speeds') or hasattr(other_eb, 'speeds'):
-#            equal = False
-#        if hasattr(self, 'operating_times') and hasattr(other_eb, 'operating_times'):
-#            equal = equal and self.operating_times == other_eb.operating_times
-#        elif hasattr(self, 'operating_times') or hasattr(other_eb, 'operating_times'):
-#            equal = False
-#        for bearing_simulation_result, other_bearing_simulation_result in zip(self.bearing_simulation_results, other_eb.bearing_simulation_results):
-#            equal = equal and bearing_simulation_result == other_bearing_simulation_result
-#        return equal
-#
-#    def __hash__(self):
-#        h = 0
-#        for bsr in self.bearing_simulation_results:
-#            h += hash(bsr)
-#        return int(h % 2091)
-#
-#    def Dict(self, subobjects_id = {}, stringify_keys=True):
-#        """
-#        Export dictionary
-#        """
-#        d={}
-#        for k,v in self.__dict__.items():
-#            tv=type(v)
-#            if tv==npy.int64:
-#                d[k]=int(v)
-#            elif tv==npy.float64:
-#                d[k]=round(float(v), 5)
-#            else:
-#                d[k]=v
-#        bgs = []
-#        for bg in self.bearing_simulation_results:
-#            if bg in subobjects_id:
-#                bgs.append(subobjects_id[bg])
-#            else:
-#                bgs.append(bg.Dict())
-#        d['bearing_simulation_results'] = bgs
-#        if stringify_keys:
-#            return StringifyDictKeys(d)
-#
-#        return d
-#
-#    @classmethod
-#    def DictToObject(cls, d):
-#        bc_result = []
-#        for bg in d['bearing_simulation_results']:
-#            bc_result.append(BearingSimulationResult.DictToObject(bg))
-#        obj = cls(bearing_simulation_results = bc_result,
-#                  axial_loads = d['axial_loads'],
-#                  radial_loads = d['radial_loads'])
-#        return obj
+
 
 
 class BearingAssemblySimulationResult(DessiaObject):
@@ -4091,65 +3579,7 @@ class BearingAssemblySimulationResult(DessiaObject):
         
         DessiaObject.__init__(self, name=name)
 
-#    def __eq__(self, other_eb):
-#        equal = (self.loads == other_eb.loads
-#                 and self.speeds == other_eb.speeds
-#                 and self.operating_times == other_eb.operating_times)
-#        if hasattr(self, 'L10') and hasattr(other_eb, 'L10'):
-#            equal = equal and self.L10 == other_eb.L10
-#        elif hasattr(self, 'L10') or hasattr(other_eb, 'L10'):
-#            equal = False
-#        for bearing_combination_simulation_result, other_bearing_combination_simulation_result \
-#                in zip(self.bearing_combination_simulation_results,\
-#                       other_eb.bearing_combination_simulation_results):
-#            equal = equal and bearing_combination_simulation_result == other_bearing_combination_simulation_result
-#        return equal
-#
-#    def __hash__(self):
-#        h = int(self.L10 % 9397)
-#        return h
-#
-#    def PlotAxialModel(self):
-#        self.axial_load_model.Plot(intensity_factor=1e-5)
-#
-#    def Dict(self, subobjects_id = {}, stringify_keys=True):
-#        """
-#        Export dictionary
-#        """
-#        d = {}
-#        for k,v in self.__dict__.items():
-#            tv = type(v)
-#            if tv == npy.int64:
-#                d[k] = int(v)
-#            elif tv==npy.float64:
-#                d[k]=round(float(v), 5)
-#            else:
-#                d[k] = v
-#        del d['axial_load_model']
-#        bcs = []
-#        for bc in self.bearing_combination_simulation_results:
-#            if bc in subobjects_id:
-#                bcs.append(subobjects_id[bc])
-#            else:
-#                bcs.append(bc.Dict())
-#        d['bearing_combination_simulation_results'] = bcs
-#
-#        if stringify_keys:
-#            return StringifyDictKeys(d)
-#
-#        return d
-#
-#    @classmethod
-#    def DictToObject(cls, d):
-#        li_bc = []
-#        for bc in d['bearing_combination_simulation_results']:
-#            li_bc.append(BearingCombinationSimulationResult.DictToObject(bc))
-#        obj = cls(bearing_combination_simulation_results = li_bc,
-#                  loads = d['loads'],
-#                  speeds = d['speeds'],
-#                  operating_times = d['operating_times'],
-#                  L10 = d['L10'])
-#        return obj
+
 
 
 class BearingAssemblySimulation(DessiaObject):
@@ -4175,54 +3605,7 @@ class BearingAssemblySimulation(DessiaObject):
         plot_data = self.bearing_assembly.plot_data()
         return plot_data
 
-#    def __eq__(self, other_eb):
-#        equal = (self.bearing_assembly == other_eb.bearing_assembly
-#                 and self.bearing_assembly_simulation_result == other_eb.bearing_assembly_simulation_result)
-#        return equal
-#
-#    def __hash__(self):
-#        br_hash = hash(self.bearing_assembly) \
-#                + hash(self.bearing_assembly_simulation_result)
-#        return br_hash
-#
-#    def Dict(self, subobjects_id = {}, stringify_keys=True):
-#        """
-#        Export dictionary
-#        """
-#        d = {}
-#        for k,v in self.__dict__.items():
-#            tv = type(v)
-#            if tv == npy.int64:
-#                d[k] = int(v)
-#            elif tv==npy.float64:
-#                d[k]=round(float(v), 5)
-#            else:
-#                d[k] = v
-#
-#        if self.bearing_assembly in subobjects_id:
-#            d['bearing_assembly'] = subobjects_id[self.bearing_assembly]
-#        else:
-#            d['bearing_assembly'] = self.bearing_assembly.Dict(subobjects_id)
-#
-#        if self.bearing_assembly_simulation_result in subobjects_id:
-#            d['bearing_assembly_simulation_result'] = subobjects_id[self.bearing_assembly_simulation_result]
-#        else:
-#            d['bearing_assembly_simulation_result'] = self.bearing_assembly_simulation_result.Dict(subobjects_id)
-#
-#        if stringify_keys:
-#            return StringifyDictKeys(d)
-#
-#        return d
-#
-#    @classmethod
-#    def DictToObject(cls, d):
-#        BA = BearingAssembly.DictToObject(d['bearing_assembly'])
-#        BAS = BearingAssemblySimulationResult.DictToObject(d['bearing_assembly_simulation_result'])
-#
-#        obj = cls(bearing_assembly = BA,
-#                  bearing_assembly_simulation_result = BAS)
-#
-#        return obj
+
 
 class BearingCombinationSimulation(DessiaObject):
     _standalone_in_db = True
@@ -4247,54 +3630,7 @@ class BearingCombinationSimulation(DessiaObject):
         plot_data = self.bearing_combination.plot_data(box=box)
         return plot_data
 
-#    def __eq__(self, other_eb):
-#        equal = (self.bearing_combination == other_eb.bearing_combination
-#                 and self.bearing_combination_simulation_result == other_eb.bearing_combination_simulation_result)
-#        return equal
-#
-#    def __hash__(self):
-#        br_hash = hash(self.bearing_combination) \
-#                + hash(self.bearing_combination_simulation_result)
-#        return br_hash
-#
-#    def Dict(self, subobjects_id = {}, stringify_keys=True):
-#        """
-#        Export dictionary
-#        """
-#        d = {}
-#        for k,v in self.__dict__.items():
-#            tv = type(v)
-#            if tv == npy.int64:
-#                d[k] = int(v)
-#            elif tv==npy.float64:
-#                d[k]=round(float(v), 5)
-#            else:
-#                d[k] = v
-#
-#        if self.bearing_combination in subobjects_id:
-#            d['bearing_combination'] = subobjects_id[self.bearing_combination]
-#        else:
-#            d['bearing_combination'] = self.bearing_combination.Dict(subobjects_id)
-#
-#        if self.bearing_combination_simulation_result in subobjects_id:
-#            d['bearing_combination_simulation_result'] = subobjects_id[self.bearing_combination_simulation_result]
-#        else:
-#            d['bearing_combination_simulation_result'] = self.bearing_combination_simulation_result.Dict(subobjects_id)
-#
-#        if stringify_keys:
-#            return StringifyDictKeys(d)
-#
-#        return d
-#
-#    @classmethod
-#    def DictToObject(cls, d):
-#        BC = BearingCombination.DictToObject(d['bearing_combination'])
-#        BCS = BearingCombinationSimulationResult.DictToObject(d['bearing_combination_simulation_result'])
-#
-#        obj = cls(bearing_combination = BC,
-#                  bearing_combination_simulation_result = BCS)
-#
-#        return obj
+
 
 
 class BearingL10Error(Exception):
