@@ -44,7 +44,7 @@ GA=meshes_opt.MeshAssemblyOptimizer(connections = connections,
 #                                  rack_choice=rack_choices)
                                   cycles={0:1e8}
                                   )
-GA.FreeCADExport('meshes')
+# GA.FreeCADExport('meshes')
 
 #Recherche triée des nb_sol architecture ayant un entraxe mini (nb_sol=-1 pour analyser l'ensemble des solutions)
 GA.Optimize(nb_sol=3, verbose = True)
