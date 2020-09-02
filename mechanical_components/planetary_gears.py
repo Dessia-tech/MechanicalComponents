@@ -42,43 +42,51 @@ class Gears(DessiaObject):
     #     model = self.volume_model()
     #     return model
 
-    # def volume_model(self):
-    #      # self.module = module
-    #      # self.d = module*self.Z
-    #      # radius = self.Z*module
-    #      # x = vm.Vector3D((1, 0, 0))
-    #      # y = vm.Vector3D((0, 1, 0))
-    #      # z = vm.Vector3D((0, 0, 1))
-    #      # rack = meshes.Rack(0.34, module)
-    #      # meshes_1 = meshes.Mesh(self.Z, radius, 0.01, rack)
-    #      # Gears3D = {0:meshes_1.Contour(3)}
-    #      # export = []
-    #      # center_2 = (xy_position[0], xy_position[1])
-    #      # center = vm.Point2D(center_2)
-    #      # model_trans = Gears3D[0][0].Translation(center)
-    #      # model_trans_rot = model_trans.Rotation(center, 0.1)
-    #      # Gears3D_Rotate = [model_trans_rot]
+    def volume_model(self,module,xy_position,z_position,lenght):
+           self.module = module
+           self.d = module*self.Z
+           radius = self.Z*module
+           x = vm.Vector3D((1, 0, 0))
+           y = vm.Vector3D((0, 1, 0))
+           z = vm.Vector3D((0, 0, 1))
+           rack = meshes.Rack(0.34, module)
+           meshes_1 = meshes.Mesh(self.Z, radius, 0.01, rack)
+           Gears3D = {0:meshes_1.Contour(3)}
+           
+           export = []
+           center_2 = (xy_position[0], xy_position[1])
+           center = vm.Point2D(center_2)
+           model_trans = Gears3D[0][0].Translation(center)
+           
+           model_trans_rot = model_trans.Rotation(center, 0.1)
+           Gears3D_Rotate = [model_trans_rot]
 
-    #      # export = []
+           export = []
 
-    #      # for (i, center, k) in zip([Gears3D[0]], [center_2], [-1]):
+           for (i, center, k) in zip([Gears3D[0]], [center_2], [-1]):
 
-    #      #                model_export = []
+                          model_export = []
 
-    #      #                for m in i:
+                          for m in i:
 
-    #      #                    center = vm.Point2D(center)
-    #      #                    model_trans = m.Translation(center)
-    #      #                    model_trans_rot = model_trans.Rotation(center, k)
-    #      #                    model_export.append(model_trans_rot)
+                              center = vm.Point2D(center)
+                              model_trans = m.Translation(center)
+                              model_trans_rot = model_trans.Rotation(center, k)
+                              model_export.append(model_trans_rot)
 
-    #      #                export.append(model_export)
+                          export.append(model_export)
 
-    #      # Gears3D_Rotate = export
-    #      # vect_x = z_position*z
-    #      # extrusion_vector1 = lenght*z
-    #      # C1 = vm.Contour2D(Gears3D_Rotate[0])
-    #      # t1 = p3d.ExtrudedProfile(vm.Vector3D(vect_x), x, y, C1, [], vm.Vector3D(extrusion_vector1))
+           Gears3D_Rotate = export
+           vect_x = z_position*z
+           extrusion_vector1 = lenght*z
+           C1 = Gears3D_Rotate[0]
+           L=[]
+           for gear in Gears3D_Rotate[0]:
+               L.append(gear.plot_data('contour', stroke_width=8))
+           
+           vmp.plot([L[0]])
+           # t1 = p3d.ExtrudedProfile(vm.Vector3D(vect_x), x, y, C1[0], [], vm.Vector3D(extrusion_vector1))
+           
     #      if module==0:
     #          return None
 
@@ -126,7 +134,7 @@ class Planetary(Gears):
         self.Z = Z
         self.name = name
         self.torque_input = torque_input
-        self.torque_signe=1
+        # self.torque_signe=1
         self.power= 0
         if planetary_type == 'Sun':
 
@@ -140,30 +148,30 @@ class Planetary(Gears):
         model = self.volume_model()
         return model
 
-    def volume_model(self):
-        position = self.position
-        module = self.module
+    # def volume_model(self):
+    #     position = self.position
+    #     module = self.module
 
-        if self.planetary_type == 'Sun':
-            pos = vm.Point3D(position)
-            axis = vm.Vector3D((1, 0, 0))
-            radius = (module*self.Z)/2
+    #     if self.planetary_type == 'Sun':
+    #         pos = vm.Point3D(position)
+    #         axis = vm.Vector3D((1, 0, 0))
+    #         radius = (module*self.Z)/2
 
-            cylinder = p3d.Cylinder(pos, axis, radius, position[0]+self.length)
-            return cylinder
+    #         cylinder = p3d.Cylinder(pos, axis, radius, position[0]+self.length)
+    #         return cylinder
 
-        radius = (module*self.Z)/2
-        p1 = vm.Point2D((radius, position[0]+self.length/2))
-        p2 = vm.Point2D((radius+radius*0.1, position[0]+self.length/2))
-        p3 = vm.Point2D((radius, position[0]-self.length/2))
-        p4 = vm.Point2D((radius+radius*0.1, position[0]-self.length/2))
-        points1 = [p1, p2, p3, p4]
-        c1 = vm.Polygon2D(points1)
-        vector_1 = vm.Point3D((0, 0, 0))
+    #     radius = (module*self.Z)/2
+    #     p1 = vm.Point2D((radius, position[0]+self.length/2))
+    #     p2 = vm.Point2D((radius+radius*0.1, position[0]+self.length/2))
+    #     p3 = vm.Point2D((radius, position[0]-self.length/2))
+    #     p4 = vm.Point2D((radius+radius*0.1, position[0]-self.length/2))
+    #     points1 = [p1, p2, p3, p4]
+    #     c1 = vm.Polygon2D(points1)
+    #     vector_1 = vm.Point3D((0, 0, 0))
 
-        profile1 = p3d.RevolvedProfile(vector_1, vm.Z3D, vm.X3D, c1, vm.O3D, vm.X3D)
+    #     profile1 = p3d.RevolvedProfile(vector_1, vm.Z3D, vm.X3D, c1, vm.O3D, vm.X3D)
 
-        return profile1
+    #     return profile1
 
 
 class Planet(Gears):
@@ -2169,6 +2177,7 @@ class PlanetaryGear(DessiaObject):
             
         # # first_input[self.planet_carrier]=self.planet_carrier.torque_input[1]
         # print(first_input)
+        self.mech=0
         if not self.mech:
             for i in range(len(self.planetaries)-1):
                 first_input[self.planetaries[i]]=self.planetaries[i].torque_input[0]/self.number_branch_planet
@@ -2661,6 +2670,7 @@ class PlanetaryGear(DessiaObject):
             position=[planetary.position[0],planetary.position[1],planetary.position[2]]
             link_planetaries_ball.append(linkages.FrictionlessBallLinkage(ground, part_planetaries[-1], np.array(position),
                                                               [0, 0, 0], 'planetary_ball'+str(i)))
+            
             link_planetaries_linear_annular.append(linkages.FrictionlessLinearAnnularLinkage(ground, part_planetaries[-1],
                                                                                  np.array([position[0]+0.1, position[1], position[2]]),
                                                                                  [0, 0, 0], 'planetary_linear_angular'+str(i)))
@@ -3384,6 +3394,7 @@ class PositionMinMaxPlanetaryGear(DessiaObject):
 
      def get_position(self, element, planetary_gear, min_max):
         element_list = planetary_gear.planets+ planetary_gear.planetaries
+   
         if min_max == 'Min':
             return self.positions_min_max[element_list.index(element)][0]
         if min_max == 'Max':
@@ -3414,7 +3425,8 @@ class PlanetaryGearResult(DessiaObject):
         self.planet_carrier=planetary_gear.planet_carrier
         self.connections=planetary_gear.connections
         self.doubles=planetary_gear.doubles
-        
+       
+        self.update_geometry()
         self.recircle_power=self.planetary_gear.recirculation_power()[0][1]
         if not self.planetary_gear.speed_max_planet:
             self.speed_max_planet = self.planetary_gear.speed_max_planets()
@@ -3446,7 +3458,7 @@ class PlanetaryGearResult(DessiaObject):
             if d > self.d_min:
                 self.d_min = d
                 
-        self.recirculation_power=planetary_gear.recirculation_power()
+        
           
         
         
