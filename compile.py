@@ -366,14 +366,17 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
             wheel.bdist_wheel.safer_name(self.distribution.get_name()),
             wheel.bdist_wheel.safer_version(self.distribution.get_version()))
         distinfo_dir = os.path.join(self.bdist_dir, distinfo_dirname)
-        
-        
-        distdir = os.path.join(self.bdist_dir, 'dessia_common')
-        
+                
+        package_name = self.distribution.get_name()
+        distdir = os.path.join(self.bdist_dir, package_name)
+
         for root, dirs, files in os.walk(distdir):
             for file in files:
-                if file.endswith('_protected.py'):
-                    os.remove(os.path.join(root, file))
+                file_path = os.path.join(root, file)
+                rel_fp = os.path.join(package_name, os.path.relpath(file_path, distdir))
+                if rel_fp in protected_files:
+                    os.remove(file_path)
+                    
         
         self.egg2dist(self.egginfo_dir, distinfo_dir)
 
@@ -413,7 +416,6 @@ def version_from_git_describe(version):
         version, number_commits_ahead, commit_hash = version.split('-')
         number_commits_ahead = int(number_commits_ahead)
 
-    print('number_commits_ahead', number_commits_ahead)
 
     split_versions = version.split('.')
     if 'post' in split_versions[-1]:
@@ -451,6 +453,12 @@ def version_from_git_describe(version):
 
         return '.'.join(split_versions)
 
+
+def readme():
+    with open('README.md') as f:
+        return f.read()
+    
+    
 def get_version():
     # Return the version if it has been injected into the file by git-archive
     version = tag_re.search('$Format:%D$')
