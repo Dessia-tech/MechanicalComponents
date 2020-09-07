@@ -45,11 +45,12 @@ class Gears(DessiaObject):
     def volume_model(self,module,xy_position,z_position,lenght):
            self.module = module
            self.d = module*self.Z
-           radius = self.Z*module
+           
            x = vm.Vector3D((1, 0, 0))
            y = vm.Vector3D((0, 1, 0))
            z = vm.Vector3D((0, 0, 1))
-           rack = meshes.Rack(0.34, module)
+           rack = meshes.Rack(20*3.14/180, module)
+           radius = m.cos(rack.transverse_pressure_angle)*module*self.Z
            meshes_1 = meshes.Mesh(self.Z, radius, 0.01, rack)
            Gears3D = {0:meshes_1.Contour(3)}
            
@@ -67,10 +68,10 @@ class Gears(DessiaObject):
 
                           model_export = []
 
-                          for m in i:
+                          for m2 in i:
 
                               center = vm.Point2D(center)
-                              model_trans = m.Translation(center)
+                              model_trans = m2.Translation(center)
                               model_trans_rot = model_trans.Rotation(center, k)
                               model_export.append(model_trans_rot)
 
@@ -81,10 +82,10 @@ class Gears(DessiaObject):
            extrusion_vector1 = lenght*z
            C1 = Gears3D_Rotate[0]
            L=[]
-           for gear in Gears3D_Rotate[0]:
-               L.append(gear.plot_data('contour', stroke_width=8))
+           # for gear in Gears3D_Rotate[0]:
+           #     L.append(gear.plot_data('contour', stroke_width=8))
            
-           vmp.plot([L[0]])
+           # vmp.plot([L[0]])
            # t1 = p3d.ExtrudedProfile(vm.Vector3D(vect_x), x, y, C1[0], [], vm.Vector3D(extrusion_vector1))
            
     #      if module==0:
