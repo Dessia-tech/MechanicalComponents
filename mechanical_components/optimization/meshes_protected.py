@@ -328,7 +328,7 @@ class ContinuousMeshesAssemblyOptimizer:
                         dict_db[eng2]=self.Z[eng2]/float(self.Z[eng1])*dict_db[eng1]
                         dict_df[eng2]=2*cd*self.Z[eng2]/float(self.Z[eng1]+self.Z[eng2])
                         dict_df[eng1]=2*cd-dict_df[eng2]
-                        dict_tpa[num_mesh]=math.arccos(dict_db[eng2]/float(dict_df[eng2]))
+                        dict_tpa[num_mesh]=math.acos(dict_db[eng2]/float(dict_df[eng2]))
                     elif eng2 in dict_db.keys():
                         cd=dict_cd[num_cd]
                         dict_db[eng1]=self.Z[eng1]/float(self.Z[eng2])*dict_db[eng2]
@@ -389,6 +389,7 @@ class ContinuousMeshesAssemblyOptimizer:
         ineq=[]
         for mesh_assembly_iter in self.mesh_assembly.mesh_combinations:
             ineq.extend(mesh_assembly_iter.ListeIneq())
+            
             #geometric constraint
             for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
                 dia1=mesh_assembly_iter.meshes[engr1].root_diameter_active
@@ -396,31 +397,43 @@ class ContinuousMeshesAssemblyOptimizer:
                 de1=mesh_assembly_iter.meshes[engr1].outside_diameter
                 de2=mesh_assembly_iter.meshes[engr2].outside_diameter
                 cd=mesh_assembly_iter.center_distance[num_mesh]
-                ineq.append(cd- 0.5*(de1+dia2))
-                ineq.append(cd- 0.5*(de2+dia1))
+                if cd<0:
+                    ineq.append(cd- 0.5*(de1-dia2))
+                    ineq.append(cd- 0.5*(-de2+dia1))
+                else:
+                    ineq.append(cd- 0.5*(de1+dia2))
+                    ineq.append(cd- 0.5*(de2+dia1))
+            
                 oaa1=mesh_assembly_iter.meshes[engr1].outside_active_angle
                 oaa2=mesh_assembly_iter.meshes[engr2].outside_active_angle
                 ineq.append(oaa1)
                 ineq.append(oaa2)
-                df1=mesh_assembly_iter.DF[num_mesh][engr1]
-                df2=mesh_assembly_iter.DF[num_mesh][engr2]
-                db1=mesh_assembly_iter.meshes[engr1].db
-                db2=mesh_assembly_iter.meshes[engr2].db
+                df1=abs(mesh_assembly_iter.DF[num_mesh][engr1])
+                df2=abs(mesh_assembly_iter.DF[num_mesh][engr2])
+                db1=abs(mesh_assembly_iter.meshes[engr1].db)
+                db2=abs(mesh_assembly_iter.meshes[engr2].db)
+             
                 ineq.append(df1-db1)
                 ineq.append(df2-db2)
+                
             # modulus constraint (not in the open-source part because this parameter is not a ddl)
             for ne,gs in enumerate(mesh_assembly_iter.connections):
                 for g in gs:
+                    
                     mo=mesh_assembly_iter.meshes[g].rack.module
                     list_module=self.rack_list[self.rack_choice[g]]['module']
-                    ineq.append(mo-list_module[0])
-                    ineq.append(list_module[1]-mo)
+                    ineq.append(abs(mo)-list_module[0])
+                    ineq.append(list_module[1]-abs(mo))
+                    print(list_module)
+                    print(mo)
+                    
             # center-distance constraint (not in the open-source part because this parameter is not a ddl)
             for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
                 cd=mesh_assembly_iter.center_distance[num_mesh]
                 limit_cd=self.center_distances[num_mesh]
-                ineq.append(cd-limit_cd[0])
-                ineq.append(limit_cd[1]-cd)
+               
+                ineq.append(abs(cd)-limit_cd[0])
+                ineq.append(limit_cd[1]-abs(cd))
         return ineq
         
     def Objective(self,X):
@@ -475,7 +488,9 @@ class ContinuousMeshesAssemblyOptimizer:
             if verbose:
                 print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
                       cx.status,min(self.Fineq(Xsol))))
-            if min(self.Fineq(Xsol)) > -1e-5:
+            
+            print(self.Fineq(Xsol))
+            if min(self.Fineq(Xsol)) > -1e-2:
                 input_dat = dict(list(output_x.items())+list(self.general_data.items()))
                 self.solutions.append(MeshAssembly.create(**input_dat))
                 arret = 1

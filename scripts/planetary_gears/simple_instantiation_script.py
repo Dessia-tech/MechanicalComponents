@@ -15,11 +15,18 @@ import dectree
 import math as m
 import copy
 import volmdlr as vm
+import volmdlr.plot_data as vmp
 import volmdlr.primitives3D as p3d
 import volmdlr.primitives2D as p2d
 import mechanical_components.meshes as meshes
 import sys
 import time
+import dessia_common
+from dessia_api_client import Client
+import mechanical_components.optimization.meshes_protected as mg
+from mechanical_components.meshes import hardened_alloy_steel
+
+
 # volumic_mass=7800
 # data_coeff_YB_Iso={'data':[[0.0,1.0029325508401201],
 #                            [4.701492563229561,0.9310850480431024],
@@ -56,46 +63,164 @@ import time
 
 # # volumemodel = vm.Contour2D(meshes_1.Contour(1) )
 # # volumemodel.MPLPlot() 
-# sun=pg.Planetary(36,'Sun','sun')
-# sun_2=pg.Planetary(60,'Ring','sun_2')
-# sun_3=pg.Planetary(60,'Sun','sun_2')
-# ring= pg.Planetary(84,'Ring','ring')
-# planet_carrier= pg.PlanetCarrier('planet_carrier')
-# planet_1=pg.Planet(20,'planet_1')
+
+sun=pg.Planetary(137,'Sun','sun')
+sun_2=pg.Planetary(-137,'Ring','sun_2')
+sun_3=pg.Planetary(60,'Sun','sun_2')
+ring= pg.Planetary(50,'Ring','ring')
+planet_carrier= pg.PlanetCarrier('planet_carrier')
+planet_1=pg.Planet(12,'planet_1')
+
+sun.speed_input=[12,100]
+sun_2.speed_input=[10,100]
+ring.speed_input=[10,100]
+planet_carrier.speed_input=[10,100]
+
+sun.torque_input=[10,100]
+sun_2.torque_input=[12,100]
+ring.torque_input=[13,100]
+planet_carrier.torque_input=[10,100]
+list1= [5,1,3]
+list2= [1,5,3]
+print(dessia_common.list_eq(list1,list2))
+planet_2=pg.Planet(10,'planet_2')
+planet_3=pg.Planet(13,'planet_3')
+planet_4=pg.Planet(5,'planet_4')
+planet_5=pg.Planet(5,'planet_5')
+planet_6=pg.Planet(5,'planet_5')
+planet_7=pg.Planet(5,'planet_5')
+connections=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'),pg.Connection([planet_2,ring],'GE'),
+              pg.Connection([planet_2,planet_3],'D'),
+              pg.Connection([planet_3,sun_2],'GI')]
+
+connections3=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'),pg.Connection([planet_2,ring],'GE'),
+              pg.Connection([planet_2,planet_3],'D'),pg.Connection([planet_5,sun_2],'GI'),
+              pg.Connection([planet_3,planet_4],'GI'),
+              pg.Connection([planet_4,planet_5],'GI')]
+
+connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'), pg.Connection([planet_2,ring],'GE')]
+# plt.figure()
+# sun.volume_model(4.0,(0,0),0,0.1)
+# sun_2.volume_model(4.0,(0,0),0,0.1)
 
 
 
-# planet_2=pg.Planet(12,'planet_2')
-# planet_3=pg.Planet(20,'planet_3')
-# planet_4=pg.Planet(7,'planet_4')
-# planet_5=pg.Planet(7,'planet_5')
-# planet_6=pg.Planet(7,'planet_5')
-# planet_7=pg.Planet(7,'planet_5')
-# connections=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'),pg.Connection([planet_2,ring],'GE'),
-#              pg.Connection([planet_2,planet_3],'D'),
-#              pg.Connection([planet_3,sun_2],'GI')]
 
-# connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'),pg.Connection([planet_2,planet_4],'GE'),
-#                pg.Connection([planet_4,planet_5],'GE'), pg.Connection([planet_5,planet_6],'GE'), pg.Connection([planet_6,planet_3],'GE'), pg.Connection([planet_3,ring],'GE')]
+# planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2], [planet_1,planet_2,planet_3], planet_carrier,connections,3,'pl_1')
+# planetary_gears_2= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3,planet_4,planet_5], planet_carrier,connections3,3,'pl_1')
 
-# planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3], planet_carrier,connections,'pl_1')
-# planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2,planet_4,planet_5,planet_6,planet_3], planet_carrier,connections_2,'pl_1')
-# generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_1,3,10,100)
-# print(generatorgeometry.verification())
 
+
+
+
+# vmp.plot(planetary_gears_1.plot_data())
+# planetary_gears_2= pg.PlanetaryGear([sun,ring], [planet_1,planet_2], planet_carrier,connections_2,3,'pl_1')
+
+# input_torque_and_composant={sun:100,ring:100}
+# input_speed={sun:150,ring:100}
+# result_torque=planetary_gears_1.torque_solve(input_torque_and_composant)
+# result_speed=planetary_gears_1.speed_solve(input_speed)
+# print(result_torque)
+# print(result_speed)
+# component=[sun,ring,sun_2,planet_1,planet_2,planet_3,planet_carrier]
+# puissance=[]
+# for i,element in enumerate(component):
+#     puissance.append(result_speed[element]*result_torque[element])
+
+# generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_2,3,1,10,200)
+# generatorgeometry.verification()
+# planetary1=generatorgeometry.planetary_gear.planetaries[0]
+# planet=generatorgeometry.planetary_gear.planets[0]
+module=0.4
+Z_1=-100
+Z_2=25
+Z_3=50
+center_distances=[[0,abs((Z_2+Z_1)*module/2)],[0,abs((Z_2+Z_3)*module/2)]]
+
+list_rack = {0:{'name':'Catalogue_A','module':[module,module],
+              'transverse_pressure_angle_rack':[20/180.*npy.pi,20/180.*npy.pi],
+              'coeff_gear_addendum':[0.85,0.85],'coeff_gear_dedendum':[1,1],
+              'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.4,0.4]}}
+
+
+rack_choices = {0:0, 1:0 , 2:0}
+db2=m.cos(20/180.*npy.pi)*module*Z_2
+
+db1=m.cos(20/180.*npy.pi)*module*Z_1
+db3=m.cos(20/180.*npy.pi)*module*Z_3
+torques = {0: 'output', 1: 100*25/50, 2:100}
+cycles = {0: 1272321481513.054 , 1:1272321481513.054}
+material={0:hardened_alloy_steel, 1:hardened_alloy_steel}
+transverse_pressure_angle={0: [20/180.*npy.pi-0.1, 20/180.*npy.pi],1: [20/180.*npy.pi-0.1, 20/180.*npy.pi]}
+db=[[-db1-0.1,-db1],[db2-0.1,db2],[db3-0.1,db3]]
+coefficient_profile_shift=[[0.01,0.01],[0.01,0.01],[0.01,0.01]]
+d=mg.ContinuousMeshesAssemblyOptimizer(Z={0:Z_1,1:Z_2,2:Z_3},center_distances=center_distances,connections=[[(0,1),(1,2)]],rigid_links=[],
+                                        transverse_pressure_angle=transverse_pressure_angle,rack_list=list_rack,rack_choice=rack_choices,material=material,
+                                        torques=torques,cycles=cycles,safety_factor=1,db=db,coefficient_profile_shift=coefficient_profile_shift)
+d.Optimize(verbose=True)
+solution=d.solutions[0]
+plt.figure()
+solution.mesh_combinations[0].VolumeModel(centers={0:[0,0,(Z_2+Z_1)*module/2],1:[0,0,0]})
+
+
+
+# debut=time.time()
+# generatorgeometry.verification_2()
+# # generatorgeometry.optimize_max()
+# generatorgeometry.optimize_min_recirculation_2()
+# generatorgeometry.planetary_gear.babylonjs()
+# planetary_gears_1.babylonjs()
+# print(planetary_gears_1.recirculation_power())
+
+# planetary_gear_result=pg.PlanetaryGearResult(planetary_gears_1,generatorgeometry.position_min_max)
+# planetary_gear_result.planetary_gear.babylonjs()
+# planetary_gear_result.babylonjs()
+
+# generatorgeometry.optimize_min()
+# planetary_gear_result=pg.PlanetaryGearResult(planetary_gears_2,generatorgeometry.position_min_max)
+# planetary_gear_result.update_geometry()
+# print(planetary_gear_result.planetary_gear.recirculation_power())
+# fin=time.time()
+# print(debut-fin)
+# planetary_gear_result.update_torque({sun:[10,100]})
+# planetary_gear_result.update_torque_max()
+# print(planetary_gears_1.mech)
+# c = Client(api_url = 'http://localhost:5000')
+# r = c.create_object_from_python_object(planetary_gears_1)
+
+# input_torque_and_composant={planetary_gears_1.planetaries[2]:2,planetary_gears_1.planetaries[1]:-5}
+# link=planetary_gears_1.torque_resolution_PFS(input_torque_and_composant)
+# print(planetary_gear_result.planetary_gear.recirculation_power())
+
+
+# print(link)
+# result_torque=planetary_gears_1.torque_solve(input_torque_and_composant)
+# print(result_torque)
+# input_speed_and_composant={planetary_gears_1.planetaries[0]:300,planetary_gears_1.planetaries[2]:200}
+# result_speed=planetary_gears_1.speed_solve(input_speed_and_composant)
+# print(result_speed)
+
+# vmp.plot_d3(planetary_gears_1.plot_data())
+# c = Client(api_url = 'http://localhost:5000')
+# r = c.create_object_from_python_object(planetary_gears_1)
+
+# li_box=planetary_gears_1.volmdlr_primitives()
+# planetary_gears_1.babylonjs()
 # print([sun,ring,sun_2])
 # torque_solution=planetary_gears_1.torque_solve({sun:0,planet_carrier:500})
-# speed_solution=planetary_gears_1.speed_solve({sun:200,planet_carrier:500})
+# speed_solution=planetary_gears_1.speed_èsolve({sun:200,planet_carrier:500})
 # print(torque_solution)
 # print(speed_solution)
 # debut=time.time()
-Generator_planet_structure=pg_generator.GeneratorPlanetsStructure(3,0,2,1,2)
-list_planet_structure=Generator_planet_structure.decision_tree()
-# print(len(list_planet_structure))
-# for planet_structure in list_planet_structure:
-#     planet_structure.plot_kinematic_graph()
-Generator_planetarie_gears=pg_generator.GeneratorPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250]])
-list_planetary_gears=Generator_planetarie_gears.decision_tree()
+# Generator_planet_structure=pg_generator.GeneratorPlanetsStructure(3,0,2,1,2)
+# list_planet_structure=Generator_planet_structure.decision_tree()
+# # print(len(list_planet_structure))
+# # for planet_structure in list_planet_structure:
+# #     planet_structure.plot_kinematic_graph()
+# # c = Client(api_url = 'http://localhost:5000')
+# # r = c.create_object_from_python_object(Generator_planet_structure)
+# Generator_planetarie_gears=pg_generator.GeneratorPlanetaryGearsArchitecture(list_planet_structure,[[500,550],[600,650],[300,350],[200,250]])
+# list_planetary_gears=Generator_planetarie_gears.decision_tree()
 
 # print(len(list_planetary_gears))
 # for planetary_gears in list_planetary_gears:
@@ -105,13 +230,16 @@ list_planetary_gears=Generator_planetarie_gears.decision_tree()
 # for i in range(len(list_planetary_gears)):
 # list_solution=[]
 # for planetary_gear in list_planetary_gears:
-Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(list_planetary_gears[2],[[500,505],[610,615],[310,315],[380,385]],[7,80],[40,100],3)
-list_solution=Generator_planetarie_gear_z.decision_tree()
-for planetary_gear in list_solution:
-    generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gear,3,10,100)
-    print(generatorgeometry.verification())
+# Generator_planetarie_gear_z=pg_generator.GeneratorPlanetaryGearsZNumber(list_planetary_gears[0],[[500,505],[610,615],[310,315],[380,385]],[7,80],[40,100],3)
+# list_solution=Generator_planetarie_gear_z.decision_tree()
+# a=list_solution[0].speed_min_max_planets()
 
-Z_planetary=[]
+
+# for planetary_gear in list_solution:
+#     generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gear,3,10,100)
+#     print(generatorgeometry.verification())
+
+# Z_planetary=[]
 # for planetary_gears in list_solution:
 #     Z=[]
 #     for planetary in planetary_gears.planetaries:
