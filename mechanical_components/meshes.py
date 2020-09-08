@@ -23,7 +23,7 @@ from dessia_common import DessiaObject
 import mechanical_components.tools as tools
 import json
 import copy
-
+from typing import  List, Tuple
 #data_coeff_YB_Iso
 evol_coeff_yb_iso={'data':[[0.0,1.0029325508401201],
                            [4.701492563229561,0.9310850480431024],
@@ -290,6 +290,11 @@ bronze=Material(8200, evol_coeff_yb_iso, wholer_bronze, sigma_bronze,
 grey_iron=Material(7200, evol_coeff_yb_iso, wholer_grey_iron, sigma_grey_iron,
                    name='Grey iron')
 
+
+
+         
+
+
 class Rack(DessiaObject):
     """
     Gear rack definition
@@ -540,7 +545,14 @@ class Rack(DessiaObject):
                    coeff_circular_tooth_thickness = d['coeff_circular_tooth_thickness'],
                    name=d['name'])
         return rack
+    
+    
 
+    
+        
+        
+    
+    
 class Mesh(DessiaObject):
     """
     Gear mesh definition
@@ -1010,6 +1022,20 @@ class Mesh(DessiaObject):
                    material = material,
                    name=d['name'])
         return mesh
+    
+# class CenterDistance(DessiaObject):
+    
+#     def __init__(self,cd:Tuple[float,float],gears:List[Gear], name:str='' ):
+        
+#         self.gears=gears
+#         self.name=name
+#         DessiaObject.__init__(self, name=name)
+#         self.cd=cd
+        
+    
+    
+        
+        
 
 class MeshCombination(DessiaObject):
     def __init__(self,  center_distance, connections, meshes,
@@ -1163,6 +1189,7 @@ class MeshCombination(DessiaObject):
             z = Z[num_engr]
             db = DB[num_engr]
             cp = coefficient_profile_shift[num_engr]
+            
 #            ngp=self.list_gear.index(num_engr)
             tpa = transverse_pressure_angle_rack[num_engr]
             cga = coeff_gear_addendum[num_engr]
@@ -1572,7 +1599,7 @@ class MeshCombination(DessiaObject):
         :results: list of volmdlr component
         """
         export=[]
-        print(list_rot)
+        
         for (i,center,k) in zip(list_gear,list_center,list_rot):
             model_export=[]
             
@@ -1594,7 +1621,7 @@ class MeshCombination(DessiaObject):
         :results: list of volmdlr component
         """
         export=[]
-        print(list_rot)
+        
         for (i,center,k) in zip(list_gear,list_center,list_rot):
             model_export=[]
             
@@ -1643,11 +1670,10 @@ class MeshCombination(DessiaObject):
         else:
             center_var={}
             for engr_num in centers.keys():
-                print(centers[engr_num])
-                print(x.vector)
+               
                 center_var[engr_num]=(npy.dot(centers[engr_num],x.vector),npy.dot(centers[engr_num],y.vector),npy.dot(centers[engr_num],z.vector))
             centers=center_var
-            print(center_var)
+          
 
         Gears3D={}
         Struct=[]
@@ -1661,8 +1687,7 @@ class MeshCombination(DessiaObject):
             if (eng1,eng2) in self.connections:
                 set_pos=self.connections.index((eng1,eng2))
                 list_rot=self.InitialPosition(set_pos,(eng1,eng2))
-                print(set_pos)
-                print(list_rot)
+            
             elif (eng2,eng1) in self.connections:
                 set_pos=self.connections.index((eng2,eng1))
                 list_rot=self.InitialPosition(set_pos,(eng2,eng1))
@@ -1686,14 +1711,14 @@ class MeshCombination(DessiaObject):
             if set_pos_dfs==0:
                 Rotation[set_pos][eng1]=list_rot[0]+angle0
                 Rotation[set_pos][eng2]=list_rot[1]+angle0
-                print(Rotation)
+               
             else:
                 for k1,rot in Rotation.items():
                     if eng1 in rot.keys():
                         Rotation[set_pos][eng1]=rot[eng1]
                         delta_rot=Rotation[set_pos][eng1]-(list_rot[0]-angle0)
                 Rotation[set_pos][eng2]=list_rot[1]-angle0-delta_rot*((self.meshes[eng1].z)/(self.meshes[eng2].z))
-            print(Rotation)
+            
             Gears3D_Rotate=self.GearRotate_2([Gears3D[eng1],Gears3D[eng2]],[(position1[1::]),(position2[1::])],
                                        list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
             plt.figure()

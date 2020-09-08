@@ -101,9 +101,14 @@ class ContinuousMeshesAssemblyOptimizer:
                         'coeff_root_radius':[],'coeff_circular_tooth_thickness':[]}
         dict_global = copy.deepcopy(dict_unknown)
         for i in list(set(list(self.rack_choice.values()))):
-            for k,v in self.rack_list[i].items():
-                if k not in ['type','name','module']:
+            rack_dict={'transverse_pressure_angle_rack':self.rack_list[i].transverse_pressure_angle,
+                       'coeff_gear_addendum':self.rack_list[i].coeff_gear_addendum,
+                       'coeff_gear_dedendum':self.rack_list[i].coeff_gear_dedendum,
+                       'coeff_root_radius':self.rack_list[i].coeff_root_radius,
+                       'coeff_circular_tooth_thickness':self.rack_list[i].coeff_circular_tooth_thickness}
+            for k in rack_dict:
                     dict_global[k].append(i)
+                    v=rack_dict[k]
                     if not v[0]==v[1]:
                         dict_unknown[k].append(i)
         # search the unknown list db and transverse_pressure_angle to define in the optimizer
@@ -291,7 +296,14 @@ class ContinuousMeshesAssemblyOptimizer:
                     if num_elem in self.dict_unknown[key]:
                         value = float(X[self._position_X(key,num_elem)])
                     else:
-                        value=self.rack_list[num_elem][key][0]
+                        rack_dict={'transverse_pressure_angle_rack':self.rack_list[num_elem].transverse_pressure_angle,
+                                   'coeff_gear_addendum':self.rack_list[num_elem].coeff_gear_addendum,
+                                   'coeff_gear_dedendum':self.rack_list[num_elem].coeff_gear_dedendum,
+                                   'coeff_root_radius':self.rack_list[num_elem].coeff_root_radius,
+                                   'coeff_circular_tooth_thickness':self.rack_list[num_elem].coeff_circular_tooth_thickness}
+                        
+                        
+                        value=rack_dict[key][0]
                     for num_engr in self.list_gear:
                         if self.rack_choice[num_engr]==num_elem:
                             optimizer_data[key][num_engr]=value
@@ -421,11 +433,10 @@ class ContinuousMeshesAssemblyOptimizer:
                 for g in gs:
                     
                     mo=mesh_assembly_iter.meshes[g].rack.module
-                    list_module=self.rack_list[self.rack_choice[g]]['module']
+                    list_module=self.rack_list[self.rack_choice[g]].module
                     ineq.append(abs(mo)-list_module[0])
                     ineq.append(list_module[1]-abs(mo))
-                    print(list_module)
-                    print(mo)
+                    
                     
             # center-distance constraint (not in the open-source part because this parameter is not a ddl)
             for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
@@ -447,7 +458,7 @@ class ContinuousMeshesAssemblyOptimizer:
             for gs in mesh_assembly_iter.connections:
                 for g in gs:
                     mo=mesh_assembly_iter.meshes[g].rack.module
-                    list_module=self.rack_list[self.rack_choice[g]]['module']
+                    list_module=self.rack_list[self.rack_choice[g]].module
                     if list_module[0]<list_module[1]:
                         obj+=100*(list_module[1]-mo)**2
             
@@ -489,7 +500,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
                       cx.status,min(self.Fineq(Xsol))))
             
-            print(self.Fineq(Xsol))
+           
             if min(self.Fineq(Xsol)) > -1e-2:
                 input_dat = dict(list(output_x.items())+list(self.general_data.items()))
                 self.solutions.append(MeshAssembly.create(**input_dat))
@@ -562,11 +573,11 @@ class MeshAssemblyOptimizer:
             for engr1,engr2 in shaft_mesh:
                 module1_min,module1_max=(math.inf, 0)
                 for rack_num in self.rack_choice[engr1]:
-                    mod_min,mod_max=self.rack_list[rack_num]['module']
+                    mod_min,mod_max=self.rack_list[rack_num].module
                     module1_min,module1_max=(min(module1_min,mod_min),max(module1_max,mod_max))
                 module2_min,module2_max=(math.inf, 0)
                 for rack_num in self.rack_choice[engr2]:
-                    mod_min,mod_max=self.rack_list[rack_num]['module']
+                    mod_min,mod_max=self.rack_list[rack_num].module
                     module2_min,module2_max=(min(module2_min,mod_min),max(module2_max,mod_max))
                 demul_min=self.gear_speeds[engr1][0]/self.gear_speeds[engr2][1]
                 demul_max=self.gear_speeds[engr1][1]/self.gear_speeds[engr2][0]
@@ -737,7 +748,7 @@ class MeshAssemblyOptimizer:
                 for tree_pos,tree_val in enumerate(dt.current_node[0:nb_gear]):
                     engr_num=list_node[tree_pos]
                     rack_num=list_rack[dt.current_node[tree_pos+nb_gear]]
-                    module_minmax[engr_num]=self.rack_list[rack_num]['module']
+                    module_minmax[engr_num]=self.rack_list[rack_num].module
                     module_inf,module_sup=(max(module_inf,module_minmax[engr_num][0]),min(module_sup,module_minmax[engr_num][1]))
                 for tree_pos,tree_val in enumerate(dt.current_node[0:nb_gear]):
                     z=list_Z[tree_pos][tree_val]

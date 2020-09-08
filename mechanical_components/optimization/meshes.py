@@ -4,8 +4,8 @@
 """
 
 """
-
-
+from dessia_common import DessiaObject
+from typing import  List, Tuple
 from mechanical_components.meshes import MeshAssembly, hardened_alloy_steel,\
         gear_graph_simple
         
@@ -20,6 +20,41 @@ except (ModuleNotFoundError, ImportError) as _:
     _open_source = False
 
 #class ContinuousMeshesAssemblyOptimizer(protected_module.ProtectedContinuousMeshesAssemblyOptimizer if _open_source==True else object):
+    
+
+class RackOpti(DessiaObject):
+    
+     def __init__(self, transverse_pressure_angle: float, module: float,
+                 coeff_gear_addendum : List[float]=None, coeff_gear_dedendum: List[float]=None,
+                 coeff_root_radius: List[float]=None, coeff_circular_tooth_thickness: List[float]=None, name : str=''):
+         
+         self.transverse_pressure_angle=transverse_pressure_angle
+         self.module=module
+         self.coeff_gear_addendum=coeff_gear_addendum
+         self.coeff_gear_dedendum=coeff_gear_dedendum
+         self.coeff_root_radius=coeff_root_radius
+         self.coeff_circular_tooth_thickness=coeff_circular_tooth_thickness
+         self.name=name
+         DessiaObject.__init__(self, name=name)
+         
+class MeshOpti(DessiaObject):
+    
+    def __init__(self,torque_input: float,speed_input : Tuple[float,float],Z={} ,rack: RackOpti=None, name:str=''):
+        self.rack=rack
+        self.name=name
+        self.torque_input=torque_input
+        self.Z=Z
+        self.speed_input=speed_input
+        DessiaObject.__init__(self, name=name)
+        
+class CenterDistanceOpti(DessiaObject):
+    
+    def __init__(self,cd:Tuple[float,float],meshs:List[MeshOpti], name:str='' ):
+        
+        self.meshs=meshs
+        self.name=name
+        DessiaObject.__init__(self, name=name)
+        self.cd=cd
 
         
 
@@ -50,12 +85,56 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                                 gear_speed = list_speed,
                                 center_distance = list_cd)
     """
-    def __init__(self, connections, gear_speeds, center_distances, torques, cycles,
-                 rigid_links=[], Z=None, transverse_pressure_angle={},  
-                 helix_angle=None, gear_width=None, forbidden_frequencies=[],
-                 coefficient_profile_shift=None, rack_list=None,
-                 rack_choice=None, material=None,
-                 safety_factor=1, verbose=False):
+    
+    def __init__(self,center_distances,cycles,rigid_link=[]):
+        list_gear=[]
+        connections=[]
+        cd=[]
+        for meshing_plan in center_distances:
+            connections_plan=[]
+            for center_distance in meshing_plan:
+                for gear in center_distance.meshs:
+                    if not gear in list_gear:
+                        list_gear.append(gear)
+                connections_plan.append((list_gear.index(center_distance.meshs[0]),list_gear.index(center_distance.meshs[1])))
+                cd.append(center_distance.cd)
+            connections.append(connections_plan)
+            
+        
+        rack_dict={}
+        rack_list=[]
+        gear_speeds={}
+        torques={}
+        Z={}
+        rack_choice={}
+        number_rack=0
+        
+        for i,gear in enumerate(list_gear):
+            gear_speeds[i]=gear.speed_input
+            torques[i]=gear.torque_input
+            if gear.Z:
+                Z[i]=gear.Z
+            
+            if not gear.rack in rack_list:
+                rack_dict[number_rack]=gear.rack
+                rack_list.append(gear.rack)
+                number_rack+=1
+            rack_choice[i]=[rack_list.index(gear.rack)]
+        if not Z:
+            Z=None
+        self.initialisation(connections=connections,gear_speeds=gear_speeds,center_distances=cd,
+                            torques=torques,cycles=cycles, rigid_links=rigid_link,Z=Z,
+                            rack_list=rack_dict,rack_choice=rack_choice)
+            
+               
+        
+    
+    def initialisation(self, connections, gear_speeds, center_distances, torques, cycles,
+                       rigid_links=[], Z=None, transverse_pressure_angle={},  
+                       helix_angle=None, gear_width=None, forbidden_frequencies=[],
+                       coefficient_profile_shift=None, rack_list=None,
+                       rack_choice=None, material=None,
+                       safety_factor=1, verbose=False):
 
         self._drap_gear_graph=False
         self._drap_list_gear=False
@@ -63,6 +142,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         self._drap_sub_graph_dfs=False
         
         list_gear=[] # list of all gears
+        
         for gs in connections:
             for (eng1,eng2) in gs:
                 if eng1 not in list_gear:
@@ -119,20 +199,20 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
 #                          'coeff_circular_tooth_thickness':[0.5,0.5]}}
             rack_list={0:{}}
         for num_rack, rack in rack_list.items():
-            if 'module' not in rack.keys():
-                rack_list[num_rack]['module'] = [1*1e-3,2.5*1e-3]
-            if 'transverse_pressure_angle_rack' not in rack.keys():
-                rack_list[num_rack]['transverse_pressure_angle_rack'] = [20*math.pi/180.,20*math.pi/180.]
-            if 'coeff_gear_addendum' not in rack.keys():
-                rack_list[num_rack]['coeff_gear_addendum'] = [1,1]
-            if 'coeff_gear_dedendum' not in rack.keys():
-                rack_list[num_rack]['coeff_gear_dedendum'] = [1.25,1.25]
-            if 'coeff_root_radius' not in rack.keys():
-                rack_list[num_rack]['coeff_root_radius'] = [0.38,0.38]
-            if 'coeff_circular_tooth_thickness' not in rack.keys():
-                rack_list[num_rack]['coeff_circular_tooth_thickness'] = [0.5,0.5]
-            if 'name' not in rack.keys():
-                rack_list[num_rack]['name'] = 'Optim_Module'
+            if  not rack.module:
+                rack_list[num_rack].module = [1*1e-3,2.5*1e-3]
+            if  not rack.transverse_pressure_angle:
+                rack_list[num_rack].transverse_pressure_angle = [20*math.pi/180.,20*math.pi/180.]
+            if  not  rack.coeff_gear_addendum:
+                rack_list[num_rack].coeff_gear_addendum = [1,1]
+            if  not  rack.coeff_gear_dedendum:
+                rack_list[num_rack].coeff_gear_dedendum = [1.25,1.25]
+            if  not  rack.coeff_root_radius:
+                rack_list[num_rack].coeff_root_radius = [0.38,0.38]
+            if not  rack.coeff_circular_tooth_thickness:
+                rack_list[num_rack].coeff_circular_tooth_thickness = [0.5,0.5]
+            if  not  rack.name:
+                rack_list[num_rack].name = 'Optim_Module'
                         
             
         if rack_choice==None:
