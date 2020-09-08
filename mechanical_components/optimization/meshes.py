@@ -49,13 +49,11 @@ class MeshOpti(DessiaObject):
         
 class CenterDistanceOpti(DessiaObject):
     
-    def __init__(self,cd:Tuple[float,float],meshs:List[MeshOpti], name:str='' ):
+    def __init__(self,center_distance:Tuple[float,float],meshes:List[MeshOpti], name:str='' ):
         
-        self.meshs=meshs
-        self.name=name
+        self.meshes = meshes
+        self.center_distance = center_distance
         DessiaObject.__init__(self, name=name)
-        self.cd=cd
-
         
 
 class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_source==True else object):
@@ -89,15 +87,15 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
     def __init__(self,center_distances,cycles,rigid_link=[]):
         list_gear=[]
         connections=[]
-        cd=[]
+        cd = []
         for meshing_plan in center_distances:
             connections_plan=[]
             for center_distance in meshing_plan:
-                for gear in center_distance.meshs:
+                for gear in center_distance.meshes:
                     if not gear in list_gear:
                         list_gear.append(gear)
-                connections_plan.append((list_gear.index(center_distance.meshs[0]),list_gear.index(center_distance.meshs[1])))
-                cd.append(center_distance.cd)
+                connections_plan.append((list_gear.index(center_distance.meshes[0]),list_gear.index(center_distance.meshes[1])))
+                cd.append(center_distance.center_distance)
             connections.append(connections_plan)
             
         

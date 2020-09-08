@@ -389,18 +389,18 @@ class ContinuousMeshesAssemblyOptimizer:
                 break
         return position
     
-    def Update(self,X):
+    def update(self,X):
         
         optimizer_data = self._convert_X2x(X)
-        _ = self.mesh_assembly.Update(optimizer_data)
+        _ = self.mesh_assembly.update(optimizer_data)
         return optimizer_data
     
     def Fineq(self,X):
         
-        _ = self.Update(X)
+        _ = self.update(X)
         ineq=[]
         for mesh_assembly_iter in self.mesh_assembly.mesh_combinations:
-            ineq.extend(mesh_assembly_iter.ListeIneq())
+            ineq.extend(mesh_assembly_iter.liste_ineq())
             
             #geometric constraint
             for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
@@ -448,11 +448,11 @@ class ContinuousMeshesAssemblyOptimizer:
         return ineq
         
     def Objective(self,X):
-        _ = self.Update(X)
+        _ = self.update(X)
         fineq=self.Fineq(X)
         obj=0
         for mesh_assembly_iter in self.mesh_assembly.mesh_combinations:
-            obj+=mesh_assembly_iter.Functional()
+            obj+=mesh_assembly_iter.functional()
         # maximization of the gear modulus
         for ne,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
             for gs in mesh_assembly_iter.connections:
@@ -487,7 +487,7 @@ class ContinuousMeshesAssemblyOptimizer:
         arret = 0 
         while i < max_iter and arret == 0:
             X0 = self.CondInit()
-            _ = self.Update(X0)
+            _ = self.update(X0)
             cons = {'type': 'ineq','fun' : self.Fineq}
             try:
                 cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons)
@@ -495,7 +495,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 i += 1
                 continue
             Xsol = cx.x
-            output_x = self.Update(Xsol)
+            output_x = self.update(Xsol)
             if verbose:
                 print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
                       cx.status,min(self.Fineq(Xsol))))
