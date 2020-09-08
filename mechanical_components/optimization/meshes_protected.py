@@ -56,7 +56,7 @@ class ContinuousMeshesAssemblyOptimizer:
     """
     def __init__(self, Z, center_distances, connections, rigid_links, transverse_pressure_angle,
                  coefficient_profile_shift, rack_list, rack_choice,
-                 material,torques, cycles, safety_factor, db, verbose=False):
+                 material,external_torques, cycles, safety_factor, db, verbose=False):
         self.center_distances = center_distances
         self.transverse_pressure_angle = transverse_pressure_angle
         self.coefficient_profile_shift = coefficient_profile_shift
@@ -65,7 +65,8 @@ class ContinuousMeshesAssemblyOptimizer:
         self.Z=Z
         self.connections=connections
         self.rigid_links = rigid_links
-        self.torques = torques
+        self.external_torques = external_torques
+       
         self.cycles = cycles
         # Initailization
         self.solutions=[]
@@ -194,7 +195,7 @@ class ContinuousMeshesAssemblyOptimizer:
         dic_torque,dic_cycle = self.TorqueCycleMeshAssembly()
         
         self.general_data = {'Z': Z, 'connections': connections,
-                 'material':material,'torque':dic_torque,'cycle':dic_cycle,
+                 'material':material,'internal_torque':dic_torque,'cycle':dic_cycle,
                  'safety_factor':safety_factor}
         input_dat = dict(list(optimizer_data.items())+list(self.general_data.items()))
         self.mesh_assembly = MeshAssembly.create(**input_dat)
@@ -239,7 +240,7 @@ class ContinuousMeshesAssemblyOptimizer:
                             valid_strong_ling=True
                     if valid_strong_ling:
                         torque_graph.add_edges_from([(num_gear,li_shaft2[pos_gear])],typ='same_speed')
-        for num_gear,tq in self.torques.items():
+        for num_gear,tq in self.external_torques.items():
             if tq=='output':
                 node_output=num_gear
         torque_graph_dfs=list(nx.dfs_edges(torque_graph,node_output))
@@ -249,8 +250,8 @@ class ContinuousMeshesAssemblyOptimizer:
         for eng1 in self.list_gear:
             temp_torque[eng1]=0
         for num_mesh_tq,(eng1,eng2) in enumerate(order_torque_calculation):
-            if eng1 in self.torques.keys():
-                temp_torque[eng1]+=self.torques[eng1]
+            if eng1 in self.external_torques.keys():
+                temp_torque[eng1]+=self.external_torques[eng1]
             if torque_graph[eng1][eng2]['typ']=='gear_mesh':
                 temp_torque[eng2]+=-temp_torque[eng1]*self.Z[eng2]/float(self.Z[eng1])
             else:
@@ -858,7 +859,7 @@ class MeshAssemblyOptimizer:
             for i,plex in enumerate(liste_plex):
                 plex['rack_list']=self.rack_list
                 plex['material']=self.material
-                plex['torques'] = self.torques
+                plex['external_torques'] = self.external_torques
                 plex['cycles'] = self.cycles
                 plex['connections'] = self.connections
                 plex['rigid_links'] = self.rigid_links
@@ -923,7 +924,7 @@ class MeshAssemblyOptimizer:
             for i,plex in enumerate(liste_plex):
                 plex['rack_list']=self.rack_list
                 plex['material']=self.material
-                plex['torques'] = self.torques
+                plex['external_torques'] = self.external_torques
                 plex['cycles'] = self.cycles
                 plex['connections'] = self.connections
                 plex['rigid_links'] = self.rigid_links

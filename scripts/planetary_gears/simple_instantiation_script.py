@@ -24,6 +24,7 @@ import time
 import dessia_common
 from dessia_api_client import Client
 import mechanical_components.optimization.meshes_protected as mg
+import mechanical_components.optimization.meshes as meshes_opt
 from mechanical_components.meshes import hardened_alloy_steel
 
 
@@ -142,6 +143,10 @@ list_rack = {0:{'name':'Catalogue_A','module':[module,module],
               'coeff_gear_addendum':[0.85,0.85],'coeff_gear_dedendum':[1,1],
               'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.4,0.4]}}
 
+rack=meshes_opt.RackOpti(module=[module,module],transverse_pressure_angle=[20/180.*npy.pi,20/180.*npy.pi],
+             coeff_gear_addendum=[0.85,0.85],coeff_gear_dedendum=[1,1],coeff_root_radius=[0.38,0.38],
+             coeff_circular_tooth_thickness=[0.4,0.4])
+list_rack = {0:rack}
 
 rack_choices = {0:0, 1:0 , 2:0}
 db2=m.cos(20/180.*npy.pi)*module*Z_2

@@ -102,14 +102,14 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         rack_dict={}
         rack_list=[]
         gear_speeds={}
-        torques={}
+        external_torques={}
         Z={}
         rack_choice={}
         number_rack=0
         
         for i,gear in enumerate(list_gear):
             gear_speeds[i]=gear.speed_input
-            torques[i]=gear.torque_input
+            external_torques[i]=gear.torque_input
             if gear.Z:
                 Z[i]=gear.Z
             
@@ -121,13 +121,13 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         if not Z:
             Z=None
         self.initialisation(connections=connections,gear_speeds=gear_speeds,center_distances=cd,
-                            torques=torques,cycles=cycles, rigid_links=rigid_link,Z=Z,
+                            external_torques=external_torques,cycles=cycles, rigid_links=rigid_link,Z=Z,
                             rack_list=rack_dict,rack_choice=rack_choice)
             
                
         
     
-    def initialisation(self, connections, gear_speeds, center_distances, torques, cycles,
+    def initialisation(self, connections, gear_speeds, center_distances, external_torques, cycles,
                        rigid_links=[], Z=None, transverse_pressure_angle={},  
                        helix_angle=None, gear_width=None, forbidden_frequencies=[],
                        coefficient_profile_shift=None, rack_list=None,
@@ -244,7 +244,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         self.rack_list = rack_list
         self.rack_choice = rack_choice
         self.material = material
-        self.torques = torques
+        self.external_torques =external_torques
         self.cycles = cycles
         self.safety_factor = safety_factor
         self.rigid_links = rigid_links

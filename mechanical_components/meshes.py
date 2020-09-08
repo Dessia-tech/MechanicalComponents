@@ -455,7 +455,12 @@ class Rack(DessiaObject):
         d=self.__dict__.copy()
         return list(d.keys()),list(d.values())
     
-# class Axe(DessiaObject):   
+# class Axe(DessiaObject):
+    
+#     def __init__(self, speed:float,torque:float):
+#         self.torque=torque
+#         self.speed=speed
+        
 
 class Mesh(DessiaObject):
     """
@@ -487,7 +492,7 @@ class Mesh(DessiaObject):
 
     def __init__(self, z:int, db:float, coefficient_profile_shift:float, rack:Rack,
                  material:Material=None,
-                 gear_width:float=1, name:str=''):
+                 gear_width:float=1,external_torque:float=None, name:str=''):
 
         self.rack = rack
         self.gear_param(z, db, coefficient_profile_shift)
@@ -497,7 +502,7 @@ class Mesh(DessiaObject):
             self.material = hardened_alloy_steel
         self.material = material
         self.gear_width = gear_width
-
+        self.external_torque=external_torque
         DessiaObject.__init__(self, name=name)
 
     def update(self, z, db, coefficient_profile_shift, transverse_pressure_angle_rack,
@@ -843,12 +848,14 @@ class Mesh(DessiaObject):
 
 # class CenterDistance(DessiaObject):
     
-#     def __init__(self,cd:Tuple[float,float],gears:List[Gear], name:str='' ):
+#     def __init__(self,cd:Tuple[float,float],meshs:Tuple[Mesh,Mesh], axes:Tuple[Axe,Axe], name:str='' ):
         
-#         self.gears=gears
+#         self.meshes=meshes
 #         self.name=name
+#         self.axes=axes
 #         DessiaObject.__init__(self, name=name)
 #         self.cd=cd
+        
         
 
 
@@ -860,14 +867,16 @@ class MeshCombination(DessiaObject):
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
 
-    def __init__(self,  center_distance:float, connections:List[Tuple[int, int]],
+    def __init__(self,  center_distance:List[float], connections:List[Tuple[int, int]],
                  meshes:List[Mesh],
-                 torque:float=None, cycle:float=None, safety_factor:float=1, name:str=''):
+                 external_torque:float=None, cycle:float=None, safety_factor:float=1, name:str=''):
 
         self.center_distance = center_distance
+        print(center_distance)
         self.connections = connections
         self.meshes = meshes
-        self.torque = torque
+        self.external_torque = external_torque
+        
         self.cycle = cycle
         self.safety_factor = safety_factor
 
@@ -907,8 +916,9 @@ class MeshCombination(DessiaObject):
                                                     connections, gear_graph)
         if len(cycle.keys())<len(list_gear): # the gear mesh optimizer calculate this dictionary
             self.cycle = MeshCombination.cycle_parameter(cycle, self.Z, list_gear)
-        self.torque, self.normal_load, self.tangential_load, self.radial_load = MeshCombination.gear_torque(self.Z, torque, self.DB,
+        self.internal_torque, self.normal_load, self.tangential_load, self.radial_load = MeshCombination.gear_torque(self.Z, external_torque, self.DB,
                     gear_graph, list_gear, connections, self.DF, self.transverse_pressure_angle)
+        
         self.linear_backlash, self.radial_contact_ratio = \
             MeshCombination.gear_contact_ratio_parameter(self.Z, self.DF, self.transverse_pressure_angle,
                                                       center_distance,
@@ -951,7 +961,7 @@ class MeshCombination(DessiaObject):
     def create(cls, Z, center_distance, connections, transverse_pressure_angle_0,
                coefficient_profile_shift, transverse_pressure_angle_rack,
                coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
-               coeff_circular_tooth_thickness, material=None, torque=None, cycle=None,
+               coeff_circular_tooth_thickness, material=None, external_torque=None, cycle=None,
                safety_factor=1):
 
         # NetworkX graph construction
@@ -974,8 +984,8 @@ class MeshCombination(DessiaObject):
             if ne not in material.keys():
                 material[ne] = hardened_alloy_steel
 
-        if torque == None:
-            torque = [{list_gear[0]:100,list_gear[1]:'output'}]
+        if external_torque == None:
+            external_torque = [{list_gear[0]:100,list_gear[1]:'output'}]
 
         if cycle == None:
             cycle = {list_gear[0]:1e6}
@@ -987,7 +997,7 @@ class MeshCombination(DessiaObject):
         if len(cycle.keys())<len(list_gear): # the gear mesh optimizer calculate this dictionary
             cycle = cls.cycle_parameter(cycle, Z, list_gear)
 
-        torque, normal_load, tangential_load, radial_load = cls.gear_torque(Z, torque, DB,
+        internal_torque, normal_load, tangential_load, radial_load = cls.gear_torque(Z, external_torque, DB,
                     gear_graph, list_gear, connections, DF, transverse_pressure_angle)
 
         meshes={}
@@ -1022,14 +1032,14 @@ class MeshCombination(DessiaObject):
 
         for num_gear in list_gear:
             meshes[num_gear].gear_width = gear_width[num_gear]
-        mesh_combination = cls(center_distance, connections, meshes, torque, cycle)
+        mesh_combination = cls(center_distance, connections, meshes, internal_torque, cycle)
         return mesh_combination
 
     def update(self, Z, center_distance, connections, transverse_pressure_angle_0,
                coefficient_profile_shift,
                transverse_pressure_angle_rack, coeff_gear_addendum,
                coeff_gear_dedendum, coeff_root_radius, coeff_circular_tooth_thickness,
-               material, torque, cycle, safety_factor):
+               material, internal_torque, cycle, safety_factor):
         """ update of the gear mesh assembly
 
         :param all: same parameters of this class initialisation
@@ -1209,7 +1219,7 @@ class MeshCombination(DessiaObject):
         return DF, db, connections_dfs, transverse_pressure_angle
 
     @classmethod
-    def gear_torque(cls, Z, torque, db, gear_graph, list_gear, connections, DF, transverse_pressure_angle):
+    def gear_torque(cls, Z, external_torque, db, gear_graph, list_gear, connections, DF, transverse_pressure_angle):
         """ Calculation of the gear mesh torque
 
         :param Z: dictionary define the number of teeth {node1:Z1, node2:Z2, mesh3:Z3 ...}
@@ -1226,8 +1236,8 @@ class MeshCombination(DessiaObject):
 
         be careful, due to the parameters of the gear mesh assembly (define one pressure angle for each mesh) the diameter db2_a is different to db2_b (you have to define correctly transverse_pressure_angle to have db2_a=db2_b)
         """
-        if 'output' in torque.values():
-            for num_gear,tq in torque.items():
+        if 'output' in external_torque.values():
+            for num_gear,tq in external_torque.items():
                 if tq=='output':
                     node_output=num_gear
             torque_graph_dfs=list(nx.dfs_edges(gear_graph,node_output))
@@ -1249,8 +1259,8 @@ class MeshCombination(DessiaObject):
         radial_load={}
 
         for num_mesh,(eng1,eng2) in enumerate(connections):
-            if 'output' not in torque.values():
-                dic_torque=torque
+            if 'output' not in external_torque.values():
+                dic_torque=external_torque
             try:
                 tq=dic_torque[(eng1,eng2)]
             except:
@@ -1685,17 +1695,18 @@ class MeshAssembly(DessiaObject):
 
     def __init__(self, connections:List[List[Tuple[int, int]]],
                  mesh_combinations:List[MeshCombination],
-                 torque:float=None,
+                 internal_torque:float=None,
                  cycle=None, strong_links=None, safety_factor:float=1, name:str=''):
 
         self.connections = connections
         self.mesh_combinations = mesh_combinations
-        self.torque = torque
+        self.internal_torque = internal_torque
         self.cycle = cycle
         self.strong_links = strong_links
         self.safety_factor = safety_factor
 
         self.center_distance = []
+        
         for num_cd, list_connection in enumerate(self.connections):
             for num_mesh_iter, gs in enumerate(list_connection):
                 valid = False
@@ -1758,7 +1769,7 @@ class MeshAssembly(DessiaObject):
         for num_graph,list_sub_graph in enumerate(self.sub_graph_dfs):
             num_mesh=0
             general_data={'Z': {}, 'connections': [],
-                 'material':{},'torque':{},'cycle':{},
+                 'material':{},'internal_torque':{},'cycle':{},
                  'safety_factor':safety_factor}
             input_data={'center_distance':[],'transverse_pressure_angle_0':0,
                  'coefficient_profile_shift':{},'transverse_pressure_angle_rack':{},
@@ -1792,10 +1803,10 @@ class MeshAssembly(DessiaObject):
                 input_data['center_distance'].append(self.center_distance[num_cd])
             general_data['connections']=li_connection
             for (eng1,eng2) in list_sub_graph:
-                if (eng1,eng2) in torque.keys():
-                    general_data['torque'][(eng1,eng2)]=torque[(eng1,eng2)]
-                if (eng2,eng1) in torque.keys():
-                    general_data['torque'][(eng2,eng1)]=torque[(eng2,eng1)]
+                if (eng1,eng2) in internal_torque.keys():
+                    general_data['internal_torque'][(eng1,eng2)]=internal_torque[(eng1,eng2)]
+                if (eng2,eng1) in internal_torque.keys():
+                    general_data['internal_torque'][(eng2,eng1)]=internal_torque[(eng2,eng1)]
                 if eng1 not in general_data['cycle'].keys():
                     general_data['cycle'][eng1]=cycle[eng1]
                 if eng2 not in general_data['cycle'].keys():
@@ -1815,7 +1826,7 @@ class MeshAssembly(DessiaObject):
                  coefficient_profile_shift, transverse_pressure_angle_rack,
                  coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
                  coeff_circular_tooth_thickness, Z, strong_links=None, material=None,
-                 torque=None, cycle=None,
+                 internal_torque=None, cycle=None,
                  safety_factor=1):
 
         mesh_combinations = []
@@ -1825,7 +1836,7 @@ class MeshAssembly(DessiaObject):
         for num_graph,list_sub_graph in enumerate(graph_dfs):
             num_mesh=0
             general_data={'Z': {}, 'connections': [],
-                 'material':{},'torque':{},'cycle':{},
+                 'material':{},'external_torque':{},'cycle':{},
                  'safety_factor':safety_factor}
             input_data={'center_distance':[],'transverse_pressure_angle_0':0,
                  'coefficient_profile_shift':{},'transverse_pressure_angle_rack':{},
@@ -1859,10 +1870,10 @@ class MeshAssembly(DessiaObject):
                 input_data['center_distance'].append(center_distance[num_cd])
             general_data['connections']=li_connection
             for (eng1,eng2) in list_sub_graph:
-                if (eng1,eng2) in torque.keys():
-                    general_data['torque'][(eng1,eng2)]=torque[(eng1,eng2)]
-                if (eng2,eng1) in torque.keys():
-                    general_data['torque'][(eng2,eng1)]=torque[(eng2,eng1)]
+                if (eng1,eng2) in internal_torque.keys():
+                    general_data['external_torque'][(eng1,eng2)]=internal_torque[(eng1,eng2)]
+                if (eng2,eng1) in internal_torque.keys():
+                    general_data['external_torque'][(eng2,eng1)]=internal_torque[(eng2,eng1)]
                 if eng1 not in general_data['cycle'].keys():
                     general_data['cycle'][eng1]=cycle[eng1]
                 if eng2 not in general_data['cycle'].keys():
@@ -1871,7 +1882,7 @@ class MeshAssembly(DessiaObject):
             output_data.append(general_data)
             xt = dict(list(input_data.items()) + list(general_data.items()))
             mesh_combinations.append(MeshCombination.create(**xt))
-        mesh_assembly = cls(connections, mesh_combinations, torque, cycle,
+        mesh_assembly = cls(connections, mesh_combinations, internal_torque, cycle,
                             strong_links, safety_factor)
         return mesh_assembly
 
