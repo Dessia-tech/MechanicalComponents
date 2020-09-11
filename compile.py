@@ -108,7 +108,13 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
             
             macs = []
             if self.macs is not None:
+                self.macs = self.macs.replace('[', '')
+                self.macs = self.macs.replace(']', '')
+                self.macs = self.macs.replace(':', '')
+                                
                 for mac in self.macs.split(','):
+                    if len(mac) != 12:
+                        raise ValueError('A mac address must be 12 digits long, got: {} instead'.format(mac))
                     macs.append(mac)
                 self.macs = macs        
                 print('\nCompiling for macs: {}'.format(self.macs))
