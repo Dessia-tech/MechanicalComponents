@@ -13,7 +13,7 @@ from scipy import interpolate
 import volmdlr as vm
 import volmdlr.primitives3D as primitives3D
 import volmdlr.primitives2D as primitives2D
-
+import volmdlr.plot_data as vmp
 import math
 from scipy.linalg import norm
 from scipy.optimize import fsolve, minimize
@@ -492,7 +492,7 @@ class Mesh(DessiaObject):
 
     def __init__(self, z:int, db:float, coefficient_profile_shift:float, rack:Rack,
                  material:Material=None,
-                 gear_width:float=1,external_torque:float=None, name:str=''):
+                 gear_width:float=1,external_torque:float=None,cycle:float=None, name:str=''):
 
         self.rack = rack
         self.gear_param(z, db, coefficient_profile_shift)
@@ -503,6 +503,7 @@ class Mesh(DessiaObject):
         self.material = material
         self.gear_width = gear_width
         self.external_torque=external_torque
+        self.cycle=cycle
         DessiaObject.__init__(self, name=name)
 
     def update(self, z, db, coefficient_profile_shift, transverse_pressure_angle_rack,
@@ -527,25 +528,29 @@ class Mesh(DessiaObject):
     def gear_param(self,z, db, coefficient_profile_shift):
 
         self.z = z
+        
         self.db = abs(db)
         
         self.dff = abs(self.db/math.cos(self.rack.transverse_pressure_angle))
-       
+        
         module_rack = self.dff/self.z
         self.rack.update(module_rack)
         self.coefficient_profile_shift = coefficient_profile_shift
 
         self.outside_diameter=abs((self.dff
                                +2*(self.rack.gear_addendum
-                                   +self.rack.module*self.coefficient_profile_shift)))
-       
+                                   +self.rack.module*self.coefficient_profile_shift))*(self.z/abs(self.z)))
+   
         self.alpha_outside_diameter = math.acos(self.db/self.outside_diameter)
+        
       
         self.root_diameter=(self.dff
                             - 2*(self.rack.gear_dedendum
-                                - self.rack.module*self.coefficient_profile_shift))
+                                - self.rack.module*self.coefficient_profile_shift)*(self.z/abs(self.z)))
        
         self.root_diameter_active,self.phi_trochoide=self._root_diameter_active()
+ 
+                
         self.alpha_root_diameter_active=math.acos(self.db/self.root_diameter_active)
        
         self.alpha_pitch_diameter=math.acos(self.db/self.dff)
@@ -579,14 +584,18 @@ class Mesh(DessiaObject):
         >>> gs=mesh1.gear_section(44*1e-3)
         """
         alpha_diameter=math.acos(self.db/diameter)
+        
         theta1=(math.tan(self.alpha_outside_diameter)-self.alpha_outside_diameter)-(math.tan(alpha_diameter)-alpha_diameter)
        
         return diameter/2*(2*theta1+abs(self.outside_active_angle)) #TODO
 
     def _root_diameter_active(self):
         a=self.rack.a
-        b=self.rack.b-self.rack.module*self.coefficient_profile_shift
+        b=(self.rack.b-self.rack.module*self.coefficient_profile_shift)
+        
         r=self.dff/2
+        # if self.z<0:
+        #     r=-r
         phi=-(a+b*math.tan(math.pi/2-self.rack.transverse_pressure_angle))/r
         root_diameter_active=2*norm(self._trochoide(phi))
         return root_diameter_active,phi
@@ -621,16 +630,18 @@ class Mesh(DessiaObject):
             list_number=npy.arange(int(abs(self.z)))
         L=[self._outside_trace(0)]
         L.append(self._involute_trace(discret,0,'T'))
-        L.append(self._trochoide_trace(2*discret,0,'T'))
-        L.append(self._root_circle_trace(0))
-        L.append(self._trochoide_trace(2*discret,0,'R'))
+        if self.z>0:
+            L.append(self._trochoide_trace(2*discret,0,'T'))
+            L.append(self._root_circle_trace(0))
+            L.append(self._trochoide_trace(2*discret,0,'R'))
         L.append(self._involute_trace(discret,1,'R'))
         for i in list_number[1::]:
             L.append(self._outside_trace(i))
             L.append(self._involute_trace(discret,i,'T'))
-            L.append(self._trochoide_trace(2*discret,i,'T'))
-            L.append(self._root_circle_trace(i))
-            L.append(self._trochoide_trace(2*discret,i,'R'))
+            if self.z>0:
+                L.append(self._trochoide_trace(2*discret,i,'T'))
+                L.append(self._root_circle_trace(i))
+                L.append(self._trochoide_trace(2*discret,i,'R'))
             L.append(self._involute_trace(discret,i+1,'R'))
         return L
 
@@ -659,20 +670,22 @@ class Mesh(DessiaObject):
         
         if ind=='T':
             L=ref.Rotation(vm.Point2D((0,0)),-number*2*math.pi/self.z)
-            
-            self.rac=L.points[-1]
+            if self.z>0:
+                self.rac=L.points[-1]
         else:
             L=ref.Rotation(vm.Point2D((0,0)),
                            self.base_circular_tooth_thickness*2/self.db)
             L=L.Rotation(vm.Point2D((0,0)),-number*2*math.pi/self.z)
-            L.points[0]=self.rac
-        x=[]
-        y=[]
-        for point in L.points:
-            x.append(point.vector[0])
-            y.append(point.vector[1])
-        
-        plt.plot(x,y)
+            if self.z>0:
+                L.points[0]=self.rac
+        # if self.z<0:
+        #     x=[]
+        #     y=[]
+        #     for point in L.points:
+        #         x.append(point.vector[0])
+        #         y.append(point.vector[1])
+            
+        # plt.plot(x,y)
         return L
 
     def _trochoide_trace(self, discret, number, type_flank='T'):
@@ -684,7 +697,7 @@ class Mesh(DessiaObject):
 
         a=indice_flank*self.rack.a # indice a in the ISO definition of the rack
         phi0=a/(self.dff/2)
-
+       
         list_2D=[]
         if type_flank=='R':
             theta=npy.linspace(phi0,indice_flank*self.phi_trochoide,discret)
@@ -702,13 +715,14 @@ class Mesh(DessiaObject):
         else:
             export_2D=list_2D.Rotation(vm.Point2D((0,0)),-number*2*math.pi/self.z)
             self.rac=export_2D.points[-1]
-        x=[]
-        y=[]
-        for point in export_2D.points:
-            x.append(point.vector[0])
-            y.append(point.vector[1])
-        
-        plt.plot(x,y)
+        # if self.z<0:
+        #     x=[]
+        #     y=[]
+        #     for point in export_2D.points:
+        #         x.append(point.vector[0])
+        #         y.append(point.vector[1])
+            
+        #     plt.plot(x,y)
         return export_2D
 
     def _root_circle_trace(self,number):
@@ -717,27 +731,27 @@ class Mesh(DessiaObject):
         # on the drive flank
         indice_flank=1
         a=indice_flank*self.rack.a
-        phi0=a/(self.dff/2)
+        phi0=a*(self.z/abs(self.z))/(self.dff/2)
         p1=vm.Point2D((self._trochoide(phi0,'T')))
         p1=p1.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
 
         # on the coast flank
         indice_flank=-1
         a=indice_flank*self.rack.a
-        phi0=a/(self.dff/2)
+        phi0=a*(self.z/abs(self.z))/(self.dff/2)
         p2=vm.Point2D((self._trochoide(phi0,'R')))
         p2=p2.Rotation(vm.Point2D((0,0)),-self.root_angle/2)
 
         list_2D=primitives2D.OpenedRoundedLineSegments2D([p1,p2],{},False)
 
         export_2D=list_2D.Rotation(vm.Point2D((0,0)),-number*2*math.pi/self.z)
-        
-        x=[]
-        y=[]
-        for point in export_2D.points:
-            x.append(point.vector[0])
-            y.append(point.vector[1])
-        plt.plot(x,y)
+        # if self.z<0:
+        #     x=[]
+        #     y=[]
+        #     for point in export_2D.points:
+        #         x.append(point.vector[0])
+        #         y.append(point.vector[1])
+        #     plt.plot(x,y)
         
         
         return export_2D
@@ -753,11 +767,13 @@ class Mesh(DessiaObject):
         export_2D=list_2D.Rotation(vm.Point2D((0,0)),-number*2*math.pi/self.z)
         x=[]
         y=[]
-        for point in export_2D.points:
-            x.append(point.vector[0])
-            y.append(point.vector[1])
-        plt.plot(x,y)
+        # for point in export_2D.points:
+        #     x.append(point.vector[0])
+        #     y.append(point.vector[1])
+        # plt.plot(x,y)
         return export_2D
+    
+   
 
     def _involute(self,tan_alpha):
         """ Involute function estimation
@@ -769,12 +785,14 @@ class Mesh(DessiaObject):
         for ta in tan_alpha:
             x.append(self.db/2*math.cos(ta)+self.db/2*ta*math.sin(ta))
             y.append(self.db/2*math.sin(ta)-self.db/2*ta*math.cos(ta))
+            
        
         
         return (x, y)
 
     def _trochoide(self,phi,type_flank='T'):
         # function generation of trochoide point
+        
         if type_flank=='T':
             indice_flank=1
         else:
@@ -782,8 +800,10 @@ class Mesh(DessiaObject):
         a=indice_flank*self.rack.a
         b=self.rack.b-self.rack.module*self.coefficient_profile_shift
         r=self.dff/2
+        
         rho=self.rack.root_radius
         x2=rho*math.sin(math.atan((a-r*phi)/b)-phi)+a*math.cos(phi)-b*math.sin(phi)+r*(math.sin(phi)-phi*math.cos(phi))
+     
         y2=-rho*math.cos(math.atan((a-r*phi)/b)-phi)-a*math.sin(phi)-b*math.cos(phi)+r*(math.cos(phi)+phi*math.sin(phi))
         export_point=(y2,x2)
         return export_point
@@ -869,20 +889,30 @@ class MeshCombination(DessiaObject):
 
     def __init__(self,  center_distance:List[float], connections:List[Tuple[int, int]],
                  meshes:List[Mesh],
-                 external_torque:float=None, cycle:float=None, safety_factor:float=1, name:str=''):
-
+                 safety_factor:float=1, name:str=''):
+       
         self.center_distance = center_distance
-        print(center_distance)
+        
         self.connections = connections
         self.meshes = meshes
-        self.external_torque = external_torque
         
-        self.cycle = cycle
+        
+        
+        
         self.safety_factor = safety_factor
 
         self.minimum_gear_width = 10e-3
         self.helix_angle = 0
-
+        self.external_torque = {}
+        self.cycle = {}
+        
+        for i,meshe in enumerate(meshes):
+            if meshe.external_torque!=None:
+                self.external_torque[i]=meshe.external_torque
+            if meshe.cycle!=None:
+                self.cycle[i]=meshe.cycle
+    
+        
         # NetworkX graph construction
         list_gear = []
         for gs in self.connections:
@@ -903,20 +933,21 @@ class MeshCombination(DessiaObject):
             self.transverse_pressure_angle.append(math.acos(mesh_first.db/df_first))
         transverse_pressure_angle_0 = self.transverse_pressure_angle[0]
 
-        self.Z = {i: mesh.z for i, mesh in meshes.items()}
-        self.material = {i: mesh.material for i, mesh in meshes.items()}
+        self.Z = {i: mesh.z for i, mesh in enumerate(meshes)}
+        self.material = {i: mesh.material for i, mesh in enumerate(meshes)}
         self.gear_width = {}
         self.DB = {}
-        for num_mesh, mesh in self.meshes.items():
+        for num_mesh, mesh in enumerate(meshes):
             self.gear_width[num_mesh] = mesh.gear_width
             self.DB[num_mesh] = mesh.db
 
         self.DF, DB_new, self.connections_dfs, transverse_pressure_angle_new\
             = MeshCombination.gear_geometry_parameter(self.Z, transverse_pressure_angle_0, center_distance,
                                                     connections, gear_graph)
-        if len(cycle.keys())<len(list_gear): # the gear mesh optimizer calculate this dictionary
+        if len(self.cycle.keys())<len(list_gear): # the gear mesh optimizer calculate this dictionary
             self.cycle = MeshCombination.cycle_parameter(cycle, self.Z, list_gear)
-        self.internal_torque, self.normal_load, self.tangential_load, self.radial_load = MeshCombination.gear_torque(self.Z, external_torque, self.DB,
+        
+        self.internal_torque, self.normal_load, self.tangential_load, self.radial_load = MeshCombination.gear_torque(self.Z, self.external_torque, self.DB,
                     gear_graph, list_gear, connections, self.DF, self.transverse_pressure_angle)
         
         self.linear_backlash, self.radial_contact_ratio = \
@@ -943,13 +974,13 @@ class MeshCombination(DessiaObject):
                                             self.material, self.cycle, self.radial_contact_ratio,
                                             self.helix_angle,
                                             self.transverse_pressure_angle)
-        for num_mesh, mesh in self.meshes.items():
+        for num_mesh, mesh in enumerate(self.meshes):
             if abs(gear_width[num_mesh] - mesh.gear_width) > 1e-6:
                 valid = False
         self.DF, DB_new, self.connections_dfs, transverse_pressure_angle_new\
             = MeshCombination.gear_geometry_parameter(self.Z, self.transverse_pressure_angle[0], self.center_distance,
                                                     self.connections, self.gear_graph)
-        for num_mesh, mesh in self.meshes.items():
+        for num_mesh, mesh in enumerate(self.meshes):
             if abs(DB_new[num_mesh] - mesh.db) > 1e-6:
                 valid = False
         for num_gear, connection in enumerate(self.connections):
@@ -1000,14 +1031,16 @@ class MeshCombination(DessiaObject):
         internal_torque, normal_load, tangential_load, radial_load = cls.gear_torque(Z, external_torque, DB,
                     gear_graph, list_gear, connections, DF, transverse_pressure_angle)
 
-        meshes={}
+        meshes=[0]*len(list_gear)
         for num_engr in list_gear:
             z = Z[num_engr]
             db = DB[num_engr]
             cp = coefficient_profile_shift[num_engr]
             
 #            ngp=self.list_gear.index(num_engr)
+            
             tpa = transverse_pressure_angle_rack[num_engr]
+           
             cga = coeff_gear_addendum[num_engr]
             cgd = coeff_gear_dedendum[num_engr]
             crr = coeff_root_radius[num_engr]
@@ -1017,6 +1050,7 @@ class MeshCombination(DessiaObject):
                         coeff_gear_addendum = cga, coeff_gear_dedendum = cgd,
                         coeff_root_radius = crr, coeff_circular_tooth_thickness = cct)
             meshes[num_engr] = Mesh(z, db, cp, rack, mat)
+            
 
         linear_backlash, radial_contact_ratio = \
             cls.gear_contact_ratio_parameter(Z, DF, transverse_pressure_angle,
@@ -1032,7 +1066,12 @@ class MeshCombination(DessiaObject):
 
         for num_gear in list_gear:
             meshes[num_gear].gear_width = gear_width[num_gear]
-        mesh_combination = cls(center_distance, connections, meshes, internal_torque, cycle)
+            if num_gear in external_torque.keys():
+                meshes[num_gear].external_torque=external_torque[num_gear]
+            if num_gear in cycle.keys():
+                meshes[num_gear].cycle=cycle[num_gear]
+        
+        mesh_combination = cls(center_distance, connections, meshes)
         return mesh_combination
 
     def update(self, Z, center_distance, connections, transverse_pressure_angle_0,
@@ -1120,11 +1159,12 @@ class MeshCombination(DessiaObject):
         :results: vector of data that should be positive
         """
         _,ineq,_=self.check_minimum_backlash(4*1e-4)
+        
         _,list_ineq,_=self.check_radial_contact_ratio(1)
         
         ineq.extend(list_ineq)
       
-        for num_gear,mesh in self.meshes.items():
+        for num_gear,mesh in enumerate(self.meshes):
             list_ineq=mesh.liste_ineq()
             ineq.extend(list_ineq)
 
@@ -1159,8 +1199,8 @@ class MeshCombination(DessiaObject):
                 raise RuntimeError
             circular_tooth_thickness1 = meshes[engr1].gear_section(DF[num_mesh][engr1])
             circular_tooth_thickness2 = meshes[engr2].gear_section(DF[num_mesh][engr2])
-            
-            transverse_radial_pitch1=math.pi*DF[num_mesh][engr1]/meshes[engr1].z
+         
+            transverse_radial_pitch1=math.pi*DF[num_mesh][engr1]/abs(meshes[engr1].z)
             space_width1=transverse_radial_pitch1-circular_tooth_thickness1
             space_width2=transverse_radial_pitch1-circular_tooth_thickness2
          
@@ -1192,8 +1232,17 @@ class MeshCombination(DessiaObject):
                 num_mesh = connections.index((engr2,engr1))
             Z1 = Z[engr1]
             Z2 = Z[engr2]
-            DF1 = abs(2*cd*Z1/Z2/(1+Z1/Z2))
-            DF2 = abs(2*cd-DF1)
+            if Z1<0:
+                DF1 = abs(2*cd*abs(Z1/Z2)/(-1+abs(Z1/Z2)))
+                DF2 = abs(-2*cd+DF1)
+               
+            elif Z2<0:
+                
+                DF1 = abs(2*cd*abs(Z1/Z2)/(1-abs(Z1/Z2)))
+                DF2 = abs(2*cd+DF1)
+            else:
+                DF1 = abs(2*cd*Z1/Z2/(1+Z1/Z2))
+                DF2 = abs(2*cd-DF1)
            
             DF[num_mesh] = {}
             DF[num_mesh][engr1] = DF1
@@ -1204,6 +1253,7 @@ class MeshCombination(DessiaObject):
             else:
                 db1 = db[engr1]
                 try:
+                    
                     dict_transverse_pressure_angle[num_mesh] = math.acos(db1/DF1)
                 except:
                     print('Error Diameter DB {}, DF {}, Z1 {}, Z2 {}, pa {}'.format(db1, DF1, Z1, Z2, transverse_pressure_angle_0))
@@ -1215,6 +1265,7 @@ class MeshCombination(DessiaObject):
         for num_mesh in sorted(dict_transverse_pressure_angle.keys()):
             tpa = dict_transverse_pressure_angle[num_mesh]
             transverse_pressure_angle.append(tpa)
+        
 
         return DF, db, connections_dfs, transverse_pressure_angle
 
@@ -1247,8 +1298,8 @@ class MeshCombination(DessiaObject):
             for eng1 in list_gear:
                 temp_torque[eng1]=0
             for num_mesh_tq,(eng1,eng2) in enumerate(order_torque_calculation):
-                if eng1 in torque.keys():
-                    temp_torque[eng1]+=torque[eng1]
+                if eng1 in external_torque.keys():
+                    temp_torque[eng1]+=external_torque[eng1]
                 temp_torque[eng2]+=-temp_torque[eng1]*Z[eng2]/float(Z[eng1])
             dic_torque={}
             for num_mesh_tq,(eng1,eng2) in enumerate(order_torque_calculation):
@@ -1257,7 +1308,7 @@ class MeshCombination(DessiaObject):
         normal_load={}
         tangential_load={}
         radial_load={}
-
+        
         for num_mesh,(eng1,eng2) in enumerate(connections):
             if 'output' not in external_torque.values():
                 dic_torque=external_torque
@@ -1265,8 +1316,10 @@ class MeshCombination(DessiaObject):
                 tq=dic_torque[(eng1,eng2)]
             except:
                 tq=dic_torque[(eng2,eng1)]
+            
             normal_load[num_mesh]=abs(tq)*2/(db[eng1])
             tangential_load[num_mesh]=abs(tq)*2/(DF[num_mesh][eng1])
+            
             radial_load[num_mesh]=math.tan(transverse_pressure_angle[num_mesh])*tangential_load[num_mesh]
         return dic_torque, normal_load, tangential_load, radial_load
 
@@ -1329,6 +1382,7 @@ class MeshCombination(DessiaObject):
             gear_width_set=max(gear_width1,gear_width2)
             gear_width[eng1]=max(gear_width[eng1],gear_width_set)
             gear_width[eng2]=max(gear_width[eng2],gear_width_set)
+       
         sigma_iso=sigma_lim
         return gear_width, sigma_iso, sigma_lim
 
@@ -1444,8 +1498,8 @@ class MeshCombination(DessiaObject):
             for m in i:
                 center = vm.Point2D(center)
                 model_trans = m.Translation(center)
-                # model_trans_rot = model_trans.Rotation(center, k)
-                model_export.append(model_trans)
+                model_trans_rot = model_trans.Rotation(center, k)
+                model_export.append(model_trans_rot)
             export.append(model_export)
         return export
 
@@ -1466,7 +1520,7 @@ class MeshCombination(DessiaObject):
         return [Gear1Angle,Gear2Angle]
 
     # TODO: use volmdlr Vector and points
-    def volume_model(self, centers = {}, axis = (1,0,0), name = ''):
+    def volmdlr_primitives(self, centers = {}, axis = (1,0,0), name = ''):
         """ Generation of the 3D volume for all the gear mesh
 
         :param center: list of tuple define the final position of the gear mesh center (a translation is perform, then a rotation around this axis)
@@ -1476,13 +1530,16 @@ class MeshCombination(DessiaObject):
         """
         x = vm.Vector3D(axis)
         # y = x.RandomUnitNormalVector()
-        y= vm.Vector3D((0,1,0))
+        # y= vm.Vector3D((0,1,0))
+        y = x.deterministic_unit_normal_vector()
+        
         z = vm.Vector3D(npy.cross(x.vector, y.vector))
         if len(centers)==0:
             centers = {}
             center_var = self.pos_axis({self.list_gear[0]:[0,0]})
+            
             for engr_num in center_var.keys():
-                centers[engr_num]=tuple(center_var[engr_num][0]*y.vector+center_var[engr_num][1]*z.vector)
+                centers[engr_num]=[0,center_var[engr_num][0],center_var[engr_num][1]]
         else:
             center_var={}
             for engr_num in centers.keys():
@@ -1495,8 +1552,11 @@ class MeshCombination(DessiaObject):
         Struct=[]
         Rotation={}
         primitives=[]
-
+        # plt.figure()
+        # plt.axis('equal')
+        
         for set_pos_dfs,(eng1,eng2) in enumerate(self.connections_dfs):
+            
             position1 = centers[eng1]
             position2 = centers[eng2]
 
@@ -1509,11 +1569,11 @@ class MeshCombination(DessiaObject):
                 list_rot=self.initial_position(set_pos,(eng2,eng1))
             Rotation[set_pos]={}
             if set_pos_dfs==0:
-                Gears3D[eng1]=self.meshes[eng1].Contour(3)
+                Gears3D[eng1]=self.meshes[eng1].contour(3)
             Struct.append(vm.Circle2D(vm.Point2D(position1),self.DF[set_pos][eng1]/2.))
-            Gears3D[eng2]=self.meshes[eng2].Contour(3)
+            Gears3D[eng2]=self.meshes[eng2].contour(3)
             Struct.append(vm.Circle2D(vm.Point2D(position2),self.DF[set_pos][eng2]/2.))
-
+            
             if position2[1]==position1[1]:
                 if position2[2]-position1[2]>0:
                     angle0=math.pi/2.
@@ -1537,36 +1597,80 @@ class MeshCombination(DessiaObject):
             
             Gears3D_Rotate=self.gear_rotate_2([Gears3D[eng1],Gears3D[eng2]],[(position1[1::]),(position2[1::])],
                                        list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
-            plt.figure()
-            x=[]
-            y=[]
             
-            for Gears in Gears3D_Rotate:
-                for element in Gears:
+            # x=[]
+            # y=[]
+            
+            # for Gears in Gears3D_Rotate:
+            #     for element in Gears:
+            #         for point in element.points:
+            #             x.append(point.vector[0])
+            #             y.append(point.vector[1])
+            # plt.plot(x,y)
+            
+           
+            print(eng1,eng2)
+            L=[]
+            L_vector=[]
+            for element in Gears3D_Rotate[0]:
                     for point in element.points:
-                        x.append(point.vector[0])
-                        y.append(point.vector[1])
-            plt.plot(x,y)
-
+                       if not point in L_vector:
+                           L_vector.append(point)
+                           L.append(point)
+                       # else:
+                       #     # print(point.vector)
+                       # print(point)
+            # L.append(L[0])
+            
+            C1=vm.Polygon2D(L,{})
+            # vmp.plot([C1.plot_data('contour')])
+            L2=[]
+            L2_vector=[]
+            for element in Gears3D_Rotate[1]:
+                    for point in element.points:
+                       if not point in L2_vector:
+                           L2_vector.append(point)
+                           L2.append(point)
+            # L2.append(L2[0])
+           
+            # L2=set(L2)
+            C2=vm.Polygon2D(L2,{})
+         
         #     C1=vm.Contour2D(Gears3D_Rotate[0])
         #     # print(Gears3D_Rotate[0])
         #     C2=vm.Contour2D(Gears3D_Rotate[1])
 
-        #     extrusion_vector1 = (self.gear_width[eng1]*x)
-        #     extrusion_vector2 = (self.gear_width[eng2]*x)
+            extrusion_vector1 = (self.gear_width[eng1]*x)
+            extrusion_vector2 = (self.gear_width[eng2]*x)
 
-        #     if set_pos_dfs==0:
-        #         vect_x = -0.5*self.gear_width[eng1]*x + vm.Vector3D((x.Dot(vm.Vector3D(centers[eng1])), 0,0))
-        #         t1=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z, C1, [], vm.Vector3D(extrusion_vector1))
-        #         primitives.append(t1)
-        #     vect_x = -0.5*self.gear_width[eng2]*x + vm.Vector3D((x.Dot(vm.Vector3D(centers[eng2])), 0,0))
-        #     t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z, C2, [], vm.Vector3D(extrusion_vector2))
+            if set_pos_dfs==0:
+                vect_x = -0.5*self.gear_width[eng1]*x + vm.Vector3D((x.Dot(vm.Vector3D(centers[eng1])), 0,0))
+                if self.Z[eng1]<0:
+                   
+                    circle=vm.Circle2D(vm.Point2D(vm.Vector2D([centers[eng1][1],centers[eng1][2]])),(self.DB[eng1]*1.3)/2)
+                    t1=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z,circle , [C1], vm.Vector3D(extrusion_vector1))
+                else:
+                    t1=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z, C1, [], vm.Vector3D(extrusion_vector1))
+                
+                primitives.append(t1)
+            vect_x = -0.5*self.gear_width[eng2]*x + vm.Vector3D((x.Dot(vm.Vector3D(centers[eng2])), 0,0))
+            if self.Z[eng2]<0:
+                    
+                    circle=vm.Circle2D(vm.Point2D([centers[eng2][1],centers[eng2][2]]),(self.DB[eng2]*1.3)/2)
+                   
+                    t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z,circle , [C2], vm.Vector3D(extrusion_vector2))
+                 
+            else:
+                t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x),y,z, C2, [], vm.Vector3D(extrusion_vector2))
 
             
-        #     primitives.append(t2)
-
-        # model = vm.volume_model(primitives, name)
-        # return model
+            primitives.append(t2)
+        
+        
+            
+            
+            
+        return primitives
 
     def mass(self):
         """
@@ -1683,6 +1787,76 @@ class MeshCombination(DessiaObject):
 #        G1=vm.Contour2D(L1)
 #        G1.MPLPlot()
         return L1
+    
+    def pos_axis(self,position):
+        # Definition of the initial center for all gear (when not given by the user)
+        
+        connections=[]
+        for connection in self.connections:
+            connections.append([connection])
+        gear_graph=nx.Graph()
+        gear_graph.add_nodes_from(self.list_gear)
+        for num_cd,list_connections in enumerate(connections):
+            
+            (eng1_m,eng2_m)=list_connections[0]
+            if len(list_connections)>1:
+                for (eng1,eng2) in list_connections[1:]:
+                    gear_graph.add_edges_from([(eng1_m,eng1),(eng2_m,eng2)])
+                    eng1_m=eng1
+                    eng2_m=eng2
+#        list_line=list(nx.connected_component_subgraphs(gear_graph))
+        list_line = [gear_graph.subgraph(c).copy() for c in nx.connected_components(gear_graph)]
+        dict_line={}
+        
+        
+       
+       
+        for num_line,list_num_eng in enumerate(list_line):
+           
+            for num_eng in list_num_eng:
+                dict_line[num_eng]=num_line
+      
+        def fun(x):
+            obj=0
+            for num_cd,list_connections in enumerate(connections):
+                eng1=dict_line[list_connections[0][0]]
+                eng2=dict_line[list_connections[0][1]]
+                obj+=(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-abs(self.center_distance[num_cd]))**2
+                # print((((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-abs(self.center_distance[num_cd]))**2)
+            return obj
+        def eg(x):
+            ine=[]
+            for k,val in position.items():
+                key=dict_line[k]
+                ine.append(x[2*int(key)]-val[0])
+                ine.append(x[2*int(key)+1]-val[1])
+            return ine
+        def ineg(x):
+            ine=[]
+            for num_cd,list_connections in enumerate(connections):
+                eng1=dict_line[list_connections[0][0]]
+                eng2=dict_line[list_connections[0][1]]
+                ine.append(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-0.999*abs(self.center_distance[num_cd]))
+                ine.append(1.001*abs(self.center_distance[num_cd])-((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5)
+                # print(ine)
+            return ine
+        cons = ({'type': 'eq','fun' : eg},{'type': 'ineq','fun' : ineg})
+        drap=1
+        while drap==1:
+            x0=tuple(npy.random.random(2*len(list_line))*1)
+            Bound=[[0,10]]*(len(list_line)*2)
+            res = minimize(fun,x0, method='SLSQP', bounds=Bound,constraints=cons)
+            
+            
+            if (min(ineg(res.x))>0) and (max(eg(res.x))<1e-7):
+                drap=0
+        x_opt=res.x
+        centers={}
+        for num_pos,num_eng in enumerate(self.list_gear):
+            opt_pos=dict_line[num_eng]
+            centers[num_eng]=[x_opt[2*opt_pos],x_opt[2*opt_pos+1]]
+        
+        return centers
 
 
 class MeshAssembly(DessiaObject):
@@ -1695,13 +1869,19 @@ class MeshAssembly(DessiaObject):
 
     def __init__(self, connections:List[List[Tuple[int, int]]],
                  mesh_combinations:List[MeshCombination],
-                 internal_torque:float=None,
-                 cycle=None, strong_links=None, safety_factor:float=1, name:str=''):
+                 strong_links=None, safety_factor:float=1, name:str=''):
 
         self.connections = connections
         self.mesh_combinations = mesh_combinations
-        self.internal_torque = internal_torque
-        self.cycle = cycle
+        
+        self.internal_torque = {}
+        self.cycle={}
+        for mesh_combination in mesh_combinations:
+            for element in mesh_combination.internal_torque.keys():
+                self.internal_torque[element]=mesh_combination.internal_torque[element]
+            for element in mesh_combination.cycle.keys():
+                self.cycle[element]=mesh_combination.cycle[element]
+      
         self.strong_links = strong_links
         self.safety_factor = safety_factor
 
@@ -1738,7 +1918,7 @@ class MeshAssembly(DessiaObject):
 
         list_gear = {}
         for mesh_combination in self.mesh_combinations:
-            for num_mesh, mesh in mesh_combination.meshes.items():
+            for num_mesh, mesh in enumerate(mesh_combination.meshes):
                 list_gear[num_mesh] = mesh
         coefficient_profile_shift = {}
         for num_mesh, mesh in list_gear.items():
@@ -1803,14 +1983,14 @@ class MeshAssembly(DessiaObject):
                 input_data['center_distance'].append(self.center_distance[num_cd])
             general_data['connections']=li_connection
             for (eng1,eng2) in list_sub_graph:
-                if (eng1,eng2) in internal_torque.keys():
-                    general_data['internal_torque'][(eng1,eng2)]=internal_torque[(eng1,eng2)]
-                if (eng2,eng1) in internal_torque.keys():
-                    general_data['internal_torque'][(eng2,eng1)]=internal_torque[(eng2,eng1)]
+                if (eng1,eng2) in self.internal_torque.keys():
+                    general_data['internal_torque'][(eng1,eng2)]=self.internal_torque[(eng1,eng2)]
+                if (eng2,eng1) in self.internal_torque.keys():
+                    general_data['internal_torque'][(eng2,eng1)]=self.internal_torque[(eng2,eng1)]
                 if eng1 not in general_data['cycle'].keys():
-                    general_data['cycle'][eng1]=cycle[eng1]
+                    general_data['cycle'][eng1]=self.cycle[eng1]
                 if eng2 not in general_data['cycle'].keys():
-                    general_data['cycle'][eng2]=cycle[eng2]
+                    general_data['cycle'][eng2]=self.cycle[eng2]
             self.general_data.append(general_data)
 
         DessiaObject.__init__(self, name=name)
@@ -1826,7 +2006,7 @@ class MeshAssembly(DessiaObject):
                  coefficient_profile_shift, transverse_pressure_angle_rack,
                  coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
                  coeff_circular_tooth_thickness, Z, strong_links=None, material=None,
-                 internal_torque=None, cycle=None,
+                 internal_torque=None,external_torque=None, cycle=None,
                  safety_factor=1):
 
         mesh_combinations = []
@@ -1870,19 +2050,27 @@ class MeshAssembly(DessiaObject):
                 input_data['center_distance'].append(center_distance[num_cd])
             general_data['connections']=li_connection
             for (eng1,eng2) in list_sub_graph:
-                if (eng1,eng2) in internal_torque.keys():
-                    general_data['external_torque'][(eng1,eng2)]=internal_torque[(eng1,eng2)]
-                if (eng2,eng1) in internal_torque.keys():
-                    general_data['external_torque'][(eng2,eng1)]=internal_torque[(eng2,eng1)]
+                # if (eng1,eng2) in internal_torque.keys():
+                #     general_data['external_torque'][(eng1,eng2)]=internal_torque[(eng1,eng2)]
+                # if (eng2,eng1) in internal_torque.keys():
+                #     general_data['external_torque'][(eng2,eng1)]=internal_torque[(eng2,eng1)]
+                
+                if not eng1 in general_data['external_torque'].keys():
+                    if eng1 in external_torque.keys():
+                        general_data['external_torque'][eng1]=external_torque[eng1]
+                if not eng2 in general_data['external_torque'].keys():
+                    if eng2 in external_torque.keys():
+                        general_data['external_torque'][eng2]=external_torque[eng2]
                 if eng1 not in general_data['cycle'].keys():
                     general_data['cycle'][eng1]=cycle[eng1]
                 if eng2 not in general_data['cycle'].keys():
                     general_data['cycle'][eng2]=cycle[eng2]
-
+            
+            
             output_data.append(general_data)
             xt = dict(list(input_data.items()) + list(general_data.items()))
             mesh_combinations.append(MeshCombination.create(**xt))
-        mesh_assembly = cls(connections, mesh_combinations, internal_torque, cycle,
+        mesh_assembly = cls(connections, mesh_combinations,
                             strong_links, safety_factor)
         return mesh_assembly
 
@@ -1959,6 +2147,7 @@ class MeshAssembly(DessiaObject):
 
         gear_graph=nx.Graph()
         gear_graph.add_nodes_from(self.list_gear)
+       
         for num_cd,list_connections in enumerate(self.connections):
             (eng1_m,eng2_m)=list_connections[0]
             if len(list_connections)>1:
@@ -1969,9 +2158,11 @@ class MeshAssembly(DessiaObject):
 #        list_line=list(nx.connected_component_subgraphs(gear_graph))
         list_line = [gear_graph.subgraph(c).copy() for c in nx.connected_components(gear_graph)]
         dict_line={}
+       
         for num_line,list_num_eng in enumerate(list_line):
             for num_eng in list_num_eng:
                 dict_line[num_eng]=num_line
+      
         def fun(x):
             obj=0
             for num_cd,list_connections in enumerate(self.connections):
@@ -1991,8 +2182,9 @@ class MeshAssembly(DessiaObject):
             for num_cd,list_connections in enumerate(self.connections):
                 eng1=dict_line[list_connections[0][0]]
                 eng2=dict_line[list_connections[0][1]]
-                ine.append(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-0.999*self.center_distance[num_cd])
-                ine.append(1.001*self.center_distance[num_cd]-((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5)
+                
+                ine.append(((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5-0.999*abs(self.center_distance[num_cd]))
+                ine.append(1.001*abs(self.center_distance[num_cd])-((x[2*eng1]-x[2*eng2])**2+(x[2*eng1+1]-x[2*eng2+1])**2)**0.5)
             return ine
         cons = ({'type': 'eq','fun' : eg},{'type': 'ineq','fun' : ineg})
         drap=1
@@ -2000,6 +2192,7 @@ class MeshAssembly(DessiaObject):
             x0=tuple(npy.random.random(2*len(list_line))*1)
             Bound=[[0,1]]*(len(list_line)*2)
             res = minimize(fun,x0, method='SLSQP', bounds=Bound,constraints=cons)
+            
             if (min(ineg(res.x))>0) and (max(eg(res.x))<1e-7):
                 drap=0
         x_opt=res.x

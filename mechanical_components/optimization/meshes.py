@@ -39,12 +39,14 @@ class RackOpti(DessiaObject):
          
 class MeshOpti(DessiaObject):
     
-    def __init__(self,torque_input: float,speed_input : Tuple[float,float],Z={} ,rack: RackOpti=None, name:str=''):
+    def __init__(self,torque_input: float,speed_input : Tuple[float,float],Z={} ,rack: RackOpti=None,gearing_interior:str='False', name:str=''):
         self.rack=rack
         self.name=name
         self.torque_input=torque_input
         self.Z=Z
         self.speed_input=speed_input
+        self.gearing_interior=gearing_interior
+        
         DessiaObject.__init__(self, name=name)
         
 class CenterDistanceOpti(DessiaObject):
@@ -106,12 +108,14 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         Z={}
         rack_choice={}
         number_rack=0
-        
+        self.list_gearing_interior=[]
         for i,gear in enumerate(list_gear):
             gear_speeds[i]=gear.speed_input
             external_torques[i]=gear.torque_input
             if gear.Z:
                 Z[i]=gear.Z
+            if gear.gearing_interior=='True':
+                self.list_gearing_interior.append(i)
             
             if not gear.rack in rack_list:
                 rack_dict[number_rack]=gear.rack
@@ -260,7 +264,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                     self.check = False
             self.Z=var_Z
             
-#        print(self.Z)
+        print(self.Z)
             
         self.solutions=[]
         self.solutions_search=[]

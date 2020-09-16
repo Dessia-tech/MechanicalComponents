@@ -26,8 +26,10 @@ import mechanical_components.genmechanics2.linkages as linkages
 import mechanical_components.genmechanics2.loads as loads
 import volmdlr.plot_data as vmp
 import scipy.optimize as op
-
-
+from mechanical_components.meshes import hardened_alloy_steel
+import mechanical_components.optimization.meshes_protected as mg
+import mechanical_components.optimization.meshes as meshes_opt
+import volmdlr.primitives3D as primitives3D
 class Gears(DessiaObject):
 
 
@@ -149,30 +151,30 @@ class Planetary(Gears):
         model = self.volume_model()
         return model
 
-    # def volume_model(self):
-    #     position = self.position
-    #     module = self.module
+    def volume_model(self):
+        position = self.position
+        module = self.module
 
-    #     if self.planetary_type == 'Sun':
-    #         pos = vm.Point3D(position)
-    #         axis = vm.Vector3D((1, 0, 0))
-    #         radius = (module*self.Z)/2
+        if self.planetary_type == 'Sun':
+            pos = vm.Point3D(position)
+            axis = vm.Vector3D((1, 0, 0))
+            radius = (module*self.Z)/2
 
-    #         cylinder = p3d.Cylinder(pos, axis, radius, position[0]+self.length)
-    #         return cylinder
+            cylinder = p3d.Cylinder(pos, axis, radius, position[0]+self.length)
+            return cylinder
 
-    #     radius = (module*self.Z)/2
-    #     p1 = vm.Point2D((radius, position[0]+self.length/2))
-    #     p2 = vm.Point2D((radius+radius*0.1, position[0]+self.length/2))
-    #     p3 = vm.Point2D((radius, position[0]-self.length/2))
-    #     p4 = vm.Point2D((radius+radius*0.1, position[0]-self.length/2))
-    #     points1 = [p1, p2, p3, p4]
-    #     c1 = vm.Polygon2D(points1)
-    #     vector_1 = vm.Point3D((0, 0, 0))
+        radius = (module*self.Z)/2
+        p1 = vm.Point2D((radius, position[0]+self.length/2))
+        p2 = vm.Point2D((radius+radius*0.1, position[0]+self.length/2))
+        p3 = vm.Point2D((radius, position[0]-self.length/2))
+        p4 = vm.Point2D((radius+radius*0.1, position[0]-self.length/2))
+        points1 = [p1, p2, p3, p4]
+        c1 = vm.Polygon2D(points1)
+        vector_1 = vm.Point3D((0, 0, 0))
 
-    #     profile1 = p3d.RevolvedProfile(vector_1, vm.Z3D, vm.X3D, c1, vm.O3D, vm.X3D)
+        profile1 = p3d.RevolvedProfile(vector_1, vm.Z3D, vm.X3D, c1, vm.O3D, vm.X3D)
 
-    #     return profile1
+        return profile1
 
 
 class Planet(Gears):
@@ -194,6 +196,7 @@ class Planet(Gears):
 
         self.length = 0.2
         self.speed = 0
+        self.torque=0
         self.module = module
         self.speed_input = [0, 0]
         self.Z = Z
@@ -458,7 +461,7 @@ class PlanetaryGear(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes=['mech', 'mech_dict']
     # _generic_eq=True
-   
+    
     
     '''
     Define a Planetary Gears
@@ -480,7 +483,7 @@ class PlanetaryGear(DessiaObject):
         
         self.number_group_solution_planet_structure=number_group_solution_planet_structure
         self.number_group_solution_architecture=number_group_solution_architecture
-        
+        self.length=0.1
         self.number_branch_planet=number_branch_planet
         self.d_min = 0
         self.planetaries = planetaries
@@ -1043,15 +1046,14 @@ class PlanetaryGear(DessiaObject):
 
     def volmdlr_primitives(self, frame=vm.OXYZ):
         
-        components = self.planetaries+self.planets+self.doubles
+        components = self.doubles
         li_box = []
+        li_box.extend(self.mesh_generation())
+        
         for component in components:
             shell = component.volume_model()
-            if isinstance(component, Planet) or isinstance(component, Double):
-                for shell_planet in shell:
+            for shell_planet in shell:
                     li_box.append(shell_planet)
-            else:
-                li_box.append(shell)
 
         return li_box
 
@@ -1105,6 +1107,86 @@ class PlanetaryGear(DessiaObject):
         
         else:
             return self.plot_kinematic_graph()
+        
+    def mesh_generation(self):
+        meshing_chains=self.meshing_chain()
+        primitives=[]
+        cycles = {0: 1272321481513.054 }
+        material={0:hardened_alloy_steel}
+        
+        for meshing_chain in meshing_chains:
+            module=meshing_chain[0].module
+            
+            rack=meshes_opt.RackOpti(module=[module,module],transverse_pressure_angle=[20/180.*npy.pi,20/180.*npy.pi],
+                                     coeff_gear_addendum=[1,1],coeff_gear_dedendum=[1.25,1.25],coeff_root_radius=[0.38,0.38],
+                                     coeff_circular_tooth_thickness=[0.5,0.5])
+            list_rack = {0:rack}
+            rack_choices ={}
+            center_distances=[]
+            dbs=[]
+            coefficient_profile_shift=[]
+            transverse_pressure_angle={}
+            Z={}
+            torques = {0: 'output'}
+            connections=[]
+            centers={}
+            number_primitive_planet=[]
+            planet=[]
+            rack_choice={}
+            for i,element in enumerate(meshing_chain):
+                
+                Z_2=element.Z
+                if isinstance(element,Planetary) and element.planetary_type=='Ring':
+                    Z_2=-Z_2
+                if i>0:
+                    if isinstance(element,Planetary):
+                        torques[i]=element.torque_input[1]
+                    else:
+                        torques[i]=element.torque
+                        
+                    connections.append([(i-1,i)])
+                    center_distances.append([abs((Z_2+Z_1)*module/2)-0.00001,abs((Z_2+Z_1)*module/2)])
+                    transverse_pressure_angle[i-1]=[20/180.*npy.pi-0.00001, 20/180.*npy.pi]
+                
+                db=m.cos(20/180.*npy.pi)*module*abs(Z_2)
+                dbs.append([db-0.00001,db])
+                rack_choices[i]=0
+                Z[i]=Z_2
+                
+                coefficient_profile_shift.append([0.01,0.01])
+                if isinstance(element,Planetary):
+                    centers[i]=element.position
+                else:
+                    centers[i]=element.positions[0]
+                    number_primitive_planet.append(i)
+                    planet.append(element)
+                previous_element=element
+                Z_1=Z_2
+           
+            mesh_optimizer=mg.ContinuousMeshesAssemblyOptimizer(Z=Z,center_distances=center_distances,connections=connections,rigid_links=[],
+                                        transverse_pressure_angle=transverse_pressure_angle,rack_list=list_rack,rack_choice=rack_choices,material=material,
+                                        external_torques=torques,cycles=cycles,safety_factor=1,db=dbs,coefficient_profile_shift=coefficient_profile_shift)
+            
+            mesh_optimizer.Optimize(verbose=True)
+            primitive=mesh_optimizer.solutions[0].mesh_combinations[0].volmdlr_primitives(centers=centers)
+           
+            for j,number in enumerate(number_primitive_planet):
+                for n in range(self.number_branch_planet-1):
+                    primitive_planet=copy.copy(primitive[number])
+                    
+                    x = vm.Vector3D((1,0,0))
+                    # primitive_planet.Rotation(center=vm.Point3D((0,0,0)),axis=vm.Vector3D((1,0,0)),angle=(n+1)*2*m.pi/self.number_branch_planet)
+                    
+                    vect_x=-0.5*mesh_optimizer.solutions[0].mesh_combinations[0].gear_width[number]*x + vm.Vector3D((x.Dot(vm.Vector3D(planet[j].positions[n])), 0,0))
+                    C2=primitive_planet.outer_contour2d.Rotation(center=vm.Point3D((0,0,0)),angle=(n+1)*2*m.pi/self.number_branch_planet)
+                    primitive.append(primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), primitive_planet.x, primitive_planet.y, 
+                                                                  C2, [], primitive_planet.extrusion_vector))
+            primitives.extend(primitive)
+        
+        return primitives
+        
+        
+            
             
 
 
@@ -2099,7 +2181,7 @@ class PlanetaryGear(DessiaObject):
 
     def meshing_chain_position_z(self, meshing_chains):
         z = [0]*len(meshing_chains)
-        length = 0.3
+        length = self.length
         z[0] = 0
         z_ini = 0
 
@@ -2189,8 +2271,10 @@ class PlanetaryGear(DessiaObject):
         speed_planetaries=[0]*len(self.planetaries)
         torque_planetaries=[0]*len(self.planetaries)
         for i,gearing_planetary in enumerate(self.mech_dict['gearings_planetary']):
-            
-            power = self.mech.TransmittedLinkagePower(gearing_planetary, 4)    
+            # try:
+            power = self.mech.TransmittedLinkagePower(gearing_planetary, 4) 
+            # except genmechanics.LinAlgError:
+            #     power=1000000
             
             if gearing_planetary.part1 in self.mech_dict['part_planetaries']:
                 index=self.mech_dict['part_planetaries'].index(gearing_planetary.part1)
@@ -2278,9 +2362,9 @@ class PlanetaryGear(DessiaObject):
             max_input[planetary]=planetary.torque_input[i]/self.number_branch_planet
             
 
-        self.torque_resolution_PFS(max_input)
+        self.update_load_mech(max_input)
         
-        for pivot in self.mech_dict['pivot_planets_without_double']:
+        for i,pivot in enumerate(self.mech_dict['pivot_planets']):
             try:
                 power = self.mech.TransmittedLinkagePower(pivot, 1)
             except genmechanics.ModelError:
@@ -2290,12 +2374,15 @@ class PlanetaryGear(DessiaObject):
                 torque=0
             else:
                 torque = power/speed
+            self.planets[i].torque=torque
+            
             
             # print(torque)
             if abs(torque) > torque_max_planet:
                 torque_max_planet = abs(torque)
+        
      
-        return  max_input
+        return  torque_max_planet
         
             
     def test_assembly_condition(self, number_planet, planetaries=[]):
@@ -2624,6 +2711,7 @@ class PlanetaryGear(DessiaObject):
                     break
             if not flag_double:
                 part_planets.append(genmechanics.Part('planet'+str(i)))
+                
                 position=[planet.positions[0][0],planet.positions[0][1],planet.positions[0][2]]
                 pivot_planets.append(linkages.FrictionlessRevoluteLinkage(part_planet_carrier, part_planets[-1],
                                                                           np.array(position), [0, 0, 0], 'pivot'+str(i)))
@@ -2676,7 +2764,7 @@ class PlanetaryGear(DessiaObject):
                                                                                  np.array([position[0]+0.1, position[1], position[2]]),
                                                                                  [0, 0, 0], 'planetary_linear_angular'+str(i)))
         self.mech_dict['part_planetaries']=part_planetaries
-        
+        self.mech_dict['pivot_planets']=pivot_planets
         
 
 

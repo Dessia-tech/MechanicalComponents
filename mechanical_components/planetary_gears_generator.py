@@ -2221,6 +2221,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
         min_x_max_x = []
         index_x = 0
         x0 = []
+        outside_diameter_coefficient=4*(0.01*M+M*1.05)
         for i, element in enumerate(meshing_chain):
             if isinstance(element, Planet):
                 index_planet = self.planetary_gear.planets.index(element)
@@ -2228,30 +2229,30 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                     for element_2 in meshing_chain[:i-1]:
                         if isinstance(element_2, Planetary):
                             if element_2.planetary_type == 'Ring':
-                                min_x_max_x.append([-np.inf, (((element_2.Z-element.Z)-2)*M/2)**2])
-                                x0.append((((element_2.Z-element.Z)-2)*M/2)**2)
+                                min_x_max_x.append([-np.inf, ((((element_2.Z-element.Z))*M-outside_diameter_coefficient)/2)**2])
+                                x0.append(((((element_2.Z-element.Z))*M-outside_diameter_coefficient)/2)**2)
                             else:
-                                min_x_max_x.append([(((element_2.Z+element.Z)+2)*M/2)**2, np.inf])
-                                x0.append((((element_2.Z+element.Z)+2)*(M+2)/2)**2)
+                                min_x_max_x.append([(((element_2.Z+element.Z)*Moutside_diameter_coefficient)/2)**2, np.inf])
+                                x0.append((((element_2.Z+element.Z)*M+outside_diameter_coefficient)/2)**2)
 
                         else:
-                            min_x_max_x.append([(((element_2.Z+element.Z)+2)*M/2)**2, np.inf])
-                            x0.append((((element_2.Z+element.Z)+2)*M/2)**2)
+                            min_x_max_x.append([(((element_2.Z+element.Z)*M+outside_diameter_coefficient)/2)**2, np.inf])
+                            x0.append((((element_2.Z+element.Z)*M+outside_diameter_coefficient)/2)**2)
 
                 for element_3 in meshing_chain:
                     if isinstance(element_3, Planet):
-                        min_x_max_x.append([(((element_3.Z+element.Z)+2)*M/2)**2, np.inf])
-                        x0.append((((element_3.Z+element.Z)+2)*M/2)**2)
+                        min_x_max_x.append([(((element_3.Z+element.Z)*M+outside_diameter_coefficient)/2)**2, np.inf])
+                        x0.append((((element_3.Z+element.Z)*M+outside_diameter_coefficient)/2)**2)
 
             elif i == len(meshing_chain)-1:
                     for element_2 in meshing_chain[:i-1]:
                        if isinstance(element_2, Planet):
                             if element.planetary_type == 'Ring':
-                                min_x_max_x.append([-np.inf, (((element.Z-element_2.Z)-2)*M/2)**2])
-                                x0.append((((element.Z-element_2.Z)+2)*M/2)**2)
+                                min_x_max_x.append([-np.inf, (((element.Z-element_2.Z)*M-outside_diameter_coefficient)/2)**2])
+                                x0.append((((element.Z-element_2.Z)*M-outside_diameter_coefficient)/2)**2)
                             else:
-                                min_x_max_x.append([(((element_2.Z+element.Z)-2)*M/2)**2, np.inf])
-                                x0.append((((element_2.Z+element.Z)+2)*M/2)**2)
+                                min_x_max_x.append([(((element_2.Z+element.Z)*M-outside_diameter_coefficient)/2)**2, np.inf])
+                                x0.append((((element_2.Z+element.Z)*M-outside_diameter_coefficient)/2)**2)
 
 
 
@@ -2344,7 +2345,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                 min_max_x, x0 = self.function_minimize_inequation_meshing_chain_min_max(meshing_chain, m2)
 
                 res_1 = op.minimize(self.function_minimize_inequation_meshing_chain, x0, bounds=min_max_x, args=(meshing_chain, X, Y))
-
+                
                 if res_1.fun > 0.000000000001:
                       f2.append(res_1.fun*10)
 
@@ -2435,11 +2436,13 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
             for i in range(len(min_max_x_2)):
                 min_x.append(min_max_x_2[i][0])
                 max_x.append(min_max_x_2[i][1])
-
+            s=0.1
+            if (self.D_max-self.D_min)<1:
+                s=(self.D_max-self.D_min)*0.1
 
             # constraint={'type':'ineq','fun':self.function_inequation_constrain,'args':(self.planetary_gear,),}
             # res_2=op.minimize(function_verification,x0,bounds=min_max_x_2, method='SLSQP' , args=(self.planetary_gear),constraints=constraint,tol=0.0001, options={'ftol':1e-10,'maxiter':150})
-            xra, fx = cma.fmin(function_verification, x0, 0.1, args=(self.planetary_gear, meshing_chains), options={'bounds':[min_x, max_x],
+            xra, fx = cma.fmin(function_verification, x0, s, args=(self.planetary_gear, meshing_chains), options={'bounds':[min_x, max_x],
                                                                                                                     'tolfun': 1e-10,
                                                                                                                     'verbose': 3,
                                                                                                                     'ftarget': 1e-24,
@@ -2729,13 +2732,15 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                             number_good_loop+=1
                     print(power_recirculation)        
                     if number_good_loop==len(power_recirculation):
-                        
+                        s=0.1
+                        if (self.D_max-self.D_min)<1:
+                            s=(self.D_max-self.D_min)*0.1
                         
             
             
                         # constraint={'type':'ineq','fun':self.function_inequation_constrain,'args':(self.planetary_gear,),}
                         # res_2=op.minimize(function_verification,x0,bounds=min_max_x_2, method='SLSQP' , args=(self.planetary_gear),constraints=constraint,tol=0.0001, options={'ftol':1e-10,'maxiter':150})
-                        xra, fx = cma.fmin(function_verification, x0, 0.1, args=(self.planetary_gear, meshing_chains), options={'bounds':[min_x, max_x],
+                        xra, fx = cma.fmin(function_verification, x0, s, args=(self.planetary_gear, meshing_chains), options={'bounds':[min_x, max_x],
                                                                                                                                 'tolfun': 1e-10,
                                                                                                                                 'verbose': 3,
                                                                                                                                 'ftarget': 1e-2,
@@ -3172,7 +3177,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
             x0 = []
 
             for meshing_chain in meshing_chains:
-                min_max_x_2.append([0, self.D_max/7])
+                min_max_x_2.append([0, self.D_max])
                 x0.append(meshing_chain[0].module)
 
             min_max_x_2.append([-self.D_max/2, self.D_max/2])
@@ -3213,7 +3218,10 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
             print(self.planetary_gear.recirculation_power())
             l=[0]
             F2=[0]
-            xra, fx = cma.fmin(function_verification, x0, 1, args=(self.planetary_gear, meshing_chains,recirculation_power,l,F2), options={'bounds':[min_x, max_x],
+            s=1
+            if self.D_max-self.D_min<1:
+                s=(self.D_max-self.D_min)*0.9
+            xra, fx = cma.fmin(function_verification, x0, s, args=(self.planetary_gear, meshing_chains,recirculation_power,l,F2), options={'bounds':[min_x, max_x],
                                                                                                                     'tolfun': 1e-15,
                                                                                                                     'verbose': 3,
                                                                                                                     'ftarget': 1e-6,
@@ -3752,8 +3760,11 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
             for i in range(len(min_max_x_2)):
                 min_x.append(min_max_x_2[i][0])
                 max_x.append(min_max_x_2[i][1])
+            s=0.1
+            if (self.D_max-self.D_min)<1:
+                s=(self.D_max-self.D_min)*0.1
 
-            xra, fx = cma.fmin(function_verification, x0, 0.1, args=(self.planetary_gear, meshing_chains), options={'bounds':[min_x, max_x],
+            xra, fx = cma.fmin(function_verification, x0, s, args=(self.planetary_gear, meshing_chains), options={'bounds':[min_x, max_x],
                                                                                                                     'tolfun': 1e-10,
                                                                                                                     'verbose': 3,
                                                                                                                     'ftarget': 1e-8,
@@ -3918,7 +3929,7 @@ class SolutionSort():
             if not Z  in Z_planetary:
                 Z_planetary.append(Z)
                 list_solution.append(planetary_gear)
-                if len(list_solution) > 100:
+                if len(list_solution) > 0:
                     print(len(planetary_gears))
                     return list_solution
         
