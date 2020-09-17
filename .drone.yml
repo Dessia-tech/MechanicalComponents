@@ -103,21 +103,6 @@ steps:
     password:
       from_secret: ssh_drone_password
 
-- name: upload sdist to seafile
-  image: dessia/drone-seafile
-  when:
-    branch: master
-    event: push
-  settings:
-    server_url: https://partage.dessia.tech
-    repo_id:
-      from_secret: seafile_repo_id
-    seafile_token:
-      from_secret: seafile_token
-    files: dist/*
-    root_directory: /mechanical_components/
-
-
 
 - name: notify
   when:
