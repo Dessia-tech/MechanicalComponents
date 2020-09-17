@@ -3505,7 +3505,7 @@ class PlanetaryGearResult(DessiaObject):
 
     _generic_eq = True
     _non_serializable_attributes=['planetaries', 'planets','planet_carrier','connections','doubles']
-    def __init__(self, planetary_gear: PlanetaryGear, position_min_max: PositionMinMaxPlanetaryGear, geometry_min_max: str = 'Min'):
+    def __init__(self, planetary_gear: PlanetaryGear, position_min_max: PositionMinMaxPlanetaryGear, geometry_min_max: str = 'Min',recycle_power: int=0):
         self.planetary_gear = planetary_gear
         self.geometry_min_max = geometry_min_max
         self.position_min_max = position_min_max
@@ -3516,7 +3516,14 @@ class PlanetaryGearResult(DessiaObject):
         self.doubles=planetary_gear.doubles
        
         self.update_geometry()
-        self.recircle_power=self.planetary_gear.recirculation_power()[0][1]
+        self.recycle_power=0
+        # if not self.recycle_power:
+        #     planetary_gear_recirculation_power=self.planetary_gear.recirculation_power()
+        #     max_recirculation_branch=[]
+        #     for recirculation_branch in planetary_gear_recirculation_power:
+        #         max_recirculation_branch.append(recirculation_branch[1])
+                
+        #     self.recircle_power=max(max_recirculation_branch)
         if not self.planetary_gear.speed_max_planet:
             self.speed_max_planet = self.planetary_gear.speed_max_planets()
             self.planetary_gear.speed_max_planet=self.speed_max_planet

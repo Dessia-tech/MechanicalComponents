@@ -251,7 +251,7 @@ workflow_generator_run = workflow_generator_planetary_gears.run(input_values)
 #                   name='Planetary_gears')
 
 planetary_gear_1=workflow_generator_run.output_value[0]
-planetary_gear_1.planetary_gear.mesh_generation()
+# planetary_gear_1.planetary_gear.mesh_generation()
 
 
 c = Client(api_url = 'http://localhost:5000')

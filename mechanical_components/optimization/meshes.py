@@ -41,7 +41,7 @@ class RackOpti(DessiaObject):
 class MeshOpti(DessiaObject):
     _standalone_in_db = True
     
-    def __init__(self,torque_input: float,speed_input : Tuple[float,float],Z={} ,rack: RackOpti=None,gearing_interior:str='False', name:str=''):
+    def __init__(self,torque_input: float,speed_input : Tuple[float,float],Z:int=0 ,rack: RackOpti=None,gearing_interior:str='False', name:str=''):
         self.rack=rack
         self.name=name
         self.torque_input=torque_input
@@ -90,7 +90,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                                 center_distance = list_cd)
     """
     
-    def __init__(self,center_distances: CenterDistanceOpti,cycles,rigid_links: List =[],safety_factor: int =1, verbose : int =False):
+    def __init__(self,center_distances: CenterDistanceOpti,cycles : List,rigid_links: List =[],safety_factor: int =1, verbose : int =False):
         list_gear=[]
         connections=[]
         cd = []
@@ -136,6 +136,11 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         if not Z:
             Z=None
         print(rack_dict)
+        if isinstance(cycles,list):
+            cycles2={}
+            for i,element in enumerate(cycles):
+                cycles2[i]=element
+            cycles=cycles2
         self.initialisation(connections=connections,gear_speeds=gear_speeds,center_distances=cd,
                             external_torques=external_torques,cycles=cycles, rigid_links=rigid_links,Z=Z,
                             rack_list=rack_dict,rack_choice=rack_choice,safety_factor=safety_factor,verbose=verbose)
