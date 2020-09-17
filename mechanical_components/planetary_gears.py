@@ -3516,14 +3516,14 @@ class PlanetaryGearResult(DessiaObject):
         self.doubles=planetary_gear.doubles
        
         self.update_geometry()
-        self.recycle_power=0
-        # if not self.recycle_power:
-        #     planetary_gear_recirculation_power=self.planetary_gear.recirculation_power()
-        #     max_recirculation_branch=[]
-        #     for recirculation_branch in planetary_gear_recirculation_power:
-        #         max_recirculation_branch.append(recirculation_branch[1])
+        self.recycle_power=recycle_power
+        if not self.recycle_power:
+            planetary_gear_recirculation_power=self.planetary_gear.recirculation_power()
+            max_recirculation_branch=[]
+            for recirculation_branch in planetary_gear_recirculation_power:
+                max_recirculation_branch.append(recirculation_branch[1])
                 
-        #     self.recircle_power=max(max_recirculation_branch)
+            self.recircle_power=max(max_recirculation_branch)
         if not self.planetary_gear.speed_max_planet:
             self.speed_max_planet = self.planetary_gear.speed_max_planets()
             self.planetary_gear.speed_max_planet=self.speed_max_planet
