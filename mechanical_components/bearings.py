@@ -775,30 +775,10 @@ class RadialBallBearing(RadialBearing):
         plot_data_state = plot_data.PlotDataState(name='bi_inf', hatching=hatching, stroke_width=stroke_width)
         plot_datas.append(bi_inf1.plot_data(plot_data_states=[plot_data_state]))
         ball_inf1 = ball_sup1.Rotation(vm.Point2D((pos, 0)), math.pi, True)
-<<<<<<< HEAD
         plot_data_state = plot_data.PlotDataState(name='ball_inf', color_surface=color_surface,
                                                   stroke_width=stroke_width)
         plot_datas.append(ball_inf1.plot_data(plot_data_states=[plot_data_state]))
-=======
-        plot_datas.append(ball_inf1.plot_data('ball_inf', fill = None))
-#
-#        if constructor:
-#            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
-#            line1.Translation(vm.Vector2D((pos, 0)))
-#            li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None)]
-#            line2 = vm.LineSegment2D(vm.Point2D((self.B/2., self.d/2.)), vm.Point2D((self.B/2., -self.d/2.)))
-#            line2.Translation(vm.Vector2D((pos, 0)))
-#            li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.05, dash = False, marker = None))
-#            pt_data = {}
-#            pt_data['name'] = 'constructor line'
-#            pt_data['type'] = 'line'
-#            pt_data['plot_data'] = li_data
-#            plot_datas.append(pt_data)
-#
-#        if quote:
-#            plot_datas.extend(self.PlotDataQuote(pos))
-        
->>>>>>> planatery_gears
+
         return plot_datas
 
     @classmethod

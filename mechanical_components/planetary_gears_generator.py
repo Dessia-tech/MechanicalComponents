@@ -2221,7 +2221,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
         min_x_max_x = []
         index_x = 0
         x0 = []
-        outside_diameter_coefficient=4*(0.01*M+M*1.05)
+        outside_diameter_coefficient=4*(0.01*M+M*1.2)
         for i, element in enumerate(meshing_chain):
             if isinstance(element, Planet):
                 index_planet = self.planetary_gear.planets.index(element)

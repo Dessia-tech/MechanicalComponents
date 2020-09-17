@@ -21,9 +21,9 @@ import mechanical_components.meshes as meshes
 from dessia_common import DessiaObject,list_eq
 from typing import Tuple, List, TypeVar
 import numpy as np
-import mechanical_components.genmechanics2 as genmechanics
-import mechanical_components.genmechanics2.linkages as linkages
-import mechanical_components.genmechanics2.loads as loads
+import genmechanics as genmechanics
+import genmechanics.linkages as linkages
+import genmechanics.loads as loads
 import volmdlr.plot_data as vmp
 import scipy.optimize as op
 from mechanical_components.meshes import hardened_alloy_steel
@@ -483,7 +483,7 @@ class PlanetaryGear(DessiaObject):
         
         self.number_group_solution_planet_structure=number_group_solution_planet_structure
         self.number_group_solution_architecture=number_group_solution_architecture
-        self.length=0.1
+        self.length=0.05
         self.number_branch_planet=number_branch_planet
         self.d_min = 0
         self.planetaries = planetaries
@@ -3335,7 +3335,7 @@ class PlanetaryGear(DessiaObject):
         #     # self.torque_resolution_PFS(first_input)
         try:    
             self.torque_max_planets()
-            G=self.mech.DrawPowerGraph()
+            G=self.mech.DrawPowerGraph(return_graph=True)
         except genmechanics.ModelError:
             return [[0,1000000]]
       

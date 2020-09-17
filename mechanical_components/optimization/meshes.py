@@ -10,7 +10,7 @@ from mechanical_components.meshes import MeshAssembly, hardened_alloy_steel,\
         gear_graph_simple
         
 import math
-
+from typing import  List, Tuple
 import copy
 
 try:
@@ -23,8 +23,9 @@ except (ModuleNotFoundError, ImportError) as _:
     
 
 class RackOpti(DessiaObject):
+     _standalone_in_db = True
     
-     def __init__(self, transverse_pressure_angle: float, module: float,
+     def __init__(self, transverse_pressure_angle: float=None, module: float=None,
                  coeff_gear_addendum : List[float]=None, coeff_gear_dedendum: List[float]=None,
                  coeff_root_radius: List[float]=None, coeff_circular_tooth_thickness: List[float]=None, name : str=''):
          
@@ -38,6 +39,7 @@ class RackOpti(DessiaObject):
          DessiaObject.__init__(self, name=name)
          
 class MeshOpti(DessiaObject):
+    _standalone_in_db = True
     
     def __init__(self,torque_input: float,speed_input : Tuple[float,float],Z={} ,rack: RackOpti=None,gearing_interior:str='False', name:str=''):
         self.rack=rack
@@ -50,6 +52,7 @@ class MeshOpti(DessiaObject):
         DessiaObject.__init__(self, name=name)
         
 class CenterDistanceOpti(DessiaObject):
+    _standalone_in_db = True
     
     def __init__(self,center_distance:Tuple[float,float],meshes:List[MeshOpti], name:str='' ):
         
@@ -59,6 +62,7 @@ class CenterDistanceOpti(DessiaObject):
         
 
 class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_source==True else object):
+    _standalone_in_db = True
     """
     Gear mesh assembly optimizer supervisor
     
@@ -86,7 +90,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                                 center_distance = list_cd)
     """
     
-    def __init__(self,center_distances,cycles,rigid_link=[]):
+    def __init__(self,center_distances: CenterDistanceOpti,cycles,rigid_links: List =[],safety_factor: int =1, verbose : int =False):
         list_gear=[]
         connections=[]
         cd = []
@@ -122,11 +126,19 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                 rack_list.append(gear.rack)
                 number_rack+=1
             rack_choice[i]=[rack_list.index(gear.rack)]
+        a=0
+        for num_gear in rack_dict:
+            if rack_dict[num_gear]!=None:
+                a=1
+        if a==0:
+            rack_dict=None
+            rack_choice=None
         if not Z:
             Z=None
+        print(rack_dict)
         self.initialisation(connections=connections,gear_speeds=gear_speeds,center_distances=cd,
-                            external_torques=external_torques,cycles=cycles, rigid_links=rigid_link,Z=Z,
-                            rack_list=rack_dict,rack_choice=rack_choice)
+                            external_torques=external_torques,cycles=cycles, rigid_links=rigid_links,Z=Z,
+                            rack_list=rack_dict,rack_choice=rack_choice,safety_factor=safety_factor,verbose=verbose)
             
                
         
@@ -199,7 +211,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
 #                          'coeff_gear_dedendum':[1.25,1.25],
 #                          'coeff_root_radius':[0.38,0.38],
 #                          'coeff_circular_tooth_thickness':[0.5,0.5]}}
-            rack_list={0:{}}
+            rack_list={0:RackOpti()}
         for num_rack, rack in rack_list.items():
             if  not rack.module:
                 rack_list[num_rack].module = [1*1e-3,2.5*1e-3]

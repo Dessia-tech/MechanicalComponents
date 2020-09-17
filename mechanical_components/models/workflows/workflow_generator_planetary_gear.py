@@ -218,7 +218,7 @@ input_values = {workflow_generator_planetary_gears_architecture.index(block_plan
                 
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[1]):3,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[2]):0.1,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):0.5,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):0.6,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[4]):250}
                 
                 # workflow_generator_planetary_gears.index(block_parallel_plot.inputs[1]):pareto_settings
@@ -254,8 +254,8 @@ planetary_gear_1=workflow_generator_run.output_value[0]
 planetary_gear_1.planetary_gear.mesh_generation()
 
 
-# c = Client(api_url = 'http://localhost:5000')
-# r = c.create_object_from_python_object(workflow_generator_run)
+c = Client(api_url = 'http://localhost:5000')
+r = c.create_object_from_python_object(workflow_generator_run)
 
 # r2= c.create_object_from_python_object(catalog)
 
