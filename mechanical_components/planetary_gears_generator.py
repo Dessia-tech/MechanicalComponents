@@ -1293,6 +1293,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
         c = [0]*num_var
         c[1] = -1
         second_planetary = list_previous_planetaries[0]
+        
         reason_second_planetary = planetary_gear.reason(list_path[0][0])
         list_previous_planetaries.remove(second_planetary)
         list_path.remove(list_path[0])
@@ -1347,8 +1348,11 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
                 A[-1][2*i] = -coefficient_2
                 A[-1][2*i+1] = coefficient_2
 
-
-        coefficient_1 = -reason_second_planetary/(reason_second_planetary-1)
+        if reason_second_planetary==1:
+            coefficient_1 =10000
+        else:
+            
+            coefficient_1 = -reason_second_planetary/(reason_second_planetary-1)
 
         if coefficient_1 < 0:
             A[-4][position_planet_carrier] = coefficient_1
@@ -1360,8 +1364,11 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
             A[-4][position_planet_carrier+1] = coefficient_1
             A[-3][position_planet_carrier] = -coefficient_1
             A[-3][position_planet_carrier+1] = coefficient_1
-
-        coefficient_2 = 1/(reason_second_planetary-1)
+        
+        if reason_second_planetary==1:
+            coefficient_2 = 10000
+        else:
+            coefficient_2 = 1/(reason_second_planetary-1)
         if coefficient_2 < 0:
             A[-2][position_planet_carrier] = coefficient_2
             A[-2][position_planet_carrier+1] = -coefficient_2
@@ -3468,10 +3475,10 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                         list_i[index]+=1
                         print(list_i[index])
                         if list_i[index]>400:
-                            if power_max<self.recircle_power_max:
-                                return 0
-                            else:
-                                return 1
+                            # if power_max<self.recircle_power_max:
+                            #     return 0
+                            # else:
+                            return 0
                             
                  
                     
@@ -3835,7 +3842,83 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
 
 
         return position_min_max
+    
+class GeneratorPlanetaryGears(DessiaObject):
+    def __init__(self,number_shafts,speed_shafts, number_max_meshing_plan,number_max_planet):
+        self.number_shafts=number_shafts
+        self.speed_shafts=speed_shafts
+        self.number_max_meshing_plan=number_max_meshing_plan
+        self.number_max_planet=number_max_planet
+        list_number_meshing_plan=[]
+        list_number_planet=[]
+        for i in range(self.number_max_planet):
+            list_number_planet.append(i+1)
+            list_number_meshing_plan.append(i+1)
+        
+        
+    def speed_conversion(self):
+        speed_possibility=[]
+        for shaft in range(self.number_shafts):
+            number_speed_planet_carrer=shaft
+            speed_possibility2=[(10,20),(30,40)]
+           
+            
+            number_total=[v for v in range(self.number_shafts)]
+            number_total.remove(shaft)
+            print(number_total)
+            for element in range(len(number_total)-1):
+               
+                number_planetary_input=number_total[0]
+                number_planetary_output=number_total[element+1]
+                liste_alpha=[]
+                for i,speed_shaft in enumerate(self.speed_shafts):
+                    alpha2=[]
+                    for speed_planet_carrer in speed_shaft[number_speed_planet_carrer]:
+                        
+                        for speed_input in  speed_shaft[number_planetary_input]:
+                            
+                            for speed_output in speed_shaft[number_planetary_output]:
+                                
+                                alpha2.append((speed_output-speed_planet_carrer)/(speed_input-speed_planet_carrer))
+                                # print(speed_planet_carrer,speed_output,speed_input)
+                                # print(alpha2)
+                    
+                    liste_alpha.append([min(alpha2),max(alpha2)])
+                # print(liste_alpha)
+                alpha_total_min=-np.inf
+                alpha_total_max=np.inf
+                
+                for alpha in liste_alpha:
+                    if alpha[0]>alpha_total_min:
+                        alpha_total_min=alpha[0]
+                    if alpha[1]<alpha_total_max :
+                        alpha_total_max=alpha[1]
+                # print(alpha_total_min,alpha_total_max)    
+                if alpha_total_min<=alpha_total_max:
+                   
+                    list_w3=[]
+                    for alpha in [alpha_total_min,alpha_total_max]:
+                        for w1 in [10,20]:
+                            for w2 in [30,40]:
+                                list_w3.append(alpha*w1+w2*(1-alpha))
+                   
+                    w3min=min(list_w3)
+                    w3max=max(list_w3)
+                    print(list_w3)
+                    speed_possibility2.append((w3min,w3max))
+                print(speed_possibility2)            
+            if len(speed_possibility2)==self.number_shafts:
+                speed_possibility.append(speed_possibility2)
+        return speed_possibility
+                
+            
+                
+          
 
+                    
+                    
+            
+            
 
 
 
@@ -3926,10 +4009,11 @@ class SolutionSort():
             Z = []
             for planetary in planetary_gear.planetaries:
                 Z.append(planetary.Z)
+                Z.append(planetary.planetary_type)
             if not Z  in Z_planetary:
                 Z_planetary.append(Z)
                 list_solution.append(planetary_gear)
-                if len(list_solution) > 0:
+                if len(list_solution) > 3:
                     print(len(planetary_gears))
                     return list_solution
         

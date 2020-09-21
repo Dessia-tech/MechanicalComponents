@@ -83,7 +83,7 @@ ring.torque_input=[13,100]
 planet_carrier.torque_input=[10,100]
 list1= [5,1,3]
 list2= [1,5,3]
-print(dessia_common.list_eq(list1,list2))
+
 planet_2=pg.Planet(10,'planet_2')
 planet_3=pg.Planet(13,'planet_3')
 planet_4=pg.Planet(5,'planet_4')
@@ -100,6 +100,11 @@ connections3=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_
               pg.Connection([planet_4,planet_5],'GI')]
 
 connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'), pg.Connection([planet_2,ring],'GE')]
+
+generator_planetary_gear=pg_generator.GeneratorPlanetaryGears(4,[[(0,0),(165,175),(-1000,1000),(9000,10000)],[(25,35),(0,0),(-1000,1000),(9000,10000)]],0,10)
+
+print(generator_planetary_gear.speed_conversion())
+
 # plt.figure()
 # sun.volume_model(4.0,(0,0),0,0.1)
 # sun_2.volume_model(4.0,(0,0),0,0.1)
@@ -132,41 +137,41 @@ connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet
 # generatorgeometry.verification()
 # planetary1=generatorgeometry.planetary_gear.planetaries[0]
 # planet=generatorgeometry.planetary_gear.planets[0]
-module=0.45
-Z_1=-100
-Z_2=25
-Z_3=50
-center_distances=[[0,abs((Z_2+Z_1)*module/2)],[0,abs((Z_2+Z_3)*module/2)]]
+# module=0.45
+# Z_1=-100
+# Z_2=25
+# Z_3=50
+# center_distances=[[0,abs((Z_2+Z_1)*module/2)],[0,abs((Z_2+Z_3)*module/2)]]
 
-list_rack = {0:{'name':'Catalogue_A','module':[module,module],
-              'transverse_pressure_angle_rack':[20/180.*npy.pi,20/180.*npy.pi],
-              'coeff_gear_addendum':[0.85,0.85],'coeff_gear_dedendum':[1,1],
-              'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.4,0.4]}}
+# list_rack = {0:{'name':'Catalogue_A','module':[module,module],
+#               'transverse_pressure_angle_rack':[20/180.*npy.pi,20/180.*npy.pi],
+#               'coeff_gear_addendum':[0.85,0.85],'coeff_gear_dedendum':[1,1],
+#               'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.4,0.4]}}
 
-rack=meshes_opt.RackOpti(module=[module,module],transverse_pressure_angle=[20/180.*npy.pi,20/180.*npy.pi],
-             coeff_gear_addendum=[1,1],coeff_gear_dedendum=[0.01,2],coeff_root_radius=[0.01,2],
-             coeff_circular_tooth_thickness=[0.01,2])
-list_rack = {0:rack}
+# rack=meshes_opt.RackOpti(module=[module,module],transverse_pressure_angle=[20/180.*npy.pi,20/180.*npy.pi],
+#              coeff_gear_addendum=[1,1],coeff_gear_dedendum=[0.01,2],coeff_root_radius=[0.01,2],
+#              coeff_circular_tooth_thickness=[0.01,2])
+# list_rack = {0:rack}
 
-rack_choices = {0:0, 1:0 , 2:0}
-db2=m.cos(20/180.*npy.pi)*module*Z_2
+# rack_choices = {0:0, 1:0 , 2:0}
+# db2=m.cos(20/180.*npy.pi)*module*Z_2
 
-db1=m.cos(20/180.*npy.pi)*module*abs(Z_1)
-db3=m.cos(20/180.*npy.pi)*module*Z_3
-print(center_distances)
-torques = {0: 'output', 1: 0, 2:100}
-cycles = {0: 1272321481513.054 }
-material={0:hardened_alloy_steel}
-transverse_pressure_angle={0: [20/180.*npy.pi-0.1, 20/180.*npy.pi],1: [20/180.*npy.pi-0.1, 20/180.*npy.pi]}
-db=[[db1-0.2,db1],[db2-0.2,db2],[db3-0.2,db3]]
-coefficient_profile_shift=[[0.01,0.01],[0.01,0.01],[0.01,0.01]]
-d=mg.ContinuousMeshesAssemblyOptimizer(Z={0:Z_1,1:Z_2,2:Z_3},center_distances=center_distances,connections=[[(0,1)],[(1,2)]],rigid_links=[],
-                                        transverse_pressure_angle=transverse_pressure_angle,rack_list=list_rack,rack_choice=rack_choices,material=material,
-                                        external_torques=torques,cycles=cycles,safety_factor=1,db=db,coefficient_profile_shift=coefficient_profile_shift)
-d.Optimize(verbose=True)
-solution=d.solutions[0]
-# plt.figure()
-Z5=solution.mesh_combinations[0]
+# db1=m.cos(20/180.*npy.pi)*module*abs(Z_1)
+# db3=m.cos(20/180.*npy.pi)*module*Z_3
+# print(center_distances)
+# torques = {0: 'output', 1: 0, 2:100}
+# cycles = {0: 1272321481513.054 }
+# material={0:hardened_alloy_steel}
+# transverse_pressure_angle={0: [20/180.*npy.pi-0.1, 20/180.*npy.pi],1: [20/180.*npy.pi-0.1, 20/180.*npy.pi]}
+# db=[[db1-0.2,db1],[db2-0.2,db2],[db3-0.2,db3]]
+# coefficient_profile_shift=[[0.01,0.01],[0.01,0.01],[0.01,0.01]]
+# d=mg.ContinuousMeshesAssemblyOptimizer(Z={0:Z_1,1:Z_2,2:Z_3},center_distances=center_distances,connections=[[(0,1)],[(1,2)]],rigid_links=[],
+#                                         transverse_pressure_angle=transverse_pressure_angle,rack_list=list_rack,rack_choice=rack_choices,material=material,
+#                                         external_torques=torques,cycles=cycles,safety_factor=1,db=db,coefficient_profile_shift=coefficient_profile_shift)
+# d.Optimize(verbose=True)
+# solution=d.solutions[0]
+# # plt.figure()
+# Z5=solution.mesh_combinations[0]
 
 
 

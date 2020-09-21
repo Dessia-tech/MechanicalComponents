@@ -18,7 +18,7 @@ import volmdlr as vm
 import volmdlr.primitives3D as p3d
 import volmdlr.primitives2D as p2d
 import mechanical_components.meshes as meshes
-from dessia_common import DessiaObject,list_eq
+from dessia_common import DessiaObject
 from typing import Tuple, List, TypeVar
 import numpy as np
 import genmechanics as genmechanics
@@ -30,6 +30,7 @@ from mechanical_components.meshes import hardened_alloy_steel
 import mechanical_components.optimization.meshes_protected as mg
 import mechanical_components.optimization.meshes as meshes_opt
 import volmdlr.primitives3D as primitives3D
+from dessia_common.list_eq import list_eq
 class Gears(DessiaObject):
 
 
@@ -354,17 +355,20 @@ class Double(DessiaObject):
         rhs = npy.array([0])
         return matrix, rhs
 
-    def voldmr_volume_model(self):
-        model = self.volume_model()
+    def voldmr_volume_model(self,axis=(1,0,0),center=(0,0,0)):
+        model = self.volume_model(axis=axis,center=center)
         return model
 
-    def volume_model(self):
+    def volume_model(self,axis=(1,0,0),center=(0,0,0)):
          position_planet_1 = self.nodes[0].positions
          position_planet_2 = self.nodes[1].positions
+         
          model = []
-         axis = vm.Vector3D((1, 0, 0))
+         axis = vm.Vector3D(axis)
          for i in range(len(position_planet_1)):
-             if position_planet_2[i][2] > position_planet_1[i][2]:
+             
+             if position_planet_2[i][0] > position_planet_1[i][0]:
+                 
                  if position_planet_2[i][0] > 0:
                      position = ((position_planet_2[i][0]-position_planet_1[i][0])/2, position_planet_1[i][1], position_planet_1[i][2])
                  else:
@@ -374,7 +378,15 @@ class Double(DessiaObject):
                      position = ((position_planet_1[i][0]-position_planet_2[i][0])/2, position_planet_1[i][1], position_planet_1[i][2])
                  else:
                      position = ((position_planet_2[i][0]-position_planet_1[i][0])/2, position_planet_1[i][1], position_planet_1[i][2])
-             pos = vm.Point3D(position)
+             
+             if not center==(0,0,0):
+                        
+                 position2=(position[0]+center[0],position[1]+center[1],
+                                    position[2]+center[2])
+                 pos = vm.Point3D(position2)
+             else:
+                 pos = vm.Point3D(position)
+                
              cylinder = p3d.Cylinder(pos, axis, (self.nodes[0].Z*self.nodes[0].module)/10, abs(position_planet_1[i][0]-position_planet_2[i][0]))
              model.append(cylinder)
          return model
@@ -491,6 +503,8 @@ class PlanetaryGear(DessiaObject):
         self.planet_carrier = planet_carrier
         self.elements = self.planetaries + self.planets + [self.planet_carrier]
         self.elements_name = []
+        self.center=(0,0,0)
+        self.axis=(1,0,0)
         for element in self.elements:
             self.elements_name.append(element.name)
 
@@ -1045,13 +1059,14 @@ class PlanetaryGear(DessiaObject):
 
 
     def volmdlr_primitives(self, frame=vm.OXYZ):
-        
+        axis=self.axis
+        center=self.center
         components = self.doubles
         li_box = []
-        li_box.extend(self.mesh_generation())
+        li_box.extend(self.mesh_generation(axis=axis,center=center))
         
         for component in components:
-            shell = component.volume_model()
+            shell = component.volume_model(axis=axis,center=center)
             for shell_planet in shell:
                     li_box.append(shell_planet)
 
@@ -1108,7 +1123,7 @@ class PlanetaryGear(DessiaObject):
         else:
             return self.plot_kinematic_graph()
         
-    def mesh_generation(self):
+    def mesh_generation(self,axis=(1,0,0),center=(0,0,0)):
         meshing_chains=self.meshing_chain()
         primitives=[]
         cycles = {0: 1272321481513.054 }
@@ -1156,8 +1171,61 @@ class PlanetaryGear(DessiaObject):
                 coefficient_profile_shift.append([0.01,0.01])
                 if isinstance(element,Planetary):
                     centers[i]=element.position
+                    if not center==(0,0,0):
+                        
+                        centers[i]=(element.position[0]+center[0],element.position[1]+center[1],
+                                    element.position[2]+center[2])
+                    else:
+                        centers[i]=element.position
+                    if not axis==(1,0,0):
+                        
+                        axis_rotation=vm.Vector3D(npy.cross(axis, (1,0,0)))
+                        axis_vector=vm.Vector3D(axis)
+                        axis_origin=vm.Vector3D((1,0,0))
+                        axis_vector_norme=copy.copy(axis_vector)
+                        axis_vector_norme.Normalize()
+                        axis_origin_norme=copy.copy(axis_origin)
+                        axis_origin_norme.Normalize()
+                        if axis_vector_norme.Dot(axis_origin_norme)==0:
+                            angle=m.pi/2
+                        else:  
+                            angle=m.acos(axis_vector.Dot(axis_origin)/axis_vector_norme.Dot(axis_origin_norme))
+                        center2=vm.Vector3D(centers[i])
+                        print(angle)
+                        print(centers[i])
+                        center2.Rotation(center=vm.Vector3D(center),axis=axis_rotation,angle=angle,copy=False)
+                        centers[i]=center2.vector
+                        print(centers[i])
+                        
+                        
                 else:
-                    centers[i]=element.positions[0]
+                    if not center==(0,0,0):
+                        
+                        centers[i]=(element.positions[0][0]+center[0],element.positions[0][1]+center[1],
+                                    element.positions[0][2]+center[2])
+                    else:
+                        centers[i]=element.positions[0]
+                    print(axis)    
+                    if not axis==(1,0,0):
+                        axis_rotation=vm.Vector3D(npy.cross(axis, (1,0,0)))
+                        axis_vector=vm.Vector3D(axis)
+                        axis_origin=vm.Vector3D((1,0,0))
+                        axis_vector_norme=copy.copy(axis_vector)
+                        axis_vector_norme.Normalize()
+                        axis_origin_norme=copy.copy(axis_origin)
+                        axis_origin_norme.Normalize()
+                        
+                        if axis_vector_norme.Dot(axis_origin_norme)==0:
+                            angle=m.pi/2
+                        else:  
+                            angle=m.acos(axis_vector.Dot(axis_origin)/axis_vector_norme.Dot(axis_origin_norme))
+                        print(angle)
+                        print(centers[i])
+                        center2=vm.Vector3D(centers[i])
+                        print(axis_rotation)
+                        center2.Rotation(center=vm.Vector3D(center),axis=axis_rotation,angle=angle,copy=False)
+                        centers[i]=center2.vector
+                        print(center2)
                     number_primitive_planet.append(i)
                     planet.append(element)
                 previous_element=element
@@ -1168,17 +1236,20 @@ class PlanetaryGear(DessiaObject):
                                         external_torques=torques,cycles=cycles,safety_factor=1,db=dbs,coefficient_profile_shift=coefficient_profile_shift)
             
             mesh_optimizer.Optimize(verbose=True)
-            primitive=mesh_optimizer.solutions[0].mesh_combinations[0].volmdlr_primitives(centers=centers)
+            print(centers)
+            primitive=mesh_optimizer.solutions[0].mesh_combinations[0].volmdlr_primitives(axis=axis,centers=centers)
            
             for j,number in enumerate(number_primitive_planet):
                 for n in range(self.number_branch_planet-1):
                     primitive_planet=copy.copy(primitive[number])
                     
-                    x = vm.Vector3D((1,0,0))
+                    x = vm.Vector3D(axis)
                     # primitive_planet.Rotation(center=vm.Point3D((0,0,0)),axis=vm.Vector3D((1,0,0)),angle=(n+1)*2*m.pi/self.number_branch_planet)
                     
-                    vect_x=-0.5*mesh_optimizer.solutions[0].mesh_combinations[0].gear_width[number]*x + vm.Vector3D((x.Dot(vm.Vector3D(planet[j].positions[n])), 0,0))
-                    C2=primitive_planet.outer_contour2d.Rotation(center=vm.Point3D((0,0,0)),angle=(n+1)*2*m.pi/self.number_branch_planet)
+                    vect_x=-0.5*mesh_optimizer.solutions[0].mesh_combinations[0].gear_width[number]*x + vm.Vector3D((x.Dot(vm.Vector3D(centers[number])), 0,0))
+                    print(center)
+                    print(centers)
+                    C2=primitive_planet.outer_contour2d.Rotation(center=vm.Vector2D((center[1],center[2])),angle=(n+1)*2*m.pi/self.number_branch_planet)
                     primitive.append(primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), primitive_planet.x, primitive_planet.y, 
                                                                   C2, [], primitive_planet.extrusion_vector))
             primitives.extend(primitive)
@@ -3516,7 +3587,7 @@ class PlanetaryGearResult(DessiaObject):
         self.doubles=planetary_gear.doubles
        
         self.update_geometry()
-        self.recycle_power=0
+        self.recircle_power=0
         # if not self.recycle_power:
         #     planetary_gear_recirculation_power=self.planetary_gear.recirculation_power()
         #     max_recirculation_branch=[]

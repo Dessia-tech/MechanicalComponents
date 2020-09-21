@@ -202,21 +202,21 @@ workflow_generator_planetary_gears=wf.Workflow(block_generator_planetary_gears,
 
 
 
-input_values = {workflow_generator_planetary_gears_architecture.index(block_planet_structure.inputs[0]): 3,
+input_values = {workflow_generator_planetary_gears_architecture.index(block_planet_structure.inputs[0]): 2,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[1]): 0,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[2]): 2,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[3]): 1,
                 workflow_generator_planetary_gears_architecture .index(block_planet_structure.inputs[4]):2,
-                workflow_generator_planetary_gears_architecture .index(block_planetary_gears_architecture.inputs[1]):[[500,501],[610,611],[310,315],[380,385]],
+                workflow_generator_planetary_gears_architecture .index(block_planetary_gears_architecture.inputs[1]):[[500,501],[610,611],[310,315]],
 
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[1]):[[500,505],[610,615],[310,315],[380,385]] , 
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[2]):[[10,60],[-70,-10],[-80,-10],[100,200]],
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[3]):[15, 80] ,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[4]):[40,100] ,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[5]):3,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[6]):1000,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[1]):[[10, 20], [30, 40], [25.878787878787882, 37.6]], 
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[2]):[[1,2000],[0.1,2001],[-2002,-0.2]],
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[3]):[15, 40] ,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[4]):[90,100] ,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[5]):6,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[6]):200,
                 
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[1]):3,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[1]):6,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[2]):0.1,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):0.6,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[4]):250}
