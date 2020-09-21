@@ -148,15 +148,15 @@ filters = [
           {'attribute' : 'sum_Z_planetary', 'operator' : 'gt', 'bound' : -100},
           {'attribute' : 'min_Z_planetary', 'operator' : 'gt', 'bound' : -100},
           {'attribute' : 'max_Z_planetary', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'd_min', 'operator' : 'gt', 'bound' : -100},
+          {'attribute' : 'D_train', 'operator' : 'gt', 'bound' : -100},
            {'attribute' : 'speed_max_planet', 'operator' : 'gt', 'bound' : -100}]
           
 filter_analyze= wf.Filter(filters)
 
-list_attribute=['sum_Z_planetary','min_Z_planetary','max_Z_planetary','d_min','speed_max_planet', 'recircle_power']
+list_attribute=['sum_Z_planetary','min_Z_planetary','max_Z_planetary','D_train','speed_max_planet', 'recircle_power']
 
 block_parallel_plot=wf.ParallelPlot(list_attribute, 4 ,name = 'Parallel_Plot')
-minimized_attributes = {'sum_Z_planetary':False,'d_min': True,'min_Z_planetary':True,'max_Z_planetary':True,'speed_max_planet': True}
+minimized_attributes = {'sum_Z_planetary':False,'D_train': True,'min_Z_planetary':True,'max_Z_planetary':True,'speed_max_planet': True}
 
 pareto_settings = ParetoSettings(minimized_attributes=minimized_attributes,
                                   enabled=True)
@@ -210,15 +210,15 @@ input_values = {workflow_generator_planetary_gears_architecture.index(block_plan
                 workflow_generator_planetary_gears_architecture .index(block_planetary_gears_architecture.inputs[1]):[[500,501],[610,611],[310,315]],
 
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[1]):[[10, 20], [30, 40], [25.878787878787882, 37.6]], 
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[2]):[[1,2000],[0.1,2001],[-2002,-0.2]],
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[2]):[[0.1,20],[0.1,20],[-20,-0.1]],
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[3]):[15, 40] ,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[4]):[90,100] ,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[5]):6,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[5]):4,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_z_number.inputs[6]):200,
                 
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[1]):6,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[2]):0.1,
-                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):0.6,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[1]):4,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[2]):0.3,
+                workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):0.4,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[4]):250}
                 
                 # workflow_generator_planetary_gears.index(block_parallel_plot.inputs[1]):pareto_settings

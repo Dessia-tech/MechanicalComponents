@@ -2342,10 +2342,10 @@ class PlanetaryGear(DessiaObject):
         speed_planetaries=[0]*len(self.planetaries)
         torque_planetaries=[0]*len(self.planetaries)
         for i,gearing_planetary in enumerate(self.mech_dict['gearings_planetary']):
-            # try:
-            power = self.mech.TransmittedLinkagePower(gearing_planetary, 4) 
-            # except genmechanics.LinAlgError:
-            #     power=1000000
+            try:
+                power = self.mech.TransmittedLinkagePower(gearing_planetary, 4) 
+            except:
+                power=1000000
             
             if gearing_planetary.part1 in self.mech_dict['part_planetaries']:
                 index=self.mech_dict['part_planetaries'].index(gearing_planetary.part1)
@@ -3603,7 +3603,8 @@ class PlanetaryGearResult(DessiaObject):
             
         # self.torque_max_planet=0
         
-        self.d_min = self.planetary_gear.d_min
+        self.D_train = self.planetary_gear.d_min
+        # self.D_mini=
         self.sum_Z_planetary = self.planetary_gear.sum_Z_planetary
         # self.sum_speed_planetary = self.planetary_gear.sum_speed_planetary
 
@@ -3615,15 +3616,15 @@ class PlanetaryGearResult(DessiaObject):
         self.update_geometry()
         for planetary in self.planetaries:
             d = planetary.module*planetary.Z
-            if d > self.d_min:
-                 self.d_min = d
+            if d > self.D_train :
+                 self.D_train  = d
                  
         for planet in self.planets:
             if planet.positions:
                 d = planet.module*planet.Z+ 2*((planet.positions[0][0])**2+(planet.positions[0][1])**2)**0.5
 
-            if d > self.d_min:
-                self.d_min = d
+            if d > self.D_train :
+                self.D_train  = d
                 
         
           
