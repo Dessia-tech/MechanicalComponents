@@ -135,7 +135,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             rack_choice=None
         if not Z:
             Z=None
-        print(rack_dict)
+     
         if isinstance(cycles,list):
             cycles2={}
             for i,element in enumerate(cycles):
@@ -281,7 +281,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                     self.check = False
             self.Z=var_Z
             
-        print(self.Z)
+       
             
         self.solutions=[]
         self.solutions_search=[]

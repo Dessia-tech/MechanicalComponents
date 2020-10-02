@@ -1499,7 +1499,7 @@ class MeshCombination(DessiaObject):
                 center = vm.Point2D(center)
                 model_trans = m.Translation(center)
                 model_trans_rot = model_trans.Rotation(center, k)
-                model_export.append(model_trans_rot)
+                model_export.append(model_trans)
             export.append(model_export)
         return export
 
@@ -1544,8 +1544,10 @@ class MeshCombination(DessiaObject):
             center_var={}
             for engr_num in centers.keys():
                
-                center_var[engr_num]=(npy.dot(centers[engr_num],x.vector),npy.dot(centers[engr_num],y.vector),npy.dot(centers[engr_num],z.vector))
+                center_var[engr_num]=npy.dot(centers[engr_num],x.vector)*x+npy.dot(centers[engr_num],y.vector)*y+npy.dot(centers[engr_num],z.vector)*z
+                center_var[engr_num]=center_var[engr_num].vector
             centers=center_var
+           
           
 
         Gears3D={}
@@ -1594,22 +1596,26 @@ class MeshCombination(DessiaObject):
                         Rotation[set_pos][eng1]=rot[eng1]
                         delta_rot=Rotation[set_pos][eng1]-(list_rot[0]-angle0)
                 Rotation[set_pos][eng2]=list_rot[1]-angle0-delta_rot*((self.meshes[eng1].z)/(self.meshes[eng2].z))
+         
+            vect_position_1=vm.Vector3D(position1)
+            vect_position_2=vm.Vector3D(position2)
+            Gears3D_Rotate=self.gear_rotate_2([Gears3D[eng1],Gears3D[eng2]],
+                                              [([vect_position_1.Dot(y),vect_position_1.Dot(z)]),([vect_position_2.Dot(y),vect_position_2.Dot(z)])],
+                                              list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
             
-            Gears3D_Rotate=self.gear_rotate_2([Gears3D[eng1],Gears3D[eng2]],[(position1[1::]),(position2[1::])],
-                                       list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
+         
             
-            # x=[]
-            # y=[]
+            x2=[]
+            y2=[]
             
             # for Gears in Gears3D_Rotate:
             #     for element in Gears:
             #         for point in element.points:
-            #             x.append(point.vector[0])
-            #             y.append(point.vector[1])
-            # plt.plot(x,y)
+            #             x2.append(point.vector[0])
+            #             y2.append(point.vector[1])
+            # plt.plot(x2,y2)
             
            
-            print(eng1,eng2)
             L=[]
             L_vector=[]
             for element in Gears3D_Rotate[0]:
@@ -1642,21 +1648,25 @@ class MeshCombination(DessiaObject):
 
             extrusion_vector1 = (self.gear_width[eng1]*x)
             extrusion_vector2 = (self.gear_width[eng2]*x)
+           
 
             if set_pos_dfs==0:
-                vect_x = -0.5*self.gear_width[eng1]*x + vm.Vector3D((x.Dot(vm.Vector3D(centers[eng1])), 0,0))
+                vect_x = -0.5*self.gear_width[eng1]*x + x.Dot(vm.Vector3D(centers[eng1]))*x
+              
                 if self.Z[eng1]<0:
-                   
-                    circle=vm.Circle2D(vm.Point2D(vm.Vector2D([centers[eng1][1],centers[eng1][2]])),(self.DB[eng1]*1.3)/2)
+                    vect_center=vm.Vector3D(centers[eng1])
+                    circle=vm.Circle2D(vm.Point2D(vm.Vector2D([vect_center.Dot(y),vect_center.Dot(z)])),(self.DB[eng1]*1.3)/2)
                     t1=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z,circle , [C1], vm.Vector3D(extrusion_vector1))
                 else:
                     t1=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z, C1, [], vm.Vector3D(extrusion_vector1))
                 
                 primitives.append(t1)
-            vect_x = -0.5*self.gear_width[eng2]*x + vm.Vector3D((x.Dot(vm.Vector3D(centers[eng2])), 0,0))
+            vect_x = -0.5*self.gear_width[eng2]*x + x.Dot(vm.Vector3D(centers[eng2]))*x
+           
             if self.Z[eng2]<0:
+                    vect_center=vm.Vector3D(centers[eng2])
                     
-                    circle=vm.Circle2D(vm.Point2D([centers[eng2][1],centers[eng2][2]]),(self.DB[eng2]*1.3)/2)
+                    circle=vm.Circle2D(vm.Point2D([vect_center.Dot(y),vect_center.Dot(z)]),(self.DB[eng2]*1.3)/2)
                    
                     t2=primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z,circle , [C2], vm.Vector3D(extrusion_vector2))
                  
@@ -1682,10 +1692,12 @@ class MeshCombination(DessiaObject):
         for i,(ic1, ic2) in enumerate(self.connections):
             DF[ic1] = self.DF[i][ic1]
             DF[ic2] = self.DF[i][ic2]
-
+        print('mesh')
         mass = 0.
         for i,df in DF.items():
             mass +=  self.gear_width[i] * self.material[i].volumic_mass* math.pi * (0.5*DF[i])**2
+        print(self.material[i].volumic_mass)
+        print(mass)
         return mass
 
     # Waiting for meshes to know how to plot themselves

@@ -778,8 +778,9 @@ class MeshAssemblyOptimizer:
                         list_analyze_Z.append(z)
                 
                 # NVH analysis of gear mesh
+              
                 for z in list_analyze_Z[1:]:
-                    if (pgcd(list_analyze_Z[0],z)!=1):
+                    if z==0 or (pgcd(list_analyze_Z[0],z)!=1):
                         valid=False
 
                 # gear ratio analysis
