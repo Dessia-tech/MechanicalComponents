@@ -1977,6 +1977,7 @@ class GeneratorPlanetaryGearsZNumberReason(DessiaObject):
         Z_range_mini_maxi = [Z_min, Z_max]
         # if Z_max>0 :
         #     print(Z_max)
+
         return Z_range_mini_maxi
 
     def decision_tree_speed_possibilities(self):
@@ -4457,34 +4458,37 @@ class GeneratorPlanetaryGears(DessiaObject):
             alpha_min_max=self.reason_min_max
         list_planetary_gears=[]
         i=0
-        while len(list_planetary_gears)<10:
+        while len(list_planetary_gears)<self.number_solution and i<=len(list_solution_planetary_gear_architecture)-1:
             planetary_gear=list_solution_planetary_gear_architecture[i]
             generator=GeneratorPlanetaryGearsZNumberReason(planetary_gear=planetary_gear,input_reason=alpha_min_max,
                                                                              input_speeds=speed_input, input_torques=self.torque_input,
                                                                              speed_planet_carrer=(30,40) ,torque_planet_carrer=(-2,2),
-                                                                             Z_range_sun=[20,80], Z_range_ring=[70,100],number_planet=3,number_solution=self.number_solution,speed_max_planet=self.speed_max_planet)
+                                                                             Z_range_sun=[7,80], Z_range_ring=[70,100],number_planet=3,number_solution=self.number_solution,speed_max_planet=self.speed_max_planet)
             
             list_planetary_gears.extend(generator.decision_tree())
             
             i+=1
-        
-        sucess=False
-        num_planetary_gear=0
-      
-        while not sucess or num_planetary_gear>(len(list_planetary_gears))-1:
-            planetary_gear=list_planetary_gears[num_planetary_gear]
-            generator=GeneratorPlanetaryGearsGeometry(planetary_gear=planetary_gear, 
-                                                      number_planet=3, D_min=self.D_min, D_max=self.D_max,recircle_power_max=250)
-            generator.verification()
-            generator.optimize_min()
-
-         
-            if generator.planetary_gear.min_Z_planetary>0:
-                planetary_gear_result=PlanetaryGearResult(planetary_gear=generator.planetary_gear,position_min_max=generator.optimize_max())
-                planetary_gear_result.update_geometry()
-                sucess=True
-            num_planetary_gear+=1
-        return planetary_gear_result
+        if not list_planetary_gears:
+            return None
+        else:
+            
+            sucess=False
+            num_planetary_gear=0
+          
+            while not sucess or num_planetary_gear>(len(list_planetary_gears))-1:
+                planetary_gear=list_planetary_gears[num_planetary_gear]
+                generator=GeneratorPlanetaryGearsGeometry(planetary_gear=planetary_gear, 
+                                                          number_planet=3, D_min=self.D_min, D_max=self.D_max,recircle_power_max=250)
+                generator.verification()
+                generator.optimize_min()
+    
+             
+                if generator.planetary_gear.min_Z_planetary>0:
+                    planetary_gear_result=PlanetaryGearResult(planetary_gear=generator.planetary_gear,position_min_max=generator.optimize_max())
+                    planetary_gear_result.update_geometry()
+                    sucess=True
+                num_planetary_gear+=1
+            return planetary_gear_result
             
             
             

@@ -264,6 +264,7 @@ class ContinuousMeshesAssemblyOptimizer:
             temp_torque[eng1]=0
         for num_mesh_tq,(eng1,eng2) in enumerate(order_torque_calculation):
             if eng1 in self.external_torques.keys():
+                
                 temp_torque[eng1]+=self.external_torques[eng1]
             if torque_graph[eng1][eng2]['typ']=='gear_mesh':
                 temp_torque[eng2]+=-temp_torque[eng1]*self.Z[eng2]/float(self.Z[eng1])
@@ -539,6 +540,7 @@ class ContinuousMeshesAssemblyOptimizer:
         max_iter = 1
         i = 0
         arret = 0 
+        verbose=True
         while i < max_iter and arret == 0:
             X0 = self.CondInit()
             _ = self.update(X0)
@@ -546,6 +548,7 @@ class ContinuousMeshesAssemblyOptimizer:
             try:
                 cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons)
             except ValidGearDiameterError:
+                print(i)
                 i += 1
                 continue
             Xsol = cx.x
@@ -559,6 +562,7 @@ class ContinuousMeshesAssemblyOptimizer:
             if min(self.Fineq(Xsol)) > -1:
                 input_dat = dict(list(output_x.items())+list(self.general_data.items()))
                 self.solutions.append(MeshAssembly.create(**input_dat))
+            
                 arret = 1
             i += 1
 
@@ -889,6 +893,10 @@ class MeshAssemblyOptimizer:
                 cd_minmax_nv=[]
                 module_optimal=0
                 for set_num,cd in enumerate(self.center_distances):
+                    print(cd)
+                    print(liste_pente_cd_module)
+                    print(self.connections)
+                    print(self.center_distances)
                     module_optimal=max(module_optimal,cd[0]/liste_pente_cd_module[set_num])
                 if module_optimal>module_sup:
                     valid=False
@@ -1036,6 +1044,7 @@ class MeshAssemblyOptimizer:
                 if len(ga.solutions)>0:
                     sol1=ga.solutions[-1]
                     self.solutions.append(sol1)
+                    
                     compt_nb_sol+=1
     #                if verbose:
     #                    print('Mesh sections: {}'.format(self.solutions[-1].gear_width))

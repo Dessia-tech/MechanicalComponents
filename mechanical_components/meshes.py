@@ -1004,7 +1004,8 @@ class MeshCombination(DessiaObject):
         gear_graph = nx.Graph()
         gear_graph.add_nodes_from(list_gear)
         gear_graph.add_edges_from(connections)
-
+  
+    
         # Definition of default parameters
         minimum_gear_width = 10e-3
         helix_angle = 0
@@ -1292,7 +1293,31 @@ class MeshCombination(DessiaObject):
                 if tq=='output':
                     node_output=num_gear
             torque_graph_dfs=list(nx.dfs_edges(gear_graph,node_output))
+            
+            
             order_torque_calculation=[(eng2,eng1) for (eng1,eng2) in torque_graph_dfs[::-1]]
+            
+            # calculation torque distribution
+            temp_torque={}
+            for eng1 in list_gear:
+                temp_torque[eng1]=0
+            for num_mesh_tq,(eng1,eng2) in enumerate(order_torque_calculation):
+                if eng1 in external_torque.keys():
+                    temp_torque[eng1]+=external_torque[eng1]
+                temp_torque[eng2]+=-temp_torque[eng1]*Z[eng2]/float(Z[eng1])
+            dic_torque={}
+            for num_mesh_tq,(eng1,eng2) in enumerate(order_torque_calculation):
+                dic_torque[(eng1,eng2)]=temp_torque[eng1]
+        else:#TODO
+            external_torque[external_torque.key()[0]]='output'
+            for num_gear,tq in external_torque.items():
+                if tq=='output':
+                    node_output=num_gear
+            torque_graph_dfs=list(nx.dfs_edges(gear_graph,node_output))
+            
+           
+            order_torque_calculation=[(eng2,eng1) for (eng1,eng2) in torque_graph_dfs[::-1]]
+            
             # calculation torque distribution
             temp_torque={}
             for eng1 in list_gear:
@@ -1310,8 +1335,8 @@ class MeshCombination(DessiaObject):
         radial_load={}
         
         for num_mesh,(eng1,eng2) in enumerate(connections):
-            if 'output' not in external_torque.values():
-                dic_torque=external_torque
+            # if 'output' not in external_torque.values():
+            #     dic_torque=external_torque
             try:
                 tq=dic_torque[(eng1,eng2)]
             except:

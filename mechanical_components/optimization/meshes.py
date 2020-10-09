@@ -101,7 +101,8 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                     if not gear in list_gear:
                         list_gear.append(gear)
                 connections_plan.append((list_gear.index(center_distance.meshes[0]),list_gear.index(center_distance.meshes[1])))
-                cd.append(center_distance.center_distance)
+                
+            cd.append(meshing_plan[0].center_distance)
             connections.append(connections_plan)
             
         

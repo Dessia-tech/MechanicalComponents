@@ -30,7 +30,7 @@ from mechanical_components.meshes import hardened_alloy_steel
 import mechanical_components.optimization.meshes_protected as mg
 import mechanical_components.optimization.meshes as meshes_opt
 import volmdlr.primitives3D as primitives3D
-from dessia_common.list_eq import list_eq
+# from dessia_common.list_eq import list_eq
 import genmechanics.geometry as gm_geo
 class Gears(DessiaObject):
 
@@ -3611,10 +3611,10 @@ class PlanetaryGear(DessiaObject):
                 else:
                     circle2.append(nodes[1])
                    
-                    l2=[]
-                    for li in circle2:
+                    # l2=[]
+                    # for li in circle2:
                         
-                        l2.append(li.name)
+                    #     l2.append(li.name)
                     
                     self.recirculation_power_recursive_function(l,nodes[1],circle2,circles)
         if not flag_node and not flag_append_circle:
@@ -3661,10 +3661,10 @@ class PlanetaryGear(DessiaObject):
                 else:
                     circle2.append(nodes[0])
                   
-                    l2=[]
-                    for li in circle2:
+                    # l2=[]
+                    # for li in circle2:
                         
-                        l2.append(li.name)
+                    #     l2.append(li.name)
                    
                     self.recirculation_power_recursive_function_inverse(l,nodes[0],circle2,circles)
         # if not flag_node and not flag_append_circle:
@@ -3702,10 +3702,10 @@ class PlanetaryGear(DessiaObject):
         G2=G.copy()
         G2.remove_node(self.mech.ground)
         
-        l=list(nx.edge_bfs(G2,list(G2.nodes)[0]))
-        l_name=[]
-        for node in l:
-            l_name.append([node[0].name,node[1].name])
+        # l=list(nx.edge_bfs(G2,list(G2.nodes)[0]))
+        # l_name=[]
+        # for node in l:
+        #     l_name.append([node[0].name,node[1].name])
             
         
         circles=[]
@@ -4625,5 +4625,22 @@ class PlanetsStructure(DessiaObject):
         
         return plot_data
 
+
+def list_eq(list_1,list_2):
+    
+    if len(list_1)==len(list_2):
+        index_list=[]
+        for element_1 in list_1:
+            for i,element_2 in enumerate(list_2):
+                if element_1==element_2:
+                    index=i
+                    
+                    if index not in index_list:
+                        index_list.append(index)
+                        break
+        
+        if len(index_list)==len(list_2):
+            return True
+    return False
 
 
