@@ -3950,14 +3950,14 @@ class PlanetaryGearResult(DessiaObject):
         self.doubles=planetary_gear.doubles
        
         self.update_geometry()
-        self.recircle_power=0
-        # if not self.recycle_power:
-        #     planetary_gear_recirculation_power=self.planetary_gear.recirculation_power()
-        #     max_recirculation_branch=[]
-        #     for recirculation_branch in planetary_gear_recirculation_power:
-        #         max_recirculation_branch.append(recirculation_branch[1])
-                
-        #     self.recircle_power=max(max_recirculation_branch)
+        self.recycle_power=0
+        if not self.recycle_power:
+            planetary_gear_recirculation_power=self.planetary_gear.recirculation_power()
+            max_recirculation_branch=[]
+            for recirculation_branch in planetary_gear_recirculation_power:
+                max_recirculation_branch.append(recirculation_branch[1])
+            if max_recirculation_branch: 
+                self.recycle_power=max(max_recirculation_branch)
         if not self.planetary_gear.speed_max_planet:
             self.speed_max_planet = self.planetary_gear.speed_max_planets()
             self.planetary_gear.speed_max_planet=self.speed_max_planet
@@ -4192,11 +4192,11 @@ class PlanetaryGearResult(DessiaObject):
     def mass(self):
         volumes=self.volmdlr_primitives()
         mass=0
-        print('planetary_gear')
+        
         for volume in volumes:
-            print(volume.Volume())
+            
             mass+=volume.Volume() *hardened_alloy_steel.volumic_mass
-        print(mass)
+        
         return mass
 
     

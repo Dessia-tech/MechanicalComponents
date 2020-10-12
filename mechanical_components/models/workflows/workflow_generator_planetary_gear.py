@@ -153,7 +153,7 @@ filters = [
           
 filter_analyze= wf.Filter(filters)
 
-list_attribute=['sum_Z_planetary','min_Z_planetary','max_Z_planetary','D_train','speed_max_planet', 'recircle_power']
+list_attribute=['sum_Z_planetary','min_Z_planetary','max_Z_planetary','D_train','speed_max_planet', 'recycle_power']
 
 block_parallel_plot=wf.ParallelPlot(list_attribute, 4 ,name = 'Parallel_Plot')
 minimized_attributes = {'sum_Z_planetary':False,'D_train': True,'min_Z_planetary':True,'max_Z_planetary':True,'speed_max_planet': True}
