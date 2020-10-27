@@ -883,12 +883,12 @@ class MeshCombination(DessiaObject):
 
     _standalone_in_db = True
     _generic_eq = True
-    _non_serializable_attributes = []
+   
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
-    _non_serializable_attributes = ['meshes']
+    _non_serializable_attributes = ['meshes_dico','gear_graph']
     def __init__(self, center_distance: List[float], connections: List[Tuple[int, int]],
-                 meshes: List[Tuple[int, Mesh]],
+                 meshes: List[Mesh],
                  safety_factor: float = 1, name: str = ''):
        
         self.center_distance = center_distance
@@ -896,8 +896,8 @@ class MeshCombination(DessiaObject):
         self.connections = connections
         self.meshes = meshes
         self.meshes_dico = {}
-        for meshe in meshes:
-            self.meshes_dico[meshe[0]] = meshe[1]
+        for i,meshe in enumerate(meshes):
+            self.meshes_dico[i] = meshe
         
         
         
@@ -908,12 +908,12 @@ class MeshCombination(DessiaObject):
         self.external_torque = {}
         self.cycle = {}
         
-        for meshe in meshes:
+        for i,meshe in enumerate(meshes):
             if meshe:
-                if meshe[1].external_torque != None:
-                    self.external_torque[meshe[0]] = meshe[1].external_torque
-                if meshe[1].cycle != None:
-                    self.cycle[meshe[0]] = meshe[1].cycle
+                if meshe.external_torque != None:
+                    self.external_torque[i] = meshe.external_torque
+                if meshe.cycle != None:
+                    self.cycle[i] = meshe.cycle
     
         
         # NetworkX graph construction
@@ -936,13 +936,13 @@ class MeshCombination(DessiaObject):
             self.transverse_pressure_angle.append(math.acos(mesh_first.db/df_first))
         transverse_pressure_angle_0 = self.transverse_pressure_angle[0]
 
-        self.Z = {mesh[0]: mesh[1].z for mesh in meshes}
-        self.material = {mesh[0]: mesh[1].material for  mesh in meshes}
+        self.Z = {i: mesh.z for i,mesh in enumerate(meshes)}
+        self.material = {i: mesh.material for  i,mesh in enumerate(meshes)}
         self.gear_width = {}
         self.DB = {}
-        for  mesh in meshes:
-            self.gear_width[mesh[0]] = mesh[1].gear_width
-            self.DB[mesh[0]] = mesh[1].db
+        for  i,mesh in enumerate(meshes):
+            self.gear_width[i] = mesh.gear_width
+            self.DB[i] = mesh.db
 
         self.DF, DB_new, self.connections_dfs, transverse_pressure_angle_new\
             = MeshCombination.gear_geometry_parameter(self.Z, transverse_pressure_angle_0, center_distance,
@@ -977,14 +977,14 @@ class MeshCombination(DessiaObject):
                                                                  self.material, self.cycle, self.radial_contact_ratio,
                                                                  self.helix_angle,
                                                                  self.transverse_pressure_angle)
-        for mesh in self.meshes:
-            if abs(gear_width[mesh[0]] - mesh[1].gear_width) > 1e-6:
+        for i,mesh in enumerate(self.meshes):
+            if abs(gear_width[i] - mesh.gear_width) > 1e-6:
                 valid = False
         self.DF, DB_new, self.connections_dfs, transverse_pressure_angle_new\
             = MeshCombination.gear_geometry_parameter(self.Z, self.transverse_pressure_angle[0], self.center_distance,
                                                     self.connections, self.gear_graph)
-        for mesh in self.meshes:
-            if abs(DB_new[mesh[0]] - mesh[1].db) > 1e-6:
+        for i,mesh in enumerate(self.meshes):
+            if abs(DB_new[i] - mesh.db) > 1e-6:
                 valid = False
         for num_gear, connection in enumerate(self.connections):
             if abs(transverse_pressure_angle_new[num_gear] - self.transverse_pressure_angle[num_gear]) > 1e-6:
@@ -1055,8 +1055,8 @@ class MeshCombination(DessiaObject):
             rack = Rack(transverse_pressure_angle=tpa,
                         coeff_gear_addendum=cga, coeff_gear_dedendum=cgd,
                         coeff_root_radius=crr, coeff_circular_tooth_thickness=cct)
-            meshes[i] = [num_engr,Mesh(z, db, cp, rack, mat)]
-            meshes_dico[num_engr]=meshes[i][1]
+            meshes[i] = Mesh(z, db, cp, rack, mat)
+            meshes_dico[num_engr]=meshes[i]
             
 
         linear_backlash, radial_contact_ratio = \
@@ -1172,7 +1172,7 @@ class MeshCombination(DessiaObject):
         ineq.extend(list_ineq)
       
         for mesh in self.meshes:
-            list_ineq = mesh[1].liste_ineq()
+            list_ineq = mesh.liste_ineq()
             ineq.extend(list_ineq)
 
         
@@ -1960,9 +1960,11 @@ class MeshAssembly(DessiaObject):
                         break
 
         list_gear = {}
+        num_gear=0
         for mesh_combination in self.mesh_combinations:
             for mesh in mesh_combination.meshes:
-                list_gear[mesh[0]] = mesh[1]
+                list_gear[num_gear] = mesh
+                num_gear+=1
         coefficient_profile_shift = {}
         for num_mesh, mesh in list_gear.items():
             coefficient_profile_shift[num_mesh] = mesh.coefficient_profile_shift
@@ -2066,27 +2068,37 @@ class MeshAssembly(DessiaObject):
                  'coeff_gear_addendum': {},'coeff_gear_dedendum': {},
                  'coeff_root_radius': {},'coeff_circular_tooth_thickness': {}}
             li_connection = []
+            num_gear_mesh=0
+            num_gear_assignation={}
             for num_cd, list_connection in enumerate(connections):
                 for num_mesh_iter, gs in enumerate(list_connection):
                     if (gs in list_sub_graph) or (gs[::-1] in list_sub_graph):
-                        li_connection.append(gs)
-                        for num_gear in gs:
+                       
+                    
+                        gs_mesh=[0]*len(gs)
+                        for i,num_gear in enumerate(gs):
+                        
+                            if not num_gear in num_gear_assignation.keys():
+                                num_gear_assignation[num_gear]=num_gear_mesh
+                                num_gear_mesh+=1
+                            gs_mesh[i]=num_gear_assignation[num_gear]
                             if num_gear in coefficient_profile_shift.keys():
-                                input_data['coefficient_profile_shift'][num_gear] = coefficient_profile_shift[num_gear]
+                                input_data['coefficient_profile_shift'][num_gear_assignation[num_gear]] = coefficient_profile_shift[num_gear]
                             if num_gear in transverse_pressure_angle_rack.keys():
-                                input_data['transverse_pressure_angle_rack'][num_gear] = transverse_pressure_angle_rack[num_gear]
+                                input_data['transverse_pressure_angle_rack'][num_gear_assignation[num_gear]] = transverse_pressure_angle_rack[num_gear]
                             if num_gear in coeff_gear_addendum.keys():
-                                input_data['coeff_gear_addendum'][num_gear] = coeff_gear_addendum[num_gear]
+                                input_data['coeff_gear_addendum'][num_gear_assignation[num_gear]] = coeff_gear_addendum[num_gear]
                             if num_gear in coeff_gear_dedendum.keys():
-                                input_data['coeff_gear_dedendum'][num_gear] = coeff_gear_dedendum[num_gear]
+                                input_data['coeff_gear_dedendum'][num_gear_assignation[num_gear]] = coeff_gear_dedendum[num_gear]
                             if num_gear in coeff_root_radius.keys():
-                                input_data['coeff_root_radius'][num_gear] = coeff_root_radius[num_gear]
+                                input_data['coeff_root_radius'][num_gear_assignation[num_gear]] = coeff_root_radius[num_gear]
                             if num_gear in coeff_circular_tooth_thickness.keys():
-                                input_data['coeff_circular_tooth_thickness'][num_gear]=coeff_circular_tooth_thickness[num_gear]
+                                input_data['coeff_circular_tooth_thickness'][num_gear_assignation[num_gear]]=coeff_circular_tooth_thickness[num_gear]
                             if num_gear in Z.keys():
-                                general_data['Z'][num_gear] = Z[num_gear]
+                                general_data['Z'][num_gear_assignation[num_gear]] = Z[num_gear]
                             if num_gear in material.keys():
-                                general_data['material'][num_gear] = material[num_gear]
+                                general_data['material'][num_gear_assignation[num_gear]] = material[num_gear]
+                        li_connection.append((gs_mesh[0],gs_mesh[1]))
                         if num_mesh == 0:
                             input_data['transverse_pressure_angle_0'] = transverse_pressure_angle[num_mesh]
                     num_mesh += 1
@@ -2100,14 +2112,14 @@ class MeshAssembly(DessiaObject):
                 
                 if not eng1 in general_data['external_torque'].keys():
                     if eng1 in external_torque.keys():
-                        general_data['external_torque'][eng1] = external_torque[eng1]
+                        general_data['external_torque'][num_gear_assignation[eng1]] = external_torque[eng1]
                 if not eng2 in general_data['external_torque'].keys():
                     if eng2 in external_torque.keys():
-                        general_data['external_torque'][eng2] = external_torque[eng2]
+                        general_data['external_torque'][num_gear_assignation[eng2]] = external_torque[eng2]
                 if eng1 not in general_data['cycle'].keys():
-                    general_data['cycle'][eng1]=cycle[eng1]
+                    general_data['cycle'][num_gear_assignation[eng1]]=cycle[eng1]
                 if eng2 not in general_data['cycle'].keys():
-                    general_data['cycle'][eng2]=cycle[eng2]
+                    general_data['cycle'][num_gear_assignation[eng2]]=cycle[eng2]
             
             
             output_data.append(general_data)
