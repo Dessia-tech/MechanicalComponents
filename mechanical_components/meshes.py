@@ -489,7 +489,7 @@ class Mesh(DessiaObject):
     _non_serializable_attributes = []
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
-
+    
     def __init__(self, z: int, db: float, coefficient_profile_shift: float, rack: Rack,
                  material: Material = None,
                  gear_width: float = 1, external_torque: float = None, cycle: float = None, name: str = ''):
@@ -886,7 +886,7 @@ class MeshCombination(DessiaObject):
     _non_serializable_attributes = []
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
-
+    _non_serializable_attributes = ['meshes']
     def __init__(self, center_distance: List[float], connections: List[Tuple[int, int]],
                  meshes: List[Tuple[int, Mesh]],
                  safety_factor: float = 1, name: str = ''):
