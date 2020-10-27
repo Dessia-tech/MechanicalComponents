@@ -561,7 +561,7 @@ class ContinuousMeshesAssemblyOptimizer:
                       cx.status,min(self.Fineq(Xsol))))
             
            
-            if min(self.Fineq(Xsol)) > -0.1:
+            if min(self.Fineq(Xsol)) > -1: #TODO
                 input_dat = dict(list(output_x.items())+list(self.general_data.items()))
                 self.solutions.append(MeshAssembly.create(**input_dat))
             
@@ -642,7 +642,9 @@ class MeshAssemblyOptimizer:
                 for rack_num in self.rack_choice[engr2]:
                     mod_min,mod_max=self.rack_list[rack_num].module
                     module2_min,module2_max=(min(module2_min,mod_min),max(module2_max,mod_max))
+                print(self.gear_speeds[engr2][1])
                 demul_min=self.gear_speeds[engr1][0]/self.gear_speeds[engr2][1]
+                
                 demul_max=self.gear_speeds[engr1][1]/self.gear_speeds[engr2][0]
                 if shaft_mesh[0][0] in self.list_gearing_interior:
                     DF1_max=2*cd_max/float(1-demul_min)

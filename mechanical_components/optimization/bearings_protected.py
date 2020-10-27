@@ -145,6 +145,7 @@ class BearingCombinationOptimizer(DessiaObject):
                         list_L10.append(bearing.estimate_base_life_time(Fr = self.radial_loads,
                                                                 N = self.speeds, 
                                                                 t = self.operating_times, Cr = bearing.Cr))
+                    
                     L10 = BearingCombination.estimate_base_life_time(list_L10)
                     if L10 > L10_objective:
                         if bearings[0] not in bearing_possibilies:

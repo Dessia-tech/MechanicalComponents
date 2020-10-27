@@ -65,10 +65,10 @@ from mechanical_components.meshes import hardened_alloy_steel
 # # volumemodel = vm.Contour2D(meshes_1.Contour(1) )
 # # volumemodel.MPLPlot() 
 
-sun=pg.Planetary(137,'Sun','sun')
-sun_2=pg.Planetary(-137,'Ring','sun_2')
+sun=pg.Planetary(30,'Sun','sun')
+sun_2=pg.Planetary(30,'Sun','sun_2')
 sun_3=pg.Planetary(60,'Sun','sun_2')
-ring= pg.Planetary(50,'Ring','ring')
+ring= pg.Planetary(100,'Ring','ring')
 planet_carrier= pg.PlanetCarrier('planet_carrier')
 planet_1=pg.Planet(12,'planet_1')
 
@@ -84,7 +84,7 @@ planet_carrier.torque_input=[10,100]
 list1= [5,1,3]
 list2= [1,5,3]
 
-planet_2=pg.Planet(10,'planet_2')
+planet_2=pg.Planet(30,'planet_2')
 planet_3=pg.Planet(13,'planet_3')
 planet_4=pg.Planet(5,'planet_4')
 planet_5=pg.Planet(5,'planet_5')
@@ -101,9 +101,9 @@ connections3=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_
 
 connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'), pg.Connection([planet_2,ring],'GE')]
 
-generator_planetary_gear=pg_generator.GeneratorPlanetaryGears(4,[[(0,0),(165,175),(-1000,1000),(9000,10000)],[(25,35),(0,0),(-1000,1000),(9000,10000)]],0,10)
+# generator_planetary_gear=pg_generator.GeneratorPlanetaryGears(4,[[(0,0),(165,175),(-1000,1000),(9000,10000)],[(25,35),(0,0),(-1000,1000),(9000,10000)]],0,10)
 
-print(generator_planetary_gear.speed_conversion())
+# print(generator_planetary_gear.speed_conversion())
 
 # plt.figure()
 # sun.volume_model(4.0,(0,0),0,0.1)
@@ -112,7 +112,7 @@ print(generator_planetary_gear.speed_conversion())
 
 
 
-# planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2], [planet_1,planet_2,planet_3], planet_carrier,connections,3,'pl_1')
+planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2], [planet_1,planet_2,planet_3], planet_carrier,connections,3,'pl_1')
 # planetary_gears_2= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3,planet_4,planet_5], planet_carrier,connections3,3,'pl_1')
 
 
@@ -133,8 +133,8 @@ print(generator_planetary_gear.speed_conversion())
 # for i,element in enumerate(component):
 #     puissance.append(result_speed[element]*result_torque[element])
 
-# generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_2,3,1,10,200)
-# generatorgeometry.verification()
+generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_1,3,1,10,200)
+generatorgeometry.verification()
 # planetary1=generatorgeometry.planetary_gear.planetaries[0]
 # planet=generatorgeometry.planetary_gear.planets[0]
 # module=0.45
@@ -187,7 +187,7 @@ print(generator_planetary_gear.speed_conversion())
 # planetary_gear_result.planetary_gear.babylonjs()
 # planetary_gear_result.babylonjs()
 
-# generatorgeometry.optimize_min()
+generatorgeometry.optimize_min()
 # planetary_gear_result=pg.PlanetaryGearResult(planetary_gears_2,generatorgeometry.position_min_max)
 # planetary_gear_result.update_geometry()
 # print(planetary_gear_result.planetary_gear.recirculation_power())
