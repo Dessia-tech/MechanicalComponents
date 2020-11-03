@@ -3971,7 +3971,7 @@ class PositionMinMaxPlanetaryGear(DessiaObject):
 class PlanetaryGearResult(DessiaObject):
     _standalone_in_db = True
 
-    _generic_eq = True
+    _generic_eq = False
     _non_serializable_attributes = ['planetaries', 'planets', 'planet_carrier', 'connections', 'doubles']
     def __init__(self, planetary_gear: PlanetaryGear, position_min_max: PositionMinMaxPlanetaryGear, geometry_min_max: str = 'Min', recycle_power: int = 0):
         self.planetary_gear = planetary_gear
