@@ -1226,10 +1226,10 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
         list_previous_planetary_2 = copy.copy(list_previous_planetary)
         list_previous_planetary_2.remove(begin_meshing_chain)
-       
+
 
         range_speed = planetary_gear.speed_range(begin_meshing_chain, planetary_gear.planet_carrier, list_previous_planetary, 1, list_path)
-        
+
         if range_speed == 'simplex':
 
 
@@ -1265,11 +1265,11 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
             if not res.success:
                 return False
 
-        
+
         elif not range_speed:
             return False
 
-        
+
         elif range_speed[begin_meshing_chain][0] > range_speed[begin_meshing_chain][1]:
             return False
 
@@ -1279,10 +1279,10 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
 
 
-        
+
         if not planetary_gear.test_assembly_condition(self.number_planet, [begin_meshing_chain, end_meshing_chain]):
             return False
-        
+
         return True
 
     def test_torque(self, planetary_gear, first_planetary, list_path, list_previous_planetaries):
@@ -1518,7 +1518,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
 
 
         Z_range_mini_maxi = [Z_min, Z_max]
-        
+
         return Z_range_mini_maxi
 
     def decision_tree_speed_possibilities(self):
