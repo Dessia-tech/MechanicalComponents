@@ -4848,7 +4848,7 @@ class GeneratorPlanetaryGears(DessiaObject):
             sucess = False
             num_planetary_gear = 0
             n = copy.copy(len(list_planetary_gears))
-            while not sucess or num_planetary_gear > n-1:
+            while not sucess or num_planetary_gear > n-1 or not Z_min:
                 Z_max = max(Z_min)
                 planetary_gear = list_planetary_gears[Z_min.index(Z_max)]
                 Z_min.remove(Z_max)

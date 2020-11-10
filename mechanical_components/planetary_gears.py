@@ -32,6 +32,7 @@ import mechanical_components.optimization.meshes as meshes_opt
 import volmdlr.primitives3D as primitives3D
 # from dessia_common.list_eq import list_eq
 import genmechanics.geometry as gm_geo
+import volmdlr.core_compiled as vm_compiled
 
 def list_eq(list_1, list_2):
 
@@ -4226,13 +4227,23 @@ class PlanetaryGearResult(DessiaObject):
         plot_data = self.planetary_gear.plot_data()
         return plot_data
 
+
+    def Volume(self,primitive_volmdlr):
+        z = primitive_volmdlr.x.Cross(primitive_volmdlr.y)
+        z.Normalize()
+        coeff = vm_compiled.Vector3DDot(primitive_volmdlr.extrusion_vector, z)
+        return primitive_volmdlr.Area()*coeff
+
     def mass(self):
         volumes = self.volmdlr_primitives()
         mass = 0
 
         for volume in volumes:
+            if volume.__class__.__name__=='ExtrudedProfile':
 
-            mass += volume.Volume() *hardened_alloy_steel.volumic_mass
+                mass += self.Volume(volume) *hardened_alloy_steel.volumic_mass
+            else:
+                mass += volume.Volume() *hardened_alloy_steel.volumic_mass
 
         return mass
 
