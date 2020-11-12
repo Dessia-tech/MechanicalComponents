@@ -305,7 +305,7 @@ class Rack(DessiaObject):
     >>> Rack1=Rack(20/180.*math.pi) #definition of an ISO rack
     """
     _standalone_in_db = True
-    _generic_eq = True
+    _eq_is_data_eq = True
     _non_serializable_attributes = []
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
@@ -485,7 +485,7 @@ class Mesh(DessiaObject):
     >>> mesh1=Mesh(**input) # generation of one gear mesh
     """
     _standalone_in_db = True
-    _generic_eq = True
+    _eq_is_data_eq = True
     _non_serializable_attributes = []
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
@@ -882,7 +882,7 @@ class Mesh(DessiaObject):
 class MeshCombination(DessiaObject):
 
     _standalone_in_db = True
-    _generic_eq = True
+    _eq_is_data_eq = True
 
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
@@ -1912,7 +1912,7 @@ class MeshCombination(DessiaObject):
 class MeshAssembly(DessiaObject):
 
     _standalone_in_db = True
-    _generic_eq = True
+    _eq_is_data_eq = True
     _non_serializable_attributes = []
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']

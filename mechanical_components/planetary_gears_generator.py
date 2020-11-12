@@ -53,7 +53,7 @@ class GeneratorPlanetsStructure(DessiaObject):
     '''
     _standalone_in_db = True
 
-    _generic_eq = True
+    _eq_is_data_eq = False
 
     def __init__(self, number_max_planet: int, number_junction: int, number_max_junction_by_planet: int, min_planet_branch: int,
                  number_max_meshing_plan: int, name: str = ''):
@@ -709,7 +709,7 @@ class GeneratorPlanetaryGearsArchitecture(DessiaObject):
     '''
     _standalone_in_db = True
 
-    _generic_eq = True
+    _eq_is_data_eq = False
     def __init__(self, planet_structures: List[PlanetsStructure], input_speeds: List[Tuple[float, float]], name: str = ''):
 
 
@@ -1152,7 +1152,7 @@ class GeneratorPlanetaryGearsZNumber(DessiaObject):
     '''
     _standalone_in_db = True
 
-    _generic_eq = True
+    _eq_is_data_eq = False
 
     def __init__(self, planetary_gear: PlanetaryGear, input_speeds: List[Tuple[float, float]], input_torques: List[Tuple[float, float]],
                  Z_range_sun: List[int], Z_range_ring: List[int], number_planet: int, speed_max_planet: float = 1000000, name: str = ''):
@@ -2112,7 +2112,7 @@ class GeneratorPlanetaryGearsZNumberReason(DessiaObject):
     '''
     _standalone_in_db = True
 
-    _generic_eq = True
+    _eq_is_data_eq = False
 
     def __init__(self, planetary_gear: PlanetaryGear, input_reason: List[Tuple[float, float]],
                  input_speeds: List[Tuple[float, float]], input_torques: List[Tuple[float, float]],
@@ -2919,7 +2919,7 @@ class GeneratorPlanetaryGearsZNumberReason(DessiaObject):
 class GeneratorPlanetaryGearsGeometry(DessiaObject):
     _standalone_in_db = True
 
-    _generic_eq = True
+    _eq_is_data_eq = False
     def __init__(self, planetary_gear: PlanetaryGear, number_planet: int, D_min: float, D_max: float, recircle_power_max: float, name: str = ''):
 
         self.planetary_gear = planetary_gear
@@ -4685,6 +4685,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
         return position_min_max
 
 class GeneratorPlanetaryGears(DessiaObject):
+    _eq_is_data_eq = False
     def __init__(self, number_shafts: int, speed_shafts: List[List[Tuple[float, float]]], torque_shafts: List[List[Tuple[float, float]]],
                  number_max_planet: int, D_min: int, D_max: int, reason_min_max: List[Tuple[float, float]] = [],
                  speed_planet_carrer: Tuple[float, float] = [], torque_planet_carrer: Tuple[float, float] = [], number_solution: int = 0):

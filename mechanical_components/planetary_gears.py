@@ -123,7 +123,7 @@ class Gears(DessiaObject):
     #      return cylinder
 
 class Planetary(Gears):
-    _generic_eq=False
+    _eq_is_data_eq=False
    
     '''
 
@@ -203,7 +203,7 @@ class Planetary(Gears):
 
 
 class Planet(Gears):
-    _generic_eq=False
+    _eq_is_data_eq=False
     
     '''
     Define a planet
@@ -255,7 +255,7 @@ class Planet(Gears):
 
 
 class PlanetCarrier(DessiaObject):
-    _generic_eq=False
+    _eq_is_data_eq=False
    
     '''
     Define a planet carrier
@@ -281,7 +281,7 @@ class PlanetCarrier(DessiaObject):
 
 
 class Meshing(DessiaObject):
-    _generic_eq=False
+    _eq_is_data_eq=False
     
 
 
@@ -292,7 +292,7 @@ class Meshing(DessiaObject):
 
 
 class MeshingPlanetary(Meshing):
-
+    _eq_is_data_eq=False
     def __init__(self, nodes: List[Gears], name: str = ''):
 
         self.type = 'GI'
@@ -326,7 +326,7 @@ class MeshingPlanetary(Meshing):
 
 
 class MeshingPlanet(Meshing):
-
+        _eq_is_data_eq=False
         def __init__(self, nodes: List[Gears], name: str = ''):
 
             self.type = 'GI'
@@ -371,7 +371,7 @@ class Fixed(DessiaObject):
         return matrix, rhs
 
 class Double(DessiaObject):
-    _generic_eq=False
+    _eq_is_data_eq=False
     
     def __init__(self, nodes: List[Planet], name: str = ''):
 
@@ -460,7 +460,7 @@ class ImposeSpeed(DessiaObject):
 
 
 class Connection(DessiaObject):
-    
+    _eq_is_data_eq=False   
     
 
 
@@ -525,7 +525,7 @@ class Connection(DessiaObject):
 class PlanetaryGear(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes = ['mech', 'mech_dict']
-    _generic_eq=False
+    _eq_is_data_eq=False
 
 
     '''
@@ -2916,6 +2916,7 @@ class PlanetaryGear(DessiaObject):
                                                                                              [0, 0, 0], 'planetary_linear_angular'+str(i)))
         self.mech_dict['part_planetaries'] = part_planetaries
         self.mech_dict['pivot_planets'] = pivot_planets
+        
 
 
 
@@ -3090,7 +3091,7 @@ class PlanetaryGear(DessiaObject):
 
 
         mech = genmechanics.Mechanism(list_parts, ground, imposed_speeds, loads_known, loads_unknown)
-        # mech.DrawPowerGraph()
+        
         self.mech = mech
         # for l, lv in mech.static_results.items():
 
@@ -3972,7 +3973,7 @@ class PositionMinMaxPlanetaryGear(DessiaObject):
 class PlanetaryGearResult(DessiaObject):
     _standalone_in_db = True
 
-    _generic_eq = False
+    _eq_is_data_eq = False
     _non_serializable_attributes = ['planetaries', 'planets', 'planet_carrier', 'connections', 'doubles']
     def __init__(self, planetary_gear: PlanetaryGear, position_min_max: PositionMinMaxPlanetaryGear, geometry_min_max: str = 'Min', recycle_power: int = 0):
         self.planetary_gear = planetary_gear
@@ -4271,7 +4272,7 @@ class PlanetsStructure(DessiaObject):
     '''
     _standalone_in_db = True
 
-    _generic_eq = False
+    _eq_is_data_eq = False
     def __init__(self, planets: List[Planet], connections: List[Connection], name: str = '', number_group_solution_planet_structure: int = 0):
         self.number_group_solution_planet_structure = number_group_solution_planet_structure
         self.planets = planets
