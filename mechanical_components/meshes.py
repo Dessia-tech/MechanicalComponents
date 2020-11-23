@@ -251,7 +251,7 @@ class Material(DessiaObject):
     #     return d
 
     # @classmethod
-    # def DictToObject(cls, d):
+    # def dict_to_object(cls, d):
     #     material = cls(volumic_mass=d['volumic_mass'],
     #                    data_coeff_YB_Iso=d['data_coeff_YB_Iso'],
     #                    data_wholer_curve=d['data_wholer_curve'],

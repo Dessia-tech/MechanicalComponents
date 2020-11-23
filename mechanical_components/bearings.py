@@ -798,7 +798,7 @@ class RadialBallBearing(RadialBearing):
         return graph
 
 #    @classmethod
-#    def DictToObject(cls, d):
+#    def dict_to_object(cls, d):
 #        if 'Cr' not in d.keys():
 #            d['Cr'] = None
 #        if 'C0r' not in d.keys():
@@ -1059,7 +1059,7 @@ class AngularBallBearing(RadialBearing):
         return graph
 
 #    @classmethod
-#    def DictToObject(cls, d):
+#    def dict_to_object(cls, d):
 #        if 'Cr' not in d.keys():
 #            d['Cr'] = None
 #        if 'C0r' not in d.keys():
@@ -1183,7 +1183,7 @@ class SphericalBallBearing(RadialBearing):
         return graph
 
 #    @classmethod
-#    def DictToObject(cls, d):
+#    def dict_to_object(cls, d):
 #        if 'Cr' not in d.keys():
 #            d['Cr'] = None
 #        if 'C0r' not in d.keys():
@@ -1440,7 +1440,7 @@ class RadialRollerBearing(RadialBearing):
         return bg
 
 #    @classmethod
-#    def DictToObject(cls, d):
+#    def dict_to_object(cls, d):
 #        if 'Cr' not in d.keys():
 #            d['Cr'] = None
 #        if 'C0r' not in d.keys():
@@ -2007,7 +2007,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         return bg
 
 #    @classmethod
-#    def DictToObject(cls, d):
+#    def dict_to_object(cls, d):
 #        if 'Cr' not in d.keys():
 #            d['Cr'] = None
 #        if 'C0r' not in d.keys():
@@ -2159,8 +2159,8 @@ class BearingCatalog(DessiaObject):
 #        return d
 
 #    @classmethod
-#    def DictToObject(cls, dict_):
-#        bearings = [RadialBearing.DictToObject(b) for b in dict_['bearings']]
+#    def dict_to_object(cls, dict_):
+#        bearings = [RadialBearing.dict_to_object(b) for b in dict_['bearings']]
 #        return cls(bearings, dict_['name'])
 
     def save_to_file(self, filepath, indent = 0):

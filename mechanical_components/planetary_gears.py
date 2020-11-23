@@ -524,7 +524,7 @@ class Connection(DessiaObject):
 
 class PlanetaryGear(DessiaObject):
     _standalone_in_db = True
-    _non_serializable_attributes = ['mech', 'mech_dict']
+    _non_serializable_attributes = ['mech', 'mech_dict','max_length_meshing_chain']
     _eq_is_data_eq=False
 
 
@@ -3929,13 +3929,14 @@ class PositionMinMaxPlanetaryGear(DessiaObject):
          if self.positions_min_max == '' and self.modules_min_max == '':
              self.positions_min_max = []
              self.modules_min_max = []
+             element_list = planetary_gear.planets+ planetary_gear.planetaries
+             for element in element_list:
+                self.positions_min_max.append([0, 0])
+                self.modules_min_max.append([0, 0])
 
          DessiaObject.__init__(self, name=planetary_gear.name+'PostionMinMax')
 
-         element_list = planetary_gear.planets+ planetary_gear.planetaries
-         for element in element_list:
-             self.positions_min_max.append([0, 0])
-             self.modules_min_max.append([0, 0])
+         
 
      def enter_position(self, position, planetary_gear, element, min_max):
         element_list = planetary_gear.planets+ planetary_gear.planetaries
@@ -4241,7 +4242,8 @@ class PlanetaryGearResult(DessiaObject):
 
         for volume in volumes:
             if volume.__class__.__name__=='ExtrudedProfile':
-
+                print('volu')
+                print(self.Volume(volume))
                 mass += self.Volume(volume) *hardened_alloy_steel.volumic_mass
             else:
                 mass += volume.Volume() *hardened_alloy_steel.volumic_mass
