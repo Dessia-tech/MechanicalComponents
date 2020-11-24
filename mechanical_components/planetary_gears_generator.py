@@ -4779,7 +4779,7 @@ class GeneratorPlanetaryGears(DessiaObject):
         return speed_possibility, alpha_min_max
 
     def reason_conversion(self):
-        speed_possibility = [(10, 20)]
+        speed_possibility = [[10, 20]]
         w_max = 40
         for list_alpha in self.reason_min_max:
             list_w3 = []
@@ -4793,7 +4793,7 @@ class GeneratorPlanetaryGears(DessiaObject):
             w3max = max(list_w3)
             if w3max > w_max:
                 w_max = w3max
-            speed_possibility.append((w3min, w3max))
+            speed_possibility.append([w3min, w3max])
         self.speed_max_planet = w_max*3
         return speed_possibility
 

@@ -524,8 +524,9 @@ class Connection(DessiaObject):
 
 class PlanetaryGear(DessiaObject):
     _standalone_in_db = True
-    _non_serializable_attributes = ['mech', 'mech_dict','max_length_meshing_chain']
+    _non_serializable_attributes = ['mech', 'mech_dict','max_length_meshing_chain','length_double','length', 'center', 'axis']
     _eq_is_data_eq=False
+    
 
 
     '''
@@ -3919,7 +3920,7 @@ class PlanetaryGear(DessiaObject):
 
 class PositionMinMaxPlanetaryGear(DessiaObject):
 
-     # _non_serializable_attributes=['planetary_gear']
+     
      def __init__(self, planetary_gear: PlanetaryGear, name: str = '', positions_min_max: List[float] = '', modules_min_max: List[float] = ''):
 
          self.planetary_gear = planetary_gear
