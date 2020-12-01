@@ -11,9 +11,9 @@ npy.seterr(all='raise', under='ignore')
 from scipy import interpolate
 
 import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
-import volmdlr.plot_data as vmp
+import volmdlr.primitives3d as primitives3D
+import volmdlr.primitives2d as primitives2D
+import plot_data as vmp
 import math
 from scipy.linalg import norm
 from scipy.optimize import fsolve, minimize
@@ -661,21 +661,21 @@ class Mesh(DessiaObject):
         sol = self._involute(drap*theta)
         x = sol[0]
         y = sol[1]
-        p = [vm.Point2D((x[0], y[0]))]
+        p = [vm.Point2D(x[0], y[0])]
 
         for i in range(1, discret):
-            p.append(vm.Point2D((x[i], y[i])))
+            p.append(vm.Point2D(x[i], y[i]))
 
         ref = primitives2D.OpenedRoundedLineSegments2D(p, {}, False)
 
         if ind == 'T':
-            L = ref.Rotation(vm.Point2D((0, 0)), -number*2*math.pi/self.z)
+            L = ref.rotation(vm.Point2D(0, 0), -number*2*math.pi/self.z)
             if self.z > 0:
                 self.rac=L.points[-1]
         else:
-            L = ref.Rotation(vm.Point2D((0, 0)),
+            L = ref.rotation(vm.Point2D(0, 0),
                            self.base_circular_tooth_thickness*2/self.db)
-            L = L.Rotation(vm.Point2D((0, 0)), -number*2*math.pi/self.z)
+            L = L.rotation(vm.Point2D(0, 0), -number*2*math.pi/self.z)
             if self.z > 0:
                 L.points[0] = self.rac
         # if self.z<0:
@@ -704,16 +704,17 @@ class Mesh(DessiaObject):
         else:
             theta = npy.linspace(indice_flank*self.phi_trochoide, phi0, discret)
         for t in theta:
-            list_2D.append(vm.Point2D((self._trochoide(t, type_flank))))
+            point=self._trochoide(t, type_flank)
+            list_2D.append(vm.Point2D(point[0],point[1]))
         list_2D = primitives2D.OpenedRoundedLineSegments2D(list_2D, {}, False)
 
-        list_2D = list_2D.Rotation(vm.Point2D((0, 0)), -self.root_angle/2)
+        list_2D = list_2D.rotation(vm.Point2D(0, 0), -self.root_angle/2)
 
         if type_flank == 'T':
-            export_2D = list_2D.Rotation(vm.Point2D((0, 0)), -number*2*math.pi/self.z)
+            export_2D = list_2D.rotation(vm.Point2D(0, 0), -number*2*math.pi/self.z)
             export_2D.points[0] = self.rac
         else:
-            export_2D = list_2D.Rotation(vm.Point2D((0, 0)), -number*2*math.pi/self.z)
+            export_2D = list_2D.rotation(vm.Point2D(0, 0), -number*2*math.pi/self.z)
             self.rac = export_2D.points[-1]
         # if self.z<0:
         #     x=[]
@@ -732,19 +733,22 @@ class Mesh(DessiaObject):
         indice_flank = 1
         a = indice_flank*self.rack.a
         phi0 = a*(self.z/abs(self.z))/(self.dff/2)
-        p1 = vm.Point2D((self._trochoide(phi0, 'T')))
-        p1 = p1.Rotation(vm.Point2D((0, 0)), -self.root_angle/2)
+        trochoide=self._trochoide(phi0, 'T')
+        point=vm.Point2D(trochoide[0],trochoide[1])
+        p1 = vm.Point2D(point[0],point[1])
+        p1 = p1.rotation(vm.Point2D(0, 0), -self.root_angle/2)
 
         # on the coast flank
         indice_flank = -1
         a = indice_flank*self.rack.a
         phi0 = a*(self.z/abs(self.z))/(self.dff/2)
-        p2 = vm.Point2D((self._trochoide(phi0, 'R')))
-        p2 = p2.Rotation(vm.Point2D((0,0)), -self.root_angle/2)
+        trochoide=(self._trochoide(phi0, 'R'))
+        p2 = vm.Point2D(trochoide[0],trochoide[1])
+        p2 = p2.rotation(vm.Point2D(0,0), -self.root_angle/2)
 
         list_2D = primitives2D.OpenedRoundedLineSegments2D([p1, p2], {}, False)
 
-        export_2D = list_2D.Rotation(vm.Point2D((0, 0)), -number*2*math.pi/self.z)
+        export_2D = list_2D.rotation(vm.Point2D(0, 0), -number*2*math.pi/self.z)
         # if self.z<0:
         #     x=[]
         #     y=[]
@@ -759,12 +763,12 @@ class Mesh(DessiaObject):
     def _outside_trace(self, number):
         # Trace of the top of the gear mesh
         theta4 = math.tan(self.alpha_outside_diameter)-self.alpha_outside_diameter
-        p1 = vm.Point2D((self.outside_diameter/2*math.cos(theta4), self.outside_diameter/2*math.sin(theta4)))
-        p2 = p1.Rotation(vm.Point2D((0, 0)), self.outside_active_angle/2)
-        p3 = p2.Rotation(vm.Point2D((0, 0)), self.outside_active_angle/2)
+        p1 = vm.Point2D(self.outside_diameter/2*math.cos(theta4), self.outside_diameter/2*math.sin(theta4))
+        p2 = p1.rotation(vm.Point2D(0, 0), self.outside_active_angle/2)
+        p3 = p2.rotation(vm.Point2D(0, 0), self.outside_active_angle/2)
         list_2D = primitives2D.OpenedRoundedLineSegments2D([p3, p2, p1], {}, False)
 
-        export_2D = list_2D.Rotation(vm.Point2D((0, 0)), -number*2*math.pi/self.z)
+        export_2D = list_2D.rotation(vm.Point2D(0, 0), -number*2*math.pi/self.z)
         x = []
         y = []
         # for point in export_2D.points:
@@ -1535,9 +1539,9 @@ class MeshCombination(DessiaObject):
             model_export=[]
 
             for m in i:
-                center = vm.Point2D(center)
-                model_trans = m.Translation(center)
-                model_trans_rot = model_trans.Rotation(center, k)
+                center = vm.Point2D(center[0],center[1])
+                model_trans = m.translation(center)
+                model_trans_rot = model_trans.rotation(center, k)
                 model_export.append(model_trans)
             export.append(model_export)
         return export
@@ -1567,12 +1571,12 @@ class MeshCombination(DessiaObject):
 
         :results: list of 3D volmdlr component
         """
-        x = vm.Vector3D(axis)
+        x = vm.Vector3D(axis[0],axis[1],axis[2])
         # y = x.RandomUnitNormalVector()
         # y= vm.Vector3D((0,1,0))
         y = x.deterministic_unit_normal_vector()
 
-        z = vm.Vector3D(npy.cross(x.vector, y.vector))
+        z = x.cross(y)
         if len(centers) == 0:
             centers = {}
             center_var = self.pos_axis({self.list_gear[0]:[0, 0]})
@@ -1583,8 +1587,8 @@ class MeshCombination(DessiaObject):
             center_var = {}
             for engr_num in centers.keys():
 
-                center_var[engr_num] = npy.dot(centers[engr_num],x.vector)*x+npy.dot(centers[engr_num],y.vector)*y+npy.dot(centers[engr_num],z.vector)*z
-                center_var[engr_num] = center_var[engr_num].vector
+                center_var[engr_num] = npy.dot(centers[engr_num],(x[0],x[1],x[2]))*x+npy.dot(centers[engr_num],(y[0],y[1],y[2]))*y+npy.dot(centers[engr_num],(z[0],z[1],z[2]))*z
+                center_var[engr_num] = (center_var[engr_num][0],center_var[engr_num][1],center_var[engr_num][2])
             centers = center_var
 
 
@@ -1611,9 +1615,9 @@ class MeshCombination(DessiaObject):
             Rotation[set_pos] = {}
             if set_pos_dfs == 0:
                 Gears3D[eng1] = self.meshes_dico[eng1].contour(3)
-            Struct.append(vm.Circle2D(vm.Point2D(position1),self.DF[set_pos][eng1]/2.))
+            Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1]/2.))
             Gears3D[eng2] = self.meshes_dico[eng2].contour(3)
-            Struct.append(vm.Circle2D(vm.Point2D(position2),self.DF[set_pos][eng2]/2.))
+            Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2]/2.))
 
             if position2[1] == position1[1]:
                 if position2[2]-position1[2] > 0:
@@ -1636,10 +1640,10 @@ class MeshCombination(DessiaObject):
                         delta_rot = Rotation[set_pos][eng1]-(list_rot[0]-angle0)
                 Rotation[set_pos][eng2] = list_rot[1]-angle0-delta_rot*((self.meshes_dico[eng1].z)/(self.meshes_dico[eng2].z))
 
-            vect_position_1 = vm.Vector3D(position1)
-            vect_position_2 = vm.Vector3D(position2)
+            vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
+            vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
             Gears3D_Rotate = self.gear_rotate_2([Gears3D[eng1],Gears3D[eng2]],
-                                                [([vect_position_1.Dot(y),vect_position_1.Dot(z)]),([vect_position_2.Dot(y),vect_position_2.Dot(z)])],
+                                                [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
                                                 list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
 
 
@@ -1667,7 +1671,7 @@ class MeshCombination(DessiaObject):
                        # print(point)
             # L.append(L[0])
 
-            C1 = vm.Polygon2D(L,{})
+            C1 = vm.wires.ClosedPolygon2D(L,{})
             # vmp.plot([C1.plot_data('contour')])
             L2 = []
             L2_vector = []
@@ -1679,7 +1683,7 @@ class MeshCombination(DessiaObject):
             # L2.append(L2[0])
 
             # L2=set(L2)
-            C2 = vm.Polygon2D(L2, {})
+            C2 = vm.wires.ClosedPolygon2D(L2, {})
 
         #     C1=vm.Contour2D(Gears3D_Rotate[0])
         #     # print(Gears3D_Rotate[0])
@@ -1690,27 +1694,28 @@ class MeshCombination(DessiaObject):
 
 
             if set_pos_dfs == 0:
-                vect_x = -0.5*self.gear_width[eng1]*x + x.Dot(vm.Vector3D(centers[eng1]))*x
+                vect_x = -0.5*self.gear_width[eng1]*x + x.dot(vm.Vector3D(centers[eng1][0],centers[eng1][1],centers[eng1][2]))*x
 
                 if self.Z[eng1] < 0:
-                    vect_center = vm.Vector3D(centers[eng1])
-                    circle = vm.Circle2D(vm.Point2D(vm.Vector2D([vect_center.Dot(y),vect_center.Dot(z)])),(self.DB[eng1]*1.3)/2)
-                    t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z,circle , [C1], vm.Vector3D(extrusion_vector1))
+                    vect_center = vm.Vector3D(centers[eng1][0],centers[eng1][1],centers[eng1][2])
+                    vector=vm.Vector2D(vect_center.dot(y),vect_center.dot(z))
+                    circle = vm.wires.Circle2D(vm.Point2D(vector[0],vector[1]),(self.DB[eng1]*1.3)/2)
+                    t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z,circle , [C1], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
                 else:
-                    t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z, C1, [], vm.Vector3D(extrusion_vector1))
+                    t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, C1, [], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
 
                 primitives.append(t1)
-            vect_x = -0.5*self.gear_width[eng2]*x + x.Dot(vm.Vector3D(centers[eng2]))*x
+            vect_x = -0.5*self.gear_width[eng2]*x + x.dot(vm.Vector3D(centers[eng2][0],centers[eng2][1],centers[eng2][2]))*x
 
             if self.Z[eng2] < 0:
-                    vect_center = vm.Vector3D(centers[eng2])
+                    vect_center = vm.Vector3D(centers[eng2][0],centers[eng2][1],centers[eng2][2])
 
-                    circle = vm.Circle2D(vm.Point2D([vect_center.Dot(y),vect_center.Dot(z)]),(self.DB[eng2]*1.3)/2)
+                    circle = vm.wires.Circle2D(vm.Point2D(vect_center.dot(y),vect_center.dot(z)),(self.DB[eng2]*1.3)/2)
 
-                    t2 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z,circle , [C2], vm.Vector3D(extrusion_vector2))
+                    t2 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z,circle , [C2], vm.Vector3D(extrusion_vector2[0],extrusion_vector2[1],extrusion_vector2[2]))
 
             else:
-                t2 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), y, z, C2, [], vm.Vector3D(extrusion_vector2))
+                t2 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, C2, [], vm.Vector3D(extrusion_vector2[0],extrusion_vector2[1],extrusion_vector2[2]))
 
 
             primitives.append(t2)

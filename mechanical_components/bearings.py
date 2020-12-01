@@ -16,9 +16,9 @@ npy.seterr(divide='raise', over='ignore', under='ignore')
 from scipy import interpolate
 #import os
 import volmdlr as vm
-from volmdlr import plot_data
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
+import plot_data
+import volmdlr.primitives3d as primitives3D
+import volmdlr.primitives2d as primitives2D
 import math
 from dessia_common import DessiaObject, dict_merge, Evolution
 from mechanical_components import shafts_assembly
@@ -472,16 +472,17 @@ class RadialBearing(DessiaObject):
 
     def volmdlr_primitives(self, center = vm.O3D, axis = vm.X3D):
         # TODO: mutualization of this in parent class?
-        axis.Normalize()
+        axis.normalize()
 
-        y = axis.RandomUnitNormalVector()
-        z = axis.Cross(y)
+        y = axis.random_unit_normal_vector()
+        z = axis.cross(y)
 
         #Internal Ring
         IRC = self.internal_ring_contour()
         irc = primitives3D.RevolvedProfile(center, axis, z, IRC, center,
                                            axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
+        
         ERC=self.external_ring_contour()
         erc=primitives3D.RevolvedProfile(center, axis, z, ERC, center,
                                          axis, angle=2*math.pi,name='External Ring')
@@ -494,8 +495,10 @@ class RadialBearing(DessiaObject):
 
         for zi in range(int(self.Z)):
             center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
-            rollers.append(primitives3D.RevolvedProfile(center_roller, axis, z, ROL,
-                                                    center_roller, axis,
+     
+            axis_2=vm.Vector3D(2,0,0)
+            rollers.append(primitives3D.RevolvedProfile(center_roller, axis_2, z, ROL,
+                                                    center_roller, axis_2,
                                                     angle=2*math.pi,name='Roller {}'.format(zi+1)))
 
         volumes = [irc, erc] + rollers
@@ -685,29 +688,29 @@ class RadialBallBearing(RadialBearing):
 
     def internal_ring_contour(self):
 
-        pbi2 = vm.Point2D((-self.B/2., self.d1/2.))
-        pbi1 = pbi2.Translation(vm.Vector2D((self.h, 0)))
-        pbi3 = vm.Point2D((-self.B/2., self.d/2.))
-        pbi4 = vm.Point2D((self.B/2., self.d/2.))
-        pbi5 = vm.Point2D((self.B/2., self.d1/2.))
-        pbi6 = pbi5.Translation(vm.Vector2D((-self.h, 0)))
+        pbi2 = vm.Point2D(-self.B/2., self.d1/2.)
+        pbi1 = pbi2.translation(vm.Vector2D(self.h, 0))
+        pbi3 = vm.Point2D(-self.B/2., self.d/2.)
+        pbi4 = vm.Point2D(self.B/2., self.d/2.)
+        pbi5 = vm.Point2D(self.B/2., self.d1/2.)
+        pbi6 = pbi5.translation(vm.Vector2D(-self.h, 0))
         bi1 = primitives2D.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1],
                                                  {1: self.radius,
                                                   2: self.radius,
                                                   3: self.radius,
                                                   4: self.radius},
                                                   adapt_radius=True)
-        cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, self.F/2)), pbi6)
-        return vm.Contour2D([cbi1] + bi1.primitives)
+        cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi6)
+        return vm.wires.Contour2D([cbi1] + bi1.primitives)
 
     def external_ring_contour(self):
 
-        pbe2 = vm.Point2D((-self.B/2., self.D1/2.))
-        pbe1 = pbe2.Translation(vm.Vector2D((self.h, 0)))
-        pbe3 = vm.Point2D((-self.B/2., self.D/2.))
-        pbe4 = vm.Point2D((self.B/2., self.D/2.))
-        pbe5 = vm.Point2D((self.B/2., self.D1/2.))
-        pbe6 = pbe5.Translation(vm.Vector2D((-self.h, 0)))
+        pbe2 = vm.Point2D(-self.B/2., self.D1/2.)
+        pbe1 = pbe2.translation(vm.Vector2D(self.h, 0))
+        pbe3 = vm.Point2D(-self.B/2., self.D/2.)
+        pbe4 = vm.Point2D(self.B/2., self.D/2.)
+        pbe5 = vm.Point2D(self.B/2., self.D1/2.)
+        pbe6 = pbe5.translation(vm.Vector2D(-self.h, 0))
 
 
         be1 = primitives2D.OpenedRoundedLineSegments2D([pbe6, pbe5, pbe4, pbe3, pbe2, pbe1],
@@ -716,23 +719,23 @@ class RadialBallBearing(RadialBearing):
                                                   3: self.radius,
                                                   4: self.radius},
                                                   adapt_radius=True)
-        cbe1 = vm.Arc2D(pbe1, vm.Point2D((0, self.E/2)), pbe6)
-        return vm.Contour2D([cbe1] + be1.primitives)
+        cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.E/2), pbe6)
+        return vm.wires.Contour2D([cbe1] + be1.primitives)
 
     def rolling_contour(self):
 
-        p0 = vm.Point2D((0, 0))
+        p0 = vm.Point2D(0, 0)
         c1 = vm.Circle2D(p0, self.Dw/2.)
         return vm.Contour2D([c1])
 
     def rolling_contour_cad(self):
-        p0 = vm.Point2D((-self.Dw/2., 0))
-        p1 = vm.Point2D((0, self.Dw/2.))
-        p2 = vm.Point2D((self.Dw/2., 0))
-        a1 = vm.Arc2D(p0, p1, p2)
-        l1 = vm.LineSegment2D(p2,p0)
+        p0 = vm.Point2D(-self.Dw/2., 0)
+        p1 = vm.Point2D(0, self.Dw/2.)
+        p2 = vm.Point2D(self.Dw/2., 0)
+        a1 = vm.edges.Arc2D(p0, p1, p2)
+        l1 = vm.edges.LineSegment2D(p2,p0)
 #        c1 = vm.Circle2D(p0, self.Dw/2.)
-        return vm.Contour2D([a1, l1])
+        return vm.wires.Contour2D([a1, l1])
 
     def plot_contour(self, direction=1):
 
@@ -3047,14 +3050,16 @@ class BearingCombination(DessiaObject):
 
 
 
-    def volume_model(self, center = vm.Point3D((0,0,0)), axis = vm.Vector3D((1,0,0))):
+    def volume_model(self, center = vm.Point3D(0,0,0), axis = vm.Vector3D(1,0,0)):
         groups = []
 #        position = self.axial_positions
         center_bearing = center+0.5*(self.bearings[0].B -self.B)*axis
         for bearing in self.bearings:
             groups.extend(bearing.volmdlr_primitives(center=center_bearing))
             center_bearing += bearing.B*axis
-        model=vm.VolumeModel(groups, self.name)
+            
+        
+        model=vm.core.VolumeModel(groups, self.name)
         return model
     
     def volmdlr_volume_model(self):

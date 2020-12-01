@@ -2920,7 +2920,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
     _standalone_in_db = True
 
     _eq_is_data_eq = False
-    def __init__(self, planetary_gear: PlanetaryGear, number_planet: int, D_min: float, D_max: float, recircle_power_max: float, name: str = ''):
+    def __init__(self, planetary_gear: PlanetaryGear, number_planet: int, D_min: float, D_max: float, recircle_power_max: float, internal_diameter_min: float = 0, name: str = ''):
 
         self.planetary_gear = planetary_gear
         self.number_planet = number_planet
@@ -2929,6 +2929,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
         self.position_min_max = PositionMinMaxPlanetaryGear(self.planetary_gear)
         self.d_min = 0
         self.recircle_power_max = recircle_power_max
+        self.internal_diameter_min=internal_diameter_min
         DessiaObject.__init__(self, name=name)
 
 
@@ -3123,6 +3124,8 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
             if isinstance(meshing_chain[0], Planetary) and meshing_chain[0].planetary_type == 'Ring':
                      f2.append(self.D_max-m2*meshing_chain[0].Z)
                      f2.append(-self.D_min+m2*meshing_chain[0].Z)
+                     
+                      
 
 
             elif isinstance(meshing_chain[-1], Planetary) and meshing_chain[-1].planetary_type == 'Ring':
@@ -3137,13 +3140,30 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                         index_planet = planetary_gear.planets.index(element)
                         f2.append((self.D_max/2)**2-(X[index_planet]**2+Y[index_planet]**2))
                         f2.append(-(self.D_min/2)**2+(X[index_planet]**2+Y[index_planet]**2))
+        if self.internal_diameter_min:
+            for i, meshing_chain in enumerate(meshing_chains):
+                m2 = M[i]
+                if isinstance(meshing_chain[0], Planetary) and meshing_chain[0].planetary_type == 'Sun':
+                    f2.append(-self.internal_diameter_min+m2*meshing_chain[0].Z)
+                    
+                    
+                elif isinstance(meshing_chain[-1], Planetary) and meshing_chain[-1].planetary_type == 'Sun':
+                    f2.append(-self.internal_diameter_min+m2*meshing_chain[-1].Z)
+                    
+                else:
+                    
+                    for element in meshing_chain:
+                        if isinstance(element, Planet):
+                            index_planet = planetary_gear.planets.index(element)
+                            
+                            f2.append(-(self.internal_diameter_min/2)+((X[index_planet]**2+Y[index_planet]**2)**1/2)-element.Z*m2/2)
         F = 0
         # print(f2)
         for f in f2:
             F += f-abs(f)
         # if F==0:
         #     F=1
-
+        print(F)
         return F
 
 
@@ -3834,7 +3854,9 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
         # else:
         #     self.planetary_gear.sum_Z_planetary = -101
         #     return self.planetary_gear
-
+    
+    
+    
 
     def optimize_min(self):
 
@@ -3878,7 +3900,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
 
                         if res_1.fun > 0.0000000000001:
                               f2.append(res_1.fun*100000000)
-
+                              
                         if isinstance(meshing_chain[0], Planetary) and meshing_chain[0].planetary_type == 'Ring':
                               f2.append((x[index_x]-m2*meshing_chain[0].Z*1.3))
                               dim_max[i] = x[index_x]
@@ -3886,6 +3908,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                               # if f2[-1] > 0:
                               #      f2[-1] = f2[-1]*100
                               index_x += 1
+                              
 
                         elif isinstance(meshing_chain[-1], Planetary) and meshing_chain[-1].planetary_type == 'Ring':
                               f2.append((x[index_x]-m2*meshing_chain[-1].Z*1.3))
@@ -3893,6 +3916,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                               # if f2[-1] > 0:
                               #      f2[-1] = f2[-1]*100
                               index_x += 1
+                              
 
                         else:
 
@@ -3908,7 +3932,28 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                                     # if f2[-1] > 0:
                                     #     f2[-1] = f2[-1]*100
                                     index_x += 1
-
+                    f3=[]               
+                    if self.internal_diameter_min:
+                        for i, meshing_chain in enumerate(meshing_chains):
+                            m2 = M[i]
+                            if isinstance(meshing_chain[0], Planetary) and meshing_chain[0].planetary_type == 'Sun':
+                                f3.append(-self.internal_diameter_min+m2*meshing_chain[0].Z)
+                                
+                                
+                                
+                            elif isinstance(meshing_chain[-1], Planetary) and meshing_chain[-1].planetary_type == 'Sun':
+                                f3.append(-self.internal_diameter_min+m2*meshing_chain[-1].Z)
+                                
+                                
+                            else:
+                                
+                                for element in meshing_chain:
+                                    if isinstance(element, Planet):
+                                        index_planet = planetary_gear.planets.index(element)
+                                        
+                                        f3.append(-(self.internal_diameter_min/2)+((X[index_planet]**2+Y[index_planet]**2)**1/2)-element.Z*m2/2)
+                    
+                    
 
                     if  recirculation_power and l[0] == 10:
                         X = []
@@ -3984,10 +4029,14 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
 
 
 
-                    F = 0
+                    F=0
 
                     for f in f2:
                         F += abs(f)
+                    
+                    for f in f3:
+                        
+                        F += f-abs(f)
 
 
                     if  recirculation_power and l[0] == 20:
@@ -4008,6 +4057,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                     F += F2[0]
 
                     l[0] += 1
+                   
                     return F
 
             min_max_x_2 = []
@@ -4059,7 +4109,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
             if self.D_max-self.D_min < 1:
                 s = (self.D_max-self.D_min)*0.1 #TODO Link with recirculation power
             # print(x0)
-            # print(min_x,max_x)
+            print(min_x,max_x)
             xra, fx = cma.fmin(function_verification, x0, s, args=(self.planetary_gear, meshing_chains, recirculation_power, l, F2), options={'bounds':[min_x, max_x],
                                                                                                                                               'tolfun': 1e-10,
                                                                                                                                               'verbose': 3,
@@ -4071,11 +4121,13 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
 
 
 
-
-            dim_max_min = min(dim_max)
-            coeff_reduc = self.D_min/dim_max_min
-
-
+            if not self.internal_diameter_min:
+                dim_max_min = min(dim_max)
+                coeff_reduc = self.D_min/dim_max_min
+            else:
+                coeff_reduc = 1
+    
+    
             x = xra
 
             X = []
@@ -4687,7 +4739,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
 class GeneratorPlanetaryGears(DessiaObject):
     _eq_is_data_eq = False
     def __init__(self, number_shafts: int, speed_shafts: List[List[Tuple[float, float]]], torque_shafts: List[List[Tuple[float, float]]],
-                 number_max_planet: int, D_min: int, D_max: int, reason_min_max: List[Tuple[float, float]] = [],
+                 number_max_planet: int, D_min: int, D_max: int, internal_diameter_min: float=0, reason_min_max: List[Tuple[float, float]] = [],
                  speed_planet_carrer: Tuple[float, float] = [], torque_planet_carrer: Tuple[float, float] = [], number_solution: int = 0):
 
         self.number_shafts = number_shafts
@@ -4713,6 +4765,7 @@ class GeneratorPlanetaryGears(DessiaObject):
         if not number_solution:
             self.number_solution = 100000000000
         self.speed_max_planet = 3*40
+        self.internal_diameter_min=internal_diameter_min
         # self.speed_planet_carrer=speed_planet_carrer
         # self.torque_planet_carrer=torque_planet_carrer
 
@@ -4796,6 +4849,9 @@ class GeneratorPlanetaryGears(DessiaObject):
             speed_possibility.append([w3min, w3max])
         self.speed_max_planet = w_max*3
         return speed_possibility
+    
+
+        
 
 
     def generator(self):
@@ -4849,18 +4905,21 @@ class GeneratorPlanetaryGears(DessiaObject):
             sucess = False
             num_planetary_gear = 0
             n = copy.copy(len(list_planetary_gears))
-            while not sucess or num_planetary_gear > n-1 or not Z_min:
+            while not sucess or num_planetary_gear > n-1 or Z_min==[]:
                 Z_max = max(Z_min)
                 planetary_gear = list_planetary_gears[Z_min.index(Z_max)]
                 Z_min.remove(Z_max)
                 list_planetary_gears.remove(planetary_gear)
                 generator = GeneratorPlanetaryGearsGeometry(planetary_gear=planetary_gear,
-                                                            number_planet=3, D_min=self.D_min, D_max=self.D_max, recircle_power_max=250)
+                                                            number_planet=3, D_min=self.D_min, D_max=self.D_max, recircle_power_max=250,internal_diameter_min= self.internal_diameter_min)
                 generator.verification()
                 generator.optimize_min()
 
 
                 if generator.planetary_gear.min_Z_planetary > 0:
+                        
+                        
+                        
                     planetary_gear_results.append(PlanetaryGearResult(planetary_gear=generator.planetary_gear, position_min_max=generator.optimize_max()))
                     planetary_gear_results[-1].update_geometry()
                     if len(planetary_gear_results) == self.number_solution:

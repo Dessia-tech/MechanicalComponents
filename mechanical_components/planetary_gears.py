@@ -15,8 +15,8 @@ import time
 import math as m
 import copy
 import volmdlr as vm
-import volmdlr.primitives3D as p3d
-import volmdlr.primitives2D as p2d
+import volmdlr.primitives3d as p3d
+import volmdlr.primitives2d as p2d
 import mechanical_components.meshes as meshes
 from dessia_common import DessiaObject
 from typing import Tuple, List, TypeVar
@@ -24,12 +24,12 @@ import numpy as np
 import genmechanics as genmechanics
 import genmechanics.linkages as linkages
 import genmechanics.loads as loads
-import volmdlr.plot_data as vmp
+import plot_data as vmp
 import scipy.optimize as op
 from mechanical_components.meshes import hardened_alloy_steel
 import mechanical_components.optimization.meshes_protected as mg
 import mechanical_components.optimization.meshes as meshes_opt
-import volmdlr.primitives3D as primitives3D
+import volmdlr.primitives3d as primitives3d
 # from dessia_common.list_eq import list_eq
 import genmechanics.geometry as gm_geo
 import volmdlr.core_compiled as vm_compiled
@@ -392,7 +392,7 @@ class Double(DessiaObject):
          position_planet_2 = self.nodes[1].positions
 
          model = []
-         axis = vm.Vector3D(axis)
+         axis = vm.Vector3D(axis[0],axis[1],axis[2])
          for i in range(len(position_planet_1)):
 
              if position_planet_2[i][0] > position_planet_1[i][0]:
@@ -411,32 +411,32 @@ class Double(DessiaObject):
 
                  position = (position[0]+center[0], position[1]+center[1],
                              position[2]+center[2])
-                 pos = vm.Point3D(position)
+                 pos = vm.Point3D(position[0],position[1],position[2])
              if not axis == (1, 0, 0):
-
-                 axis_rotation = vm.Vector3D(npy.cross(axis.vector, (1, 0, 0)))
-                 axis_vector = vm.Vector3D(axis)
-                 axis_origin = vm.Vector3D((1, 0, 0))
+                 vector=npy.cross((axis[0],axis[1],axis[2]), (1, 0, 0))
+                 axis_rotation = vm.Vector3D(vector[0],vector[1],vector[2])
+                 axis_vector = vm.Vector3D(axis[0],axis[1],axis[2])
+                 axis_origin = vm.Vector3D(1, 0, 0)
 
                  axis_vector_norme = copy.copy(axis_vector)
-                 axis_vector_norme.Normalize()
+                 axis_vector_norme.normalize()
 
                  axis_origin_norme = copy.copy(axis_origin)
-                 axis_origin_norme.Normalize()
+                 axis_origin_norme.normalize()
 
-                 if axis_vector_norme.Dot(axis_origin_norme) == 0:
+                 if axis_vector_norme.dot(axis_origin_norme) == 0:
                         angle = m.pi/2
                  else:
-                        angle = m.acos(axis_vector.Dot(axis_origin)/axis_vector_norme.Dot(axis_origin_norme))
-                 position2 = vm.Vector3D(position)
+                        angle = m.acos(axis_vector.dot(axis_origin)/axis_vector_norme.dot(axis_origin_norme))
+                 position2 = vm.Vector3D(position[0],position[1],position[2])
 
-                 position2.Rotation(center=vm.Vector3D(center), axis=axis_rotation, angle=angle, copy=False)
-                 position = position2.vector
-                 pos = vm.Point3D(position)
+                 position2.rotation(center=vm.Vector3D(center[0],center[1],center[2]), axis=axis_rotation, angle=angle, copy=False)
+                 
+                 pos = vm.Point3D(position2[0],position2[1],position2[2])
 
 
              else:
-                 pos = vm.Point3D(position)
+                 pos = vm.Point3D(position[0],position[1],position[2])
 
 
              cylinder = p3d.Cylinder(pos, axis, (self.nodes[0].Z*self.nodes[0].module)/10, abs(position_planet_1[i][0]-position_planet_2[i][0]))
@@ -1313,16 +1313,16 @@ class PlanetaryGear(DessiaObject):
                 for n in range(self.number_branch_planet-1):
                     primitive_planet = copy.copy(primitive[number])
 
-                    x = vm.Vector3D(axis)
+                    x = vm.Vector3D(axis[0],axis[1],axis[2])
 
                     # primitive_planet.Rotation(center=vm.Point3D((0,0,0)),axis=vm.Vector3D((1,0,0)),angle=(n+1)*2*m.pi/self.number_branch_planet)
 
-                    vect_x = -0.5*solution.gear_width[number]*x +  x.Dot(vm.Vector3D(centers[number]))*x
+                    vect_x = -0.5*solution.gear_width[number]*x +  x.dot(vm.Vector3D(centers[number][0],centers[number][1],centers[number][2]))*x
 
-                    vect_center = vm.Vector3D(center)
-                    C2 = primitive_planet.outer_contour2d.Rotation(center=vm.Vector2D((vect_center.Dot(primitive_planet.x), vect_center.Dot(primitive_planet.y))),
+                    vect_center = vm.Vector3D(center[0],center[1],center[2])
+                    C2 = primitive_planet.outer_contour2d.rotation(center=vm.Vector2D(vect_center.dot(primitive_planet.x), vect_center.dot(primitive_planet.y)),
                                                                    angle=(n+1)*2*m.pi/self.number_branch_planet)
-                    primitive.append(primitives3D.ExtrudedProfile(vm.Vector3D(vect_x), primitive_planet.x, primitive_planet.y,
+                    primitive.append(primitives3d.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), primitive_planet.x, primitive_planet.y,
                                                                   C2, [], primitive_planet.extrusion_vector))
             primitives.extend(primitive)
 
@@ -4232,10 +4232,10 @@ class PlanetaryGearResult(DessiaObject):
 
 
     def Volume(self,primitive_volmdlr):
-        z = primitive_volmdlr.x.Cross(primitive_volmdlr.y)
-        z.Normalize()
-        coeff = vm_compiled.Vector3DDot(primitive_volmdlr.extrusion_vector, z)
-        return primitive_volmdlr.Area()*coeff
+        z = primitive_volmdlr.x.cross(primitive_volmdlr.y)
+        z.normalize()
+        coeff = primitive_volmdlr.extrusion_vector.dot(z)
+        return primitive_volmdlr.area()*coeff
 
     def mass(self):
         volumes = self.volmdlr_primitives()
@@ -4247,7 +4247,7 @@ class PlanetaryGearResult(DessiaObject):
                 print(self.Volume(volume))
                 mass += self.Volume(volume) *hardened_alloy_steel.volumic_mass
             else:
-                mass += volume.Volume() *hardened_alloy_steel.volumic_mass
+                mass += volume.volume() *hardened_alloy_steel.volumic_mass
 
         return mass
 
