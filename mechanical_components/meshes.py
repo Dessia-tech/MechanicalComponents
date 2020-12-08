@@ -613,7 +613,7 @@ class Mesh(DessiaObject):
 
     ### Trace method
 
-    def contour(self, discret=10, list_number=[None]):
+    def contour(self, discret=1, list_number=[None]):
         """ Definition of the gear contour for volmdlr
 
         :param discret: number of discretization points on the gear mesh involute
@@ -1661,11 +1661,17 @@ class MeshCombination(DessiaObject):
 
             L = []
             L_vector = []
+            i=0
             for element in Gears3D_Rotate[0]:
                     for point in element.points:
                        if not point in L_vector:
-                           L_vector.append(point)
-                           L.append(point)
+                           # if i==100:
+                               L_vector.append(point)
+                               L.append(point)
+                           #     i=0
+                           # else:
+                           #     i+=1
+                           
                        # else:
                        #     # print(point.vector)
                        # print(point)
@@ -1675,11 +1681,17 @@ class MeshCombination(DessiaObject):
             # vmp.plot([C1.plot_data('contour')])
             L2 = []
             L2_vector = []
+            i=0
             for element in Gears3D_Rotate[1]:
                     for point in element.points:
                        if not point in L2_vector:
-                           L2_vector.append(point)
-                           L2.append(point)
+                           # if i==100:
+                               L2_vector.append(point)
+                               L2.append(point)
+                               i=0
+                           # else:
+                           #     i+=1
+                              
             # L2.append(L2[0])
 
             # L2=set(L2)
@@ -1691,7 +1703,7 @@ class MeshCombination(DessiaObject):
 
             extrusion_vector1 = (self.gear_width[eng1]*x)
             extrusion_vector2 = (self.gear_width[eng2]*x)
-
+            print(L2)
 
             if set_pos_dfs == 0:
                 vect_x = -0.5*self.gear_width[eng1]*x + x.dot(vm.Vector3D(centers[eng1][0],centers[eng1][1],centers[eng1][2]))*x
@@ -1702,8 +1714,13 @@ class MeshCombination(DessiaObject):
                     circle = vm.wires.Circle2D(vm.Point2D(vector[0],vector[1]),(self.DB[eng1]*1.3)/2)
                     t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z,circle , [C1], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
                 else:
-                    t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, C1, [], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
-
+                    try:                    
+                        t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, C1, [], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
+                    except ZeroDivisionError:
+                        vector=vm.Vector2D(vect_center.dot(y),vect_center.dot(z))
+                        circle = vm.wires.Circle2D(vm.Point2D(vector[0],vector[1]),(self.DB[eng1])/2)
+                        t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, circle, [], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
+                        
                 primitives.append(t1)
             vect_x = -0.5*self.gear_width[eng2]*x + x.dot(vm.Vector3D(centers[eng2][0],centers[eng2][1],centers[eng2][2]))*x
 

@@ -1303,7 +1303,7 @@ class PlanetaryGear(DessiaObject):
             solution = mesh_optimizer.solutions[0].mesh_combinations[0]
             primitive = solution.volmdlr_primitives(axis=axis, centers=centers)
             gear_width_max = 0
-
+            
             for gear in solution.gear_width:
                 if solution.gear_width[gear] > gear_width_max:
                     gear_width_max = solution.gear_width[gear]
@@ -3170,8 +3170,8 @@ class PlanetaryGear(DessiaObject):
                     break
             if not flag_double:
                 part_planets.append(genmechanics.Part('planet'+str(i)))
-
-                position = [planet.positions[0][0]+center[0], planet.positions[0][1]+center[1], planet.positions[0][2]+center[3]]
+           
+                position = [planet.positions[0][0]+center[0], planet.positions[0][1]+center[1], planet.positions[0][2]+center[2]]
                 pivot_planets.append(linkages.FrictionlessRevoluteLinkage(part_planet_carrier, part_planets[-1],
                                                                           np.array(position), [0, 0, 0], 'pivot'+str(i)))
 
@@ -4026,7 +4026,7 @@ class PlanetaryGearResult(DessiaObject):
 
         for planet in self.planets:
             if planet.positions:
-                d = planet.module*planet.Z+ 2*((planet.positions[0][0])**2+(planet.positions[0][1])**2)**0.5
+                d = planet.module*planet.Z+ 2*((planet.positions[0][2])**2+(planet.positions[0][1])**2)**0.5
 
             if d > self.D_train:
                 self.D_train = d
@@ -4205,7 +4205,23 @@ class PlanetaryGearResult(DessiaObject):
     def torque_range(self, elements):
 
         return self.planetary_gear.torque_range(elements)
+    
+    def update_d_train(self):
+        self.D_train=0
+        for planetary in self.planetaries:
+            d = planetary.module*planetary.Z
+            
+            if planetary.planetary_type == 'Ring':
+                d = d*1.3
+            if d > self.D_train:
+                 self.D_train = d
 
+        for planet in self.planets:
+            if planet.positions:
+                d = planet.module*planet.Z+ 2*((planet.positions[0][1])**2+(planet.positions[0][2])**2)**0.5
+                print(planet.positions[0])
+            if d > self.D_train:
+                self.D_train = d
 
 
 
