@@ -725,8 +725,8 @@ class RadialBallBearing(RadialBearing):
     def rolling_contour(self):
 
         p0 = vm.Point2D(0, 0)
-        c1 = vm.Circle2D(p0, self.Dw/2.)
-        return vm.Contour2D([c1])
+        c1 = vm.wires.Circle2D(p0, self.Dw/2.)
+        return vm.wires.Contour2D([c1])
 
     def rolling_contour_cad(self):
         p0 = vm.Point2D(-self.Dw/2., 0)
@@ -756,33 +756,33 @@ class RadialBallBearing(RadialBearing):
         color_surface = plot_data.ColorSurfaceSet(color='white')
 
         be_sup = self.external_ring_contour()
-        be_sup1 = be_sup.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='be_sup', hatching=hatching, stroke_width=stroke_width)
+        be_sup1 = be_sup.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='be_sup', hatching=hatching, stroke_width=stroke_width)
         plot_datas.append(be_sup1.plot_data(plot_data_states=[plot_data_state]))
 
         bi_sup = self.internal_ring_contour()
-        bi_sup1 = bi_sup.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='bi_sup', hatching=hatching, stroke_width=stroke_width)
+        bi_sup1 = bi_sup.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='bi_sup', hatching=hatching, stroke_width=stroke_width)
         plot_datas.append(bi_sup1.plot_data(plot_data_states=[plot_data_state]))
         ball_sup = self.rolling_contour()
-        ball_sup1 = ball_sup.Translation((pos, self.Dpw/2.), True)
-        plot_data_state = plot_data.PlotDataState(name='ball_sup', color_surface=color_surface, stroke_width=stroke_width)
+        ball_sup1 = ball_sup.translation((pos, self.Dpw/2.), True)
+        plot_data_state = plot_data.Settings(name='ball_sup', color_surface=color_surface, stroke_width=stroke_width)
         plot_datas.append(ball_sup1.plot_data(plot_data_states=[plot_data_state]))
 
-        be_inf = be_sup.Rotation(vm.Point2D((0, 0)), math.pi, True)
-        be_inf1 = be_inf.Translation(vm.Vector2D((pos, 0)), True)
-        plot_data_state = plot_data.PlotDataState(name='be_inf', hatching=hatching, stroke_width=stroke_width)
+        be_inf = be_sup.rotation(vm.Point2D(0, 0), math.pi, True)
+        be_inf1 = be_inf.translation(vm.Vector2D(pos, 0), True)
+        plot_data_state = plot_data.Settings(name='be_inf', hatching=hatching, stroke_width=stroke_width)
         plot_datas.append(be_inf1.plot_data(plot_data_states=[plot_data_state]))
-        bi_inf = bi_sup.Rotation(vm.Point2D((0, 0)), math.pi, True)
-        bi_inf1 = bi_inf.Translation(vm.Vector2D((pos, 0)), True)
-        plot_data_state = plot_data.PlotDataState(name='bi_inf', hatching=hatching, stroke_width=stroke_width)
+        bi_inf = bi_sup.rotation(vm.Point2D(0, 0), math.pi, True)
+        bi_inf1 = bi_inf.translation(vm.Vector2D(pos, 0), True)
+        plot_data_state = plot_data.Settings(name='bi_inf', hatching=hatching, stroke_width=stroke_width)
         plot_datas.append(bi_inf1.plot_data(plot_data_states=[plot_data_state]))
-        ball_inf1 = ball_sup1.Rotation(vm.Point2D((pos, 0)), math.pi, True)
-        plot_data_state = plot_data.PlotDataState(name='ball_inf', color_surface=color_surface,
+        ball_inf1 = ball_sup1.rotation(vm.Point2D(pos, 0), math.pi, True)
+        plot_data_state = plot_data.Settings(name='ball_inf', color_surface=color_surface,
                                                   stroke_width=stroke_width)
         plot_datas.append(ball_inf1.plot_data(plot_data_states=[plot_data_state]))
 
-        return plot_datas
+        return plot_data.PrimitiveGroup(plot_datas)
 
     @classmethod
     def graph(cls, list_node, direction=1):
