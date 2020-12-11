@@ -517,14 +517,14 @@ class RadialBearing(DessiaObject):
         plot_data = []
         #internal diameter
         quote_x = 1.1*self.B/2.
-        line1 = vm.LineSegment2D(vm.Point2D((0, self.d/2.)), vm.Point2D((quote_x + delta_quote, self.d/2.)))
-        line1.Translation(vm.Vector2D((pos, 0)))
+        line1 = vm.edges.LineSegment2D(vm.Point2D(0, self.d/2.), vm.Point2D(quote_x + delta_quote, self.d/2.))
+        line1.translation(vm.Vector2D(pos, 0))
         li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True)]
-        line2 = vm.LineSegment2D(vm.Point2D((0, -self.d/2.)), vm.Point2D((quote_x + delta_quote, -self.d/2.)))
-        line2.Translation(vm.Vector2D((pos, 0)))
+        line2 = vm.edges.LineSegment2D(vm.Point2D(0, -self.d/2.), vm.Point2D(quote_x + delta_quote, -self.d/2.))
+        line2.translation(vm.Vector2D(pos, 0))
         li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True))
-        line3 = vm.LineSegment2D(vm.Point2D((quote_x, self.d/2.)), vm.Point2D((quote_x, -self.d/2.)))
-        line3.Translation(vm.Vector2D((pos, 0)))
+        line3 = vm.edges.LineSegment2D(vm.Point2D(quote_x, self.d/2.), vm.Point2D(quote_x, -self.d/2.))
+        line3.translation(vm.Vector2D(pos, 0))
         li_data.append(line3.plot_data(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
 
         pt_data = {}
@@ -540,14 +540,14 @@ class RadialBearing(DessiaObject):
         plot_data.append(pt_data)
         #external diameter
         quote_x = -1.3*self.B/2.
-        line1 = vm.LineSegment2D(vm.Point2D((0, self.D/2.)), vm.Point2D((quote_x - delta_quote, self.D/2.)))
-        line1.Translation(vm.Vector2D((pos, 0)))
+        line1 = vm.edgesLineSegment2D(vm.Point2D(0, self.D/2.), vm.Point2D(quote_x - delta_quote, self.D/2.))
+        line1.translation(vm.Vector2D(pos, 0))
         li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True)]
-        line2 = vm.LineSegment2D(vm.Point2D((0, -self.D/2.)), vm.Point2D((quote_x - delta_quote, -self.D/2.)))
-        line2.Translation(vm.Vector2D((pos, 0)))
+        line2 = vm.edges.LineSegment2D(vm.Point2D(0, -self.D/2.), vm.Point2D(quote_x - delta_quote, -self.D/2.))
+        line2.translation(vm.Vector2D(pos, 0))
         li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True))
-        line3 = vm.LineSegment2D(vm.Point2D((quote_x, self.D/2.)), vm.Point2D((quote_x, -self.D/2.)))
-        line3.Translation(vm.Vector2D((pos, 0)))
+        line3 = vm.edges.LineSegment2D(vm.Point2D(quote_x, self.D/2.), vm.Point2D(quote_x, -self.D/2.))
+        line3.translation(vm.Vector2D(pos, 0))
         li_data.append(line3.plot_data(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
 
         pt_data = {}
@@ -563,14 +563,14 @@ class RadialBearing(DessiaObject):
         plot_data.append(pt_data)
         #width
         quote_x = 1.1*self.B/2.
-        line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., -self.D/2.)), vm.Point2D((-self.B/2., -self.D/2. - quote_x - delta_quote)))
-        line1.Translation(vm.Vector2D((pos, 0)))
+        line1 = vm.edges.LineSegment2D(vm.Point2D(-self.B/2., -self.D/2.), vm.Point2D(-self.B/2., -self.D/2. - quote_x - delta_quote))
+        line1.translation(vm.Vector2D(pos, 0))
         li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True)]
-        line2 = vm.LineSegment2D(vm.Point2D((self.B/2., -self.D/2.)), vm.Point2D((self.B/2., -self.D/2. - quote_x - delta_quote)))
-        line2.Translation(vm.Vector2D((pos, 0)))
+        line2 = vm.edges.LineSegment2D(vm.Point2D(self.B/2., -self.D/2.), vm.Point2D(self.B/2., -self.D/2. - quote_x - delta_quote))
+        line2.translation(vm.Vector2D(pos, 0))
         li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True))
-        line3 = vm.LineSegment2D(vm.Point2D((self.B/2., -self.D/2. - quote_x)), vm.Point2D((-self.B/2., -self.D/2. - quote_x)))
-        line3.Translation(vm.Vector2D((pos, 0)))
+        line3 = vm.edges.LineSegment2D(vm.Point2D(self.B/2., -self.D/2. - quote_x), vm.Point2D(-self.B/2., -self.D/2. - quote_x))
+        line3.translation(vm.Vector2D(pos, 0))
         li_data.append(line3.plot_data(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
 
         pt_data = {}
@@ -742,12 +742,12 @@ class RadialBallBearing(RadialBearing):
         be_sup = self.external_ring_contour()
         bi_sup = self.internal_ring_contour()
         ball_sup = self.rolling_contour()
-        ball_sup.Translation(vm.Vector2D((0, self.Dpw/2.)))
+        ball_sup.translation(vm.Vector2D(0, self.Dpw/2.))
 
-        bearing_sup = vm.Contour2D([be_sup, bi_sup, ball_sup])
-        bearing_inf = bearing_sup.Rotation(vm.Point2D((0, 0)), math.pi, True)
+        bearing_sup = vm.wires.Contour2D([be_sup, bi_sup, ball_sup])
+        bearing_inf = bearing_sup.Rotation(vm.Point2D(0, 0), math.pi, True)
 
-        bg = vm.Contour2D([bearing_sup, bearing_inf])
+        bg = vm.wires.Contour2D([bearing_sup, bearing_inf])
         return bg
 
     def plot_data(self, pos=0, stroke_width=1):
@@ -944,50 +944,50 @@ class AngularBallBearing(RadialBearing):
 
     def internal_ring_contour(self, direction=1, sign_V=1):
 
-        pbi2 = vm.Point2D((direction*self.B/2., sign_V*self.d2/2.))
-        pbi1 = vm.Point2D((direction*(self.B/2. - self.h2), sign_V*(self.Dpw/2. - self.Dw/2.*0.95)))
-        pbi3 = vm.Point2D((direction*self.B/2., sign_V*self.d/2.))
-        pbi4 = vm.Point2D((-direction*self.B/2., sign_V*self.d/2.))
-        pbi5 = vm.Point2D((-direction*self.B/2., sign_V*self.d1/2.))
-        pbi6 = pbi5.Translation(vm.Vector2D((direction*self.h1, 0)))
+        pbi2 = vm.Point2D(direction*self.B/2., sign_V*self.d2/2.)
+        pbi1 = vm.Point2D(direction*(self.B/2. - self.h2), sign_V*(self.Dpw/2. - self.Dw/2.*0.95))
+        pbi3 = vm.Point2D(direction*self.B/2., sign_V*self.d/2.)
+        pbi4 = vm.Point2D(-direction*self.B/2., sign_V*self.d/2.)
+        pbi5 = vm.Point2D(-direction*self.B/2., sign_V*self.d1/2.)
+        pbi6 = pbi5.translation(vm.Vector2D(direction*self.h1, 0))
         bi1 = primitives2d.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1], {1: self.radius,
                                              2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
 
-        cbi1 = vm.Arc2D(pbi1, vm.Point2D((0, sign_V*self.F/2)), pbi6)
+        cbi1 = vm.wires.Arc2D(pbi1, vm.Point2D(0, sign_V*self.F/2), pbi6)
 
-        return vm.Contour2D([cbi1] + bi1.primitives)
+        return vm.wires.Contour2D([cbi1] + bi1.primitives)
 
     def external_ring_contour(self, direction=1, sign_V=1):
 
-        pbe2 = vm.Point2D((direction*self.B/2., sign_V*self.D1/2.))
-        pbe1 = pbe2.Translation(vm.Vector2D((-direction*self.h1, 0)))
-        pbe3 = vm.Point2D((direction*self.B/2., sign_V*self.D/2.))
-        pbe4 = vm.Point2D((-direction*self.B/2., sign_V*self.D/2.))
-        pbe5 = vm.Point2D((-direction*self.B/2., sign_V*self.D2/2.))
-        pbe6 = vm.Point2D((-direction*(self.B/2. - self.h2), sign_V*(self.Dpw/2. + self.Dw/2.*0.95)))
+        pbe2 = vm.Point2D(direction*self.B/2., sign_V*self.D1/2.)
+        pbe1 = pbe2.translation(vm.Vector2D(-direction*self.h1, 0))
+        pbe3 = vm.Point2D(direction*self.B/2., sign_V*self.D/2.)
+        pbe4 = vm.Point2D(-direction*self.B/2., sign_V*self.D/2.)
+        pbe5 = vm.Point2D(-direction*self.B/2., sign_V*self.D2/2.)
+        pbe6 = vm.Point2D(-direction*(self.B/2. - self.h2), sign_V*(self.Dpw/2. + self.Dw/2.*0.95))
         be1 = primitives2d.OpenedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], 
                                                        {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius}, 
                                                        adapt_radius = True)
 
-        cbe1 = vm.Arc2D(pbe6, vm.Point2D((0, sign_V*self.E/2)), pbe1)
-        return vm.Contour2D([cbe1] + be1.primitives)
+        cbe1 = vm.wires.Arc2D(pbe6, vm.Point2D(0, sign_V*self.E/2), pbe1)
+        return vm.wires.Contour2D([cbe1] + be1.primitives)
 
 
     def rolling_contour(self):
 
-        p0 = vm.Point2D((0, 0))
-        c1 = vm.Circle2D(p0, self.Dw/2.)
-        return vm.Contour2D([c1])
+        p0 = vm.Point2D(0, 0)
+        c1 = vm.wires.Circle2D(p0, self.Dw/2.)
+        return vm.wires.Contour2D([c1])
 
     def rolling_contour_cad(self):
 
-        p0 = vm.Point2D((-self.Dw/2., 0))
-        p1 = vm.Point2D((0, self.Dw/2.))
-        p2 = vm.Point2D((self.Dw/2., 0))
-        a1 = vm.Arc2D(p0, p1, p2)
-        l1 = vm.LineSegment2D(p2,p0)
+        p0 = vm.Point2D(-self.Dw/2., 0)
+        p1 = vm.Point2D(0, self.Dw/2.)
+        p2 = vm.Point2D(self.Dw/2., 0)
+        a1 = vm.wires.Arc2D(p0, p1, p2)
+        l1 = vm.edges.LineSegment2D(p2,p0)
 #        c1 = vm.Circle2D(p0, self.Dw/2.)
-        return vm.Contour2D([a1, l1])
+        return vm.wires.Contour2D([a1, l1])
 
     def plot_contour(self, direction=1):
 
@@ -996,33 +996,33 @@ class AngularBallBearing(RadialBearing):
         bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
         bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
         ball = self.rolling_contour()
-        ball_sup = ball.Translation(vm.Vector2D((0, self.Dpw/2.)), True)
-        ball_inf = ball.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
-        bg = vm.Contour2D([be_sup, bi_sup, ball_sup, be_inf, bi_inf, ball_inf])
+        ball_sup = ball.translation(vm.Vector2D(0, self.Dpw/2.), True)
+        ball_inf = ball.translation(vm.Vector2D(0, -self.Dpw/2.), True)
+        bg = vm.wires.Contour2D([be_sup, bi_sup, ball_sup, be_inf, bi_inf, ball_inf])
         return bg
 
     def plot_data(self, pos=0, quote=True, constructor=True, direction=1):
 
         plot_datas = []
         be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
-        be_sup1 = be_sup.Translation((pos, 0), True)
+        be_sup1 = be_sup.translation((pos, 0), True)
         plot_datas.append(be_sup1.plot_data('be_sup'))
         bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
-        bi_sup1 = bi_sup.Translation((pos, 0), True)
+        bi_sup1 = bi_sup.translation((pos, 0), True)
         plot_datas.append(bi_sup1.plot_data('bi_sup'))
         ball = self.rolling_contour()
-        ball_sup = ball.Translation((0, self.Dpw/2.), True)
-        ball_sup1 = ball_sup.Translation((pos, 0), True)
+        ball_sup = ball.translation((0, self.Dpw/2.), True)
+        ball_sup1 = ball_sup.translation((pos, 0), True)
         plot_datas.append(ball_sup1.plot_data('ball_sup', fill = None))
 
         be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
-        be_inf1 = be_inf.Translation((pos, 0), True)
+        be_inf1 = be_inf.translation((pos, 0), True)
         plot_datas.append(be_inf1.plot_data('be_inf'))
         bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
-        bi_inf1 = bi_inf.Translation((pos, 0), True)
+        bi_inf1 = bi_inf.translation((pos, 0), True)
         plot_datas.append(bi_inf1.plot_data('bi_inf'))
-        ball_inf = ball.Translation((0, -self.Dpw/2.), True)
-        ball_inf1 = ball_inf.Translation((pos, 0), True)
+        ball_inf = ball.translation((0, -self.Dpw/2.), True)
+        ball_inf1 = ball_inf.translation((pos, 0), True)
         plot_datas.append(ball_inf1.plot_data('ball_inf', fill = None))
 
 #        if constructor:
@@ -1352,21 +1352,21 @@ class RadialRollerBearing(RadialBearing):
 
     def rolling_contour(self):
 
-        p1 = vm.Point2D((-self.Lw/2.,-self.Dw/2.))
-        p2 = vm.Point2D((-self.Lw/2.,self.Dw/2.))
-        p3 = vm.Point2D((self.Lw/2.,self.Dw/2.))
-        p4 = vm.Point2D((self.Lw/2.,-self.Dw/2.))
+        p1 = vm.Point2D(-self.Lw/2.,-self.Dw/2.)
+        p2 = vm.Point2D(-self.Lw/2.,self.Dw/2.)
+        p3 = vm.Point2D(self.Lw/2.,self.Dw/2.)
+        p4 = vm.Point2D(self.Lw/2.,-self.Dw/2.)
         rol = primitives2d.ClosedRoundedLineSegments2D([p1, p2, p3, p4], {0: self.radius,
                                              1: self.radius, 2: self.radius, 3: self.radius})
-        return vm.Contour2D(rol.primitives)
+        return vm.wires.Contour2D(rol.primitives)
 
     def rolling_contour_cad(self):
-        p1 = vm.Point2D((-self.Lw/2., 0))
-        p2 = vm.Point2D((-self.Lw/2., self.Dw/2.))
-        p3 = vm.Point2D((self.Lw/2., self.Dw/2.))
-        p4 = vm.Point2D((self.Lw/2., 0))
+        p1 = vm.Point2D(-self.Lw/2., 0)
+        p2 = vm.Point2D(-self.Lw/2., self.Dw/2.)
+        p3 = vm.Point2D(self.Lw/2., self.Dw/2.)
+        p4 = vm.Point2D(self.Lw/2., 0)
         rol = primitives2d.ClosedRoundedLineSegments2D([p1, p2, p3, p4], {1: self.radius, 2: self.radius}, True)
-        return vm.Contour2D(rol.primitives)
+        return vm.wires.Contour2D(rol.primitives)
 
 
     def plot_data(self, pos=0, quote=True, constructor=True, direction=1, stroke_width=1):
@@ -1375,39 +1375,39 @@ class RadialRollerBearing(RadialBearing):
 
         plot_datas = []
         be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
-        be_sup1 = be_sup.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='be_sup', hatching=hatching,
+        be_sup1 = be_sup.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='be_sup', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(be_sup1.plot_data(plot_data_states=[plot_data_state]))
 
         be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
-        be_inf1 = be_inf.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='be_inf', hatching=hatching,
+        be_inf1 = be_inf.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='be_inf', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(be_inf1.plot_data(plot_data_states=[plot_data_state]))
 
         bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
-        bi_sup1 = bi_sup.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='bi_sup', hatching=hatching,
+        bi_sup1 = bi_sup.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='bi_sup', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(bi_sup1.plot_data(plot_data_states=[plot_data_state]))
 
         bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
-        bi_inf1 = bi_inf.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='bi_inf', hatching=hatching,
+        bi_inf1 = bi_inf.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='bi_inf', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(bi_inf1.plot_data(plot_data_states=[plot_data_state]))
 
         roller = self.rolling_contour()
-        roller_sup = roller.Translation((0, self.Dpw/2.), True)
-        roller_sup1 = roller_sup.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='roller_sup', hatching=hatching,
+        roller_sup = roller.translation((0, self.Dpw/2.), True)
+        roller_sup1 = roller_sup.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='roller_sup', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(roller_sup1.plot_data(plot_data_states=[plot_data_state]))
 
-        roller_inf = roller.Translation((0, -self.Dpw/2.), True)
-        roller_inf1 = roller_inf.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='roller_inf', hatching=hatching,
+        roller_inf = roller.translation((0, -self.Dpw/2.), True)
+        roller_inf1 = roller_inf.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='roller_inf', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(roller_inf1.plot_data(plot_data_states=[plot_data_state]))
 
@@ -1436,10 +1436,10 @@ class RadialRollerBearing(RadialBearing):
         bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
         bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
         roller = self.rolling_contour()
-        roller_sup = roller.Translation(vm.Vector2D((0, self.Dpw/2.)), True)
-        roller_inf = roller.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
+        roller_sup = roller.translation(vm.Vector2D(0, self.Dpw/2.), True)
+        roller_inf = roller.translation(vm.Vector2D(0, -self.Dpw/2.), True)
 
-        bg = vm.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
+        bg = vm.wires.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
         return bg
 
 #    @classmethod
@@ -1518,40 +1518,40 @@ class NUP(RadialRollerBearing):
     def internal_ring_contour(self, direction=1, sign_V=1):
 
         d1 = self.d1
-        pbi2 = vm.Point2D((-direction*self.B/2., sign_V*d1/2.))
-        pbi1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*d1/2.))
-        pbi0 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-        pbi3 = vm.Point2D((-direction*self.B/2., sign_V*self.d/2.))
-        pbi4 = vm.Point2D((direction*self.B/2., sign_V*self.d/2.))
-        pbi5 = vm.Point2D((direction*self.B/2., sign_V*d1/2.))
-        pbi6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*d1/2.))
-        pbi7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
+        pbi2 = vm.Point2D(-direction*self.B/2., sign_V*d1/2.)
+        pbi1 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*d1/2.)
+        pbi0 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*(self.F/2.))
+        pbi3 = vm.Point2D(-direction*self.B/2., sign_V*self.d/2.)
+        pbi4 = vm.Point2D(direction*self.B/2., sign_V*self.d/2.)
+        pbi5 = vm.Point2D(direction*self.B/2., sign_V*d1/2.)
+        pbi6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*d1/2.)
+        pbi7 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.F/2.))
         irc = primitives2d.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
-        return vm.Contour2D(irc.primitives)
+        return vm.wires.Contour2D(irc.primitives)
 
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
 
         D1 = self.D1
-        pbe2 = vm.Point2D((-direction*self.B/2., sign_V*D1/2.))
-        pbe1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*D1/2.))
-        pbe0 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-        pbe3 = vm.Point2D((-direction*self.B/2., sign_V*self.D/2.))
-        pbe4 = vm.Point2D((direction*self.B/2., sign_V*self.D/2.))
-        pbe5 = vm.Point2D((direction*self.B/2., sign_V*D1/2.))
-        pbe6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*D1/2.))
-        pbe7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
+        pbe2 = vm.Point2D(-direction*self.B/2., sign_V*D1/2.)
+        pbe1 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*D1/2.)
+        pbe0 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*(self.E/2.))
+        pbe3 = vm.Point2D(-direction*self.B/2., sign_V*self.D/2.)
+        pbe4 = vm.Point2D(direction*self.B/2., sign_V*self.D/2.)
+        pbe5 = vm.Point2D(direction*self.B/2., sign_V*D1/2.)
+        pbe6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*D1/2.)
+        pbe7 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.E/2.))
         be1 = primitives2d.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
 
         # erc = vm.Contour2D([be1])
-        return vm.Contour2D(be1.primitives)
+        return vm.wires.Contour2D(be1.primitives)
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1598,37 +1598,37 @@ class N(RadialRollerBearing):
     def internal_ring_contour(self, direction=1, sign_V=1):
 
         d1 = self.d1
-        pbi2 = vm.Point2D((-direction*self.B/2., sign_V*d1/2.))
-        pbi1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*d1/2.))
-        pbi0 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-        pbi3 = vm.Point2D((-direction*self.B/2., sign_V*self.d/2.))
-        pbi4 = vm.Point2D((direction*self.B/2., sign_V*self.d/2.))
-        pbi5 = vm.Point2D((direction*self.B/2., sign_V*d1/2.))
-        pbi6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*d1/2.))
-        pbi7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
+        pbi2 = vm.Point2D(-direction*self.B/2., sign_V*d1/2.)
+        pbi1 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*d1/2.)
+        pbi0 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*(self.F/2.))
+        pbi3 = vm.Point2D(-direction*self.B/2., sign_V*self.d/2.)
+        pbi4 = vm.Point2D(direction*self.B/2., sign_V*self.d/2.)
+        pbi5 = vm.Point2D(direction*self.B/2., sign_V*d1/2.)
+        pbi6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*d1/2.)
+        pbi7 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.F/2.))
         irc = primitives2d.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
-        return vm.Contour2D(irc.primitives)
+        return vm.wires.Contour2D(irc.primitives)
 
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
 
         D1 = self.E + 0.1*(self.D - self.E)
-        pbe2 = vm.Point2D((-direction*self.B/2., sign_V*D1/2.))
-        pbe1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-        pbe3 = vm.Point2D((-direction*self.B/2., sign_V*self.D/2.))
-        pbe4 = vm.Point2D((direction*self.B/2., sign_V*self.D/2.))
-        pbe5 = vm.Point2D((direction*self.B/2., sign_V*D1/2.))
-        pbe6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
+        pbe2 = vm.Point2D(-direction*self.B/2., sign_V*D1/2.)
+        pbe1 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*(self.E/2.))
+        pbe3 = vm.Point2D(-direction*self.B/2., sign_V*self.D/2.)
+        pbe4 = vm.Point2D(direction*self.B/2., sign_V*self.D/2.)
+        pbe5 = vm.Point2D(direction*self.B/2., sign_V*D1/2.)
+        pbe6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.E/2.))
         be1 = primitives2d.ClosedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius,
                            2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
 
 
         # erc = vm.Contour2D([be1])
-        return vm.Contour2D(be1.primitives)
+        return vm.wires.Contour2D(be1.primitives)
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1671,32 +1671,32 @@ class NF(RadialRollerBearing):
     def internal_ring_contour(self, direction=1, sign_V=1):
 
         d1 = self.d1
-        pbi2 = vm.Point2D((-direction*self.B/2., sign_V*d1/2.))
-        pbi1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*d1/2.))
-        pbi0 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-        pbi3 = vm.Point2D((-direction*self.B/2., sign_V*self.d/2.))
-        pbi4 = vm.Point2D((direction*self.B/2., sign_V*self.d/2.))
-        pbi5 = vm.Point2D((direction*self.B/2., sign_V*d1/2.))
-        pbi6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*d1/2.))
-        pbi7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
+        pbi2 = vm.Point2D(-direction*self.B/2., sign_V*d1/2.)
+        pbi1 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*d1/2.)
+        pbi0 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*(self.F/2.))
+        pbi3 = vm.Point2D(-direction*self.B/2., sign_V*self.d/2.)
+        pbi4 = vm.Point2D(direction*self.B/2., sign_V*self.d/2.)
+        pbi5 = vm.Point2D(direction*self.B/2., sign_V*d1/2.)
+        pbi6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*d1/2.)
+        pbi7 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.F/2.))
         irc = primitives2d.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
-        return vm.Contour2D(irc.primitives)
+        return vm.wires.Contour2D(irc.primitives)
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
 
         D1 = self.D1
         D2 = self.E + 0.1*(self.D - self.E)
-        pbe2 = vm.Point2D((-direction*self.B/2., sign_V*D1/2.))
-        pbe1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*D1/2.))
-        pbe0 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-        pbe3 = vm.Point2D((-direction*self.B/2., sign_V*self.D/2.))
-        pbe4 = vm.Point2D((direction*self.B/2., sign_V*self.D/2.))
-        pbe5 = vm.Point2D((direction*self.B/2., sign_V*D2/2.))
-        pbe6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
+        pbe2 = vm.Point2D(-direction*self.B/2., sign_V*D1/2.)
+        pbe1 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*D1/2.)
+        pbe0 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*(self.E/2.))
+        pbe3 = vm.Point2D(-direction*self.B/2., sign_V*self.D/2.)
+        pbe4 = vm.Point2D(direction*self.B/2., sign_V*self.D/2.)
+        pbe5 = vm.Point2D(direction*self.B/2., sign_V*D2/2.)
+        pbe6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.E/2.))
         be1 = primitives2d.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius}, adapt_radius = True)
@@ -1704,7 +1704,7 @@ class NF(RadialRollerBearing):
 
         # erc = vm.Contour2D([be1])
 
-        return vm.Contour2D(be1.primitives)
+        return vm.wires.Contour2D(be1.primitives)
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1751,35 +1751,35 @@ class NU(RadialRollerBearing):
 
     def internal_ring_contour(self, direction=1, sign_V=1):
         d1 = self.F - 0.1*(self.F - self.d)
-        pbi2 = vm.Point2D((-direction*self.B/2., sign_V*d1/2.))
-        pbi1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
-        pbi3 = vm.Point2D((-direction*self.B/2., sign_V*self.d/2.))
-        pbi4 = vm.Point2D((direction*self.B/2., sign_V*self.d/2.))
-        pbi5 = vm.Point2D((direction*self.B/2., sign_V*d1/2.))
-        pbi6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.F/2.)))
+        pbi2 = vm.Point2D(-direction*self.B/2., sign_V*d1/2.)
+        pbi1 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*(self.F/2.))
+        pbi3 = vm.Point2D(-direction*self.B/2., sign_V*self.d/2.)
+        pbi4 = vm.Point2D(direction*self.B/2., sign_V*self.d/2.)
+        pbi5 = vm.Point2D(direction*self.B/2., sign_V*d1/2.)
+        pbi6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.F/2.))
         irc = primitives2d.ClosedRoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius,
                            2: self.radius, 3: self.radius, 4: self.radius},
                            adapt_radius = True)
 
-        return vm.Contour2D(irc.primitives)
+        return vm.wires.Contour2D(irc.primitives)
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
         D1 = self.D1
-        pbe2 = vm.Point2D((-direction*self.B/2., sign_V*D1/2.))
-        pbe1 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*D1/2.))
-        pbe0 = vm.Point2D((-direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
-        pbe3 = vm.Point2D((-direction*self.B/2., sign_V*self.D/2.))
-        pbe4 = vm.Point2D((direction*self.B/2., sign_V*self.D/2.))
-        pbe5 = vm.Point2D((direction*self.B/2., sign_V*D1/2.))
-        pbe6 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*D1/2.))
-        pbe7 = vm.Point2D((direction*(self.B/2. - self.h), sign_V*(self.E/2.)))
+        pbe2 = vm.Point2D(-direction*self.B/2., sign_V*D1/2.)
+        pbe1 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*D1/2.)
+        pbe0 = vm.Point2D(-direction*(self.B/2. - self.h), sign_V*(self.E/2.))
+        pbe3 = vm.Point2D(-direction*self.B/2., sign_V*self.D/2.)
+        pbe4 = vm.Point2D(direction*self.B/2., sign_V*self.D/2.)
+        pbe5 = vm.Point2D(direction*self.B/2., sign_V*D1/2.)
+        pbe6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*D1/2.)
+        pbe7 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.E/2.))
         be1 = primitives2d.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius=True)
         # erc = vm.Contour2D([be1])
 
-        return vm.Contour2D(be1.primitives)
+        return vm.wires.Contour2D(be1.primitives)
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1834,28 +1834,28 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         shift_bi = 5e-4
 #        shift_be = 1e-3
 
-        p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
-        p1 = p0.Translation((math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha)), True)
-        l1 = vm.Line2D(p0, p1)
-        l1.Rotation(p0, direction*sign_V*self.beta)
-        l1.Translation((-0.8*direction*self.Dw/2.*math.sin(self.alpha), -sign_V*0.8*self.Dw/2.*math.cos(self.alpha)))
-        l2 = l1.Translation((-0.2*direction*self.Dw/2.*math.sin(self.alpha), -sign_V*0.2*self.Dw/2.*math.cos(self.alpha)), True)
-        pbi3 = vm.Point2D((direction*(self.B/2. - shift_bi), sign_V*self.d/2.))
-        pbi3T = pbi3.Translation((0, 1))
-        pbi4 = vm.Point2D((-direction*(self.B/2.), sign_V*self.d/2.))
-        pbi4T = pbi4.Translation((0, 1))
-        l3 = vm.Line2D(pbi3, pbi3T)
-        l4 = vm.Line2D(pbi4, pbi4T)
-        pbi2 = vm.Point2D.LinesIntersection(l1, l3)
-        pbi5 = vm.Point2D.LinesIntersection(l1, l4)
-        l5 = vm.Line2D(vm.Point2D((direction*self.Lw/2.,0)), vm.Point2D((direction*self.Lw/2.,1)))
-        l5.Rotation(vm.Point2D((0,sign_V*self.Dpw/2.)), -sign_V*direction*self.alpha)
-        l6 = vm.Line2D(vm.Point2D((-direction*self.Lw/2.,0)), vm.Point2D((-direction*self.Lw/2.,1)))
-        l6.Rotation(vm.Point2D((0,sign_V*self.Dpw/2.)),-sign_V*direction*self.alpha)
-        pbi1 = vm.Point2D.LinesIntersection(l1, l5)
-        pbi0 = vm.Point2D.LinesIntersection(l2, l5)
-        pbi6 = vm.Point2D.LinesIntersection(l1, l6)
-        pbi7 = vm.Point2D.LinesIntersection(l2, l6)
+        p0 = vm.Point2D(0, sign_V*self.Dpw/2.)
+        p1 = p0.translation((math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha)), True)
+        l1 = vm.edges.Line2D(p0, p1)
+        l1.rotation(p0, direction*sign_V*self.beta)
+        l1.translation((-0.8*direction*self.Dw/2.*math.sin(self.alpha), -sign_V*0.8*self.Dw/2.*math.cos(self.alpha)))
+        l2 = l1.translation((-0.2*direction*self.Dw/2.*math.sin(self.alpha), -sign_V*0.2*self.Dw/2.*math.cos(self.alpha)), True)
+        pbi3 = vm.Point2D(direction*(self.B/2. - shift_bi), sign_V*self.d/2.)
+        pbi3T = pbi3.translation((0, 1))
+        pbi4 = vm.Point2D(-direction*(self.B/2.), sign_V*self.d/2.)
+        pbi4T = pbi4.translation((0, 1))
+        l3 = vm.edges.Line2D(pbi3, pbi3T)
+        l4 = vm.edges.Line2D(pbi4, pbi4T)
+        pbi2 = vm.Point2D.line_intersection(l1, l3)
+        pbi5 = vm.Point2D.line_intersection(l1, l4)
+        l5 = vm.edges.Line2D(vm.Point2D(direction*self.Lw/2.,0), vm.Point2D(direction*self.Lw/2.,1))
+        l5.rotation(vm.Point2D(0,sign_V*self.Dpw/2.), -sign_V*direction*self.alpha)
+        l6 = vm.edges.Line2D(vm.Point2D(-direction*self.Lw/2.,0), vm.Point2D(-direction*self.Lw/2.,1))
+        l6.rotation(vm.Point2D(0,sign_V*self.Dpw/2.),-sign_V*direction*self.alpha)
+        pbi1 = vm.Point2D.line_intersection(l1, l5)
+        pbi0 = vm.Point2D.line_intersection(l2, l5)
+        pbi6 = vm.Point2D.line_intersection(l1, l6)
+        pbi7 = vm.Point2D.line_intersection(l2, l6)
 
         bi1 = primitives2d.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                                                  {1: self.radius, 2: self.radius, 3: self.radius,
@@ -1864,26 +1864,26 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 
         # irc = vm.Contour2D([bi1])
 # 
-        return vm.Contour2D(bi1.primitives)
+        return vm.wires.Contour2D(bi1.primitives)
 
     def external_ring_contour(self, direction=1, sign_V=1):
 
 #        shift_bi = 5e-4
         shift_be = 1e-3
 
-        p0 = vm.Point2D((0, sign_V*self.Dpw/2.))
-        p1 = p0.Translation(vm.Vector2D((math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha))), True)
-        l0 = vm.Line2D(p0, p1)
-        l0.Rotation(p0, -direction*sign_V*self.beta)
-        l0.Translation(vm.Vector2D((direction*self.Dw/2.*math.sin(self.alpha), sign_V*self.Dw/2.*math.cos(self.alpha))))
-        pbe3 = vm.Point2D((direction*self.B/2., sign_V*self.D/2.))
-        pbe3T = pbe3.Translation(vm.Vector2D((0, 1)))
-        pbe4 = vm.Point2D((-direction*(self.B/2. - shift_be), sign_V*self.D/2.))
-        pbe4T = pbe4.Translation(vm.Vector2D((0, 1)))
-        l3 = vm.Line2D(pbe3, pbe3T)
-        l4 = vm.Line2D(pbe4, pbe4T)
-        pbe2 = vm.Point2D.LinesIntersection(l0, l3)
-        pbe5 = vm.Point2D.LinesIntersection(l0, l4)
+        p0 = vm.Point2D(0, sign_V*self.Dpw/2.)
+        p1 = p0.translation(vm.Vector2D(math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha)), True)
+        l0 = vm.edges.Line2D(p0, p1)
+        l0.rotation(p0, -direction*sign_V*self.beta)
+        l0.translation(vm.Vector2D(direction*self.Dw/2.*math.sin(self.alpha), sign_V*self.Dw/2.*math.cos(self.alpha)))
+        pbe3 = vm.Point2D(direction*self.B/2., sign_V*self.D/2.)
+        pbe3T = pbe3.translation(vm.Vector2D(0, 1))
+        pbe4 = vm.Point2D(-direction*(self.B/2. - shift_be), sign_V*self.D/2.)
+        pbe4T = pbe4.translation(vm.Vector2D(0, 1))
+        l3 = vm.edges.Line2D(pbe3, pbe3T)
+        l4 = vm.edges.Line2D(pbe4, pbe4T)
+        pbe2 = vm.Point2D.line_intersection(l0, l3)
+        pbe5 = vm.Point2D.line_intersection(l0, l4)
         be1 = primitives2d.ClosedRoundedLineSegments2D([pbe2, pbe3, pbe4, pbe5],
                                                        {0: self.radius,
                                                         1: self.radius,
@@ -1891,7 +1891,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                                                         3: self.radius},
                                                         adapt_radius=True)
 
-        return vm.Contour2D(be1.primitives)
+        return vm.wires.Contour2D(be1.primitives)
 
     def volmdlr_primitives(self, center = vm.O3D, axis = vm.X3D):
         axis.Normalize()
@@ -1919,15 +1919,15 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 
     def rolling_contour(self, direction=1, sign_V=1):
 
-        r1 = vm.Point2D((--direction*self.Lw/2., self.Dw/2. - self.Lw/2.*math.tan(self.beta)))
-        r2 = vm.Point2D((-direction*self.Lw/2., self.Dw/2. + self.Lw/2.*math.tan(self.beta)))
-        r3 = vm.Point2D((-direction*self.Lw/2., -self.Dw/2. - self.Lw/2.*math.tan(self.beta)))
-        r4 = vm.Point2D((--direction*self.Lw/2., -self.Dw/2. + self.Lw/2.*math.tan(self.beta)))
+        r1 = vm.Point2D(--direction*self.Lw/2., self.Dw/2. - self.Lw/2.*math.tan(self.beta))
+        r2 = vm.Point2D(-direction*self.Lw/2., self.Dw/2. + self.Lw/2.*math.tan(self.beta))
+        r3 = vm.Point2D(-direction*self.Lw/2., -self.Dw/2. - self.Lw/2.*math.tan(self.beta))
+        r4 = vm.Point2D(--direction*self.Lw/2., -self.Dw/2. + self.Lw/2.*math.tan(self.beta))
         rol = primitives2d.ClosedRoundedLineSegments2D([r1, r2, r3, r4], {0: self.radius,
                                              1: self.radius, 2: self.radius, 3: self.radius})
 
 #        bg = vm.Contour2D([rol])
-        return vm.Contour2D(rol.primitives)
+        return vm.wires.Contour2D(rol.primitives)
 
     def plot_data(self, pos=0, direction=1, quote=True, constructor=True, stroke_width=1):
         hatching = plot_data.HatchingSet(0.5, 3)
@@ -1935,42 +1935,42 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 
         plot_datas = []
         be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
-        be_sup1 = be_sup.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='be_sup', hatching=hatching,
+        be_sup1 = be_sup.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='be_sup', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(be_sup1.plot_data(plot_data_states=[plot_data_state]))
 
         be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
-        be_inf1 = be_inf.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='be_inf', hatching=hatching,
+        be_inf1 = be_inf.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='be_inf', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(be_inf1.plot_data(plot_data_states=[plot_data_state]))
 
         bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
-        bi_sup1 = bi_sup.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='bi_sup', hatching=hatching,
+        bi_sup1 = bi_sup.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='bi_sup', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(bi_sup1.plot_data(plot_data_states=[plot_data_state]))
 
         bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
-        bi_inf1 = bi_inf.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='bi_inf', hatching=hatching,
+        bi_inf1 = bi_inf.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='bi_inf', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(bi_inf1.plot_data(plot_data_states=[plot_data_state]))
 #
         roller_sup = self.rolling_contour(direction = direction, sign_V = 1)
-        roller_sup = roller_sup.Rotation(vm.Point2D((0, 0)), -direction*self.alpha, True)
-        roller_sup = roller_sup.Translation((0, self.Dpw/2.), True)
-        roller_sup1 = roller_sup.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='roller_sup', hatching=hatching,
+        roller_sup = roller_sup.rotation(vm.Point2D(0, 0), -direction*self.alpha, True)
+        roller_sup = roller_sup.translation((0, self.Dpw/2.), True)
+        roller_sup1 = roller_sup.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='roller_sup', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(roller_sup1.plot_data(plot_data_states=[plot_data_state]))
 
         roller_inf = self.rolling_contour(direction = direction, sign_V = -1)
-        roller_inf = roller_inf.Rotation(vm.Point2D((0, 0)), direction*self.alpha, True)
-        roller_inf = roller_inf.Translation((0, -self.Dpw/2.), True)
-        roller_inf1 = roller_inf.Translation((pos, 0), True)
-        plot_data_state = plot_data.PlotDataState(name='roller_inf', hatching=hatching,
+        roller_inf = roller_inf.rotation(vm.Point2D(0, 0), direction*self.alpha, True)
+        roller_inf = roller_inf.translation((0, -self.Dpw/2.), True)
+        roller_inf1 = roller_inf.translation((pos, 0), True)
+        plot_data_state = plot_data.Settings(name='roller_inf', hatching=hatching,
                                                   stroke_width=stroke_width)
         plot_datas.append(roller_inf1.plot_data(plot_data_states=[plot_data_state]))
         
@@ -2000,13 +2000,13 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
         bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
         roller_sup = self.rolling_contour(direction = direction, sign_V = 1)
-        roller_sup = roller_sup.Rotation(vm.Point2D((0, 0)), -direction*self.alpha, True)
-        roller_sup = roller_sup.Translation(vm.Vector2D((0, self.Dpw/2.)), True)
+        roller_sup = roller_sup.rotation(vm.Point2D(0, 0), -direction*self.alpha, True)
+        roller_sup = roller_sup.translation(vm.Vector2D(0, self.Dpw/2.), True)
         roller_inf = self.rolling_contour(direction = direction, sign_V = -1)
-        roller_inf = roller_inf.Rotation(vm.Point2D((0, 0)), direction*self.alpha, True)
-        roller_inf = roller_inf.Translation(vm.Vector2D((0, -self.Dpw/2.)), True)
+        roller_inf = roller_inf.rotation(vm.Point2D(0, 0), direction*self.alpha, True)
+        roller_inf = roller_inf.translation(vm.Vector2D(0, -self.Dpw/2.), True)
 
-        bg = vm.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
+        bg = vm.wires.Contour2D([be_sup, bi_sup, roller_sup, be_inf, bi_inf, roller_inf])
         return bg
 
 #    @classmethod
@@ -2645,10 +2645,10 @@ class BearingCombination(DessiaObject):
             pos_m = -self.B/2.
             for bg in gp:
                 graph = bg.PlotGraph()
-                graph = graph.Translation((pos_m + bg.B/2., 0), True)
+                graph = graph.translation((pos_m + bg.B/2., 0), True)
                 pos_m += bg.B
                 list_graph.append(graph)
-            list_graph = vm.Contour2D(list_graph)
+            list_graph = vm.wires.Contour2D(list_graph)
     #        list_graph = list_graph.Translation((pos, 0), True)
             f,a = list_graph.MPLPlot(color='b',arrow= True)
 
@@ -2670,12 +2670,12 @@ class BearingCombination(DessiaObject):
             Dg = Dg - ep
         if self.connection_be.right:
             Dd = Dd -ep
-        be = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D((-B/2., sign*D/2.)), vm.Point2D((-B/2., sign*Dg/2.)),
-                           vm.Point2D((-B/2. - ep, sign*Dg/2.)), vm.Point2D((-B/2. - ep, sign*De/2.)),
-                           vm.Point2D((B/2. + ep, sign*De/2.)), vm.Point2D((B/2. + ep, sign*Dd/2.)),
-                           vm.Point2D((B/2., sign*Dd/2.)), vm.Point2D((B/2., sign*D/2.)),
-                           vm.Point2D((-B/2., sign*D/2.))], {})
-        return vm.Contour2D(be.primitives)
+        be = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D(-B/2., sign*D/2.), vm.Point2D(-B/2., sign*Dg/2.),
+                           vm.Point2D(-B/2. - ep, sign*Dg/2.), vm.Point2D(-B/2. - ep, sign*De/2.),
+                           vm.Point2D(B/2. + ep, sign*De/2.), vm.Point2D(B/2. + ep, sign*Dd/2.),
+                           vm.Point2D(B/2., sign*Dd/2.), vm.Point2D(B/2., sign*D/2.),
+                           vm.Point2D(-B/2., sign*D/2.)], {})
+        return vm.wires.Contour2D(be.primitives)
 
     def internal_bearing(self, sign=1):
         B = self.B
@@ -2688,20 +2688,20 @@ class BearingCombination(DessiaObject):
             dg = dg + ep
         if self.connection_bi.right:
             dd = dd + ep
-        bi = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D((-B/2., sign*d/2.)), vm.Point2D((-B/2., sign*dg/2.)),
-                           vm.Point2D((-B/2. - ep, sign*dg/2.)), vm.Point2D((-B/2. - ep, sign*di/2.)),
-                           vm.Point2D((B/2. + ep, sign*di/2.)), vm.Point2D((B/2. + ep, sign*dd/2.)),
-                           vm.Point2D((B/2., sign*dd/2.)), vm.Point2D((B/2., sign*d/2.)),
-                           vm.Point2D((-B/2., sign*d/2.))], {})
-        return vm.Contour2D(bi.primitives)
+        bi = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D(-B/2., sign*d/2.), vm.Point2D(-B/2., sign*dg/2.),
+                           vm.Point2D(-B/2. - ep, sign*dg/2.), vm.Point2D(-B/2. - ep, sign*di/2.),
+                           vm.Point2D(B/2. + ep, sign*di/2.), vm.Point2D(B/2. + ep, sign*dd/2.),
+                           vm.Point2D(B/2., sign*dd/2.), vm.Point2D(B/2., sign*d/2.),
+                           vm.Point2D(-B/2., sign*d/2.)], {})
+        return vm.wires.Contour2D(bi.primitives)
 
     def bearing_box(self, sign=1):
-        box = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D((self.axial_positions, sign*self.internal_diameters/2.)),
-                      vm.Point2D((self.axial_positions, sign*self.external_diameters/2.)),
-                      vm.Point2D((self.axial_positions + self.length, sign*self.external_diameters/2.)),
-                      vm.Point2D((self.axial_positions + self.length, sign*self.internal_diameters/2.)),
-                      vm.Point2D((self.axial_positions, sign*self.internal_diameters/2.))], {})
-        return vm.Contour2D(box.primitives)
+        box = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D(self.axial_positions, sign*self.internal_diameters/2.),
+                      vm.Point2D(self.axial_positions, sign*self.external_diameters/2.),
+                      vm.Point2D(self.axial_positions + self.length, sign*self.external_diameters/2.),
+                      vm.Point2D(self.axial_positions + self.length, sign*self.internal_diameters/2.),
+                      vm.Point2D(self.axial_positions, sign*self.internal_diameters/2.)], {})
+        return vm.wires.Contour2D(box.primitives)
 
     def plot_data(self, pos=0, box=False, typ=None, bearing_combination_result=None, quote=False, constructor=True):
 
@@ -2711,27 +2711,27 @@ class BearingCombination(DessiaObject):
         export_data = []
 
         if box:
-            box_sup = self.bearing_box(1).Translation(vm.Vector2D((pos, 0)), True)
-            plot_data_state = plot_data.PlotDataState(name='box_sup', stroke_width=stroke_width, color_line=color_line)
+            box_sup = self.bearing_box(1).translation(vm.Vector2D(pos, 0), True)
+            plot_data_state = plot_data.Settings(name='box_sup', stroke_width=stroke_width, color_line=color_line)
             export_data.append(box_sup.plot_data(plot_data_states=[plot_data_state]))
             # export_data.append(box_sup.plot_data('box_sup', fill = 'none', color='red', stroke_width = 0.3, opacity = 0.3))
-            box_inf = self.bearing_box(-1).Translation(vm.Vector2D((pos, 0)), True)
-            plot_data_state = plot_data.PlotDataState(name='box_inf', stroke_width=stroke_width, color_line=color_line)
+            box_inf = self.bearing_box(-1).translation(vm.Vector2D(pos, 0), True)
+            plot_data_state = plot_data.Settings(name='box_inf', stroke_width=stroke_width, color_line=color_line)
             export_data.append(box_inf.plot_data(plot_data_states=[plot_data_state]))
             # export_data.append(box_inf.plot_data('box_inf', fill = 'none', color = 'red', stroke_width = 0.3, opacity = 0.3))
 
 
-        plot_data_state = plot_data.PlotDataState(name='be_sup', stroke_width=stroke_width)
-        be_sup = self.external_bearing(sign = 1).Translation(vm.Vector2D((pos, 0)), True)
+        plot_data_state = plot_data.Settings(name='be_sup', stroke_width=stroke_width)
+        be_sup = self.external_bearing(sign = 1).translation(vm.Vector2D(pos, 0), True)
         export_data.append(be_sup.plot_data(plot_data_states=[plot_data_state]))
-        be_inf = self.external_bearing(sign = -1).Translation(vm.Vector2D((pos, 0)), True)
-        plot_data_state = plot_data.PlotDataState(name='be_inf', stroke_width=stroke_width)
+        be_inf = self.external_bearing(sign = -1).translation(vm.Vector2D(pos, 0), True)
+        plot_data_state = plot_data.Settings(name='be_inf', stroke_width=stroke_width)
         export_data.append(be_inf.plot_data(plot_data_states=[plot_data_state]))
-        bi_sup = self.internal_bearing(sign = 1).Translation(vm.Vector2D((pos, 0)), True)
-        plot_data_state = plot_data.PlotDataState(name='bi_sup', stroke_width=stroke_width)
+        bi_sup = self.internal_bearing(sign = 1).translation(vm.Vector2D(pos, 0), True)
+        plot_data_state = plot_data.Settings(name='bi_sup', stroke_width=stroke_width)
         export_data.append(bi_sup.plot_data(plot_data_states=[plot_data_state]))
-        bi_inf = self.internal_bearing(sign = -1).Translation(vm.Vector2D((pos, 0)), True)
-        plot_data_state = plot_data.PlotDataState(name='bi_inf', stroke_width=stroke_width)
+        bi_inf = self.internal_bearing(sign = -1).translation(vm.Vector2D(pos, 0), True)
+        plot_data_state = plot_data.Settings(name='bi_inf', stroke_width=stroke_width)
         export_data.append(bi_inf.plot_data(plot_data_states=[plot_data_state]))
 
 #        contour = []
@@ -2768,18 +2768,18 @@ class BearingCombination(DessiaObject):
         bi_sup = self.internal_bearing(sign = 1)
         bi_inf = self.internal_bearing(sign = -1)
         contour = [be_sup, be_inf, bi_sup, bi_inf]
-        linkage_area = vm.Contour2D(contour)
-        linkage_area = linkage_area.Translation(vm.Vector2D((pos, 0)), True)
+        linkage_area = vm.wires.Contour2D(contour)
+        linkage_area = linkage_area.Translation(vm.Vector2D(pos, 0), True)
 
         contour = []
         pos_m = -self.B/2.
         for bg, di in zip(self.bearings, self.directions):
             cont = bg.plot_contour(direction = di)
-            cont = cont.Translation(vm.Vector2D((pos_m + bg.B/2., 0)), True)
+            cont = cont.translation(vm.Vector2D(pos_m + bg.B/2., 0), True)
             pos_m += bg.B
             contour.append(cont)
-        assembly_bg = vm.Contour2D(contour)
-        assembly_bg = assembly_bg.Translation(vm.Vector2D((pos, 0)), True)
+        assembly_bg = vm.wires.Contour2D(contour)
+        assembly_bg = assembly_bg.translation(vm.Vector2D(pos, 0), True)
 
         return linkage_area, assembly_bg
 
@@ -3020,8 +3020,8 @@ class BearingCombination(DessiaObject):
             #     graph = graph.Translation(vm.Vector2D((pos_m + bg_ref.B/2., 0)), True)
             #     pos_m += bg_ref.B
             #     list_graph.append(graph)
-            list_graph = vm.Contour2D(list_graph)
-            list_graph = list_graph.Translation(vm.Vector2D((pos, 0)), True)
+            list_graph = vm.wires.Contour2D(list_graph)
+            list_graph = list_graph.translation(vm.Vector2D(pos, 0), True)
             list_graph.MPLPlot(a, 'b', True)
 
         elif typ == 'Load':
@@ -3044,8 +3044,8 @@ class BearingCombination(DessiaObject):
             box_sup = self.bearing_box(1)
             box_inf = self.bearing_box(-1)
             cont_box = [box_sup, box_inf]
-            contour_box = vm.Contour2D(cont_box)
-            contour_box = contour_box.Translation(vm.Vector2D((pos, 0)), True)
+            contour_box = vm.wires.Contour2D(cont_box)
+            contour_box = contour_box.translation(vm.Vector2D(pos, 0), True)
             contour_box.MPLPlot(a, color='r')
 
 
@@ -3198,7 +3198,7 @@ class BearingAssembly(DessiaObject):
             mass += li_bg.mass
         if self.axial_positions is not None:
             poly2d = self.shaft()
-            mass += poly2d.Area()
+            mass += poly2d.area()
         return mass
     
     @property
@@ -3214,15 +3214,15 @@ class BearingAssembly(DessiaObject):
         B1 = self.bearing_combinations[0].B
         B2 = self.bearing_combinations[1].B
         pos_mid = (self.axial_positions[0] + self.axial_positions[1])/2.
-        shaft = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.)),
-                      vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.)),
-                      vm.Point2D((pos_mid, d1/2.)),
-                      vm.Point2D((pos_mid, d2/2.)),
-                      vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, d2/2.)),
-                      vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, -d2/2.)),
-                      vm.Point2D((pos_mid, -d2/2.)),
-                      vm.Point2D((pos_mid, -d1/2.)),
-                      vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.))],
+        shaft = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, -d1/2.),
+                      vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, d1/2.),
+                      vm.Point2D(pos_mid, d1/2.),
+                      vm.Point2D(pos_mid, d2/2.),
+                      vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, d2/2.),
+                      vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, -d2/2.),
+                      vm.Point2D(pos_mid, -d2/2.),
+                      vm.Point2D(pos_mid, -d1/2.),
+                      vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, -d1/2.)],
                                                  {}, adapt_radius=False)
         # shaft = vm.Polygon2D([vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.)),
         #               vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.)),
@@ -3233,7 +3233,7 @@ class BearingAssembly(DessiaObject):
         #               vm.Point2D((pos_mid, -d2/2.)),
         #               vm.Point2D((pos_mid, -d1/2.)),
         #               vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.))])
-        return vm.Contour2D(shaft.primitives)
+        return vm.wires.Contour2D(shaft.primitives)
     
     def cad_shaft(self, center = vm.O3D, axis = vm.X3D):
         # TODO: mutualization of this in parent class?
@@ -3249,26 +3249,26 @@ class BearingAssembly(DessiaObject):
         B2 = self.bearing_combinations[1].B
         pos_mid = (self.axial_positions[0] + self.axial_positions[1])/2.
         if d1 == d2:
-            p1 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, 0))
-            p2 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.))
-            p3 = vm.Point2D((pos_mid, d1/2.))
-            p5 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, d2/2.))
-            p6 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, 0))
+            p1 = vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, 0)
+            p2 = vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, d1/2.)
+            p3 = vm.Point2D(pos_mid, d1/2.)
+            p5 = vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, d2/2.)
+            p6 = vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, 0)
             shaft = primitives2d.OpenedRoundedLineSegments2D([p6, p5, p3, p2, p1],
                                                      {},
                                                       adapt_radius=True)
         else:
-            p1 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, 0))
-            p2 = vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.))
-            p3 = vm.Point2D((pos_mid, d1/2.))
-            p4 = vm.Point2D((pos_mid, d2/2.))
-            p5 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, d2/2.))
-            p6 = vm.Point2D((self.axial_positions[1] + B2/2. + 5e-3, 0))
+            p1 = vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, 0)
+            p2 = vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, d1/2.)
+            p3 = vm.Point2D(pos_mid, d1/2.)
+            p4 = vm.Point2D(pos_mid, d2/2.)
+            p5 = vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, d2/2.)
+            p6 = vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, 0)
             shaft = primitives2d.OpenedRoundedLineSegments2D([p6, p5, p4, p3, p2, p1],
                                                      {},
                                                       adapt_radius=True)
-        l1 = vm.LineSegment2D(p1,p6)
-        shaft_cont = vm.Contour2D(shaft.primitives + [l1])
+        l1 = vm.edges.LineSegment2D(p1,p6)
+        shaft_cont = vm.wires.Contour2D(shaft.primitives + [l1])
         
         irc = primitives3d.RevolvedProfile(center, axis, z, shaft_cont, center,
                                          axis, angle=2*math.pi, color=[204/255, 12/255, 12/255], name='Shaft')
@@ -3281,14 +3281,14 @@ class BearingAssembly(DessiaObject):
         stroke_width = 1
 
         shaft = self.shaft()
-        contour_shaft = vm.Contour2D(shaft.primitives)
-        plot_data_state = plot_data.PlotDataState(name='contour_shaft', stroke_width=stroke_width)
+        contour_shaft = vm.wires.Contour2D(shaft.primitives)
+        plot_data_state = plot_data.Settings(name='contour_shaft', stroke_width=stroke_width)
         export_data = [contour_shaft.plot_data(plot_data_states=[plot_data_state])]
 
 
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
             export_data.extend(assembly_bg.plot_data(pos, box, quote = False, constructor = constructor))
-        return export_data
+        return plot_data.PrimitiveGroup(export_data)
 
     def plot(self, box=True, typ=None, ind_load_case=0):
 
