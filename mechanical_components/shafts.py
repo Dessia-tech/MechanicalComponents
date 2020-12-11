@@ -19,7 +19,7 @@ Created on Mon Mar 11 10:36:08 2019
 from dessia_common.core import DessiaObject
 
 import volmdlr as vm
-import volmdlr.primitives2D
+import volmdlr.primitives2d
 #import volmdlr.primitives3D as vm3d
 from itertools import chain
 
@@ -79,12 +79,12 @@ class FunctionalAccessories(DessiaObject):
         linkage_contours = []
         for accessory in self.accessories:
             if accessory.montage == 'axial' or accessory.montage == 'radial':
-                functional_contours.append(vm.Contour2D([vm.primitives2D.RoundedLineSegments2D(accessory.functional_points, {})]))   
+                functional_contours.append(vm.Contour2D([vm.primitives2d.RoundedLineSegments2D(accessory.functional_points, {})]))   
                 print(accessory.linkage_points)
                 if accessory.linkage_points != None:
-                    linkage_contours.append(vm.Contour2D([vm.primitives2D.RoundedLineSegments2D(accessory.linkage_points, {})]))
+                    linkage_contours.append(vm.Contour2D([vm.primitives2d.RoundedLineSegments2D(accessory.linkage_points, {})]))
             if accessory.montage == 'inbuilt':
-                functional_contours_inbuilt.append(vm.Contour2D([vm.primitives2D.RoundedLineSegments2D(accessory.functional_points, {})]))
+                functional_contours_inbuilt.append(vm.Contour2D([vm.primitives2d.RoundedLineSegments2D(accessory.functional_points, {})]))
         return functional_contours, functional_contours_inbuilt, linkage_contours
     
         
@@ -151,7 +151,7 @@ class Shaft(DessiaObject):
 #        points_sup.reverse()
         points = points_inf + points_sup + [points_inf[0]]
         
-        line = vm.primitives2D.RoundedLineSegments2D(points, {})
+        line = vm.primitives2d.RoundedLineSegments2D(points, {})
         contour = vm.Contour2D([line])
         return contour
 

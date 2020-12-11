@@ -7,8 +7,8 @@
 from dessia_common.core import DessiaObject
 
 import volmdlr as vm
-import volmdlr.primitives2D as primitives2D
-import volmdlr.primitives3D as primitives3D
+import volmdlr.primitives2d as primitives2d
+import volmdlr.primitives3d as primitives3d
 #import matplotlib.pyplot as plt
 
 class Section(DessiaObject):
@@ -38,7 +38,7 @@ class ISection(Section):
         p11 = vm.Point2D((-0.5*self.tw, -0.5*self.h+self.tf))
         p12 = vm.Point2D((-0.5*self.b, -0.5*self.h+self.tf))
 
-        rl = primitives2D.ClosedRoundedLineSegments2D([p1, p2, p3, p4, p5, p6, p7, p8,
+        rl = primitives2d.ClosedRoundedLineSegments2D([p1, p2, p3, p4, p5, p6, p7, p8,
                                                        p9, p10, p11, p12],
                                                       radius={3: self.r, 4: self.r,
                                                               9: self.r, 10: self.r})
@@ -86,7 +86,7 @@ class Beam(DessiaObject):
         """
         z = x.Cross(y)
         c = self.section.contour()
-        return [primitives3D.ExtrudedProfile(position-0.5*self.length*z, x, y, c, [], z*self.length)]
+        return [primitives3d.ExtrudedProfile(position-0.5*self.length*z, x, y, c, [], z*self.length)]
         
 #beam = Beam(ipe_120, 2.56)
 #beam.cad_volumes()

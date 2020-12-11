@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
 import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
+import volmdlr.primitives3d as primitives3d
+import volmdlr.primitives2d as primitives2d
 
 import pandas as pd
 from pandas.plotting import scatter_matrix
@@ -230,7 +230,7 @@ class Spring(DessiaObject):
         p = l/self.n
         
         primitives = []
-        volume = primitives3D.HelicalExtrudedProfile(position, x, z, position,
+        volume = primitives3d.HelicalExtrudedProfile(position, x, z, position,
                                                      l*z, p, self.contour, name = 'spring')
         primitives.append(volume)
         
