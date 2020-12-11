@@ -3,8 +3,9 @@ name: default
 
 steps:
 - name: install, doc and script running
-  image: python:3
+  image: python:3.8
   commands:
+  - pip install Cython
   - git fetch --tags
   - python setup.py install
   - pip install sphinx sphinx_rtd_theme
@@ -17,12 +18,12 @@ steps:
   # - python scripts/bearings/workflow_combination_bearing_test.py
 
 - name: develop
-  image: python:3
+  image: python:3.8
   commands:
   - python setup.py develop
 
 - name: sdist
-  image: python:3
+  image: python:3.8
   commands:
   - python setup.py sdist
 
