@@ -16,8 +16,8 @@ npy.seterr(divide='raise', over='ignore', under='ignore')
 from scipy import interpolate
 #import os
 import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
+import volmdlr.primitives3d as primitives3D
+import volmdlr.primitives2d as primitives2D
 import math
 from dessia_common import DessiaObject, dict_merge, Evolution
 from mechanical_components import shafts_assembly
@@ -3007,7 +3007,7 @@ class BearingCombination(DessiaObject):
 
 
 
-    def volume_model(self, center = vm.Point3D((0,0,0)), axis = vm.Vector3D((1,0,0))):
+    def volume_model(self, center = vm.Point3D(0,0,0), axis = vm.Vector3D(1,0,0)):
         groups = []
 #        position = self.axial_positions
         center_bearing = center+0.5*(self.bearings[0].B -self.B)*axis

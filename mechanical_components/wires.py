@@ -7,7 +7,7 @@ Created on Tue Sep 25 15:11:29 2018
 
 from dessia_common.core import DessiaObject
 import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
+import volmdlr.primitives3d as primitives3D
 import matplotlib.pyplot as plt
 import math
 import networkx as nx

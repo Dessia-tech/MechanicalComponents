@@ -19,8 +19,8 @@ import networkx as nx
 import dectree
 from dessia_common.core import DessiaObject
 import volmdlr as vm
-from volmdlr import primitives2D
-import volmdlr.primitives3D as vm3d
+from volmdlr import primitives2d
+import volmdlr.primitives3d as vm3d
 #from scipy import interpolate
 #import json
 #import pkg_resources
