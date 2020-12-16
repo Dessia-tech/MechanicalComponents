@@ -20,6 +20,7 @@ steps:
 - name: develop
   image: python:3.8
   commands:
+  - pip install Cython
   - python setup.py develop
 
 - name: sdist
@@ -94,7 +95,6 @@ steps:
   image: appleboy/drone-scp
   when:
     branch: master
-    event: tag
   settings:
     host: austerlitz.dessia.tech
     target: /var/www/documentation/MechanicalComponents/
