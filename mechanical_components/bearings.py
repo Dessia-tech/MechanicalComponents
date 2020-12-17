@@ -953,7 +953,7 @@ class AngularBallBearing(RadialBearing):
         bi1 = primitives2d.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1], {1: self.radius,
                                              2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
 
-        cbi1 = vm.wires.Arc2D(pbi1, vm.Point2D(0, sign_V*self.F/2), pbi6)
+        cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, sign_V*self.F/2), pbi6)
 
         return vm.wires.Contour2D([cbi1] + bi1.primitives)
 
