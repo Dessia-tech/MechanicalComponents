@@ -132,7 +132,7 @@ block_workflow_generator_planetary_gears_geometry=wf.WorkflowBlock(workflow_gene
 
  
 
-block_for_each_planetary_gears_geometry= wf.ForEach(block_workflow_generator_planetary_gears_geometry,block_workflow_generator_planetary_gears_geometry.inputs[0])
+block_for_each_planetary_gears_geometry= wf.ForEach(block_workflow_generator_planetary_gears_geometry,0)
 
 
 block_workflow_generator_planetary_gears_z_number=wf.WorkflowBlock(workflow_generator_planetary_gears_z_number)
@@ -142,7 +142,7 @@ block_workflow_generator_planetary_gears_z_number=wf.WorkflowBlock(workflow_gene
 
 
 block_for_each_planetary_gears_z_number= wf.ForEach(block_workflow_generator_planetary_gears_z_number,
-                                                        block_workflow_generator_planetary_gears_z_number.inputs[0])
+                                                        0)
 
 filters = [
           {'attribute' : 'sum_Z_planetary', 'operator' : 'gt', 'bound' : -100},
