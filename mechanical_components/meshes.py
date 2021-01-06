@@ -1703,7 +1703,7 @@ class MeshCombination(DessiaObject):
 
             extrusion_vector1 = (self.gear_width[eng1]*x)
             extrusion_vector2 = (self.gear_width[eng2]*x)
-            print(L2)
+            
 
             if set_pos_dfs == 0:
                 vect_x = -0.5*self.gear_width[eng1]*x + x.dot(vm.Vector3D(centers[eng1][0],centers[eng1][1],centers[eng1][2]))*x

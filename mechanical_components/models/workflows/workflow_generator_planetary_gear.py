@@ -255,7 +255,7 @@ planetary_gear_1=workflow_generator_run.output_value[0]
 # planetary_gear_1.planetary_gear.mesh_generation()
 
 
-c = Client(api_url = 'https://api.platform-dev.dessia.tech')
+c = Client(api_url = 'https://api.demo.dessia.tech')
 r = c.create_object_from_python_object(workflow_generator_run)
 
 # r2= c.create_object_from_python_object(catalog)

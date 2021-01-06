@@ -1266,6 +1266,7 @@ class PlanetaryGear(DessiaObject):
                         centers[i] = (element.positions[0][0]+center[0], element.positions[0][1]+center[1],
                                       element.positions[0][2]+center[2])
                     else:
+                        print(element.positions)
                         centers[i] = element.positions[0]
 
                     if not axis == (1, 0, 0):
@@ -3401,11 +3402,11 @@ class PlanetaryGear(DessiaObject):
             labels[linkage] = linkage.name
 
             widths.append(abs(self.mech.TransmittedLinkagePower(linkage, 0)))
-            print(self.mech.TransmittedLinkagePower(linkage, 0))
+            
             edges.append((linkage, linkage.part1))
 
             widths.append(abs(self.mech.TransmittedLinkagePower(linkage, 1)))
-            print(self.mech.TransmittedLinkagePower(linkage, 1))
+           
             edges.append((linkage, linkage.part2))
 
         for load in self.mech.unknown_static_loads+self.mech.known_static_loads:
@@ -3891,8 +3892,7 @@ class PlanetaryGear(DessiaObject):
                 elif isinstance(element, Planet):
                     for j, position in enumerate(element.positions):
                         element.positions[j] = (z[i], position[1], position[2])
-        print('AZE')
-        print(self.length)
+       
 
         self.length = z_max-z_min+(max_length_meshing_chain[index_min]+max_length_meshing_chain[index_max])/2
 
@@ -4219,7 +4219,7 @@ class PlanetaryGearResult(DessiaObject):
         for planet in self.planets:
             if planet.positions:
                 d = planet.module*planet.Z+ 2*((planet.positions[0][1])**2+(planet.positions[0][2])**2)**0.5
-                print(planet.positions[0])
+                
             if d > self.D_train:
                 self.D_train = d
 
@@ -4259,8 +4259,7 @@ class PlanetaryGearResult(DessiaObject):
 
         for volume in volumes:
             if volume.__class__.__name__=='ExtrudedProfile':
-                print('volu')
-                print(self.Volume(volume))
+              
                 mass += self.Volume(volume) *hardened_alloy_steel.volumic_mass
             else:
                 mass += volume.volume() *hardened_alloy_steel.volumic_mass
