@@ -1716,7 +1716,7 @@ class MeshCombination(DessiaObject):
                 else:
                     try:                    
                         t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, C1, [], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
-                    except ZeroDivisionError:
+                    except ZeroDivisionError or ValueError:
                         vector=vm.Vector2D(vect_center.dot(y),vect_center.dot(z))
                         circle = vm.wires.Circle2D(vm.Point2D(vector[0],vector[1]),(self.DB[eng1])/2)
                         t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, circle, [], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))

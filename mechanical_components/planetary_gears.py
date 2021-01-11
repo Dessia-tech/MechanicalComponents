@@ -33,7 +33,7 @@ import volmdlr.primitives3d as primitives3d
 # from dessia_common.list_eq import list_eq
 import genmechanics.geometry as gm_geo
 import volmdlr.core_compiled as vm_compiled
-
+import plot_data as pld
 def list_eq(list_1, list_2):
 
     if len(list_1) == len(list_2):
@@ -771,8 +771,8 @@ class PlanetaryGear(DessiaObject):
     def plot_kinematic_graph_gear(self, coordinate, lenght, diameter,
                                   diameter_pivot, lenght_pivot, color, plot_data):
 
-        list_color = ['red', 'blue', 'green', 'red', 'blue', 'green',
-                      'red', 'blue', 'green']
+        list_color = [pld.colors.RED, pld.colors.BLUE, pld.colors.GREEN, pld.colors.RED, 'blue', 'green',
+                      pld.colors.RED, pld.colors.BLUE, pld.colors.GREEN]
 
         x = [coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0],
              coordinate[0], coordinate[0]+lenght/2, coordinate[0]-lenght/2]
@@ -784,10 +784,11 @@ class PlanetaryGear(DessiaObject):
 
         for i in range(len(x)-1):
 
-                point1 = vm.Point2D((x[i], y[i]))
-                point2 = vm.Point2D((x[i+1], y[i+1]))
-                line = vm.LineSegment2D(point1, point2)
-                plot_data.append(line.plot_data('line', color=list_color[color]))
+                point1 = vm.Point2D(x[i], y[i])
+                point2 = vm.Point2D(x[i+1], y[i+1])
+                line = vm.edges.LineSegment2D(point1, point2)
+                edge_style= pld.EdgeStyle(line_width=2,color_stroke= list_color[color])
+                plot_data.append(line.plot_data(edge_style=edge_style))
 
         x = [coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0],
              coordinate[0], coordinate[0]+lenght/2, coordinate[0]-lenght/2]
@@ -798,15 +799,16 @@ class PlanetaryGear(DessiaObject):
         # plt.plot(x, y, list_color[color])
 
         for i in range(len(x)-1):
-                point1 = vm.Point2D((x[i], y[i]))
-                point2 = vm.Point2D((x[i+1], y[i+1]))
-                line = vm.LineSegment2D(point1, point2)
-                plot_data.append(line.plot_data('line', color=list_color[color]))
+                point1 = vm.Point2D(x[i], y[i])
+                point2 = vm.Point2D(x[i+1], y[i+1])
+                line = vm.edges.LineSegment2D(point1, point2)
+                edge_style= pld.EdgeStyle(line_width=2,color_stroke= list_color[color])
+                plot_data.append(line.plot_data(edge_style=edge_style))
 
     def plot_kinematic_graph_double(self, coordinate, diameter, lenght, color, plot_data):
 
-        list_color = ['red', 'blue', 'green', 'red', 'blue', 'green',
-                      'red', 'blue', 'green']
+        list_color = [pld.colors.RED, pld.colors.BLUE, pld.colors.GREEN, pld.colors.RED, 'blue', 'green',
+                      pld.colors.RED, pld.colors.BLUE, pld.colors.GREEN]
 
         x = [coordinate[0], coordinate[0]+lenght]
         y = [coordinate[1]+diameter/2, coordinate[1]+diameter/2]
@@ -814,19 +816,21 @@ class PlanetaryGear(DessiaObject):
         # plt.plot(x, y, list_color[color])
 
         for i in range(len(x)-1):
-                point1 = vm.Point2D((x[i], y[i]))
-                point2 = vm.Point2D((x[i+1], y[i+1]))
-                line = vm.LineSegment2D(point1, point2)
-                plot_data.append(line.plot_data('line', color=list_color[color]))
+                point1 = vm.Point2D(x[i], y[i])
+                point2 = vm.Point2D(x[i+1], y[i+1])
+                line = vm.edges.LineSegment2D(point1, point2)
+                edge_style= pld.EdgeStyle(line_width=2,color_stroke= list_color[color])
+                plot_data.append(line.plot_data(edge_style=edge_style))
 
         x = [coordinate[0], coordinate[0]+lenght]
         y = [coordinate[1]-diameter/2, coordinate[1]-diameter/2]
 
         for i in range(len(x)-1):
-                point1 = vm.Point2D((x[i], y[i]))
-                point2 = vm.Point2D((x[i+1], y[i+1]))
-                line = vm.LineSegment2D(point1, point2)
-                plot_data.append(line.plot_data('line', color=list_color[color]))
+                point1 = vm.Point2D(x[i], y[i])
+                point2 = vm.Point2D(x[i+1], y[i+1])
+                line = vm.edges.LineSegment2D(point1, point2)
+                edge_style= pld.EdgeStyle(line_width=2,color_stroke= list_color[color])
+                plot_data.append(line.plot_data(edge_style=edge_style))
 
         # plt.plot(x, y, list_color[color])
 
@@ -854,10 +858,11 @@ class PlanetaryGear(DessiaObject):
             y = [coordinate[1], coordinate[1]]
 
             for i in range(len(x)-1):
-                point1 = vm.Point2D((x[i], y[i]))
-                point2 = vm.Point2D((x[i+1], y[i+1]))
-                line = vm.LineSegment2D(point1, point2)
-                plot_data.append(line.plot_data('line'))
+                point1 = vm.Point2D(x[i], y[i])
+                point2 = vm.Point2D(x[i+1], y[i+1])
+                line = vm.edges.LineSegment2D(point1, point2)
+                edge_style= pld.EdgeStyle(line_width=2,color_stroke= plot_data.colors.BLACK)
+                plot_data.append(edge_style=edge_style)
 
             # plt.plot(x, y, 'r')
 
@@ -865,28 +870,30 @@ class PlanetaryGear(DessiaObject):
         y = [coordinate_planet_carrier[1], coordinate_planet_carrier[1], coordinate_y_max]
 
         for i in range(len(x)-1):
-            point1 = vm.Point2D((x[i], y[i]))
-            point2 = vm.Point2D((x[i+1], y[i+1]))
-            line = vm.LineSegment2D(point1, point2)
-            plot_data.append(line.plot_data('line'))
+            point1 = vm.Point2D(x[i], y[i])
+            point2 = vm.Point2D(x[i+1], y[i+1])
+            line = vm.edges.LineSegment2D(point1, point2)
+            edge_style= pld.EdgeStyle(line_width=2,color_stroke= plot_data.colors.BLACK)
+            plot_data.append(line.plot_data(edge_style=edge_style))
         # plt.plot(x, y, 'r')
 
         return coordinate_planet_carrier
 
     def plot_kinematic_graph_ring(self, coordinate, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color, plot_data):
 
-        list_color = ['red', 'blue', 'green', 'red', 'blue', 'green',
-                      'red', 'blue', 'green']
+        list_color = [pld.colors.RED, pld.colors.BLUE, pld.colors.GREEN, pld.colors.RED, 'blue', 'green',
+                      pld.colors.RED, pld.colors.BLUE, pld.colors.GREEN]
 
         x = [coordinate[0]-lenght_gear/2, coordinate[0]+lenght_gear/2, coordinate[0], coordinate[0],
              coordinate_planet_carrier[0]+lenght_ring, coordinate_planet_carrier[0]+lenght_ring]
         y = [coordinate[1], coordinate[1], coordinate[1], diameter_ring/2, diameter_ring/2, coordinate_planet_carrier[1]]
 
         for i in range(len(x)-1):
-            point1 = vm.Point2D((x[i], y[i]))
-            point2 = vm.Point2D((x[i+1], y[i+1]))
-            line = vm.LineSegment2D(point1, point2)
-            plot_data.append(line.plot_data('line', color=list_color[color]))
+            point1 = vm.Point2D(x[i], y[i])
+            point2 = vm.Point2D(x[i+1], y[i+1])
+            line = vm.edges.LineSegment2D(point1, point2)
+            edge_style= pld.EdgeStyle(line_width=2,color_stroke= list_color[color])
+            plot_data.append(line.plot_data(edge_style=edge_style))
 
         # plt.plot(x, y, list_color[color])
         coordinate[1] -= (abs(coordinate[1]-coordinate_planet_carrier[1]))*2
@@ -1109,7 +1116,7 @@ class PlanetaryGear(DessiaObject):
                     self.plot_kinematic_graph_ring(coordinate_ring, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color, plot_data)
 
 
-        return plot_data
+        return pld.PrimitiveGroup(primitives= plot_data)
 
 
 
@@ -1136,48 +1143,54 @@ class PlanetaryGear(DessiaObject):
             plot_data = []
             primitive_2D = []
             meshing_chains = self.meshing_chain()
-            list_color = ['blue', 'red', 'green', 'black']
+            list_color = [ pld.colors.BLUE, pld.colors.RED, pld.colors.GREEN, pld.colors.BLACK]
 
             if self.d_min == 0:
                 planetary_gear = PlanetaryGear(self.planetaries, self.planets, self.planet_carrier, self.connections)
                 self.d_min = planetary_gear.d_min
-
-
-            for planetary in self.planetaries:
-
+                
+            list_d=[]
+            list_element=self.planetaries+self.planets
+            for element in list_element:
+                list_d.append(element.module*element.Z)
+            list_d_sorted=sorted(list_d)[::-1]
+            
+            for d in list_d_sorted:
+                i=list_d.index(d)
+                element=list_element[i]
                 for i, meshing_chain in enumerate(meshing_chains):
-                    if planetary in meshing_chain:
+                    if element in meshing_chain:
                         color = list_color[i]
+                if element in self.planetaries:
+                    position = vm.Point2D(0, 0)
 
-
-                position = vm.Point2D((0, 0))
-
-                d = planetary.module*planetary.Z
-
-                circle = vm.Circle2D(position, d/2)
-
-                contour = vm.Contour2D([circle], True)
-                plot_data.append(contour.plot_data('contour', stroke_width=2, color=color))
-
-            for planet in self.planets:
-                d = planet.module*planet.Z
-                # for i,meshing_chain in enumerate(meshing_chains):
-                #     if planet in meshing_chain:
-                #         color=list_color[i]
-                for position in planet.positions:
-                    position_2 = vm.Point2D((position[1], position[2]))
-
-                    circle = vm.Circle2D(position_2, d/2)
-
-                    contour = vm.Contour2D([circle], True)
-                    plot_data.append(contour.plot_data('contour', stroke_width=2, color=color))
+                   
+    
+                    circle = vm.wires.Circle2D(position, d/2)
+    
+                    
+                    edge_style= pld.EdgeStyle(line_width=2,color_stroke= color)
+                    surface_style=pld.SurfaceStyle(color_fill=pld.colors.WHITE)
+                    plot_data.append(circle.plot_data(edge_style=edge_style,surface_style=surface_style))
+                else:
+                    for position in element.positions:
+                        position_2 = vm.Point2D(position[1], position[2])
+    
+                        contour = vm.wires.Circle2D(position_2, d/2)
+    
+                        
+                        edge_style= pld.EdgeStyle(line_width=2,color_stroke= color)
+                        surface_style=pld.SurfaceStyle(color_fill=pld.colors.WHITE)
+                        plot_data.append(contour.plot_data(edge_style=edge_style,surface_style=surface_style))
+                    
+                
             if positions_gearing:
 
                 for position in positions_gearing:
-                    point = vm.Point2D((position[1], position[2]))
+                    point = vm.Point2D(position[1], position[2])
                     plot_data.append(point.plot_data('.', size=5, color=color))
 
-            return plot_data
+            return pld.PrimitiveGroup(primitives= plot_data)
 
         else:
             return self.plot_kinematic_graph()

@@ -757,30 +757,30 @@ class RadialBallBearing(RadialBearing):
 
         be_sup = self.external_ring_contour()
         be_sup1 = be_sup.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='be_sup', hatching=hatching, stroke_width=stroke_width)
-        plot_datas.append(be_sup1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='be_sup', hatching=hatching, stroke_width=stroke_width)
+        plot_datas.append(be_sup1.plot_data())
 
         bi_sup = self.internal_ring_contour()
         bi_sup1 = bi_sup.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='bi_sup', hatching=hatching, stroke_width=stroke_width)
-        plot_datas.append(bi_sup1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='bi_sup', hatching=hatching, stroke_width=stroke_width)
+        plot_datas.append(bi_sup1.plot_data())
         ball_sup = self.rolling_contour()
         ball_sup1 = ball_sup.translation((pos, self.Dpw/2.), True)
-        plot_data_state = plot_data.Settings(name='ball_sup', color_surface=color_surface, stroke_width=stroke_width)
-        plot_datas.append(ball_sup1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='ball_sup', color_surface=color_surface, stroke_width=stroke_width)
+        plot_datas.append(ball_sup1.plot_data())
 
         be_inf = be_sup.rotation(vm.Point2D(0, 0), math.pi, True)
         be_inf1 = be_inf.translation(vm.Vector2D(pos, 0), True)
-        plot_data_state = plot_data.Settings(name='be_inf', hatching=hatching, stroke_width=stroke_width)
-        plot_datas.append(be_inf1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='be_inf', hatching=hatching, stroke_width=stroke_width)
+        plot_datas.append(be_inf1.plot_data())
         bi_inf = bi_sup.rotation(vm.Point2D(0, 0), math.pi, True)
         bi_inf1 = bi_inf.translation(vm.Vector2D(pos, 0), True)
-        plot_data_state = plot_data.Settings(name='bi_inf', hatching=hatching, stroke_width=stroke_width)
-        plot_datas.append(bi_inf1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='bi_inf', hatching=hatching, stroke_width=stroke_width)
+        plot_datas.append(bi_inf1.plot_data())
         ball_inf1 = ball_sup1.rotation(vm.Point2D(pos, 0), math.pi, True)
-        plot_data_state = plot_data.Settings(name='ball_inf', color_surface=color_surface,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(ball_inf1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='ball_inf', color_surface=color_surface,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(ball_inf1.plot_data())
 
         return plot_data.PrimitiveGroup(plot_datas)
 
@@ -953,7 +953,7 @@ class AngularBallBearing(RadialBearing):
         bi1 = primitives2d.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1], {1: self.radius,
                                              2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
 
-        cbi1 = vm.wires.Arc2D(pbi1, vm.Point2D(0, sign_V*self.F/2), pbi6)
+        cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, sign_V*self.F/2), pbi6)
 
         return vm.wires.Contour2D([cbi1] + bi1.primitives)
 
@@ -969,7 +969,7 @@ class AngularBallBearing(RadialBearing):
                                                        {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius}, 
                                                        adapt_radius = True)
 
-        cbe1 = vm.wires.Arc2D(pbe6, vm.Point2D(0, sign_V*self.E/2), pbe1)
+        cbe1 = vm.edges.Arc2D(pbe6, vm.Point2D(0, sign_V*self.E/2), pbe1)
         return vm.wires.Contour2D([cbe1] + be1.primitives)
 
 
@@ -984,7 +984,7 @@ class AngularBallBearing(RadialBearing):
         p0 = vm.Point2D(-self.Dw/2., 0)
         p1 = vm.Point2D(0, self.Dw/2.)
         p2 = vm.Point2D(self.Dw/2., 0)
-        a1 = vm.wires.Arc2D(p0, p1, p2)
+        a1 = vm.edges.Arc2D(p0, p1, p2)
         l1 = vm.edges.LineSegment2D(p2,p0)
 #        c1 = vm.Circle2D(p0, self.Dw/2.)
         return vm.wires.Contour2D([a1, l1])
@@ -1376,40 +1376,40 @@ class RadialRollerBearing(RadialBearing):
         plot_datas = []
         be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
         be_sup1 = be_sup.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='be_sup', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(be_sup1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='be_sup', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(be_sup1.plot_data())
 
         be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
         be_inf1 = be_inf.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='be_inf', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(be_inf1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='be_inf', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(be_inf1.plot_data())
 
         bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
         bi_sup1 = bi_sup.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='bi_sup', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(bi_sup1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='bi_sup', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(bi_sup1.plot_data())
 
         bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
         bi_inf1 = bi_inf.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='bi_inf', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(bi_inf1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='bi_inf', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(bi_inf1.plot_data())
 
         roller = self.rolling_contour()
         roller_sup = roller.translation((0, self.Dpw/2.), True)
         roller_sup1 = roller_sup.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='roller_sup', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(roller_sup1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='roller_sup', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(roller_sup1.plot_data())
 
         roller_inf = roller.translation((0, -self.Dpw/2.), True)
         roller_inf1 = roller_inf.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='roller_inf', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(roller_inf1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='roller_inf', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(roller_inf1.plot_data())
 
 #        if constructor:
 #            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
@@ -1894,9 +1894,9 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         return vm.wires.Contour2D(be1.primitives)
 
     def volmdlr_primitives(self, center = vm.O3D, axis = vm.X3D):
-        axis.Normalize()
+        axis.normalize()
 
-        y = axis.RandomUnitNormalVector()
+        y = axis.random_unit_normal_vector()
 #        y.vector = npy.round(y.vector,3)
 #        y.vector = y.vector/y.Norm()
 
@@ -1936,43 +1936,43 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         plot_datas = []
         be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
         be_sup1 = be_sup.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='be_sup', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(be_sup1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='be_sup', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(be_sup1.plot_data())
 
         be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
         be_inf1 = be_inf.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='be_inf', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(be_inf1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='be_inf', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(be_inf1.plot_data())
 
         bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
         bi_sup1 = bi_sup.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='bi_sup', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(bi_sup1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='bi_sup', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(bi_sup1.plot_data())
 
         bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
         bi_inf1 = bi_inf.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='bi_inf', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(bi_inf1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='bi_inf', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(bi_inf1.plot_data())
 #
         roller_sup = self.rolling_contour(direction = direction, sign_V = 1)
         roller_sup = roller_sup.rotation(vm.Point2D(0, 0), -direction*self.alpha, True)
         roller_sup = roller_sup.translation((0, self.Dpw/2.), True)
         roller_sup1 = roller_sup.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='roller_sup', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(roller_sup1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='roller_sup', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(roller_sup1.plot_data())
 
         roller_inf = self.rolling_contour(direction = direction, sign_V = -1)
         roller_inf = roller_inf.rotation(vm.Point2D(0, 0), direction*self.alpha, True)
         roller_inf = roller_inf.translation((0, -self.Dpw/2.), True)
         roller_inf1 = roller_inf.translation((pos, 0), True)
-        plot_data_state = plot_data.Settings(name='roller_inf', hatching=hatching,
-                                                  stroke_width=stroke_width)
-        plot_datas.append(roller_inf1.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='roller_inf', hatching=hatching,
+        #                                           stroke_width=stroke_width)
+        plot_datas.append(roller_inf1.plot_data())
         
 #        if constructor:
 #            line1 = vm.LineSegment2D(vm.Point2D((-self.B/2., self.d/2.)), vm.Point2D((-self.B/2., -self.d/2.)))
@@ -2712,27 +2712,27 @@ class BearingCombination(DessiaObject):
 
         if box:
             box_sup = self.bearing_box(1).translation(vm.Vector2D(pos, 0), True)
-            plot_data_state = plot_data.Settings(name='box_sup', stroke_width=stroke_width, color_line=color_line)
-            export_data.append(box_sup.plot_data(plot_data_states=[plot_data_state]))
+            # plot_data_state = plot_data.Settings(name='box_sup', stroke_width=stroke_width, color_line=color_line)
+            export_data.append(box_sup.plot_data())
             # export_data.append(box_sup.plot_data('box_sup', fill = 'none', color='red', stroke_width = 0.3, opacity = 0.3))
             box_inf = self.bearing_box(-1).translation(vm.Vector2D(pos, 0), True)
-            plot_data_state = plot_data.Settings(name='box_inf', stroke_width=stroke_width, color_line=color_line)
-            export_data.append(box_inf.plot_data(plot_data_states=[plot_data_state]))
+            # plot_data_state = plot_data.Settings(name='box_inf', stroke_width=stroke_width, color_line=color_line)
+            export_data.append(box_inf.plot_data())
             # export_data.append(box_inf.plot_data('box_inf', fill = 'none', color = 'red', stroke_width = 0.3, opacity = 0.3))
 
 
-        plot_data_state = plot_data.Settings(name='be_sup', stroke_width=stroke_width)
+        # plot_data_state = plot_data.Settings(name='be_sup', stroke_width=stroke_width)
         be_sup = self.external_bearing(sign = 1).translation(vm.Vector2D(pos, 0), True)
-        export_data.append(be_sup.plot_data(plot_data_states=[plot_data_state]))
+        export_data.append(be_sup.plot_data())
         be_inf = self.external_bearing(sign = -1).translation(vm.Vector2D(pos, 0), True)
-        plot_data_state = plot_data.Settings(name='be_inf', stroke_width=stroke_width)
-        export_data.append(be_inf.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='be_inf', stroke_width=stroke_width)
+        export_data.append(be_inf.plot_data())
         bi_sup = self.internal_bearing(sign = 1).translation(vm.Vector2D(pos, 0), True)
-        plot_data_state = plot_data.Settings(name='bi_sup', stroke_width=stroke_width)
-        export_data.append(bi_sup.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='bi_sup', stroke_width=stroke_width)
+        export_data.append(bi_sup.plot_data())
         bi_inf = self.internal_bearing(sign = -1).translation(vm.Vector2D(pos, 0), True)
-        plot_data_state = plot_data.Settings(name='bi_inf', stroke_width=stroke_width)
-        export_data.append(bi_inf.plot_data(plot_data_states=[plot_data_state]))
+        # plot_data_state = plot_data.Settings(name='bi_inf', stroke_width=stroke_width)
+        export_data.append(bi_inf.plot_data())
 
 #        contour = []
         pos_m = -self.B/2.
@@ -3282,8 +3282,8 @@ class BearingAssembly(DessiaObject):
 
         shaft = self.shaft()
         contour_shaft = vm.wires.Contour2D(shaft.primitives)
-        plot_data_state = plot_data.Settings(name='contour_shaft', stroke_width=stroke_width)
-        export_data = [contour_shaft.plot_data(plot_data_states=[plot_data_state])]
+        # plot_data_state = plot_data.Settings(name='contour_shaft', stroke_width=stroke_width)
+        export_data = [contour_shaft.plot_data()]
 
 
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
