@@ -30,7 +30,7 @@ protected_files = ['mechanical_components/optimization/bearings_protected.py',
                    'mechanical_components/optimization/meshes_protected.py',
                    'mechanical_components/optimization/wires_protected.py',
                    'mechanical_components/shafts.py',
-                   'mechanical_components/shafts_assembly.py'
+                   #'mechanical_components/shafts_assembly.py'
                    ]
 
 
