@@ -10,7 +10,7 @@ import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
 # from dessia_api_client import Client
 
-from volmdlr import plot_data
+import plot_data
 
 import pkg_resources
 
@@ -49,7 +49,7 @@ for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
     
 #ba_simulation.bearing_assembly.bearing_combinations[0].plot()
 plots = ba_simulation.bearing_assembly.plot_data()
-pdg = plot_data.plot_d3(plots)
+pdg = plot_data.plot_canvas(plots)
 
 d = bis2.to_dict()
 obj = bearings_opt.BearingAssemblyOptimizer.dict_to_object(d)

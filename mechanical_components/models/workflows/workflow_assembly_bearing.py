@@ -5,8 +5,8 @@ Created on Fri Oct  5 09:53:05 2018
 
 @author: Pierrem
 """
-from dessia_common import DessiaObject, dict_merge
-from dessia_common import Evolution, CombinationEvolution
+# from dessia_common import DessiaObject, dict_merge
+# from dessia_common import Evolution, CombinationEvolution
 import dectree
 # from dessia_api_client import Client
 from dessia_common import workflow as wf
@@ -64,20 +64,20 @@ pipes = [wf.Pipe(blockA.outputs[0], optimizeA.inputs[0]),
 
 workflow_assembly_bearing = wf.Workflow(blocks, pipes, filter_analyze.outputs[0])
     
-# input_values = {workflow.index(blockA.inputs[0]): [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]],
-#                 workflow.index(blockA.inputs[1]): [157.07],
-#                 workflow.index(blockA.inputs[2]): [3600000],
-#                 workflow.index(blockA.inputs[3]): [0.035, 0.035],
-#                 workflow.index(blockA.inputs[4]): [0.072, 0.072],
-#                 workflow.index(blockA.inputs[5]): [0, 0.3], 
-#                 workflow.index(blockA.inputs[6]): [0.03, 0.03],
-#                 workflow.index(blockA.inputs[7]): [bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)]),
-#                                                    bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)])],
-#                 workflow.index(blockA.inputs[8]): [bearings.CombinationMounting([bearings.Mounting(), bearings.Mounting(left=True)])],
-#                 workflow.index(blockA.inputs[9]): [[1], [1]],
-#                 workflow.index(blockA.inputs[12]): schaeffler_catalog,
-#                 workflow.index(optimizeA.inputs[1]): 10,
-#                 }
+input_values = {workflow_assembly_bearing.index(blockA.inputs[0]): [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]],
+                workflow.index(blockA.inputs[1]): [157.07],
+                workflow.index(blockA.inputs[2]): [3600000],
+                workflow.index(blockA.inputs[3]): [0.035, 0.035],
+                workflow.index(blockA.inputs[4]): [0.072, 0.072],
+                workflow.index(blockA.inputs[5]): [0, 0.3], 
+                workflow.index(blockA.inputs[6]): [0.03, 0.03],
+                workflow.index(blockA.inputs[7]): [bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)]),
+                                                    bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)])],
+                workflow.index(blockA.inputs[8]): [bearings.CombinationMounting([bearings.Mounting(), bearings.Mounting(left=True)])],
+                workflow.index(blockA.inputs[9]): [[1], [1]],
+                workflow.index(blockA.inputs[12]): schaeffler_catalog,
+                workflow.index(optimizeA.inputs[1]): 10,
+                }
 
 # a = workflow.to_dict()
 # obj = wf.Workflow.dict_to_object(a)

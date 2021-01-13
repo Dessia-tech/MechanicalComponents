@@ -8,7 +8,7 @@ Created on Wed Jul 10 15:21:32 2019
 """
 
 import networkx as nx
-from .common import RoutingOptimizer
+from common import RoutingOptimizer
 import mechanical_components.wires as wires
 
 class WiringOptimizer(RoutingOptimizer):

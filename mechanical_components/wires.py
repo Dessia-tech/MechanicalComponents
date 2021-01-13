@@ -7,7 +7,7 @@ Created on Tue Sep 25 15:11:29 2018
 
 from dessia_common.core import DessiaObject
 import volmdlr as vm
-import volmdlr.primitives3d as primitives3D
+import volmdlr.primitives3d as primitives3d
 import matplotlib.pyplot as plt
 import math
 import networkx as nx
@@ -31,8 +31,8 @@ class Wire(DessiaObject):
             # if lines are not colinear
             if vm.Line2D(self.waypoints[i],self.waypoints[i+1]).DirectionVector(unit=True).Dot(vm.Line2D(self.waypoints[i+1], self.waypoints[i+2]).DirectionVector(unit=True))!=1:                
                 radii[i+1] = 4*self.diameter
-        return  primitives3D.OpenedRoundedLineSegments3D(self.waypoints, radii, adapt_radius = True)        
-#        return  primitives3D.RoundedLineSegments3D(self.waypoints, {}, adapt_radius = True)        
+        return  primitives3d.OpenedRoundedLineSegments3D(self.waypoints, radii, adapt_radius = True)        
+#        return  primitives3d.RoundedLineSegments3D(self.waypoints, {}, adapt_radius = True)        
     
     def _get_path(self):
         if not self._utd_path:
@@ -63,7 +63,7 @@ class Wire(DessiaObject):
     def volume_model(self):
         first_dir = self.waypoints[1] - self.waypoints[0]
         section = vm.Contour3D([vm.Circle3D(self.waypoints[0], 0.5 * self.diameter, first_dir)])
-        li_box = primitives3D.Sweep(section, self.path, name=self.name)
+        li_box = primitives3d.Sweep(section, self.path, name=self.name)
         model = vm.VolumeModel(primitives=[li_box])
         return model
     

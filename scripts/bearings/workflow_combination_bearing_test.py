@@ -102,6 +102,7 @@ input_values = {workflow.index(blockA.inputs[0]): [500],
 
 
 ##
+workflow.plot_jointjs()
 workflow_run = workflow.run(input_values)
 
 a = workflow_run.to_dict()

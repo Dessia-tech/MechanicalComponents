@@ -3,8 +3,9 @@ name: default
 
 steps:
 - name: install, doc and script running
-  image: python:3
+  image: python:3.8
   commands:
+  - pip install Cython
   - git fetch --tags
   - python setup.py install
   - pip install sphinx sphinx_rtd_theme
@@ -17,12 +18,13 @@ steps:
   # - python scripts/bearings/workflow_combination_bearing_test.py
 
 - name: develop
-  image: python:3
+  image: python:3.8
   commands:
+  - pip install Cython
   - python setup.py develop
 
 - name: sdist
-  image: python:3
+  image: python:3.8
   commands:
   - python setup.py sdist
 
@@ -93,7 +95,6 @@ steps:
   image: appleboy/drone-scp
   when:
     branch: master
-    event: tag
   settings:
     host: austerlitz.dessia.tech
     target: /var/www/documentation/MechanicalComponents/
