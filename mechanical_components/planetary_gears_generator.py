@@ -3120,8 +3120,8 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
                                 min_x_max_x.append([-np.inf, (((element.Z-element_2.Z)*M-outside_diameter_coefficient)/2)**2])
                                 x0.append((((element.Z-element_2.Z)*M-outside_diameter_coefficient)/2)**2)
                             else:
-                                min_x_max_x.append([(((element_2.Z+element.Z)*M-outside_diameter_coefficient)/2)**2, np.inf])
-                                x0.append((((element_2.Z+element.Z)*M-outside_diameter_coefficient)/2)**2)
+                                min_x_max_x.append([(((element_2.Z+element.Z)*M+outside_diameter_coefficient)/2)**2, np.inf])
+                                x0.append((((element_2.Z+element.Z)*M+outside_diameter_coefficient)/2)**2)
 
 
 
@@ -5059,8 +5059,8 @@ class GeneratorPlanetaryGears(DessiaObject):
                     planetary_gear_results.append(PlanetaryGearResult(planetary_gear=generator.planetary_gear, position_min_max=position_min_max))
                    
                     planetary_gear_results[-1].update_geometry()
-                    planetary_gear_results[-1].babylonjs()
-                    plot_data.plot_canvas(planetary_gear_results[-1].plot_data())
+                    # planetary_gear_results[-1].babylonjs()
+                    # plot_data.plot_canvas(planetary_gear_results[-1].plot_data())
                     if len(planetary_gear_results) == self.number_solution:
                         sucess = True
                 num_planetary_gear += 1

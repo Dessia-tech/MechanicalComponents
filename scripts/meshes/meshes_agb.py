@@ -27,7 +27,7 @@ center_distances = [(0.11134984458664793, 0.1293457790652981),
 
 rack=meshes_opt.RackOpti(module=[2*1e-3,2*1e-3],transverse_pressure_angle=[20/180.*npy.pi,20/180.*npy.pi],
              coeff_gear_addendum=[1,1],coeff_gear_dedendum=[1.25,1.25],coeff_root_radius=[0.38,0.38],
-             coeff_circular_tooth_thickness=[0.5,0.5])
+             coeff_circular_tooth_thickness=[0.5,0.5],helix_angle=[21,60])
 
 
 meshopti1 = meshes_opt.MeshOpti(rack=rack, torque_input= 'output', speed_input=(1878.1453579221634, 1974.460504482274))
@@ -64,9 +64,9 @@ GA.Optimize(nb_sol=5, verbose=True)
 print('Number of solutions:',len(GA.solutions))
 solution=GA.solutions[1]
 # solution.pos_axis({0:(0,0,0)})
-Z5=solution.mesh_combinations[0]
-# for mesh_combination in solution.mesh_combinations:
-#     mesh_combination.VolumeModel()
+
+for mesh_assembly in GA.solutions:
+    mesh_assembly.mesh_combinations[0].babylonjs()
 #solution=GA.solutions[-1]
 #solution.SVGExport('name.txt',{6 : [0,0], 4 : [0.5,0]})
 #solution.FreeCADExport('meshes3')
