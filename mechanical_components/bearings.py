@@ -501,7 +501,7 @@ class RadialBearing(DessiaObject):
         #                                             center_roller, axis_2,
         #                                             angle=2*math.pi,name='Roller {}'.format(zi+1)))
 
-        volumes = [irc, erc] + rollers
+        volumes = [irc, erc] 
         return volumes
 
     def FreeCADExport(self, fcstd_filepath, python_path='python',
