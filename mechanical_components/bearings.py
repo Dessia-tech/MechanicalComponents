@@ -2918,6 +2918,8 @@ class BearingCombination(DessiaObject):
                                bearing_combination_simulation_result.axial_loads):
 
             if (not self.behavior_link.free) and (abs(axial_load) >= 1e-4):
+                print(axial_load)
+                print(bearing_combination_simulation_result)
                 check_axial_load = self.axial_load(axial_load, radial_load, bearing_combination_simulation_result)
                 if check_axial_load == False:
                     return False
@@ -2968,7 +2970,7 @@ class BearingCombination(DessiaObject):
         nonlinear_linkages = []
 
         component, nonlinear_linkages_iter, loads_iter, axial_bearings, check_axial_load \
-            = self.Elementaryaxial_load(ground, shaft, 0, radial_load, result_bgs, axial_load)
+            = self.elementary_axial_load(ground, shaft, 0, radial_load, result_bgs, axial_load)
         loads = loads + loads_iter
 
         for bir, bor in component:
