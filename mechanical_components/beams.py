@@ -25,18 +25,18 @@ class ISection(Section):
         self.r = r
         
     def contour(self, x=vm.X2D, z=vm.Y2D):
-        p1 = vm.Point2D((-0.5*self.b, -0.5*self.h))
-        p2 = vm.Point2D((0.5*self.b, -0.5*self.h))
-        p3 = vm.Point2D((0.5*self.b, -0.5*self.h+self.tf))
-        p4 = vm.Point2D((0.5*self.tw, -0.5*self.h + self.tf))
-        p5 = vm.Point2D((0.5*self.tw, 0.5*self.h - self.tf))
-        p6 = vm.Point2D((0.5*self.b, 0.5*self.h - self.tf))
-        p7 = vm.Point2D((0.5*self.b, 0.5*self.h))
-        p8 = vm.Point2D((-0.5*self.b, 0.5*self.h))
-        p9 = vm.Point2D((-0.5*self.b, 0.5*self.h-self.tf))
-        p10 = vm.Point2D((-0.5*self.tw, 0.5*self.h-self.tf))
-        p11 = vm.Point2D((-0.5*self.tw, -0.5*self.h+self.tf))
-        p12 = vm.Point2D((-0.5*self.b, -0.5*self.h+self.tf))
+        p1 = vm.Point2D(-0.5*self.b, -0.5*self.h)
+        p2 = vm.Point2D(0.5*self.b, -0.5*self.h)
+        p3 = vm.Point2D(0.5*self.b, -0.5*self.h+self.tf)
+        p4 = vm.Point2D(0.5*self.tw, -0.5*self.h + self.tf)
+        p5 = vm.Point2D(0.5*self.tw, 0.5*self.h - self.tf)
+        p6 = vm.Point2D(0.5*self.b, 0.5*self.h - self.tf)
+        p7 = vm.Point2D(0.5*self.b, 0.5*self.h)
+        p8 = vm.Point2D(-0.5*self.b, 0.5*self.h)
+        p9 = vm.Point2D(-0.5*self.b, 0.5*self.h-self.tf)
+        p10 = vm.Point2D(-0.5*self.tw, 0.5*self.h-self.tf)
+        p11 = vm.Point2D(-0.5*self.tw, -0.5*self.h+self.tf)
+        p12 = vm.Point2D(-0.5*self.b, -0.5*self.h+self.tf)
 
         rl = primitives2d.ClosedRoundedLineSegments2D([p1, p2, p3, p4, p5, p6, p7, p8,
                                                        p9, p10, p11, p12],
@@ -84,7 +84,7 @@ class Beam(DessiaObject):
         """
         x and y define the plane of section in the beam axis
         """
-        z = x.Cross(y)
+        z = x.cross(y)
         c = self.section.contour()
         return [primitives3d.ExtrudedProfile(position-0.5*self.length*z, x, y, c, [], z*self.length)]
         
