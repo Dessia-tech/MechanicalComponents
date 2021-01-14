@@ -489,17 +489,17 @@ class RadialBearing(DessiaObject):
         #roller
         ROL=self.rolling_contour_cad()
 
-        radius=self.F/2.+self.slack+self.Dw/2.
-        rollers=[]
-        theta=2*math.pi/self.Z
+        # radius=self.F/2.+self.slack+self.Dw/2.
+        # rollers=[]
+        # theta=2*math.pi/self.Z
 
-        for zi in range(int(self.Z)):
-            center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
+        # for zi in range(int(self.Z)):
+        #     center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
      
-            axis_2=vm.Vector3D(2,0,0)
-            rollers.append(primitives3d.RevolvedProfile(center_roller, axis_2, z, ROL,
-                                                    center_roller, axis_2,
-                                                    angle=2*math.pi,name='Roller {}'.format(zi+1)))
+        #     axis_2=vm.Vector3D(2,0,0)
+        #     rollers.append(primitives3d.RevolvedProfile(center_roller, axis_2, z, ROL,
+        #                                             center_roller, axis_2,
+        #                                             angle=2*math.pi,name='Roller {}'.format(zi+1)))
 
         volumes = [irc, erc] + rollers
         return volumes
