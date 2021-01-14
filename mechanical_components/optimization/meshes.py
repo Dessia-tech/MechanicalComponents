@@ -28,11 +28,14 @@ class RackOpti(DessiaObject):
      def __init__(self, transverse_pressure_angle: float=None, module: float=None,
                  coeff_gear_addendum : List[float]=None, coeff_gear_dedendum: List[float]=None,
                  coeff_root_radius: List[float]=None, coeff_circular_tooth_thickness: List[float]=None,
-                 helix_angle: Tuple[float,float]=[0,0],name : str=''):
+                 helix_angle: Tuple[float,float]=None ,name : str=''):
 
          self.transverse_pressure_angle=transverse_pressure_angle
          self.module=module
+         if helix_angle==None:
+             helix_angle=[0,0]
          self.helix_angle=helix_angle
+         
          self.coeff_gear_addendum=coeff_gear_addendum
          self.coeff_gear_dedendum=coeff_gear_dedendum
          self.coeff_root_radius=coeff_root_radius
@@ -44,15 +47,16 @@ class MeshOpti(DessiaObject):
     _standalone_in_db = True
 
     def __init__(self,torque_input: float,speed_input : Tuple[float,float],Z:int=0 ,rack: RackOpti=None,gearing_interior:str='False',
-                 coefficient_profile_shift: Tuple[float,float]=[-0.8,0.8], name:str=''):
+                 coefficient_profile_shift: Tuple[float,float]=None, name:str=''):
         self.rack=rack
         self.name=name
         self.torque_input=torque_input
         self.Z=Z
         self.speed_input=speed_input
         self.gearing_interior=gearing_interior
+        if coefficient_profile_shift==None:
+            coefficient_profile_shift=[0.8,0.8]
         self.coefficient_profile_shift=coefficient_profile_shift
-
         DessiaObject.__init__(self, name=name)
 
 class CenterDistanceOpti(DessiaObject):
@@ -94,7 +98,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                                 center_distance = list_cd)
     """
 
-    def __init__(self,center_distances: CenterDistanceOpti,cycles : List,rigid_links: List =[],safety_factor: int =1, verbose : int =False):
+    def __init__(self,center_distances: CenterDistanceOpti,cycles : List,rigid_links: List =None,safety_factor: int =1, verbose : int =False):
         list_gear=[]
         connections=[]
         cd = []
