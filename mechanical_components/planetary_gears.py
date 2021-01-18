@@ -4264,7 +4264,12 @@ class PlanetaryGearResult(DessiaObject):
         z = primitive_volmdlr.x.cross(primitive_volmdlr.y)
         z.normalize()
         coeff = primitive_volmdlr.extrusion_vector.dot(z)
-        return primitive_volmdlr.area()*coeff
+        
+        area=primitive_volmdlr.outer_contour2d.area()
+        if primitive_volmdlr.inner_contours2d:
+            for inner_contour in primitive_volmdlr.inner_contours2d:
+                area-=inner_contour.area()
+        return area*coeff
 
     def mass(self):
         volumes = self.volmdlr_primitives()
