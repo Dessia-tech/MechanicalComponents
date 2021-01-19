@@ -510,5 +510,9 @@ setup(name='mechanical_components',
                         ],
       include_package_data=True,
       data_files=[('mechanical_components/catalogs',['mechanical_components/catalogs/ferroflex.csv',
-                                                     'mechanical_components/catalogs/schaeffler.json'])]
+                                                     'mechanical_components/catalogs/schaeffler.json'])],
+      cmdclass = {'build_ext': build_ext,
+                  'cdist_wheel': ClientWheelDist},
+      ext_modules = ext_modules 
+      
       )
