@@ -478,12 +478,14 @@ class RadialBearing(DessiaObject):
         z = axis.cross(y)
 
         #Internal Ring
-        IRC = self.internal_ring_contour()
+        cbi1,bi1 = self.internal_ring_contour()
+        IRC=vm.wires.Contour2D([cbi1]+bi1.primitives)
         irc = primitives3d.RevolvedProfile(center, axis, z, IRC, center,
                                            axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
         
-        ERC=self.external_ring_contour()
+        cbe1,be1=self.external_ring_contour()
+        ERC=vm.wires.Contour2D([cbe1]+be1.primitives)
         erc=primitives3d.RevolvedProfile(center, axis, z, ERC, center,
                                          axis, angle=2*math.pi,name='External Ring')
         #roller
@@ -701,8 +703,8 @@ class RadialBallBearing(RadialBearing):
                                                   4: self.radius},
                                                   adapt_radius=True)
         cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi6)
-        bi1_contour2d=vm.wires.Contour2D(bi1.primitives)
-        return cbi1
+        
+        return cbi1,bi1
 
     def external_ring_contour(self):
 
@@ -722,8 +724,8 @@ class RadialBallBearing(RadialBearing):
                                                   adapt_radius=True)
         cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.E/2), pbe6)
         
-        be1_contour2d=vm.wires.Contour2D(be1.primitives)
-        return cbe1
+        
+        return cbe1,be1
 
     def rolling_contour(self):
 
@@ -758,13 +760,13 @@ class RadialBallBearing(RadialBearing):
         hatching = plot_data.HatchingSet(0.5, 3)
         color_surface = plot_data.ColorSurfaceSet(color='white')
 
-        be_arc2d= self.external_ring_contour()
+        be_arc2d= self.external_ring_contour()[0]
         # be_sup1 = be_sup.translation((pos, 0), True)
         be_arc2d1=be_arc2d.translation((pos, 0), True)
         # plot_data_state = plot_data.Settings(name='be_sup', hatching=hatching, stroke_width=stroke_width)
         # plot_datas.append(be_sup1.plot_data())
         plot_datas.append(be_arc2d1.plot_data())
-        bi_arc2d = self.internal_ring_contour()
+        bi_arc2d = self.internal_ring_contour()[0]
         # bi_sup1 = bi_sup.translation((pos, 0), True)
         bi_arc2d1 = bi_arc2d.translation((pos, 0), True)
         # plot_data_state = plot_data.Settings(name='bi_sup', hatching=hatching, stroke_width=stroke_width)
@@ -968,7 +970,7 @@ class AngularBallBearing(RadialBearing):
 
         cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, sign_V*self.F/2), pbi6)
 
-        return cbi1
+        return cbi1,bi1
 
     def external_ring_contour(self, direction=1, sign_V=1):
 
@@ -983,7 +985,7 @@ class AngularBallBearing(RadialBearing):
                                                        adapt_radius = True)
 
         cbe1 = vm.edges.Arc2D(pbe6, vm.Point2D(0, sign_V*self.E/2), pbe1)
-        return cbe1
+        return cbe1,be1
 
 
     def rolling_contour(self):
@@ -1017,10 +1019,10 @@ class AngularBallBearing(RadialBearing):
     def plot_data(self, pos=0, quote=True, constructor=True, direction=1):
 
         plot_datas = []
-        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
+        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)[0]
         be_sup1 = be_sup.translation((pos, 0), True)
         plot_datas.append(be_sup1.plot_data())
-        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
+        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)[0]
         bi_sup1 = bi_sup.translation((pos, 0), True)
         plot_datas.append(bi_sup1.plot_data())
         ball = self.rolling_contour()
@@ -1028,10 +1030,10 @@ class AngularBallBearing(RadialBearing):
         ball_sup1 = ball_sup.translation((pos, 0), True)
         plot_datas.append(ball_sup1.plot_data())
 
-        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
+        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)[0]
         be_inf1 = be_inf.translation((pos, 0), True)
         plot_datas.append(be_inf1.plot_data())
-        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
+        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)[0]
         bi_inf1 = bi_inf.translation((pos, 0), True)
         plot_datas.append(bi_inf1.plot_data())
         ball_inf = ball.translation((0, -self.Dpw/2.), True)
@@ -1917,11 +1919,13 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 #        z = axis.Cross(y)
 
         #Internal Ring
-        IRC=self.internal_ring_contour()
+        IRC=vm.wires.Contour2D(self.internal_ring_contour().primitives)
+        
         irc=primitives3d.RevolvedProfile(center, axis, y, IRC, center,
                                          axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
-        ERC=self.external_ring_contour()
+    
+        ERC=vm.wires.Contour2D(self.external_ring_contour().primitives)
         erc=primitives3d.RevolvedProfile(center, axis, y, ERC, center,
                                          axis, angle=2*math.pi,name='External Ring')
 
