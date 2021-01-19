@@ -496,7 +496,7 @@ class RadialBearing(DessiaObject):
         for zi in range(int(self.Z)):
             center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
      
-            axis_2=vm.Vector3D(2,0,0)
+            axis_2=vm.Vector3D(1,0,0)
             rollers.append(primitives3d.RevolvedProfile(center_roller, axis_2, z, ROL,
                                                     center_roller, axis_2,
                                                     angle=2*math.pi,name='Roller {}'.format(zi+1)))
