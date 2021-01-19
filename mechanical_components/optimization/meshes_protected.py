@@ -576,9 +576,9 @@ class ContinuousMeshesAssemblyOptimizer:
             Xsol = cx.x
 
             output_x = self.update(Xsol)
-            if verbose:
-                print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
-                      cx.status,min(self.Fineq(Xsol))))
+            # if verbose:
+            #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
+            #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
 
 
             if min(self.Fineq(Xsol)) > -1: #TODO
