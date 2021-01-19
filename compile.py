@@ -491,9 +491,13 @@ def get_version():
     return version
 
 
+
 setup(name='mechanical_components',
       version=get_version(),
       description="Design of elementary components by AI",
+      long_description='',
+      keywords='',
+      url='',
       zip_safe=False,# To ensure static files can be loaded
       author='DessiA Technologies',
       author_email='root@dessia.tech',
@@ -501,16 +505,14 @@ setup(name='mechanical_components',
                 'mechanical_components.models',
                 'mechanical_components.optimization'],
       setup_requires=['numpy'],
-      install_requires=['dessia-common', 'scipy', 'volmdlr>=0.1.7', 'numpy', 'pandas', 'dectree>=0.0.4',    
-                        'networkx', 'matplotlib', 'genmechanics>=0.0.7',
-                        'dessia_common>=0.0.3'],
+      install_requires=['dessia-common>=0.4.0', 'scipy', 'volmdlr>=0.2.1', 'numpy', 'pandas', 'dectree>=0.0.4',
+                        'networkx', 'matplotlib', 'genmechanics>=0.1.5'
+                        ],
       include_package_data=True,
       data_files=[('mechanical_components/catalogs',['mechanical_components/catalogs/ferroflex.csv',
                                                      'mechanical_components/catalogs/schaeffler.json'])],
-      
       cmdclass = {'build_ext': build_ext,
                   'cdist_wheel': ClientWheelDist},
-      ext_modules = ext_modules,
-
-)
-
+      ext_modules = ext_modules 
+      
+      )
