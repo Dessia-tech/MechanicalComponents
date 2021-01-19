@@ -381,13 +381,15 @@ class RadialBearing(DessiaObject):
         """
         total_cycles = 0.
         Pr = 0.
+        
         for fr, fa, ni, ti in zip(Fr, Fa, N, t):
             C = self.equivalent_dynamic_load(fr, fa)**(self.coeff_baselife)
+            
             if C != 0.:
                 cycles = ni * ti * 2 * math.pi
                 Pr += cycles * C
                 total_cycles += cycles
-
+      
         if total_cycles != 0:
             Pr = (Pr / total_cycles) ** (1/self.coeff_baselife)
             L10 = (Cr/Pr)**(self.coeff_baselife)
@@ -674,6 +676,7 @@ class RadialBallBearing(RadialBearing):
                 Pr = X3*fr+Y3*fa
             else:
                 Pr = X2*fr+Y2*fa
+       
         return Pr
 
     def a_iso(self, kappa, ec, Cu, Pr):
@@ -943,6 +946,7 @@ class AngularBallBearing(RadialBearing):
                 Pr = X3*fr+Y3*fa
             else:
                 Pr = X2*fr+Y2*fa
+    
         return Pr
 
     def a_iso(self, kappa, ec, Cu, Pr):
@@ -1344,6 +1348,7 @@ class RadialRollerBearing(RadialBearing):
                 Pr = fr
             elif self.i == 2:
                 Pr = X3*fr
+       
         return Pr
 
     def a_iso(self, kappa, ec, Cu, Pr):
@@ -2778,7 +2783,7 @@ class BearingCombination(DessiaObject):
 #                            B = bg_ref.B, d1 = bg_ref.d1, D1 = bg_ref.D1)
 #                pos_m += bg_ref.B
 
-        print(export_data)
+       
         return plot_data.PrimitiveGroup(export_data)
 
     def plot_contour2D(self, pos=0, a=None, box=True, typ='Graph'):
@@ -2865,7 +2870,7 @@ class BearingCombination(DessiaObject):
                   
                     nonlinear_linkages.append(link)
                    
-                    print(nonlinear_linkages)
+                    
                     axial_bearings.append([link])
                     loads.append(unidimensional.Load(bor, -Fp))
                     loads.append(unidimensional.Load(bir, Fp))
@@ -2875,7 +2880,7 @@ class BearingCombination(DessiaObject):
                   
                     nonlinear_linkages.append(link)
                     
-                    print(nonlinear_linkages)
+                    
                     axial_bearings.append([link])
                     loads.append(unidimensional.Load(bor, Fp))
                     loads.append(unidimensional.Load(bir, -Fp))
@@ -2890,8 +2895,8 @@ class BearingCombination(DessiaObject):
                     nonlinear_linkages.append(link)
                     
                     axial_bearings.append([link])
-            print(nonlinear_linkages)
-            print(num_bg)
+            
+            
             check_radial_linkage = self.radial_load_linkage[num_bg]
             if check_radial_linkage:
                 bg_result.radial_load.append(radial_load/nb_bg_radial)
@@ -3002,9 +3007,9 @@ class BearingCombination(DessiaObject):
 
         component, nonlinear_linkages_iter, loads_iter, axial_bearings, check_axial_load \
             = self.elementary_axial_load(ground, shaft, 0, radial_load, result_bgs, axial_load)
-        print(loads_iter)
+        
         loads = loads + loads_iter
-        print(loads)
+       
         for bir, bor in component:
             bodies.append(bir)
             bodies.append(bor)
@@ -3015,10 +3020,7 @@ class BearingCombination(DessiaObject):
                          imposed_displacements)
         
         self.plot()
-        print(self.connection_bi.left)
-        print(self.connection_bi.right)
-        print(self.connection_be.left)
-        print(self.connection_be.right)
+       
         sm.Plot()
         if check_axial_load:
             
@@ -3443,7 +3445,10 @@ class BearingAssembly(DessiaObject):
                 tensor = mech.GlobalLinkageForces(bg,1)
                 fr = (tensor[1]**2 + tensor[2]**2)**(0.5)
                 bearing_combination_result.radial_loads.append(fr)
-            self.axial_load(positions, axial_load, bearing_assembly_simulation_result)
+            bearing_assembly_simulation_result=self.axial_load(positions, axial_load, bearing_assembly_simulation_result)
+        
+           
+                    
         try:
             self.base_life_time(bearing_assembly_simulation_result)
         except BearingL10Error:
@@ -3460,11 +3465,14 @@ class BearingAssembly(DessiaObject):
 
         result_bcs = bearing_assembly_simulation_result.bearing_combination_simulation_results
         result_bgs = [bg.bearing_simulation_results for bg in result_bcs]
+      
         for bearing_combination, bearing_result in zip(self.bearing_combinations, result_bgs):
             for bg, bg_result in zip(bearing_combination.bearings, bearing_result):
+                
                 time = bearing_assembly_simulation_result.operating_times
                 speed = bearing_assembly_simulation_result.speeds
                 try:
+                    
                     L10 = bg.base_life_time(Fr = bg_result.radial_load, Fa = bg_result.axial_load,
                                     N = speed, t = time, Cr = bg.Cr)
 #                if (str(L10) != 'nan') and (L10 != False):
@@ -3525,16 +3533,24 @@ class BearingAssembly(DessiaObject):
                          imposed_displacements)
         try:
             result_sm = sm.Solve(500)
+            
+            
 #            bearing_assembly_simulation_result.axial_load_model = result_sm
             for num_bc, (axial_linkages, component) in enumerate(zip(bc_axial_bearings, components)):
+                
                 if len(axial_linkages) == 0:
                     for result_bg in result_bgs[num_bc]:
                         result_bg.axial_load.append(0)
                 for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_linkages, component)):
+                    
                     for link in axial_linkage:
+                        
                         if link in result_sm.activated_nonlinear_linkages:
                             positions = (result_sm.positions[bir], result_sm.positions[bor])
                             result_bgs[num_bc][num_bg].axial_load.append(link.Strains(positions))
+                        else:
+                            result_bgs[num_bc][num_bg].axial_load.append(0.0)
+            return bearing_assembly_simulation_result
 
         except unidimensional.ModelConvergenceError:
             print('Convergence Error')
