@@ -60,11 +60,11 @@ class ContinuousMeshesAssemblyOptimizer:
         self.center_distances = center_distances
         self.transverse_pressure_angle = transverse_pressure_angle
         self.coefficient_profile_shift = coefficient_profile_shift
-
+        
         self.rack_list=rack_list
         self.rack_choice=rack_choice
         self.Z=Z
-
+        
         self.connections=connections
         self.rigid_links = rigid_links
         self.external_torques = external_torques
@@ -101,24 +101,28 @@ class ContinuousMeshesAssemblyOptimizer:
         dict_unknown = {'db':[],'transverse_pressure_angle':[],
                         'coefficient_profile_shift':[],'transverse_pressure_angle_rack':[],
                         'coeff_gear_addendum':[],'coeff_gear_dedendum':[],
-                        'coeff_root_radius':[],'coeff_circular_tooth_thickness':[]}
+                        'coeff_root_radius':[],'coeff_circular_tooth_thickness':[],'helix_angle':[]}
         dict_global = copy.deepcopy(dict_unknown)
         for i in list(set(list(self.rack_choice.values()))):
             rack_dict={'transverse_pressure_angle_rack':self.rack_list[i].transverse_pressure_angle,
                        'coeff_gear_addendum':self.rack_list[i].coeff_gear_addendum,
                        'coeff_gear_dedendum':self.rack_list[i].coeff_gear_dedendum,
                        'coeff_root_radius':self.rack_list[i].coeff_root_radius,
-                       'coeff_circular_tooth_thickness':self.rack_list[i].coeff_circular_tooth_thickness}
+                       'coeff_circular_tooth_thickness':self.rack_list[i].coeff_circular_tooth_thickness,
+                       'helix_angle':self.rack_list[i].helix_angle}
             for k in rack_dict:
                     dict_global[k].append(i)
                     v=rack_dict[k]
+                    
                     if not v[0]==v[1]:
                         dict_unknown[k].append(i)
+                        
         # search the unknown list db and transverse_pressure_angle to define in the optimizer
         list_analyze_cd={}
         list_analyze_line_gear=[]
         num_mesh=0
         list_unknown=[]
+   
         for num_cd,list_connections in enumerate(connections):
             for (eng1,eng2) in list_connections:
                 for num_line_iter,list_dfs in enumerate(self.sub_graph_dfs): # search the number of the line gear analyze
@@ -128,7 +132,9 @@ class ContinuousMeshesAssemblyOptimizer:
                     list_analyze_cd[num_cd]=num_mesh
                     if num_line not in list_analyze_line_gear:
                         list_analyze_line_gear.append(num_line)
+                        
                         interval_db=db[eng1]
+                       
                         if interval_db[0]!=interval_db[1]:
                             dict_unknown['db'].append(eng1)
                         interval_tpa=self.transverse_pressure_angle[num_mesh]
@@ -148,14 +154,22 @@ class ContinuousMeshesAssemblyOptimizer:
         for num_gear in self.list_gear:
             dict_global['db'].append(num_gear)
             dict_global['transverse_pressure_angle'].append(num_gear)
-        #search another unknown
-        for num_gear in self.list_gear:
+            
             cps=coefficient_profile_shift[num_gear]
+            
             dict_global['coefficient_profile_shift'].append(num_gear)
             if not cps[0]==cps[1]:
                 dict_unknown['coefficient_profile_shift'].append(num_gear)
+            
+            # dict_global['helix_angle'].append(num_gear)
+            # b=helix_angles[num_gear]
+            # if not b[0]==b[1]:
+            #     dict_unknown['helix_angle'].append(num_gear)
+                
+        
         self.dict_unknown=dict_unknown
         self.dict_global=dict_global
+       
         number_unknown=0
         for key,list_unknown in dict_unknown.items():
             number_unknown+=len(list_unknown)
@@ -181,17 +195,20 @@ class ContinuousMeshesAssemblyOptimizer:
                         Bounds.append(self.coefficient_profile_shift[num_gear])
                 elif key in ['transverse_pressure_angle_rack','coeff_gear_addendum',
                              'coeff_gear_dedendum','coeff_root_radius',
-                             'coeff_circular_tooth_thickness']:
+                             'coeff_circular_tooth_thickness','helix_angle']:
                     list_order_unknown.append(key)
                     for num_rack in list_unknown:
-                        rack_dict={'transverse_pressure_angle_rack':self.rack_list[i].transverse_pressure_angle,
-                                   'coeff_gear_addendum':self.rack_list[i].coeff_gear_addendum,
-                                   'coeff_gear_dedendum':self.rack_list[i].coeff_gear_dedendum,
-                                   'coeff_root_radius':self.rack_list[i].coeff_root_radius,
-                                   'coeff_circular_tooth_thickness':self.rack_list[i].coeff_circular_tooth_thickness}
+                        rack_dict={'transverse_pressure_angle_rack':self.rack_list[num_rack].transverse_pressure_angle,
+                                   'coeff_gear_addendum':self.rack_list[num_rack].coeff_gear_addendum,
+                                   'coeff_gear_dedendum':self.rack_list[num_rack].coeff_gear_dedendum,
+                                   'coeff_root_radius':self.rack_list[num_rack].coeff_root_radius,
+                                   'coeff_circular_tooth_thickness':self.rack_list[num_rack].coeff_circular_tooth_thickness,
+                                   'helix_angle':self.rack_list[num_rack].helix_angle}
+                        
                         Bounds.append(rack_dict[key])
 #        self.Bounds = npy.array(Bounds)
         self.Bounds = Bounds
+        
         self.list_order_unknown = list_order_unknown
 
         # Definition initial condition
@@ -294,7 +311,8 @@ class ContinuousMeshesAssemblyOptimizer:
         optimizer_data={'center_distance':[],'transverse_pressure_angle':[],
                  'coefficient_profile_shift':{},'transverse_pressure_angle_rack':{},
                  'coeff_gear_addendum':{},'coeff_gear_dedendum':{},
-                 'coeff_root_radius':{},'coeff_circular_tooth_thickness':{}} # dictionary of possibily/currently optimization data
+                 'coeff_root_radius':{},'coeff_circular_tooth_thickness':{},
+                 'helix_angle': {}} # dictionary of possibily/currently optimization data
         # copy and transfert data to the dictionary optimizer_data
 #        liste_transverse_pressure_angle=[]
         for key,list_ind in self.dict_global.items():
@@ -307,7 +325,7 @@ class ContinuousMeshesAssemblyOptimizer:
                     optimizer_data[key][num_elem]=value
                 elif key in ['transverse_pressure_angle_rack',
                              'coeff_gear_addendum','coeff_gear_dedendum',
-                             'coeff_root_radius','coeff_circular_tooth_thickness']:
+                             'coeff_root_radius','coeff_circular_tooth_thickness','helix_angle']:
                     if num_elem in self.dict_unknown[key]:
                         value = float(X[self._position_X(key,num_elem)])
                     else:
@@ -315,7 +333,8 @@ class ContinuousMeshesAssemblyOptimizer:
                                    'coeff_gear_addendum':self.rack_list[num_elem].coeff_gear_addendum,
                                    'coeff_gear_dedendum':self.rack_list[num_elem].coeff_gear_dedendum,
                                    'coeff_root_radius':self.rack_list[num_elem].coeff_root_radius,
-                                   'coeff_circular_tooth_thickness':self.rack_list[num_elem].coeff_circular_tooth_thickness}
+                                   'coeff_circular_tooth_thickness':self.rack_list[num_elem].coeff_circular_tooth_thickness,
+                                   'helix_angle':self.rack_list[num_elem].helix_angle}
 
 
                         value=rack_dict[key][0]
@@ -329,7 +348,7 @@ class ContinuousMeshesAssemblyOptimizer:
         dict_tpa={} # temp storage of transversale_pressure_angle
         for num_gear in self.dict_unknown['db']:
             dict_db[num_gear] = float(X[self._position_X('db',num_gear)])
-
+            
         for num_mesh in self.dict_unknown['transverse_pressure_angle']:
             dict_tpa[num_mesh] = float(X[self._position_X('transverse_pressure_angle',num_mesh)])
         num_mesh=0
@@ -413,6 +432,7 @@ class ContinuousMeshesAssemblyOptimizer:
 
         for num_cd,list_connection in enumerate(self.connections):
 #            print('optimizer_data {} dict_cd {} num_cd {}'.format(optimizer_data, dict_cd, num_cd))
+            
             optimizer_data['center_distance'].append(dict_cd[num_cd])
 
             for num_mesh_iter,(eng1,eng2) in enumerate(list_connection):
@@ -556,9 +576,9 @@ class ContinuousMeshesAssemblyOptimizer:
             Xsol = cx.x
 
             output_x = self.update(Xsol)
-            if verbose:
-                print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
-                      cx.status,min(self.Fineq(Xsol))))
+            # if verbose:
+            #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
+            #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
 
 
             if min(self.Fineq(Xsol)) > -1: #TODO
@@ -1006,6 +1026,7 @@ class MeshAssemblyOptimizer:
     #            plex['center_distance']=self.center_distance
                 plex['transverse_pressure_angle'] = self.transverse_pressure_angle
                 plex['coefficient_profile_shift'] = self.coefficient_profile_shift
+                
                 plex['safety_factor'] = self.safety_factor
                 liste_plex[i] = plex
 

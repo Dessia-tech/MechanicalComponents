@@ -313,13 +313,14 @@ class Rack(DessiaObject):
     def __init__(self, transverse_pressure_angle: float, module: float = None,
                  coeff_gear_addendum: float = 1, coeff_gear_dedendum: float = 1.25,
                  coeff_root_radius: float = 0.38, coeff_circular_tooth_thickness: float = 0.5,
-                 name: str = ''):
+                 helix_angle:float =0.0,name: str = ''):
         self.transverse_pressure_angle = transverse_pressure_angle
         self.module = module
         self.coeff_gear_addendum = coeff_gear_addendum
         self.coeff_gear_dedendum = coeff_gear_dedendum
         self.coeff_root_radius = coeff_root_radius
         self.coeff_circular_tooth_thickness = coeff_circular_tooth_thickness
+        self.helix_angle=helix_angle
 
         if module is not None:
             self.update(module, transverse_pressure_angle, coeff_gear_addendum,
@@ -492,11 +493,12 @@ class Mesh(DessiaObject):
 
     def __init__(self, z: int, db: float, coefficient_profile_shift: float, rack: Rack,
                  material: Material = None,
-                 gear_width: float = 1, external_torque: float = None, cycle: float = None, name: str = ''):
+                 gear_width: float = 1, external_torque: float = None, cycle: float = None, 
+                 name: str = ''):
 
         self.rack = rack
         self.gear_param(z, db, coefficient_profile_shift)
-
+        
         # Definition of default parameters
         if material is None:
             self.material = hardened_alloy_steel
@@ -912,7 +914,7 @@ class MeshCombination(DessiaObject):
         self.safety_factor = safety_factor
 
         self.minimum_gear_width = 10e-3
-        self.helix_angle = 0
+        self.helix_angle = {}
         self.external_torque = {}
         self.cycle = {}
 
@@ -922,6 +924,7 @@ class MeshCombination(DessiaObject):
                     self.external_torque[i] = meshe.external_torque
                 if meshe.cycle != None:
                     self.cycle[i] = meshe.cycle
+                self.helix_angle[i]=meshe.rack.helix_angle
 
 
         # NetworkX graph construction
@@ -1004,7 +1007,7 @@ class MeshCombination(DessiaObject):
     def create(cls, Z, center_distance, connections, transverse_pressure_angle_0,
                coefficient_profile_shift, transverse_pressure_angle_rack,
                coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
-               coeff_circular_tooth_thickness, material=None, external_torque=None, cycle=None,
+               coeff_circular_tooth_thickness,helix_angle, material=None, external_torque=None, cycle=None,
                safety_factor=1):
 
         # NetworkX graph construction
@@ -1020,7 +1023,7 @@ class MeshCombination(DessiaObject):
 
         # Definition of default parameters
         minimum_gear_width = 10e-3
-        helix_angle = 0
+        
 
         if material == None:
             material = {list_gear[0]:hardened_alloy_steel}
@@ -1061,9 +1064,11 @@ class MeshCombination(DessiaObject):
             crr = coeff_root_radius[num_engr]
             cct = coeff_circular_tooth_thickness[num_engr]
             mat = material[num_engr]
+            helix_ang=helix_angle[num_engr]
             rack = Rack(transverse_pressure_angle=tpa,
                         coeff_gear_addendum=cga, coeff_gear_dedendum=cgd,
-                        coeff_root_radius=crr, coeff_circular_tooth_thickness=cct)
+                        coeff_root_radius=crr, coeff_circular_tooth_thickness=cct,
+                        helix_angle=helix_ang)
             meshes[i] = Mesh(z, db, cp, rack, mat)
             meshes_dico[num_engr]=meshes[i]
 
@@ -1495,9 +1500,9 @@ class MeshCombination(DessiaObject):
             coeff_yb_iso[num_mesh] = {}
             
             matrice_YB = material[eng1].data_coeff_YB_Iso
-            coeff_yb_iso[num_mesh][eng1] = material[eng1].FunCoeff(helix_angle, npy.array(matrice_YB['data']), matrice_YB['x'], matrice_YB['y'])
+            coeff_yb_iso[num_mesh][eng1] = material[eng1].FunCoeff(helix_angle[eng1], npy.array(matrice_YB['data']), matrice_YB['x'], matrice_YB['y'])
             matrice_YB = material[eng2].data_coeff_YB_Iso
-            coeff_yb_iso[num_mesh][eng2] = material[eng2].FunCoeff(helix_angle, npy.array(matrice_YB['data']), matrice_YB['x'], matrice_YB['y'])
+            coeff_yb_iso[num_mesh][eng2] = material[eng2].FunCoeff(helix_angle[eng2], npy.array(matrice_YB['data']), matrice_YB['x'], matrice_YB['y'])
         return coeff_yb_iso
 
     ### Function graph and export
@@ -1703,7 +1708,7 @@ class MeshCombination(DessiaObject):
 
             extrusion_vector1 = (self.gear_width[eng1]*x)
             extrusion_vector2 = (self.gear_width[eng2]*x)
-            print(L2)
+            
 
             if set_pos_dfs == 0:
                 vect_x = -0.5*self.gear_width[eng1]*x + x.dot(vm.Vector3D(centers[eng1][0],centers[eng1][1],centers[eng1][2]))*x
@@ -1716,7 +1721,7 @@ class MeshCombination(DessiaObject):
                 else:
                     try:                    
                         t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, C1, [], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
-                    except ZeroDivisionError:
+                    except ZeroDivisionError or ValueError:
                         vector=vm.Vector2D(vect_center.dot(y),vect_center.dot(z))
                         circle = vm.wires.Circle2D(vm.Point2D(vector[0],vector[1]),(self.DB[eng1])/2)
                         t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, circle, [], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
@@ -2079,7 +2084,7 @@ class MeshAssembly(DessiaObject):
     def create(cls, center_distance, connections, transverse_pressure_angle,
                  coefficient_profile_shift, transverse_pressure_angle_rack,
                  coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
-                 coeff_circular_tooth_thickness, Z, strong_links=None, material=None,
+                 coeff_circular_tooth_thickness, Z, helix_angle, strong_links=None, material=None,
                  internal_torque=None,external_torque=None, cycle=None,
                  safety_factor=1):
 
@@ -2095,7 +2100,8 @@ class MeshAssembly(DessiaObject):
             input_data={'center_distance': [],'transverse_pressure_angle_0': 0,
                  'coefficient_profile_shift': {},'transverse_pressure_angle_rack': {},
                  'coeff_gear_addendum': {},'coeff_gear_dedendum': {},
-                 'coeff_root_radius': {},'coeff_circular_tooth_thickness': {}}
+                 'coeff_root_radius': {},'coeff_circular_tooth_thickness': {},
+                 'helix_angle':{}}
             li_connection = []
             num_gear_mesh=0
             num_gear_assignation={}
@@ -2123,6 +2129,8 @@ class MeshAssembly(DessiaObject):
                                 input_data['coeff_root_radius'][num_gear_assignation[num_gear]] = coeff_root_radius[num_gear]
                             if num_gear in coeff_circular_tooth_thickness.keys():
                                 input_data['coeff_circular_tooth_thickness'][num_gear_assignation[num_gear]]=coeff_circular_tooth_thickness[num_gear]
+                            if num_gear in helix_angle.keys():
+                                input_data['helix_angle'][num_gear_assignation[num_gear]]=helix_angle[num_gear]
                             if num_gear in Z.keys():
                                 general_data['Z'][num_gear_assignation[num_gear]] = Z[num_gear]
                             if num_gear in material.keys():

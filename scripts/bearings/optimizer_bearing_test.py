@@ -19,7 +19,7 @@ with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_compone
     schaeffler_catalog = bearings.BearingCatalog.load_from_file(schaeffler_json)
 
 bis2 = bearings_opt.BearingAssemblyOptimizer(
-                    loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
+                    loads = [[[[0.1595, 0, 0], [10, -14000, 0], [0, 0, 0]]]], 
                     speeds = [157.07],
                     operating_times = [3600000],
                     inner_diameters = [0.035, 0.035],
@@ -28,7 +28,7 @@ bis2 = bearings_opt.BearingAssemblyOptimizer(
                     lengths = [0.03, 0.03],
                     linkage_types = [bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)]),
                                      bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)])],
-                    mounting_types = [bearings.CombinationMounting([bearings.Mounting(), bearings.Mounting(left=True)])],
+                    mounting_types = [bearings.CombinationMounting([bearings.Mounting(left=True), bearings.Mounting(right=True)])],
                     number_bearings = [[1], [1]],
                     catalog = schaeffler_catalog,
 #                    bearing_classes = [bearings.RadialBallBearing, 

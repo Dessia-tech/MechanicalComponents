@@ -28,17 +28,6 @@ steps:
   commands:
   - python setup.py sdist
 
-
-- name: install from sdist and run test scripts
-  image: python:3
-  commands:
-  - mkdir install_from_sdist
-  - tar -xf dist/*.tar.gz -C install_from_sdist/
-  - cd install_from_sdist
-  - cd mechanical_components*
-  - python setup.py install
-
-
 - name: compile linux test licence valid
   image: python:3.8
   commands:

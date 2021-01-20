@@ -27,10 +27,15 @@ class RackOpti(DessiaObject):
 
      def __init__(self, transverse_pressure_angle: float=None, module: float=None,
                  coeff_gear_addendum : List[float]=None, coeff_gear_dedendum: List[float]=None,
-                 coeff_root_radius: List[float]=None, coeff_circular_tooth_thickness: List[float]=None, name : str=''):
+                 coeff_root_radius: List[float]=None, coeff_circular_tooth_thickness: List[float]=None,
+                 helix_angle: Tuple[float,float]=None ,name : str=''):
 
          self.transverse_pressure_angle=transverse_pressure_angle
          self.module=module
+         if helix_angle==None:
+             helix_angle=[0,0]
+         self.helix_angle=helix_angle
+         
          self.coeff_gear_addendum=coeff_gear_addendum
          self.coeff_gear_dedendum=coeff_gear_dedendum
          self.coeff_root_radius=coeff_root_radius
@@ -41,14 +46,17 @@ class RackOpti(DessiaObject):
 class MeshOpti(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self,torque_input: float,speed_input : Tuple[float,float],Z:int=0 ,rack: RackOpti=None,gearing_interior:str='False', name:str=''):
+    def __init__(self,torque_input: float,speed_input : Tuple[float,float],Z:int=0 ,rack: RackOpti=None,gearing_interior:str='False',
+                 coefficient_profile_shift: Tuple[float,float]=None, name:str=''):
         self.rack=rack
         self.name=name
         self.torque_input=torque_input
         self.Z=Z
         self.speed_input=speed_input
         self.gearing_interior=gearing_interior
-
+        if coefficient_profile_shift==None:
+            coefficient_profile_shift=[0.8,0.8]
+        self.coefficient_profile_shift=coefficient_profile_shift
         DessiaObject.__init__(self, name=name)
 
 class CenterDistanceOpti(DessiaObject):
@@ -90,7 +98,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                                 center_distance = list_cd)
     """
 
-    def __init__(self,center_distances: CenterDistanceOpti,cycles : List,rigid_links: List =[],safety_factor: int =1, verbose : int =False):
+    def __init__(self,center_distances: CenterDistanceOpti,cycles : List,rigid_links: List =None,safety_factor: int =1, verbose : int =False):
         list_gear=[]
         connections=[]
         cd = []
@@ -108,15 +116,22 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
 
         rack_dict={}
         rack_list=[]
+       
         gear_speeds={}
         external_torques={}
         Z={}
         rack_choice={}
+        transverse_pressure_angle={}
+        coefficient_profile_shift={}
         number_rack=0
         self.list_gearing_interior=[]
         for i,gear in enumerate(list_gear):
             gear_speeds[i]=gear.speed_input
+            if gear.rack:
+                
+                transverse_pressure_angle[i]=gear.rack.transverse_pressure_angle
             external_torques[i]=gear.torque_input
+            coefficient_profile_shift[i]=gear.coefficient_profile_shift
             if gear.Z:
                 Z[i]=gear.Z
             if gear.gearing_interior=='True':
@@ -144,14 +159,16 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             cycles=cycles2
         self.initialisation(connections=connections,gear_speeds=gear_speeds,center_distances=cd,
                             external_torques=external_torques,cycles=cycles, rigid_links=rigid_links,Z=Z,
-                            rack_list=rack_dict,rack_choice=rack_choice,safety_factor=safety_factor,verbose=verbose)
+                            rack_list=rack_dict,rack_choice=rack_choice,safety_factor=safety_factor,
+                           
+                            coefficient_profile_shift=coefficient_profile_shift,verbose=verbose)
 
 
 
 
     def initialisation(self, connections, gear_speeds, center_distances, external_torques, cycles,
                        rigid_links=[], Z=None, transverse_pressure_angle={},
-                       helix_angle=None, gear_width=None, forbidden_frequencies=[],
+                       gear_width=None, forbidden_frequencies=[],
                        coefficient_profile_shift=None, rack_list=None,
                        rack_choice=None, material=None,
                        safety_factor=1, verbose=False):
@@ -180,8 +197,8 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                 if num_mesh not in transverse_pressure_angle.keys():
                     transverse_pressure_angle[num_mesh]=[15/180.*math.pi,30/180.*math.pi]
 
-        if helix_angle==None:
-            helix_angle={list_gear[0]:[15/180.*math.pi,25/180.*math.pi]}
+        # if helix_angle==None:
+        #     helix_angle={list_gear[0]:[15/180.*math.pi,25/180.*math.pi]}
 
         if gear_width==None:
             gear_width={list_gear[0]:[15*1e-3,25*1e-3]}
@@ -196,8 +213,6 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             if ne not in gear_width.keys():
                 gear_width[ne]=[gw_min,gw_max]
 
-        if coefficient_profile_shift==None:
-            coefficient_profile_shift={list_gear[0]:[-0.8,0.8]}
         for ne in list_gear:
             if ne not in coefficient_profile_shift.keys():
                 coefficient_profile_shift[ne]=[-0.8,0.8]
@@ -222,7 +237,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             if  not rack.module:
                 rack_list[num_rack].module = [1*1e-3,2.5*1e-3]
             if  not rack.transverse_pressure_angle:
-                rack_list[num_rack].transverse_pressure_angle = [20*math.pi/180.,20*math.pi/180.]
+                rack_list[num_rack].transverse_pressure_angle =[15/180.*math.pi,30/180.*math.pi]
             if  not  rack.coeff_gear_addendum:
                 rack_list[num_rack].coeff_gear_addendum = [1,1]
             if  not  rack.coeff_gear_dedendum:
@@ -231,10 +246,12 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                 rack_list[num_rack].coeff_root_radius = [0.38,0.38]
             if not  rack.coeff_circular_tooth_thickness:
                 rack_list[num_rack].coeff_circular_tooth_thickness = [0.5,0.5]
+            if not  rack.helix_angle:
+                rack_list[num_rack].helix_angle = [0,0]
             if  not  rack.name:
                 rack_list[num_rack].name = 'Optim_Module'
 
-
+       
         if rack_choice==None:
             rack_choice={list_gear[0]:[list(rack_list.keys())[0]]}
         for ne in list_gear:
@@ -271,7 +288,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         self.safety_factor = safety_factor
         self.rigid_links = rigid_links
         self.safety_factor = safety_factor
-
+        
         self.nb_rack = len(self.rack_list.keys())
         self.check = True
 
