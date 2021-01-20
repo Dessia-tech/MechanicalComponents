@@ -2867,19 +2867,19 @@ class BearingCombination(DessiaObject):
                 if self.directions[num_bg] == -1:
                     global_axial_load += Fp
                     link = unidimensional.CompressionSpring(bor, bir, k1, -j1, 'bearing {}'.format(num_bg))
-                  
+
                     nonlinear_linkages.append(link)
                    
-                    
+                    print(15269)
                     axial_bearings.append([link])
                     loads.append(unidimensional.Load(bor, -Fp))
                     loads.append(unidimensional.Load(bir, Fp))
                 elif self.directions[num_bg] == 1:
                     global_axial_load += -Fp
                     link = unidimensional.CompressionSpring(bir, bor, k1, -j1, 'bearing {}'.format(num_bg))
-                  
-                    nonlinear_linkages.append(link)
                     
+                    nonlinear_linkages.append(link)
+                    print(15269)
                     
                     axial_bearings.append([link])
                     loads.append(unidimensional.Load(bor, Fp))
@@ -2888,7 +2888,7 @@ class BearingCombination(DessiaObject):
                 if self.directions[num_bg] == -1:
                     link = unidimensional.CompressionSpring(bor, bir, k1, -j1, 'bearing {}'.format(num_bg))
                     nonlinear_linkages.append(link)
-                    
+                    print(15269)
                     axial_bearings.append([link])
                 elif self.directions[num_bg] == 1:
                     link = unidimensional.CompressionSpring(bir, bor, k1, -j1, 'bearing {}'.format(num_bg))
@@ -3007,32 +3007,45 @@ class BearingCombination(DessiaObject):
 
         component, nonlinear_linkages_iter, loads_iter, axial_bearings, check_axial_load \
             = self.elementary_axial_load(ground, shaft, 0, radial_load, result_bgs, axial_load)
+            
+        
         
         loads = loads + loads_iter
        
         for bir, bor in component:
             bodies.append(bir)
             bodies.append(bor)
+            
+      
         
         nonlinear_linkages.extend(nonlinear_linkages_iter)
-
+       
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
                          imposed_displacements)
         
-        self.plot()
+        
        
-        sm.Plot()
+        
         if check_axial_load:
-            
-            result_sm = sm.Solve(500)
-#            bearing_combination_simulation_result.axial_load_model = result_sm
-
-            for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_bearings, component)):
-                for link in axial_linkage:
-                    if link in result_sm.activated_nonlinear_linkages:
-                        positions = (result_sm.positions[bir], result_sm.positions[bor])
-                        result_bgs[num_bg].axial_load.append(link.Strains(positions))
-            return True
+            try:
+                result_sm = sm.Solve(500)
+    #            bearing_combination_simulation_result.axial_load_model = result_sm
+    
+                for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_bearings, component)):
+                    for link in axial_linkage:
+                        if link in result_sm.activated_nonlinear_linkages:
+                            positions = (result_sm.positions[bir], result_sm.positions[bor])
+                            result_bgs[num_bg].axial_load.append(link.Strains(positions))
+                return True
+            except unidimensional.ModelConvergenceError:
+                print('Convergence Error')
+                return False
+                pass
+            except IndexError:
+                
+                print('Convergence Error')
+                return False
+                pass
         else:
             return False
 
@@ -3531,6 +3544,9 @@ class BearingAssembly(DessiaObject):
 
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
                          imposed_displacements)
+        
+        
+        
         try:
             result_sm = sm.Solve(500)
             
@@ -3554,6 +3570,7 @@ class BearingAssembly(DessiaObject):
 
         except unidimensional.ModelConvergenceError:
             print('Convergence Error')
+            
             pass
 
 

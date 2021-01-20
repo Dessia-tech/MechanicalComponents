@@ -456,14 +456,18 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
                     bearing = self.bearing_classes[node]
                     bearings.append(bearing)
                 else:
-                    directions.append([1, -1][node])
+                    
+                    directions.append([-1, 1][node])
 
             if dt.current_depth // 2 == max_bearings:
                 # Instanciating 
                 valid = self.CheckLinkage(bearings)
+                print(valid)
+                print(directions)
                 if valid:
                     cbc = ConceptualBearingCombination(bearings, directions, self.mounting)
                     valid = cbc.check_kinematic()  
+                    print(valid)
             
             # Testing
             if valid:
@@ -1197,13 +1201,22 @@ class BearingAssemblyOptimizer(DessiaObject):
         pos2_max = max(pos2_min, self.axial_positions[1] + self.lengths[1] - l2/2.)
         pos1_moy = (pos1_min + pos1_max)/2.
         pos2_moy = (pos2_min + pos2_max)/2.
-        
-        def fun(x):
+        Bound = [[pos1_min, pos1_max], [pos2_min, pos2_max]]
+        def fun(x,bound=Bound):
             obj = 0
             try:
                 bearing_assembly.shaft_load([x[0], x[1]], bearing_assembly_simulation_result)
                 L10 = bearing_assembly_simulation_result.L10
                 obj += 1/(L10)**2
+               
+                if x[0]<bound[0][0]:
+                    x[0]=bound[0][0]
+                if x[0]>bound[0][1]:
+                    x[0]=bound[0][1]
+                if x[1]<bound[1][0]:
+                    x[1]=bound[1][0]
+                if x[1]>bound[1][1]:
+                    x[1]=bound[1][1]
                 return obj
             except BearingL10Error:
                 return 1e6
@@ -1216,8 +1229,7 @@ class BearingAssemblyOptimizer(DessiaObject):
         sol_fun = math.inf
         for p1, p2 in product(Bound[0] + [pos1_moy],Bound[1] + [pos2_moy]):
 #            cons = {'type': 'ineq','fun' : fineq}
-            print([p1,p2])
-            print(Bound)            
+           
             res = minimize(fun, [p1, p2], method='SLSQP', bounds=Bound)
             if fun(res.x) < sol_fun:
                 sol_fun = fun(res.x)

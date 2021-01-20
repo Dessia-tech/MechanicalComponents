@@ -28,7 +28,7 @@ bis2 = bearings_opt.BearingAssemblyOptimizer(
                     lengths = [0.03, 0.03],
                     linkage_types = [bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)]),
                                      bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)])],
-                    mounting_types = [bearings.CombinationMounting([bearings.Mounting(left=True), bearings.Mounting(right=True)])],
+                    mounting_types = [bearings.CombinationMounting([bearings.Mounting(right=True), bearings.Mounting(left=True)])],
                     number_bearings = [[1], [1]],
                     catalog = schaeffler_catalog,
 #                    bearing_classes = [bearings.RadialBallBearing, 
