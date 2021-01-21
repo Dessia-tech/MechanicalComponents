@@ -4094,7 +4094,7 @@ class PlanetaryGearResult(DessiaObject):
             for planetary in self.planetary_gear.planetaries:
                 planetary.position = self.position_min_max.get_position(planetary, self.planetary_gear, self.geometry_min_max)
                 planetary.module = self.position_min_max.get_module(planetary, self.planetary_gear, self.geometry_min_max)
-        self.planetary_gear.update_length()
+        # self.planetary_gear.update_length()
 
 
 
