@@ -2847,6 +2847,7 @@ class BearingCombination(DessiaObject):
             component_item.append(unidimensional.Body(posx, bg.D/2., name='Outer ring{}'.format(num_bg)))
             bir = component_item[0]
             bor = component_item[1]
+           
             if bg.taking_loads == 'both':
                 pos1 = bir.initial_position
                 pos2 = bor.initial_position
@@ -2870,7 +2871,7 @@ class BearingCombination(DessiaObject):
 
                     nonlinear_linkages.append(link)
                    
-                    print(15269)
+                    
                     axial_bearings.append([link])
                     loads.append(unidimensional.Load(bor, -Fp))
                     loads.append(unidimensional.Load(bir, Fp))
@@ -2879,7 +2880,7 @@ class BearingCombination(DessiaObject):
                     link = unidimensional.CompressionSpring(bir, bor, k1, -j1, 'bearing {}'.format(num_bg))
                     
                     nonlinear_linkages.append(link)
-                    print(15269)
+                    
                     
                     axial_bearings.append([link])
                     loads.append(unidimensional.Load(bor, Fp))
@@ -2888,7 +2889,7 @@ class BearingCombination(DessiaObject):
                 if self.directions[num_bg] == -1:
                     link = unidimensional.CompressionSpring(bor, bir, k1, -j1, 'bearing {}'.format(num_bg))
                     nonlinear_linkages.append(link)
-                    print(15269)
+                    
                     axial_bearings.append([link])
                 elif self.directions[num_bg] == 1:
                     link = unidimensional.CompressionSpring(bir, bor, k1, -j1, 'bearing {}'.format(num_bg))
