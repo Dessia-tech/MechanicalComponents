@@ -197,7 +197,7 @@ class Material(DessiaObject):
                            data_wholer_curve, data_gear_material)
     """
     _standalone_in_db = False
-    _non_serializable_attributes = ['data_coeff_YB_Iso','data_wholer_curve','data_gear_material']
+    
 
     def __init__(self, volumic_mass, data_coeff_YB_Iso, data_wholer_curve,
                  data_gear_material, name=''):
@@ -488,7 +488,7 @@ class Mesh(DessiaObject):
     """
     _standalone_in_db = True
     _eq_is_data_eq = True
-    _non_serializable_attributes = ['rac']
+    _non_serializable_attributes = ['rac','material']
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
 
@@ -895,7 +895,7 @@ class MeshCombination(DessiaObject):
     _non_hash_attributes = ['name']
     _non_serializable_attributes = ['internal_torque','normal_load','tangential_load','radial_load',
                                     'linear_backlash','radial_contact_ratio','sigma_iso', 'sigma_lim',
-                                    'cycle','external_torque','gear_graph']
+                                    'cycle','external_torque','gear_graph','material']
                                     
     def __init__(self, center_distance: List[float], connections: List[Tuple[int, int]],
                  meshes: List[Mesh],
