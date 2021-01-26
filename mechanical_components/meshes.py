@@ -197,6 +197,7 @@ class Material(DessiaObject):
                            data_wholer_curve, data_gear_material)
     """
     _standalone_in_db = False
+    _non_serializable_attributes = ['data_coeff_YB_Iso','data_wholer_curve','data_gear_material']
 
     def __init__(self, volumic_mass, data_coeff_YB_Iso, data_wholer_curve,
                  data_gear_material, name=''):
