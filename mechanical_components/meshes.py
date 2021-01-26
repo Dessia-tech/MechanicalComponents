@@ -33,7 +33,7 @@ class Data(DessiaObject):
         self.data=data
         self.x=x
         self.y=y
-        
+        DessiaObject.__init__(self, name='data')
         
         
         
