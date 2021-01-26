@@ -145,6 +145,7 @@ class BearingCombinationOptimizer(DessiaObject):
                         list_L10.append(bearing.estimate_base_life_time(Fr = self.radial_loads,
                                                                 N = self.speeds, 
                                                                 t = self.operating_times, Cr = bearing.Cr))
+                    
                     L10 = BearingCombination.estimate_base_life_time(list_L10)
                     if L10 > L10_objective:
                         if bearings[0] not in bearing_possibilies:
@@ -275,7 +276,8 @@ class BearingCombinationOptimizer(DessiaObject):
                     li_bg_results.append(BearingSimulationResult())
                 bearing_combination_simulation_result = BearingCombinationSimulationResult(li_bg_results, self.axial_loads,
                                                                 self.radial_loads, self.speeds, self.operating_times)
-
+                # bc.plot()
+                
                 check = bc.base_life_time(bearing_combination_simulation_result)
                 if check == False:
                     break
@@ -506,15 +508,30 @@ class BearingAssemblyOptimizer(DessiaObject):
             valid_load_case = True
             if not mounting_type_left.both and not mounting_type_right.both:
                 for load_case in list_load_cases:
-                    if load_case not in (mounting_type_left, mounting_type_right):
+                    print(load_case)
+                    print((mounting_type_left, mounting_type_right))
+                    mouting_verification=[]
+                    for mouting in [mounting_type_left,mounting_type_right]:
+                        if mouting.right:
+                            mouting_verification.append('right')
+                        if mouting.left:
+                            mouting_verification.append('left')
+                    
+                    
+                    if load_case not in mouting_verification:
                         valid_load_case = False
+            
+            
             if mounting_type_left.free and mounting_type_right.free:
                 valid_load_case = False
             # if 'both' in set((mounting_type_left, mounting_type_right)):
+            
             if mounting_type_left.both or mounting_type_right.both:
                 if not mounting_type_left.free and not mounting_type_right.free:
                 # if 'free' not in set((mounting_type_left, mounting_type_right)):
                     valid_load_case = False
+                    
+            
             if valid_load_case:
                 for linkage_left, linkage_right in product(*[lt.linkages for lt in self.linkage_types]):
                     configurations.append(((mounting_type_left, linkage_left),
@@ -523,8 +540,12 @@ class BearingAssemblyOptimizer(DessiaObject):
 
     def ConceptualBearingCombinations(self, max_bearings=[2, 2]):
         bearing_combinations_possibilities = {}
+        
         for left, right in self.Configurations():
+            
             if not (left, right) in bearing_combinations_possibilities:
+                
+                
                 DBC_l = mechanical_components.optimization.bearings.ConceptualBearingCombinationOptimizer(left[1], 
                                                     left[0], 
                                                     self.inner_diameters[0],
@@ -542,6 +563,8 @@ class BearingAssemblyOptimizer(DessiaObject):
                 
                 combination_left = DBC_l.ConceptualBearingCombinations(max_bearings[0])
                 combination_right = DBC_r.ConceptualBearingCombinations(max_bearings[1])
+                print(len(combination_left))
+                print(len(combination_right))
                 if (len(combination_left) > 0) and (len(combination_right) > 0):
                     bearing_combinations_possibilities[(left, right)] = (combination_left, combination_right)
 #        print(len(DBC_l.ConceptualBearingCombinations(max_bearings[0])))
@@ -803,7 +826,8 @@ class BearingAssemblyOptimizer(DessiaObject):
 #                if Cr_current_node_m == Cr_current_node:
 #                    valid = False
 #                Cr_current_node_m = Cr_current_node
-
+            print(valid)
+            print(dt.current_depth)
             if (dt.current_depth == nb_bearings) and valid:
                 
                 bc_left = conceptual_bearing_combination_left.bearing_combination(bearings[0: nb_bearings_left])
@@ -814,9 +838,12 @@ class BearingAssemblyOptimizer(DessiaObject):
                     li_bg_results = []
                     for bearing in bearing_combination.bearings:
                         li_bg_results.append(BearingSimulationResult())
+                        print(li_bg_results[-1].radial_load)
                     bc_results.append(BearingCombinationSimulationResult(li_bg_results))
                 bearing_assembly_simulation_result = BearingAssemblySimulationResult(bc_results, 
                                                                 self.loads, self.speeds, self.operating_times)
+                
+                print(bearing_assembly_simulation_result.L10)
 #                pos1_min = self.axial_positions[0]
 #                pos1_max = self.axial_positions[0] + self.lengths[0]
 #                pos2_min = self.axial_positions[1]
@@ -828,16 +855,17 @@ class BearingAssemblyOptimizer(DessiaObject):
                 pos2_max = max(pos2_min, self.axial_positions[1] + self.lengths[1] - B_right/2.)
                 pos1_moy = (pos1_min + pos1_max)/2.
                 pos2_moy = (pos2_min + pos2_max)/2.
-
+                print(1256)
                 L10 = 0
                 for pos1, pos2 in product([pos1_min, pos1_moy, pos1_max], [pos2_min, pos2_moy, pos2_max]):
                     try:
                         bearing_assembly.shaft_load([pos1, pos2], 
                                                     bearing_assembly_simulation_result)
+                        
                         L10 = max(L10, bearing_assembly_simulation_result.L10)
                     except BearingL10Error:
                         pass
-                    
+                print(1257)
                 if L10 == 0:
                     break
                 
@@ -861,6 +889,7 @@ class BearingAssemblyOptimizer(DessiaObject):
                             li_bg_results = []
                             for bearing in bearing_combination.bearings:
                                 li_bg_results.append(BearingSimulationResult())
+                               
                             bc_results.append(BearingCombinationSimulationResult(li_bg_results))
                         bearing_assembly_simulation_result = BearingAssemblySimulationResult(bc_results, 
                                                                         self.loads, self.speeds, self.operating_times)
@@ -899,27 +928,38 @@ class BearingAssemblyOptimizer(DessiaObject):
                         list_Cr.append(Cr_current_node_max)
                         
             # Testing
+            print(valid)
             if valid:
                 # Counting possibilities
                 if dt.current_depth == 0:
                     dt.SetCurrentNodeNumberPossibilities(len(bearing_left_possibilies))
                     list_bearing_possibilities[dt.current_depth] = bearing_left_possibilies
+                    print(bearing_left_possibilies)
+                    print(nb_bearings_left)
                 elif dt.current_depth < nb_bearings_left:
+                    
                     bearing_classe = conceptual_bearing_combination_left.bearing_classes[dt.current_depth]
                     bearing = bearing_left_possibilies[dt.current_node[0]]
                     d = bearing.d
                     D = bearing.D
                     try:
                         bearing_possibilities = self.catalog.next_bearing_catalog(bearing_classe, d , D)
+                        print(bearing_possibilities)
+                        
                         dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
                         list_bearing_possibilities[dt.current_depth] = bearing_possibilities
                     except CatalogSearchError:
                         valid = False
+                        
                         dt.SetCurrentNodeNumberPossibilities(0)
                 elif dt.current_depth == nb_bearings_left:
                     dt.SetCurrentNodeNumberPossibilities(len(bearing_right_possibilies))
+                    print(bearing_right_possibilies)
                     list_bearing_possibilities[dt.current_depth] = bearing_right_possibilies
+                    print(nb_bearings)
+                    print(dt.current_depth )
                 elif dt.current_depth < nb_bearings:
+                    
                     bearing_classe = conceptual_bearing_combination_right.bearing_classes[dt.current_depth - nb_bearings_left]
                     bearing = bearing_right_possibilies[dt.current_node[nb_bearings_left]]
                     d = bearing.d
@@ -930,8 +970,11 @@ class BearingAssemblyOptimizer(DessiaObject):
                         list_bearing_possibilities[dt.current_depth] = bearing_possibilities
                     except CatalogSearchError:
                         valid = False
+                        
                         dt.SetCurrentNodeNumberPossibilities(0)
+                
                 elif dt.current_depth == nb_bearings:
+                    print(15698)
                     dt.SetCurrentNodeNumberPossibilities(0) 
                     bc_left = conceptual_bearing_combination_left.bearing_combination(bearings[0: nb_bearings_left])
                     bc_right = conceptual_bearing_combination_right.bearing_combination(bearings[nb_bearings_left:])
@@ -942,6 +985,7 @@ class BearingAssemblyOptimizer(DessiaObject):
                     if compt_same_configuration > max_bearing_assemblies - 1:
                         break
                 else:
+                    
                     dt.SetCurrentNodeNumberPossibilities(0)      
             else:
                 dt.SetCurrentNodeNumberPossibilities(0)
@@ -951,8 +995,9 @@ class BearingAssemblyOptimizer(DessiaObject):
     def OptimizeGeneric(self, max_solutions=10, nb_solutions_family=10,
                         progress_callback=lambda x:0,
                         verbose=False):
-        
+        print(4987)
         L10_objective = 0
+        
         for speed, time in zip(self.speeds, self.operating_times):
             L10_objective += speed/(2*math.pi)*time
         L10_objective = L10_objective/1e6
@@ -985,6 +1030,7 @@ class BearingAssemblyOptimizer(DessiaObject):
         combination_number_bearings = list(product(*self.number_bearings))
         combination_number_bearings = [combination_number_bearings[j] for j in npy.argsort([sum(i) for i in combination_number_bearings])]
         ncnb = float(len(combination_number_bearings))
+       
         for icnb, (max_bearings_left, max_bearings_right) in enumerate(combination_number_bearings):
             if verbose:
                 print('number of bearings analyzed: {} left and {} right'.format(max_bearings_left, max_bearings_right))
@@ -994,6 +1040,7 @@ class BearingAssemblyOptimizer(DessiaObject):
             li_bearing_assembly_L10 = []
             
             bearing_combinations_possibilities = self.ConceptualBearingCombinations(max_bearings = (max_bearings_left, max_bearings_right))
+            
             if len(bearing_combinations_possibilities) == 0:
                 continue
             for (left, right), bearing_combinations_possibility in bearing_combinations_possibilities.items():
@@ -1008,16 +1055,19 @@ class BearingAssemblyOptimizer(DessiaObject):
 #            bearing_assembly_configurations_sort = [li_bearing_assembly_configurations[i] for i in npy.argsort(li_bearing_assembly_L10)[::-1]]
             if verbose:
                 print('number bearing assemblies configurations {}'.format(len(bearing_assembly_configurations_sort)))
+            
             for bearing_assembly_configurations in bearing_assembly_configurations_sort:
                 bearing_assemblies = self.AnalyzeBearingCombinations(bearing_assembly_configurations, 
                                                                      L10_objective = L10_objective,
                                                                      max_bearing_assemblies=nb_solutions_family)
                 cas_bearing_assembly_simulations = []
+                
                 for i_bearing_assembly, bearing_assembly in enumerate(bearing_assemblies):
                     cas_bearing_assembly_simulations.append(bearing_assembly)
                 if cas_bearing_assembly_simulations != []:
                     bearing_assembly_generic.append(cas_bearing_assembly_simulations)
                 if verbose:
+                    print(cas_bearing_assembly_simulations)
                     print('size solutions {}'.format(len(bearing_assembly_generic)))
         return bearing_assembly_generic
                 
@@ -1026,8 +1076,8 @@ class BearingAssemblyOptimizer(DessiaObject):
                  verbose:bool=False)->None:
 #        progress_callback=lambda x:0,
         
-        bearing_assembly_generic = self.OptimizeGeneric(max_solutions)
-            
+        bearing_assembly_generic = self.OptimizeGeneric(max_solutions,verbose=True)
+        print(max_solutions)   
         L10_objective = 0
         for speed, time in zip(self.speeds, self.operating_times):
             L10_objective += speed/(2*math.pi)*time
@@ -1040,9 +1090,10 @@ class BearingAssemblyOptimizer(DessiaObject):
             li_cost = [ba.cost for ba in cas_bearing_assembly_simulations]
             list_cost.append(min(li_cost))
         bearing_assembly_simulations_sort = [bearing_assembly_generic[i] for i in npy.argsort(list_cost)]
-            
+       
         bearing_assembly_simulations = []
         sort_bearing_assembly_simulations = []
+       
         for bearing_assemblies in bearing_assembly_simulations_sort:
             list_cost_temp = [ba.cost for ba in bearing_assemblies]
             bearing_assemblies_temp = [bearing_assemblies[i] for i in npy.argsort(list_cost_temp)]
@@ -1165,6 +1216,8 @@ class BearingAssemblyOptimizer(DessiaObject):
         sol_fun = math.inf
         for p1, p2 in product(Bound[0] + [pos1_moy],Bound[1] + [pos2_moy]):
 #            cons = {'type': 'ineq','fun' : fineq}
+            print([p1,p2])
+            print(Bound)            
             res = minimize(fun, [p1, p2], method='SLSQP', bounds=Bound)
             if fun(res.x) < sol_fun:
                 sol_fun = fun(res.x)

@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
 import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
+import volmdlr.primitives3d as primitives3d
+import volmdlr.primitives2d as primitives2d
 
 import pandas as pd
 from pandas.plotting import scatter_matrix
@@ -202,11 +202,11 @@ class Spring(DessiaObject):
             self.matching_products.extend(products)
     
     def Contour(self):
-        p0 = vm.Point2D((self.D, 0))
+        p0 = vm.Point2D(self.D, 0)
         
-        l1 = vm.Circle2D(p0, self.d/2)
+        l1 = vm.wires.Circle2D(p0, self.d/2)
         
-        return vm.Contour2D([l1])
+        return vm.wires.Contour2D([l1])
     
     def Volume(self, F=0., position=vm.O3D, x=vm.X3D, z=vm.Z3D):
 #        p_spring_coord = (self.pos_x, self.pos_y, 0)
@@ -230,9 +230,9 @@ class Spring(DessiaObject):
         p = l/self.n
         
         primitives = []
-        volume = primitives3D.HelicalExtrudedProfile(position, x, z, position,
-                                                     l*z, p, self.contour, name = 'spring')
-        primitives.append(volume)
+        # volume = primitives3d.HelicalExtrudedProfile(position, x, z, position,
+        #                                              l*z, p, self.contour, name = 'spring')
+        # primitives.append(volume)
         
         return primitives
     

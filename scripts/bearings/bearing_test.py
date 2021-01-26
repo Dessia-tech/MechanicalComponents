@@ -8,7 +8,7 @@ Created on Fri Oct  5 09:53:05 2018
 import sys as sys
 #del sys.modules['mechanical_components.optimization']
 import mechanical_components.bearings as bearings
-from volmdlr import plot_data
+import plot_data
 import dessia_common as dc
 
 import numpy as npy
@@ -33,5 +33,5 @@ if not b1_bis == b1:
     raise KeyError('Non equal bearing object with dict_to_object')
     
 d = b1.plot_data(stroke_width=1)
-sol = [plt.to_dict() for plt in d]
-plot_data.plot_d3(sol)
+
+plot_data.plot_canvas(d,debug_mode=False)

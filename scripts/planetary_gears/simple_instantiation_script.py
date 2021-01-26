@@ -24,6 +24,7 @@ import time
 import dessia_common
 from dessia_api_client import Client
 import mechanical_components.optimization.meshes_protected as mg
+import mechanical_components.optimization.meshes as meshes_opt
 from mechanical_components.meshes import hardened_alloy_steel
 
 
@@ -64,10 +65,10 @@ from mechanical_components.meshes import hardened_alloy_steel
 # # volumemodel = vm.Contour2D(meshes_1.Contour(1) )
 # # volumemodel.MPLPlot() 
 
-sun=pg.Planetary(137,'Sun','sun')
-sun_2=pg.Planetary(-137,'Ring','sun_2')
+sun=pg.Planetary(30,'Sun','sun')
+sun_2=pg.Planetary(30,'Sun','sun_2')
 sun_3=pg.Planetary(60,'Sun','sun_2')
-ring= pg.Planetary(50,'Ring','ring')
+ring= pg.Planetary(100,'Ring','ring')
 planet_carrier= pg.PlanetCarrier('planet_carrier')
 planet_1=pg.Planet(12,'planet_1')
 
@@ -82,8 +83,8 @@ ring.torque_input=[13,100]
 planet_carrier.torque_input=[10,100]
 list1= [5,1,3]
 list2= [1,5,3]
-print(dessia_common.list_eq(list1,list2))
-planet_2=pg.Planet(10,'planet_2')
+
+planet_2=pg.Planet(30,'planet_2')
 planet_3=pg.Planet(13,'planet_3')
 planet_4=pg.Planet(5,'planet_4')
 planet_5=pg.Planet(5,'planet_5')
@@ -99,6 +100,11 @@ connections3=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_
               pg.Connection([planet_4,planet_5],'GI')]
 
 connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet_2],'GE'), pg.Connection([planet_2,ring],'GE')]
+
+# generator_planetary_gear=pg_generator.GeneratorPlanetaryGears(4,[[(0,0),(165,175),(-1000,1000),(9000,10000)],[(25,35),(0,0),(-1000,1000),(9000,10000)]],0,10)
+
+# print(generator_planetary_gear.speed_conversion())
+
 # plt.figure()
 # sun.volume_model(4.0,(0,0),0,0.1)
 # sun_2.volume_model(4.0,(0,0),0,0.1)
@@ -106,7 +112,7 @@ connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet
 
 
 
-# planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2], [planet_1,planet_2,planet_3], planet_carrier,connections,3,'pl_1')
+planetary_gears_1= pg.PlanetaryGear([sun,ring,sun_2], [planet_1,planet_2,planet_3], planet_carrier,connections,3,'pl_1')
 # planetary_gears_2= pg.PlanetaryGear([sun,ring,sun_2,], [planet_1,planet_2,planet_3,planet_4,planet_5], planet_carrier,connections3,3,'pl_1')
 
 
@@ -127,40 +133,45 @@ connections_2=[pg.Connection([sun,planet_1],'GE'),pg.Connection([planet_1,planet
 # for i,element in enumerate(component):
 #     puissance.append(result_speed[element]*result_torque[element])
 
-# generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_2,3,1,10,200)
-# generatorgeometry.verification()
+generatorgeometry=pg_generator.GeneratorPlanetaryGearsGeometry(planetary_gears_1,3,1,10,200)
+generatorgeometry.verification()
 # planetary1=generatorgeometry.planetary_gear.planetaries[0]
 # planet=generatorgeometry.planetary_gear.planets[0]
-module=0.4
-Z_1=-100
-Z_2=25
-Z_3=50
-center_distances=[[0,abs((Z_2+Z_1)*module/2)],[0,abs((Z_2+Z_3)*module/2)]]
+# module=0.45
+# Z_1=-100
+# Z_2=25
+# Z_3=50
+# center_distances=[[0,abs((Z_2+Z_1)*module/2)],[0,abs((Z_2+Z_3)*module/2)]]
 
-list_rack = {0:{'name':'Catalogue_A','module':[module,module],
-              'transverse_pressure_angle_rack':[20/180.*npy.pi,20/180.*npy.pi],
-              'coeff_gear_addendum':[0.85,0.85],'coeff_gear_dedendum':[1,1],
-              'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.4,0.4]}}
+# list_rack = {0:{'name':'Catalogue_A','module':[module,module],
+#               'transverse_pressure_angle_rack':[20/180.*npy.pi,20/180.*npy.pi],
+#               'coeff_gear_addendum':[0.85,0.85],'coeff_gear_dedendum':[1,1],
+#               'coeff_root_radius':[0.38,0.38],'coeff_circular_tooth_thickness':[0.4,0.4]}}
 
+# rack=meshes_opt.RackOpti(module=[module,module],transverse_pressure_angle=[20/180.*npy.pi,20/180.*npy.pi],
+#              coeff_gear_addendum=[1,1],coeff_gear_dedendum=[0.01,2],coeff_root_radius=[0.01,2],
+#              coeff_circular_tooth_thickness=[0.01,2])
+# list_rack = {0:rack}
 
-rack_choices = {0:0, 1:0 , 2:0}
-db2=m.cos(20/180.*npy.pi)*module*Z_2
+# rack_choices = {0:0, 1:0 , 2:0}
+# db2=m.cos(20/180.*npy.pi)*module*Z_2
 
-db1=m.cos(20/180.*npy.pi)*module*Z_1
-db3=m.cos(20/180.*npy.pi)*module*Z_3
-torques = {0: 'output', 1: 100*25/50, 2:100}
-cycles = {0: 1272321481513.054 , 1:1272321481513.054}
-material={0:hardened_alloy_steel, 1:hardened_alloy_steel}
-transverse_pressure_angle={0: [20/180.*npy.pi-0.1, 20/180.*npy.pi],1: [20/180.*npy.pi-0.1, 20/180.*npy.pi]}
-db=[[-db1-0.1,-db1],[db2-0.1,db2],[db3-0.1,db3]]
-coefficient_profile_shift=[[0.01,0.01],[0.01,0.01],[0.01,0.01]]
-d=mg.ContinuousMeshesAssemblyOptimizer(Z={0:Z_1,1:Z_2,2:Z_3},center_distances=center_distances,connections=[[(0,1),(1,2)]],rigid_links=[],
-                                        transverse_pressure_angle=transverse_pressure_angle,rack_list=list_rack,rack_choice=rack_choices,material=material,
-                                        torques=torques,cycles=cycles,safety_factor=1,db=db,coefficient_profile_shift=coefficient_profile_shift)
-d.Optimize(verbose=True)
-solution=d.solutions[0]
-plt.figure()
-solution.mesh_combinations[0].VolumeModel(centers={0:[0,0,(Z_2+Z_1)*module/2],1:[0,0,0]})
+# db1=m.cos(20/180.*npy.pi)*module*abs(Z_1)
+# db3=m.cos(20/180.*npy.pi)*module*Z_3
+# print(center_distances)
+# torques = {0: 'output', 1: 0, 2:100}
+# cycles = {0: 1272321481513.054 }
+# material={0:hardened_alloy_steel}
+# transverse_pressure_angle={0: [20/180.*npy.pi-0.1, 20/180.*npy.pi],1: [20/180.*npy.pi-0.1, 20/180.*npy.pi]}
+# db=[[db1-0.2,db1],[db2-0.2,db2],[db3-0.2,db3]]
+# coefficient_profile_shift=[[0.01,0.01],[0.01,0.01],[0.01,0.01]]
+# d=mg.ContinuousMeshesAssemblyOptimizer(Z={0:Z_1,1:Z_2,2:Z_3},center_distances=center_distances,connections=[[(0,1)],[(1,2)]],rigid_links=[],
+#                                         transverse_pressure_angle=transverse_pressure_angle,rack_list=list_rack,rack_choice=rack_choices,material=material,
+#                                         external_torques=torques,cycles=cycles,safety_factor=1,db=db,coefficient_profile_shift=coefficient_profile_shift)
+# d.Optimize(verbose=True)
+# solution=d.solutions[0]
+# # plt.figure()
+# Z5=solution.mesh_combinations[0]
 
 
 
@@ -176,7 +187,7 @@ solution.mesh_combinations[0].VolumeModel(centers={0:[0,0,(Z_2+Z_1)*module/2],1:
 # planetary_gear_result.planetary_gear.babylonjs()
 # planetary_gear_result.babylonjs()
 
-# generatorgeometry.optimize_min()
+generatorgeometry.optimize_min()
 # planetary_gear_result=pg.PlanetaryGearResult(planetary_gears_2,generatorgeometry.position_min_max)
 # planetary_gear_result.update_geometry()
 # print(planetary_gear_result.planetary_gear.recirculation_power())

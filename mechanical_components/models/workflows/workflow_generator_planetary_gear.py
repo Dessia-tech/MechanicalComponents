@@ -132,7 +132,7 @@ block_workflow_generator_planetary_gears_geometry=wf.WorkflowBlock(workflow_gene
 
  
 
-block_for_each_planetary_gears_geometry= wf.ForEach(block_workflow_generator_planetary_gears_geometry,block_workflow_generator_planetary_gears_geometry.inputs[0])
+block_for_each_planetary_gears_geometry= wf.ForEach(block_workflow_generator_planetary_gears_geometry,0)
 
 
 block_workflow_generator_planetary_gears_z_number=wf.WorkflowBlock(workflow_generator_planetary_gears_z_number)
@@ -142,21 +142,21 @@ block_workflow_generator_planetary_gears_z_number=wf.WorkflowBlock(workflow_gene
 
 
 block_for_each_planetary_gears_z_number= wf.ForEach(block_workflow_generator_planetary_gears_z_number,
-                                                        block_workflow_generator_planetary_gears_z_number.inputs[0])
+                                                        0)
 
 filters = [
           {'attribute' : 'sum_Z_planetary', 'operator' : 'gt', 'bound' : -100},
           {'attribute' : 'min_Z_planetary', 'operator' : 'gt', 'bound' : -100},
           {'attribute' : 'max_Z_planetary', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'd_min', 'operator' : 'gt', 'bound' : -100},
+          {'attribute' : 'D_train', 'operator' : 'gt', 'bound' : -100},
            {'attribute' : 'speed_max_planet', 'operator' : 'gt', 'bound' : -100}]
           
 filter_analyze= wf.Filter(filters)
 
-list_attribute=['sum_Z_planetary','min_Z_planetary','max_Z_planetary','d_min','speed_max_planet', 'recircle_power']
+list_attribute=['sum_Z_planetary','min_Z_planetary','max_Z_planetary','D_train','speed_max_planet', 'recycle_power']
 
 block_parallel_plot=wf.ParallelPlot(list_attribute, 4 ,name = 'Parallel_Plot')
-minimized_attributes = {'sum_Z_planetary':False,'d_min': True,'min_Z_planetary':True,'max_Z_planetary':True,'speed_max_planet': True}
+minimized_attributes = {'sum_Z_planetary':False,'D_train': True,'min_Z_planetary':True,'max_Z_planetary':True,'speed_max_planet': True}
 
 pareto_settings = ParetoSettings(minimized_attributes=minimized_attributes,
                                   enabled=True)
@@ -220,6 +220,7 @@ input_values = {workflow_generator_planetary_gears_architecture.index(block_plan
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[2]):1,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[3]):10,
                 workflow_generator_planetary_gears.index(block_for_each_planetary_gears_geometry.inputs[4]):250}
+
                 
                 # workflow_generator_planetary_gears.index(block_parallel_plot.inputs[1]):pareto_settings
 
@@ -250,16 +251,17 @@ workflow_generator_run = workflow_generator_planetary_gears.run(input_values)
 #                   pareto_settings=pareto_settings,
 #                   name='Planetary_gears')
 
-planetary_gear=workflow_generator_run.output_value[0]
+planetary_gear_1=workflow_generator_run.output_value[0]
+# planetary_gear_1.planetary_gear.mesh_generation()
 
 
-c = Client(api_url = 'http://localhost:5000')
+c = Client(api_url = 'https://api.demo.dessia.tech')
 r = c.create_object_from_python_object(workflow_generator_run)
 
 # r2= c.create_object_from_python_object(catalog)
 
-<<<<<<< HEAD
+# <<<<<<< HEAD
 # workflow_generator_planetary_gears = workflow_generator_planetary_gears.run(input_values)
-=======
->>>>>>> planatery_gears
+# =======
+# >>>>>>> planatery_gears
 # workflow_generator_planetary_gears.output_value[1].plot_kinematic_graph()

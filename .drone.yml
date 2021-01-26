@@ -3,8 +3,9 @@ name: default
 
 steps:
 - name: install, doc and script running
-  image: python:3
+  image: python:3.8
   commands:
+  - pip install Cython
   - git fetch --tags
   - python setup.py install
   - pip install sphinx sphinx_rtd_theme
@@ -17,25 +18,15 @@ steps:
   # - python scripts/bearings/workflow_combination_bearing_test.py
 
 - name: develop
-  image: python:3
+  image: python:3.8
   commands:
+  - pip install Cython
   - python setup.py develop
 
 - name: sdist
-  image: python:3
+  image: python:3.8
   commands:
   - python setup.py sdist
-
-
-- name: install from sdist and run test scripts
-  image: python:3
-  commands:
-  - mkdir install_from_sdist
-  - tar -xf dist/*.tar.gz -C install_from_sdist/
-  - cd install_from_sdist
-  - cd mechanical_components*
-  - python setup.py install
-
 
 - name: compile linux test licence valid
   image: python:3.8
@@ -93,7 +84,6 @@ steps:
   image: appleboy/drone-scp
   when:
     branch: master
-    event: tag
   settings:
     host: austerlitz.dessia.tech
     target: /var/www/documentation/MechanicalComponents/
@@ -102,21 +92,6 @@ steps:
     username: drone
     password:
       from_secret: ssh_drone_password
-
-- name: upload sdist to seafile
-  image: dessia/drone-seafile
-  when:
-    branch: master
-    event: push
-  settings:
-    server_url: https://partage.dessia.tech
-    repo_id:
-      from_secret: seafile_repo_id
-    seafile_token:
-      from_secret: seafile_token
-    files: dist/*
-    root_directory: /mechanical_components/
-
 
 
 - name: notify

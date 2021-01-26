@@ -6,7 +6,7 @@
 
 import math
 import volmdlr as vm
-import volmdlr.primitives3D
+import volmdlr.primitives3d
 from typing import List
 
 from dessia_common.core import DessiaObject
@@ -59,7 +59,7 @@ class HexagonNut(DessiaObject):
         return vm.Contour2D([vm.Circle2D(vm.o2D, 0.5*self.d)])
 
     def volmdlr_model(self, center=vm.O3D, x=vm.X3D, y=vm.Y3D, z=vm.Z3D):
-        extrusion = volmdlr.primitives3D.ExtrudedProfile(center, x, y,
+        extrusion = volmdlr.primitives3d.ExtrudedProfile(center, x, y,
                                                          self.outer_contour(),
                                                          [self.inner_contour()],
                                                          z*self.h,
@@ -125,17 +125,17 @@ class HexagonScrew(DessiaObject):
         return vm.Contour2D([vm.Circle2D(vm.o2D, 0.5*self.d)])
 
     def volmdlr_model(self, center=vm.O3D, x=vm.X3D, y=vm.Y3D, z=vm.Z3D):
-        head = volmdlr.primitives3D.ExtrudedProfile(center, x, y,
+        head = volmdlr.primitives3d.ExtrudedProfile(center, x, y,
                                                     self.head_outer_contour(),
                                                     [],
                                                     z*self.a,
                                                     name='head '+self.name)
-        body_without_thead = volmdlr.primitives3D.ExtrudedProfile(center+z*self.a, x, y,
+        body_without_thead = volmdlr.primitives3d.ExtrudedProfile(center+z*self.a, x, y,
                                                                   self.body_outer_contour(),
                                                                   [],
                                                                   z*self.s,
                                                                   name='body '+self.name)
-        body_with_thread = volmdlr.primitives3D.ExtrudedProfile(center+z*(self.a+self.s), x, y,
+        body_with_thread = volmdlr.primitives3d.ExtrudedProfile(center+z*(self.a+self.s), x, y,
                                                                 self.body_outer_contour(),
                                                                 [],
                                                                 z*(self.L-self.a),
@@ -187,7 +187,7 @@ class FlatWasher(DessiaObject):
         return vm.Contour2D([vm.Circle2D(vm.o2D, 0.5*self.D)])
 
     def volmdlr_model(self, center=vm.O3D, x=vm.X3D, y=vm.Y3D, z=vm.Z3D):
-        extrusion = volmdlr.primitives3D.ExtrudedProfile(center, x, y,
+        extrusion = volmdlr.primitives3d.ExtrudedProfile(center, x, y,
                                                          self.outer_contour(),
                                                          [self.inner_contour()],
                                                          z*self.e1,
