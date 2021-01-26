@@ -1318,9 +1318,9 @@ class PlanetaryGear(DessiaObject):
             primitive = solution.volmdlr_primitives(axis=axis, centers=centers)
             gear_width_max = 0
 
-            for gear in solution.gear_width:
-                if solution.gear_width[gear] > gear_width_max:
-                    gear_width_max = solution.gear_width[gear]
+            for gear_width in solution.gear_width:
+                if gear_width > gear_width_max:
+                    gear_width_max = gear_width
 
             max_length_meshing_chain.append(gear_width_max)
             for j, number in enumerate(number_primitive_planet):
