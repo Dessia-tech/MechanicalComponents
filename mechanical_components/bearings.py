@@ -3040,11 +3040,13 @@ class BearingCombination(DessiaObject):
                 return True
             except unidimensional.ModelConvergenceError:
                 print('Convergence Error')
+                
                 return False
                 pass
             except IndexError:
                 
                 print('Convergence Error')
+                
                 return False
                 pass
         else:

@@ -892,7 +892,10 @@ class MeshCombination(DessiaObject):
 
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
-    _non_serializable_attributes = ['meshes_dico','gear_graph']
+    _non_serializable_attributes = ['internal_torque','normal_load','tangential_load','radial_load',
+                                    'linear_backlash','radial_contact_ratio','sigma_iso', 'sigma_lim',
+                                    'cycle','external_torque']
+                                    
     def __init__(self, center_distance: List[float], connections: List[Tuple[int, int]],
                  meshes: List[Mesh],
                  safety_factor: float = 1, name: str = ''):
@@ -905,26 +908,26 @@ class MeshCombination(DessiaObject):
             if connection.__class__.__name__ =='list':
                self.connections[i]=(connection[0],connection[1]) 
         self.meshes = meshes
-        self.meshes_dico = {}
+        self.meshes_dico = []
         for i,meshe in enumerate(meshes):
-            self.meshes_dico[i] = meshe
+            self.meshes_dico.append(meshe)
 
 
 
         self.safety_factor = safety_factor
 
         self.minimum_gear_width = 10e-3
-        self.helix_angle = {}
+        self.helix_angle = []
         self.external_torque = {}
         self.cycle = {}
 
         for i,meshe in enumerate(meshes):
             if meshe:
                 if meshe.external_torque != None:
-                    self.external_torque[i] = meshe.external_torque
-                if meshe.cycle != None:
-                    self.cycle[i] = meshe.cycle
-                self.helix_angle[i]=meshe.rack.helix_angle
+                    self.external_torque[i]= meshe.external_torque
+                # if meshe.cycle != None:
+                self.cycle[i]= meshe.cycle
+                self.helix_angle.append(meshe.rack.helix_angle)
 
 
         # NetworkX graph construction
@@ -946,21 +949,23 @@ class MeshCombination(DessiaObject):
             df_first = 2*self.center_distance[num_gear]*mesh_first.z/mesh_second.z/(1+mesh_first.z/mesh_second.z)
             self.transverse_pressure_angle.append(math.acos(mesh_first.db/df_first))
         transverse_pressure_angle_0 = self.transverse_pressure_angle[0]
-
-        self.Z = {i: mesh.z for i,mesh in enumerate(meshes)}
-        self.material = {i: mesh.material for  i,mesh in enumerate(meshes)}
+        self.Z=[]
+        self.material=[]
+        for i,mesh in enumerate(meshes):
+            self.Z.append( mesh.z)
+            self.material.append(mesh.material)
         
-        self.gear_width = {}
-        self.DB = {}
+        self.gear_width = []
+        self.DB = []
         for  i,mesh in enumerate(meshes):
-            self.gear_width[i] = mesh.gear_width
-            self.DB[i] = mesh.db
+            self.gear_width.append(mesh.gear_width)
+            self.DB.append(mesh.db)
 
         self.DF, DB_new, self.connections_dfs, transverse_pressure_angle_new\
             = MeshCombination.gear_geometry_parameter(self.Z, transverse_pressure_angle_0, center_distance,
                                                     connections, gear_graph)
         if len(self.cycle.keys())<len(list_gear): # the gear mesh optimizer calculate this dictionary
-            self.cycle = MeshCombination.cycle_parameter(cycle, self.Z, list_gear)
+            self.cycle = MeshCombination.cycle_parameter(self.cycle, self.Z, list_gear)
 
         self.internal_torque, self.normal_load, self.tangential_load, self.radial_load = MeshCombination.gear_torque(self.Z, self.external_torque, self.DB,
                                                                                                                      gear_graph, list_gear, connections, self.DF, self.transverse_pressure_angle)
@@ -1241,7 +1246,7 @@ class MeshCombination(DessiaObject):
     @classmethod
     def gear_geometry_parameter(cls, Z, transverse_pressure_angle_0, center_distance, connections, gear_graph):
         # Construction of pitch and base diameter
-        DF = {}
+        DF = [0]*len(connections)
         db = {}
         dict_transverse_pressure_angle = {0: transverse_pressure_angle_0}
         connections_dfs = list(nx.edge_dfs(gear_graph,
@@ -1266,7 +1271,7 @@ class MeshCombination(DessiaObject):
                 DF1 = abs(2*cd*Z1/Z2/(1+Z1/Z2))
                 DF2 = abs(2*cd-DF1)
 
-            DF[num_mesh] = {}
+            DF[num_mesh] =[0]*len(Z)
             DF[num_mesh][engr1] = DF1
             DF[num_mesh][engr2] = DF2
             if num_mesh == 0:
@@ -1379,6 +1384,7 @@ class MeshCombination(DessiaObject):
 
         :results: dictionary define the number of cycle for each gear mesh {node1:cycle1, node2:cycle2, node3:cycle3 ...}
         """
+        
         eng_init=list(cycle.keys())[0]
         for eng in list_gear:
             if eng not in cycle.keys():
