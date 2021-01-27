@@ -213,8 +213,8 @@ class Material(DessiaObject):
     _standalone_in_db = False
     
 
-    def __init__(self, volumic_mass, data_coeff_YB_Iso, data_wholer_curve,
-                 data_gear_material, name=''):
+    def __init__(self, volumic_mass: float, data_coeff_YB_Iso: Data, data_wholer_curve: Data,
+                 data_gear_material: Data, name: str=''):
         self.volumic_mass = volumic_mass
         self.data_coeff_YB_Iso = data_coeff_YB_Iso
         self.data_wholer_curve = data_wholer_curve

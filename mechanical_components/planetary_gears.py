@@ -4284,7 +4284,7 @@ class PlanetaryGearResult(DessiaObject):
     def volmdlr_primitives(self, frame=vm.OXYZ):
 
         self.update_geometry()
-        # self.planetary_gear.update_length()
+        self.planetary_gear.update_length()
         li_box = self.planetary_gear.volmdlr_primitives()
         return li_box
 
