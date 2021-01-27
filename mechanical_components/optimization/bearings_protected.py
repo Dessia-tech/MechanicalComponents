@@ -942,7 +942,7 @@ class BearingAssemblyOptimizer(DessiaObject):
                     D = bearing.D
                     try:
                         bearing_possibilities = self.catalog.next_bearing_catalog(bearing_classe, d , D)
-                        print(bearing_possibilities)
+                        
                         
                         dt.SetCurrentNodeNumberPossibilities(len(bearing_possibilities))
                         list_bearing_possibilities[dt.current_depth] = bearing_possibilities
