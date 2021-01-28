@@ -4964,6 +4964,8 @@ class GeneratorPlanetaryGears(DessiaObject):
         self.speed_max_planet = w_max*3
         return speed_possibility
     
+    
+    
 
         
 
@@ -5059,6 +5061,7 @@ class GeneratorPlanetaryGears(DessiaObject):
                     planetary_gear_results.append(PlanetaryGearResult(planetary_gear=generator.planetary_gear, position_min_max=position_min_max))
                    
                     planetary_gear_results[-1].update_geometry()
+                    planetary_gear_results[-1].planetary_gear.update_length()
                     # planetary_gear_results[-1].babylonjs()
                     # plot_data.plot_canvas(planetary_gear_results[-1].plot_data())
                     if len(planetary_gear_results) == self.number_solution:

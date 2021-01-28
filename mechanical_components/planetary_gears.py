@@ -524,7 +524,7 @@ class Connection(DessiaObject):
 
 class PlanetaryGear(DessiaObject):
     _standalone_in_db = True
-    _non_serializable_attributes = ['mech', 'mech_dict','max_length_meshing_chain','length_double','length', 'center', 'axis']
+    _non_serializable_attributes = ['mech', 'mech_dict','max_length_meshing_chain', 'center', 'axis']
     _eq_is_data_eq=False
 
 
@@ -1279,7 +1279,7 @@ class PlanetaryGear(DessiaObject):
                         centers[i] = (element.positions[0][0]+center[0], element.positions[0][1]+center[1],
                                       element.positions[0][2]+center[2])
                     else:
-                        print(element.positions)
+                        
                         centers[i] = element.positions[0]
 
                     if not axis == (1, 0, 0):
@@ -1318,9 +1318,9 @@ class PlanetaryGear(DessiaObject):
             primitive = solution.volmdlr_primitives(axis=axis, centers=centers)
             gear_width_max = 0
 
-            for gear in solution.gear_width:
-                if solution.gear_width[gear] > gear_width_max:
-                    gear_width_max = solution.gear_width[gear]
+            for gear_width in solution.gear_width:
+                if gear_width > gear_width_max:
+                    gear_width_max = gear_width
 
             max_length_meshing_chain.append(gear_width_max)
             for j, number in enumerate(number_primitive_planet):
@@ -3909,6 +3909,33 @@ class PlanetaryGear(DessiaObject):
 
         self.length = z_max-z_min+(max_length_meshing_chain[index_min]+max_length_meshing_chain[index_max])/2
 
+    
+    def update_length_without_mesh_generation(self):
+        meshing_chains = self.meshing_chain()
+
+        z = self.meshing_chain_position_z(meshing_chains)
+        z_max = 0
+        
+        z_min = np.inf
+        
+        for i, meshing_chain in enumerate(meshing_chains):
+
+            if z[i] < z_min:
+                z_min = z[i]
+                i
+
+            if z[i] > z_max:
+                z_max = z[i]
+              
+
+            for element in meshing_chain:
+                if isinstance(element, Planetary):
+                    element.position = (z[i], element.position[1], element.position[2])
+
+                elif isinstance(element, Planet):
+                    for j, position in enumerate(element.positions):
+                        element.positions[j] = (z[i], position[1], position[2])
+
     def ConvertCenterPlanetaryGears(self, z):
         meshing_chains = self.meshing_chain()
         z_meshing_chain = self.meshing_chain_position_z(meshing_chains)
@@ -3999,9 +4026,9 @@ class PlanetaryGearResult(DessiaObject):
         self.planet_carrier = planetary_gear.planet_carrier
         self.connections = planetary_gear.connections
         self.doubles = planetary_gear.doubles
-
-        self.update_geometry()
-        self.recycle_power = 0
+        self.recycle_power=recycle_power
+        # self.update_geometry()
+       
         # if not self.recycle_power:
         #     planetary_gear_recirculation_power = self.planetary_gear.recirculation_power()
         #     max_recirculation_branch = []
@@ -4043,11 +4070,19 @@ class PlanetaryGearResult(DessiaObject):
 
             if d > self.D_train:
                 self.D_train = d
-
-
-
-
-
+                
+    @classmethod
+    def dict_to_object(cls, dict_):
+        planetary_gear = PlanetaryGear.dict_to_object(dict_['planetary_gear'])
+        position_min_max = PositionMinMaxPlanetaryGear.dict_to_object(dict_['position_min_max'])
+        recycle_power=dict_['recycle_power']
+        obj = cls(planetary_gear=planetary_gear,position_min_max=position_min_max,
+                  recycle_power=recycle_power)
+        obj.planetary_gear.length=dict_['planetary_gear']['length']
+        obj.planetary_gear.length_double=dict_['planetary_gear']['length_double']
+        obj.planetary_gear.update_length_without_mesh_generation()
+        return obj
+    
 
     def __str__(self):
 
@@ -4094,7 +4129,7 @@ class PlanetaryGearResult(DessiaObject):
             for planetary in self.planetary_gear.planetaries:
                 planetary.position = self.position_min_max.get_position(planetary, self.planetary_gear, self.geometry_min_max)
                 planetary.module = self.position_min_max.get_module(planetary, self.planetary_gear, self.geometry_min_max)
-        self.planetary_gear.update_length()
+        self.planetary_gear.update_length_without_mesh_generation()
 
 
 
@@ -4248,8 +4283,8 @@ class PlanetaryGearResult(DessiaObject):
 
     def volmdlr_primitives(self, frame=vm.OXYZ):
 
-        # self.update_geometry()
-
+        self.update_geometry()
+        self.planetary_gear.update_length()
         li_box = self.planetary_gear.volmdlr_primitives()
         return li_box
 
@@ -4544,7 +4579,7 @@ class PlanetsStructure(DessiaObject):
             plot_data.append(line.plot_data('line', color=list_color[color]))
         # plt.plot(x, y, 'r')
 
-
+    
 
 
 

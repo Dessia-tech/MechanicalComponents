@@ -24,8 +24,22 @@ import mechanical_components.tools as tools
 import json
 import copy
 from typing import  List, Tuple
+
+
+class Data(DessiaObject):
+    _standalone_in_db = False
+    
+    def __init__(self,data,x,y):
+        self.data=data
+        self.x=x
+        self.y=y
+        DessiaObject.__init__(self, name='data')
+        
+        
+        
+        
 #data_coeff_YB_Iso
-evol_coeff_yb_iso = {'data':[[0.0, 1.0029325508401201],
+evol_coeff_yb_iso = Data(data=[[0.0, 1.0029325508401201],
                              [4.701492563229561, 0.9310850480431024],
                              [9.104477651442416, 0.8782991233021732],
                              [14.5522388104227, 0.8240469255458759],
@@ -34,10 +48,10 @@ evol_coeff_yb_iso = {'data':[[0.0, 1.0029325508401201],
                              [28.507462609617956, 0.7521994155347822],
                              [34.029850499665855, 0.7507331425194141],
                              [40.0, 0.7492668574805859]
-                             ], 'x':'Linear', 'y':'Linear'}
+                             ], x='Linear', y='Linear')
 
 #data_wholer_curve
-wholer_hardened_alloy_steel = {'data':[[4.296196199237153, 1.9797762011105589],
+wholer_hardened_alloy_steel = Data(data=[[4.296196199237153, 1.9797762011105589],
                                        [4.824840106199563, 1.9413306094362142],
                                        [5.3344338175705674, 1.908892154601565],
                                        [6.115493253679078, 1.8632380197445122],
@@ -45,18 +59,18 @@ wholer_hardened_alloy_steel = {'data':[[4.296196199237153, 1.9797762011105589],
                                        [7.144205815889171, 1.8536266428508523],
                                        [7.691899918442984, 1.8524252154829133],
                                        [8.010991340520903, 1.8524252154829133]
-                                       ], 'x':'Log', 'y':'Log'}
+                                       ], x='Log', y='Log')
 
-wholer_nitrided_alloy_steel = {'data':[[4.104865629699472, 1.9252942042661974],
+wholer_nitrided_alloy_steel = Data(data=[[4.104865629699472, 1.9252942042661974],
                                        [4.568697315952783, 1.8521640228225367],
                                        [4.887581626297173, 1.8046294185503593],
                                        [5.438381821440599, 1.7900033864666123],
                                        [6.402282079596832, 1.7918316299646175],
                                        [7.264719174616821, 1.7918316299646175],
                                        [7.989456220850952, 1.793659894487549]
-                                       ], 'x':'Log', 'y':'Log'}
+                                       ], x='Log', y='Log')
 
-wholer_through_hardened_steel = {'data':[[4.172369719531124, 1.895676495604088],
+wholer_through_hardened_steel = Data(data=[[4.172369719531124, 1.895676495604088],
                                          [4.677200861168087, 1.7983611100752137],
                                          [4.9677168648417585, 1.741894170956562],
                                          [5.329671247836526, 1.6842258044699714],
@@ -64,9 +78,9 @@ wholer_through_hardened_steel = {'data':[[4.172369719531124, 1.895676495604088],
                                          [6.091680488353632, 1.6734129791834462],
                                          [7.139443246155129, 1.671010124447568],
                                          [8.00146620105282, 1.6758158339193243]
-                                         ], 'x':'Log', 'y':'Log'}
+                                         ], x='Log',y='Log')
 
-wholer_surface_hardened_steel = {'data':[[4.281908490035029, 1.7611169667937343],
+wholer_surface_hardened_steel = Data(data=[[4.281908490035029, 1.7611169667937343],
                                          [4.701013626493532, 1.6998443182033265],
                                          [5.015342395492649, 1.6553916107142128],
                                          [5.358246582896013, 1.6109389032250994],
@@ -75,88 +89,88 @@ wholer_surface_hardened_steel = {'data':[[4.281908490035029, 1.7611169667937343]
                                          [6.567936294931109, 1.5748961873115592],
                                          [7.263269725861159, 1.5772990210225108],
                                          [7.996703631318779, 1.5772990210225108]
-                                         ], 'x':'Log', 'y':'Log'}
+                                         ], x='Log', y='Log')
 
-wholer_carbon_steel = {'data':[[4.307791955971963, 1.6419147590563592],
+wholer_carbon_steel = Data(data=[[4.307791955971963, 1.6419147590563592],
                                [5.242702822291173, 1.535876005424268],
                                [5.938450393343521, 1.4700588400224806],
                                [6.518240063668731, 1.431665495290182],
                                [7.221234961844144, 1.4334937598131132],
                                [7.989456220850952, 1.4353220033111185]
-                               ], 'x':'Log', 'y':'Log'}
+                               ], x='Log', y='Log')
 
-wholer_cast_iron = {'data':[[4.307791955971963, 1.6419147590563592],
+wholer_cast_iron = Data(data=[[4.307791955971963, 1.6419147590563592],
                             [5.242702822291173, 1.535876005424268],
                             [5.938450393343521, 1.4700588400224806],
                             [6.518240063668731, 1.431665495290182],
                             [7.221234961844144, 1.4334937598131132],
                             [7.989456220850952, 1.4353220033111185]
-                            ], 'x':'Log', 'y':'Log'}
+                            ], x='Log', y='Log')
 
-wholer_bronze = {'data':[[4.307791955971963, 1.6419147590563592],
+wholer_bronze = Data(data=[[4.307791955971963, 1.6419147590563592],
                          [5.242702822291173, 1.535876005424268],
                          [5.938450393343521, 1.4700588400224806],
                          [6.518240063668731, 1.431665495290182],
                          [7.221234961844144, 1.4334937598131132],
                          [7.989456220850952, 1.4353220033111185]
-                         ], 'x':'Log', 'y':'Log'}
+                         ], x='Log', y='Log')
 
-wholer_grey_iron = {'data':[[4.307791955971963, 1.6419147590563592],
+wholer_grey_iron = Data(data=[[4.307791955971963, 1.6419147590563592],
                             [5.242702822291173, 1.535876005424268],
                             [5.938450393343521, 1.4700588400224806],
                             [6.518240063668731, 1.431665495290182],
                             [7.221234961844144, 1.4334937598131132],
                             [7.989456220850952, 1.4353220033111185]
-                            ], 'x':'Log', 'y':'Log'}
+                            ], x='Log', y='Log')
 #data_gear_material
 
-sigma_hardened_alloy_steel = {'data':[[1.8422104370714443, 1.4645831828946267],
+sigma_hardened_alloy_steel = Data(data=[[1.8422104370714443, 1.4645831828946267],
                                       [1.948612010770208, 1.5219116983411152],
                                       [2.0605171321606295, 1.5810895335609718],
                                       [2.141235568740199, 1.6254729099758645]
-                                      ], 'x':'Log', 'y':'Log'}
+                                      ], x='Log', y='Log')
 
-sigma_nitrided_alloy_steel = {'data':[[1.8458794622934307, 1.4349942652846983],
+sigma_nitrided_alloy_steel = Data(data=[[1.8458794622934307, 1.4349942652846983],
                                       [1.943108482795906, 1.488624180937243],
                                       [2.0201578941534892, 1.5274596179084272],
                                       [2.128393990321924, 1.5866374531282839]
-                                      ], 'x':'Log', 'y':'Log'}
+                                      ], x='Log', y='Log')
 
-sigma_through_hardened_steel = {'data':[[1.7798371068844516, 1.292597616678765],
+sigma_through_hardened_steel = Data(data=[[1.7798371068844516, 1.292597616678765],
                                         [1.921094370898698, 1.3850629693024938],
                                         [2.032999472571764, 1.4627338829976548],
                                         [2.1650841833897223, 1.5533499158480155]
-                                        ], 'x':'Log', 'y':'Log'}
+                                        ], x='Log', y='Log')
 
-sigma_surface_hardened_steel = {'data':[[1.8312033811228403, 1.115064130895591],
+sigma_surface_hardened_steel = Data(data=[[1.8312033811228403, 1.115064130895591],
                                         [1.932101426847302, 1.200132264055036],
                                         [2.038503000546066, 1.2852003773380847]
-                                        ], 'x':'Log', 'y':'Log'}
+                                        ], x='Log', y='Log')
 
-sigma_carbon_steel = {'data':[[1.677104538690319, 1.1002696720906269],
+sigma_carbon_steel = Data(data=[[1.677104538690319, 1.1002696720906269],
                               [1.7633265032441903, 1.1723926463420797],
                               [1.8385414118494579, 1.2389677010262203],
                               [1.8844041581135444, 1.2796524577707729]
-                              ], 'x':'Log', 'y':'Log'}
+                              ], x='Log', y='Log')
 
-sigma_cast_iron = {'data':[[1.4734739247717241, 0.922736186307453],
+sigma_cast_iron = Data(data=[[1.4734739247717241, 0.922736186307453],
                            [1.5468543306246763, 0.9837633214242817],
                            [1.6073931580593532, 1.0336946174064863],
                            [1.6404143456225206, 1.0688314545837265]
-                           ], 'x':'Log', 'y':'Log'}
+                           ], x='Log', y='Log')
 
-sigma_bronze = {'data':[[1.313871566195314, 0.7858874572688317],
+sigma_bronze = Data(data=[[1.313871566195314, 0.7858874572688317],
                         [1.3890864826875238, 0.8487638922826322],
                         [1.4294457009773085, 0.8802021097895326],
                         [1.4551288380965028, 0.9097910273994609]
-                        ], 'x':'Log', 'y':'Log'}
+                        ], x='Log', y='Log')
 
-sigma_grey_iron = {'data':[[1.354230792372041, 0.7100658633470387],
+sigma_grey_iron = Data(data=[[1.354230792372041, 0.7100658633470387],
                            [1.4276111785076375, 0.7766409180311793],
                            [1.4936535339166166, 0.84691459238566],
                            [1.5431853054026896, 0.8986951882648367],
                            [1.5725374677438706, 0.933832025442077]
-                           ], 'x':'Log', 'y':'Log'}
+                           ], x='Log', y='Log')
 
 class Material(DessiaObject):
     """
@@ -197,9 +211,10 @@ class Material(DessiaObject):
                            data_wholer_curve, data_gear_material)
     """
     _standalone_in_db = False
+    
 
-    def __init__(self, volumic_mass, data_coeff_YB_Iso, data_wholer_curve,
-                 data_gear_material, name=''):
+    def __init__(self, volumic_mass: float, data_coeff_YB_Iso: Data, data_wholer_curve: Data,
+                 data_gear_material: Data, name: str=''):
         self.volumic_mass = volumic_mass
         self.data_coeff_YB_Iso = data_coeff_YB_Iso
         self.data_wholer_curve = data_wholer_curve
@@ -892,7 +907,10 @@ class MeshCombination(DessiaObject):
 
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
-    _non_serializable_attributes = ['meshes_dico','gear_graph']
+    _non_serializable_attributes = ['internal_torque','normal_load','tangential_load','radial_load',
+                                    'linear_backlash','radial_contact_ratio','sigma_iso', 'sigma_lim',
+                                    'cycle','external_torque','gear_graph']
+                                    
     def __init__(self, center_distance: List[float], connections: List[Tuple[int, int]],
                  meshes: List[Mesh],
                  safety_factor: float = 1, name: str = ''):
@@ -905,26 +923,26 @@ class MeshCombination(DessiaObject):
             if connection.__class__.__name__ =='list':
                self.connections[i]=(connection[0],connection[1]) 
         self.meshes = meshes
-        self.meshes_dico = {}
+        self.meshes_dico = []
         for i,meshe in enumerate(meshes):
-            self.meshes_dico[i] = meshe
+            self.meshes_dico.append(meshe)
 
 
 
         self.safety_factor = safety_factor
 
         self.minimum_gear_width = 10e-3
-        self.helix_angle = {}
+        self.helix_angle = []
         self.external_torque = {}
         self.cycle = {}
 
         for i,meshe in enumerate(meshes):
             if meshe:
                 if meshe.external_torque != None:
-                    self.external_torque[i] = meshe.external_torque
-                if meshe.cycle != None:
-                    self.cycle[i] = meshe.cycle
-                self.helix_angle[i]=meshe.rack.helix_angle
+                    self.external_torque[i]= meshe.external_torque
+                # if meshe.cycle != None:
+                self.cycle[i]= meshe.cycle
+                self.helix_angle.append(meshe.rack.helix_angle)
 
 
         # NetworkX graph construction
@@ -946,21 +964,23 @@ class MeshCombination(DessiaObject):
             df_first = 2*self.center_distance[num_gear]*mesh_first.z/mesh_second.z/(1+mesh_first.z/mesh_second.z)
             self.transverse_pressure_angle.append(math.acos(mesh_first.db/df_first))
         transverse_pressure_angle_0 = self.transverse_pressure_angle[0]
-
-        self.Z = {i: mesh.z for i,mesh in enumerate(meshes)}
-        self.material = {i: mesh.material for  i,mesh in enumerate(meshes)}
+        self.Z=[]
+        self.material=[]
+        for i,mesh in enumerate(meshes):
+            self.Z.append( mesh.z)
+            self.material.append(mesh.material)
         
-        self.gear_width = {}
-        self.DB = {}
+        self.gear_width = []
+        self.DB = []
         for  i,mesh in enumerate(meshes):
-            self.gear_width[i] = mesh.gear_width
-            self.DB[i] = mesh.db
+            self.gear_width.append(mesh.gear_width)
+            self.DB.append(mesh.db)
 
         self.DF, DB_new, self.connections_dfs, transverse_pressure_angle_new\
             = MeshCombination.gear_geometry_parameter(self.Z, transverse_pressure_angle_0, center_distance,
                                                     connections, gear_graph)
         if len(self.cycle.keys())<len(list_gear): # the gear mesh optimizer calculate this dictionary
-            self.cycle = MeshCombination.cycle_parameter(cycle, self.Z, list_gear)
+            self.cycle = MeshCombination.cycle_parameter(self.cycle, self.Z, list_gear)
 
         self.internal_torque, self.normal_load, self.tangential_load, self.radial_load = MeshCombination.gear_torque(self.Z, self.external_torque, self.DB,
                                                                                                                      gear_graph, list_gear, connections, self.DF, self.transverse_pressure_angle)
@@ -1241,7 +1261,7 @@ class MeshCombination(DessiaObject):
     @classmethod
     def gear_geometry_parameter(cls, Z, transverse_pressure_angle_0, center_distance, connections, gear_graph):
         # Construction of pitch and base diameter
-        DF = {}
+        DF = [0]*len(connections)
         db = {}
         dict_transverse_pressure_angle = {0: transverse_pressure_angle_0}
         connections_dfs = list(nx.edge_dfs(gear_graph,
@@ -1266,7 +1286,7 @@ class MeshCombination(DessiaObject):
                 DF1 = abs(2*cd*Z1/Z2/(1+Z1/Z2))
                 DF2 = abs(2*cd-DF1)
 
-            DF[num_mesh] = {}
+            DF[num_mesh] =[0]*len(Z)
             DF[num_mesh][engr1] = DF1
             DF[num_mesh][engr2] = DF2
             if num_mesh == 0:
@@ -1379,6 +1399,7 @@ class MeshCombination(DessiaObject):
 
         :results: dictionary define the number of cycle for each gear mesh {node1:cycle1, node2:cycle2, node3:cycle3 ...}
         """
+        
         eng_init=list(cycle.keys())[0]
         for eng in list_gear:
             if eng not in cycle.keys():
@@ -1452,16 +1473,16 @@ class MeshCombination(DessiaObject):
 
             matrice_wholer = material[eng1].data_wholer_curve
             matrice_material = material[eng1].data_gear_material
-            sgla = material[eng1].FunCoeff(cycle[eng1],npy.array(matrice_wholer['data']), matrice_wholer['x'], matrice_wholer['y'])
-            sgl1 = material[eng1].FunCoeff(sgla,npy.array(matrice_material['data']), matrice_material['x'], matrice_material['y'])
+            sgla = material[eng1].FunCoeff(cycle[eng1],npy.array(matrice_wholer.data), matrice_wholer.x, matrice_wholer.y)
+            sgl1 = material[eng1].FunCoeff(sgla,npy.array(matrice_material.data), matrice_material.x, matrice_material.y)
             s_thickness_iso_1,h_height_iso_1 = meshes[eng1].gear_iso_section(angle)
             coeff_ys_iso = meshes[eng1]._iso_YS(s_thickness_iso_1)
             sigma_lim[num_mesh][eng1] = float((sgl1/(safety_factor*coeff_ys_iso))*10**7)
 
             matrice_wholer = material[eng2].data_wholer_curve
             matrice_material = material[eng2].data_gear_material
-            sglb = material[eng2].FunCoeff(cycle[eng2], npy.array(matrice_wholer['data']), matrice_wholer['x'], matrice_wholer['y'])
-            sgl2 = material[eng2].FunCoeff(sglb, npy.array(matrice_material['data']), matrice_material['x'], matrice_material['y'])
+            sglb = material[eng2].FunCoeff(cycle[eng2], npy.array(matrice_wholer.data), matrice_wholer.x, matrice_wholer.y)
+            sgl2 = material[eng2].FunCoeff(sglb, npy.array(matrice_material.data), matrice_material.x, matrice_material.y)
             s_thickness_iso_2,h_height_iso_2 = meshes[eng2].gear_iso_section(angle)
             coeff_ys_iso = meshes[eng2]._iso_YS(s_thickness_iso_2)
             sigma_lim[num_mesh][eng2] = float((sgl2/(safety_factor*coeff_ys_iso))*10**7)
@@ -1500,9 +1521,9 @@ class MeshCombination(DessiaObject):
             coeff_yb_iso[num_mesh] = {}
             
             matrice_YB = material[eng1].data_coeff_YB_Iso
-            coeff_yb_iso[num_mesh][eng1] = material[eng1].FunCoeff(helix_angle[eng1], npy.array(matrice_YB['data']), matrice_YB['x'], matrice_YB['y'])
+            coeff_yb_iso[num_mesh][eng1] = material[eng1].FunCoeff(helix_angle[eng1], npy.array(matrice_YB.data), matrice_YB.x, matrice_YB.y)
             matrice_YB = material[eng2].data_coeff_YB_Iso
-            coeff_yb_iso[num_mesh][eng2] = material[eng2].FunCoeff(helix_angle[eng2], npy.array(matrice_YB['data']), matrice_YB['x'], matrice_YB['y'])
+            coeff_yb_iso[num_mesh][eng2] = material[eng2].FunCoeff(helix_angle[eng2], npy.array(matrice_YB.data), matrice_YB.x, matrice_YB.y)
         return coeff_yb_iso
 
     ### Function graph and export
