@@ -1,3 +1,6 @@
+# CMA files
+outcmaes/*.dat
+
 *.fcstd
 *.fcstd1
 *.stl
