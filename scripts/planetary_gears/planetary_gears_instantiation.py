@@ -25,4 +25,4 @@ planetary_gears_1 = pg.PlanetaryGear([sun, ring, sun_2], [planet_1, planet_2, pl
 
 
 
-planetary_gears_1.plot_kinematic_graph()
+# planetary_gears_1.plot_kinematic_graph()

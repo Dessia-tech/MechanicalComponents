@@ -65,8 +65,10 @@ print('Number of solutions:',len(GA.solutions))
 solution=GA.solutions[1]
 # solution.pos_axis({0:(0,0,0)})
 
+
+    
 for mesh_assembly in GA.solutions:
-    mesh_assembly.mesh_combinations[0].babylonjs()
+    m=mesh_assembly.mesh_combinations
 #solution=GA.solutions[-1]
 #solution.SVGExport('name.txt',{6 : [0,0], 4 : [0.5,0]})
 #solution.FreeCADExport('meshes3')

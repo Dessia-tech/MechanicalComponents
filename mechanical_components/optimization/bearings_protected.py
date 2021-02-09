@@ -303,7 +303,7 @@ class BearingCombinationOptimizer(DessiaObject):
                         bearing_combination_simulation_result = BearingCombinationSimulationResult(li_bg_results, self.axial_loads,
                                                                         self.radial_loads, self.speeds, self.operating_times)
         
-                        check = bc.BaseLifeTime(bearing_combination_simulation_result)
+                        check = bc.base_life_time(bearing_combination_simulation_result)
                         if not check:
                             return False
                         

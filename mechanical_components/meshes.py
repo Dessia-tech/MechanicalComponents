@@ -982,8 +982,8 @@ class MeshCombination(DessiaObject):
         if len(self.cycle.keys())<len(list_gear): # the gear mesh optimizer calculate this dictionary
             self.cycle = MeshCombination.cycle_parameter(self.cycle, self.Z, list_gear)
 
-        self.internal_torque, self.normal_load, self.tangential_load, self.radial_load = MeshCombination.gear_torque(self.Z, self.external_torque, self.DB,
-                                                                                                                     gear_graph, list_gear, connections, self.DF, self.transverse_pressure_angle)
+        self.internal_torque, self.normal_load, self.tangential_load, self.radial_load, self.axial_load = MeshCombination.gear_torque(self.Z, self.external_torque, self.DB,
+                                                                                                                     gear_graph, list_gear, connections, self.DF, self.transverse_pressure_angle,self.helix_angle)
 
         self.linear_backlash, self.radial_contact_ratio = \
             MeshCombination.gear_contact_ratio_parameter(self.Z, self.DF, self.transverse_pressure_angle,
@@ -1064,9 +1064,9 @@ class MeshCombination(DessiaObject):
         if len(cycle.keys())<len(list_gear): # the gear mesh optimizer calculate this dictionary
             cycle = cls.cycle_parameter(cycle, Z, list_gear)
 
-        internal_torque, normal_load, tangential_load, radial_load = cls.gear_torque(Z, external_torque, DB,
+        internal_torque, normal_load, tangential_load, radial_load,axial_load = cls.gear_torque(Z, external_torque, DB,
                                                                                      gear_graph, list_gear,
-                                                                                     connections, DF, transverse_pressure_angle)
+                                                                                     connections, DF, transverse_pressure_angle,helix_angle)
 
         meshes = [0]*(len(list_gear))#TODO
         meshes_dico = {}
@@ -1248,13 +1248,16 @@ class MeshCombination(DessiaObject):
             linear_backlash.append(min(space_width1-circular_tooth_thickness2,space_width2-circular_tooth_thickness1))
             transverse_pressure_angle1 = transverse_pressure_angle[num_mesh]
             center_distance1 = abs(center_distance[num_mesh])
-
+            # print(1547)
+            # print(meshes[engr1].outside_diameter**2- meshes[engr1].db**2)
+            # print(radial_contact_ratio)
             radial_contact_ratio.append((1/2.*(math.sqrt(meshes[engr1].outside_diameter**2
                                                          - meshes[engr1].db**2)
                                                + math.sqrt(meshes[engr2].outside_diameter**2
                                                            - meshes[engr2].db**2)
                                                - 2*center_distance1*math.sin(transverse_pressure_angle1))
                                          /(transverse_radial_pitch1*math.cos(transverse_pressure_angle1))))#TODO
+            # print(radial_contact_ratio)
 
         return linear_backlash, radial_contact_ratio
 
@@ -1312,7 +1315,7 @@ class MeshCombination(DessiaObject):
         return DF, db, connections_dfs, transverse_pressure_angle
 
     @classmethod
-    def gear_torque(cls, Z, external_torque, db, gear_graph, list_gear, connections, DF, transverse_pressure_angle):
+    def gear_torque(cls, Z, external_torque, db, gear_graph, list_gear, connections, DF, transverse_pressure_angle,helix_angle):
         """ Calculation of the gear mesh torque
 
         :param Z: dictionary define the number of teeth {node1:Z1, node2:Z2, mesh3:Z3 ...}
@@ -1375,7 +1378,7 @@ class MeshCombination(DessiaObject):
         normal_load = {}
         tangential_load = {}
         radial_load = {}
-
+        axial_load={}
         for num_mesh, (eng1, eng2) in enumerate(connections):
             # if 'output' not in external_torque.values():
             #     dic_torque=external_torque
@@ -1386,9 +1389,9 @@ class MeshCombination(DessiaObject):
 
             normal_load[num_mesh] = abs(tq)*2/(db[eng1])
             tangential_load[num_mesh] = abs(tq)*2/(DF[num_mesh][eng1])
-
-            radial_load[num_mesh] = math.tan(transverse_pressure_angle[num_mesh])*tangential_load[num_mesh]
-        return dic_torque, normal_load, tangential_load, radial_load
+            axial_load[num_mesh]=tangential_load[num_mesh]*math.tan(helix_angle[eng1])
+            radial_load[num_mesh] = math.tan(transverse_pressure_angle[num_mesh])*tangential_load[num_mesh]/math.cos(helix_angle[eng1])
+        return dic_torque, normal_load, tangential_load, radial_load,axial_load
 
     @classmethod
     def cycle_parameter(cls, cycle, Z, list_gear):
@@ -1503,6 +1506,7 @@ class MeshCombination(DessiaObject):
             coeff_yf_iso[num_mesh][eng2] = ((6*(h_height_iso_2/meshes[eng2].rack.module)*math.cos(transverse_pressure_angle[num_mesh]))
                                             /((s_thickness_iso_2/meshes[eng2].rack.module)**2
                                               *math.cos(meshes[eng2].rack.transverse_pressure_angle)))
+        
         return coeff_yf_iso
 
     @classmethod
@@ -1511,6 +1515,8 @@ class MeshCombination(DessiaObject):
         coeff_ye_iso = []
         for ne, eng in enumerate(connections):
             coeff_ye_iso.append(1/radial_contact_ratio[ne])
+        # print(59864)
+        # print(coeff_ye_iso)
         return coeff_ye_iso
 
     @classmethod
@@ -1521,9 +1527,9 @@ class MeshCombination(DessiaObject):
             coeff_yb_iso[num_mesh] = {}
             
             matrice_YB = material[eng1].data_coeff_YB_Iso
-            coeff_yb_iso[num_mesh][eng1] = material[eng1].FunCoeff(helix_angle[eng1], npy.array(matrice_YB.data), matrice_YB.x, matrice_YB.y)
+            coeff_yb_iso[num_mesh][eng1] = material[eng1].FunCoeff(helix_angle[eng1]*180/3.14, npy.array(matrice_YB.data), matrice_YB.x, matrice_YB.y)
             matrice_YB = material[eng2].data_coeff_YB_Iso
-            coeff_yb_iso[num_mesh][eng2] = material[eng2].FunCoeff(helix_angle[eng2], npy.array(matrice_YB.data), matrice_YB.x, matrice_YB.y)
+            coeff_yb_iso[num_mesh][eng2] = material[eng2].FunCoeff(helix_angle[eng2]*180/3.14, npy.array(matrice_YB.data), matrice_YB.x, matrice_YB.y)
         return coeff_yb_iso
 
     ### Function graph and export

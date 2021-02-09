@@ -3354,7 +3354,7 @@ class GeneratorPlanetaryGearsGeometry(DessiaObject):
             # constraint={'type':'ineq','fun':self.function_inequation_constrain,'args':(self.planetary_gear,),}
             # res_2=op.minimize(function_verification,x0,bounds=min_max_x_2, method='SLSQP' , args=(self.planetary_gear),constraints=constraint,tol=0.0001, options={'ftol':1e-10,'maxiter':150})
             xra, fx = cma.fmin(function_verification, x0, s, args=(self.planetary_gear, meshing_chains), options={'bounds':[min_x, max_x],
-                                                                                                                  'tolfun': 1e-15,
+                                                                                                                  'tolfun': 1e-12,
                                                                                                                   'verbose': 3,
                                                                                                                   'ftarget': 1e-24,
                                                                                                                   'maxiter': 1500})[0:2]
