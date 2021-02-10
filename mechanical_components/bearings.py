@@ -481,13 +481,19 @@ class RadialBearing(DessiaObject):
 
         #Internal Ring
         cbi1,bi1 = self.internal_ring_contour()
-        IRC=vm.wires.Contour2D([cbi1]+bi1.primitives)
+        if cbi1:
+            IRC=vm.wires.Contour2D([cbi1]+bi1.primitives)
+        else:
+            IRC=vm.wires.Contour2D(bi1.primitives)
         irc = primitives3d.RevolvedProfile(center, axis, z, IRC, center,
                                            axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
         
         cbe1,be1=self.external_ring_contour()
-        ERC=vm.wires.Contour2D([cbe1]+be1.primitives)
+        if cbe1:
+            ERC=vm.wires.Contour2D([cbe1]+be1.primitives)
+        else:
+            ERC=vm.wires.Contour2D(be1.primitives)
         erc=primitives3d.RevolvedProfile(center, axis, z, ERC, center,
                                          axis, angle=2*math.pi,name='External Ring')
         #roller
@@ -1550,7 +1556,9 @@ class NUP(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
-        return vm.wires.Contour2D(irc.primitives)
+
+        
+        return None,irc
 
 
 
@@ -1571,7 +1579,7 @@ class NUP(RadialRollerBearing):
 
 
         # erc = vm.Contour2D([be1])
-        return vm.wires.Contour2D(be1.primitives)
+        return None,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -2855,7 +2863,7 @@ class BearingCombination(DessiaObject):
                 link2 = unidimensional.CompressionSpring(bor, bir, k1, -j1, 'bearing {}'.format(num_bg))
                 nonlinear_linkages.append(link1)
                 nonlinear_linkages.append(link2)
-                
+              
                 axial_bearings.append([link1, link2])
 #            elif bg.taking_loads == 'free':
 #                link1 = unidimensional.CompressionSpring(bir, bor, 10, -j1, 'bearing {}'.format(num_bg))
@@ -2868,7 +2876,7 @@ class BearingCombination(DessiaObject):
                 if self.directions[num_bg] == -1:
                     global_axial_load += Fp
                     link = unidimensional.CompressionSpring(bor, bir, k1, -j1, 'bearing {}'.format(num_bg))
-
+                   
                     nonlinear_linkages.append(link)
                    
                     
@@ -2892,6 +2900,7 @@ class BearingCombination(DessiaObject):
                     
                     axial_bearings.append([link])
                 elif self.directions[num_bg] == 1:
+                    
                     link = unidimensional.CompressionSpring(bir, bor, k1, -j1, 'bearing {}'.format(num_bg))
                     nonlinear_linkages.append(link)
                     
@@ -2921,15 +2930,19 @@ class BearingCombination(DessiaObject):
                 nonlinear_linkages.append(unidimensional.UnilateralContact(bg1[1], bg2[1], pos2 - pos1, name='Outer rings'))
         if self.connection_be.left:
             bor = component[0][1]
+            
             nonlinear_linkages.append(unidimensional.UnilateralContact(ground, bor, 0.0001, name='Outer rings'))
         if self.connection_be.right:
             bor = component[-1][1]
+           
             nonlinear_linkages.append(unidimensional.UnilateralContact(bor, ground, 0.0001, name='Outer rings'))
         if self.connection_bi.left:
             bir = component[0][0]
+           
             nonlinear_linkages.append(unidimensional.UnilateralContact(shaft, bir, 0.0001, name='Inner rings'))
         if self.connection_bi.right:
             bir = component[-1][0]
+            
             nonlinear_linkages.append(unidimensional.UnilateralContact(bir, shaft, 0.0001, name='Inner rings'))
         return component, nonlinear_linkages, loads, axial_bearings, check_axial_load
 
@@ -3020,7 +3033,18 @@ class BearingCombination(DessiaObject):
       
         
         nonlinear_linkages.extend(nonlinear_linkages_iter)
-       
+        # print(12569)
+        
+        
+        # for bodie in bodies:
+        #     print(bodie.name)
+        # for nonlinear_linkage in nonlinear_linkages:
+            
+        #     print(nonlinear_linkage.name)
+        # for load in loads:
+        #     print(load.value)
+        # for imposed_displacement in imposed_displacements:  
+        #     print(imposed_displacement.value)
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
                          imposed_displacements)
         

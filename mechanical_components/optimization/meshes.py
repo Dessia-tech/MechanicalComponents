@@ -7,7 +7,7 @@
 from dessia_common import DessiaObject
 from typing import  List, Tuple
 from mechanical_components.meshes import MeshAssembly, hardened_alloy_steel,\
-        gear_graph_simple
+        gear_graph_simple,Material
 
 import math
 from typing import  List, Tuple
@@ -47,13 +47,15 @@ class MeshOpti(DessiaObject):
     _standalone_in_db = True
 
     def __init__(self,torque_input: float,speed_input : Tuple[float,float],Z:int=0 ,rack: RackOpti=None,gearing_interior:str='False',
-                 coefficient_profile_shift: Tuple[float,float]=None, name:str=''):
+                 coefficient_profile_shift: Tuple[float,float]=None,material: Material=None, name: str=''):
         self.rack=rack
         self.name=name
         self.torque_input=torque_input
         self.Z=Z
+        self.material=material
         self.speed_input=speed_input
         self.gearing_interior=gearing_interior
+        
         if coefficient_profile_shift==None:
             coefficient_profile_shift=[0.8,0.8]
         self.coefficient_profile_shift=coefficient_profile_shift
@@ -125,6 +127,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         coefficient_profile_shift={}
         number_rack=0
         self.list_gearing_interior=[]
+        material={}
         for i,gear in enumerate(list_gear):
             gear_speeds[i]=gear.speed_input
             if gear.rack:
@@ -136,7 +139,8 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                 Z[i]=gear.Z
             if gear.gearing_interior=='True':
                 self.list_gearing_interior.append(i)
-
+            if gear.material:
+                material[i]=gear.material
             if not gear.rack in rack_list:
                 rack_dict[number_rack]=gear.rack
                 rack_list.append(gear.rack)
@@ -160,7 +164,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         self.initialisation(connections=connections,gear_speeds=gear_speeds,center_distances=cd,
                             external_torques=external_torques,cycles=cycles, rigid_links=rigid_links,Z=Z,
                             rack_list=rack_dict,rack_choice=rack_choice,safety_factor=safety_factor,
-                           
+                            material=material,
                             coefficient_profile_shift=coefficient_profile_shift,verbose=verbose)
 
 
