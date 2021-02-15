@@ -16,8 +16,9 @@ import plot_data
 
 
 class Wheel(dc.DessiaObject):
-    def __init__(self, inner_diameter:float, outer_diameter:float,
+    def __init__(self, inner_diameter:float,
                  lower_tooth_diameter:float,
+                 outer_diameter:float,
                  number_teeth:int,
                  upper_tooth_ratio:float, lower_tooth_ratio:float, 
                  width:float):
@@ -62,8 +63,8 @@ class Wheel(dc.DessiaObject):
                                 junction2.rotation(vm.O2D, i*self.tooth_angle)])
         return vmw.Contour2D(primitives)
     
-    # def plot_data(self):
-    #     return [self.outer_contour().plot_data()]
+    def plot_data(self):
+        return [plot_data.PrimitiveGroup([self.outer_contour().plot_data()])]
         
     def volmdlr_primitives(self, frame=vm.OXYZ):
         inner_contour = vmw.Circle2D(vm.O2D, 0.5*self.inner_diameter)
@@ -126,9 +127,34 @@ class Pawl(dc.DessiaObject):
                                     frame.u*self.width)]
     
 class ParkingPawl(dc.DessiaObject):
-    def __init__(self, wheel:Wheel, pawl:Pawl):
-        self.wheel = wheel
-        self.pawl = pawl
+    def __init__(self,
+                 wheel_inner_diameter:float, wheel_lower_tooth_diameter:float,
+                 outer_diameter:float,
+                 number_teeth:int,
+                 upper_tooth_ratio:float, lower_tooth_ratio:float, 
+                 width:float,
+                 axis_position:vm.Point2D,
+                 axis_inner_diameter:float, axis_outer_diameter:float,
+                 finger_height:float, finger_angle:float,
+                 finger_width:float,
+                 slope_height_start, slope_length,
+                 slope_offset:float, slope_angle:float,
+                 ):
+        self.wheel = Wheel(wheel_inner_diameter, wheel_lower_tooth_diameter,
+                           outer_diameter, number_teeth,
+                           upper_tooth_ratio, lower_tooth_ratio,
+                           width)
+        self.pawl = Pawl(axis_position,
+                         axis_inner_diameter,
+                         wheel_lower_tooth_diameter,
+                         axis_outer_diameter,
+                         finger_height, finger_angle, finger_width,
+                         slope_height_start=slope_height_start,
+                         slope_length=slope_length,
+                         slope_offset=slope_offset,
+                         slope_angle=slope_angle,
+                         width=width
+                         )
         
         self.engaged_wheel_angle = self.wheel.junction_angle+0.5*self.wheel.lower_tooth_angle
     
@@ -138,14 +164,26 @@ class ParkingPawl(dc.DessiaObject):
                 + self.pawl.volmdlr_primitives(frame=frame))
 
 
-wheel = Wheel(0.020, 0.080, 0.060, 9, 0.25, 0.3, 0.035)
+# wheel = Wheel(0.020, 0.080, 0.060, 9, 0.25, 0.3, 0.035)
 # wheel.outer_contour().plot()
 # wheel.babylonjs()
-pawl = Pawl(vm.Point2D(-0.06, 0.042), 0.03, 0.025, 0.030,finger_height=0.012,
-            finger_angle=math.radians(20), finger_width=0.008, slope_height_start=0.015,
-            slope_angle=math.radians(12), slope_offset=0.005, slope_length=0.035,
-            width=0.030)
-pawl.outer_contour().plot()
+# pawl = Pawl(vm.Point2D(-0.06, 0.042), 0.03, 0.025, 0.030,finger_height=0.012,
+#             finger_angle=math.radians(20), finger_width=0.008, slope_height_start=0.015,
+#             slope_angle=math.radians(12), slope_offset=0.005, slope_length=0.035,
+#             width=0.030)
 
-parking_pawl = ParkingPawl(wheel, pawl)
+# parking_pawl = ParkingPawl(wheel, pawl)
+parking_pawl = ParkingPawl(0.020, 0.060, 0.080,
+                           9, 0.25, 0.3, width = 0.035,
+                           axis_position = vm.Point2D(-0.06, 0.042),
+                           axis_inner_diameter=0.025,
+                           axis_outer_diameter=0.030,
+                           finger_height=0.012,
+                           finger_angle=math.radians(20), finger_width=0.008,
+                           slope_height_start=0.015,
+                           slope_angle=math.radians(12),
+                           slope_offset=0.005, slope_length=0.035)
+parking_pawl.pawl.outer_contour().plot()
+parking_pawl.wheel.outer_contour().plot()
+plot_data.plot_canvas(plot_data_object=parking_pawl.wheel.plot_data()[0], debug_mode=True)
 parking_pawl.babylonjs()
