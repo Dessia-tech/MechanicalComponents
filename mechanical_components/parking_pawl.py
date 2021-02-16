@@ -19,7 +19,7 @@ class Wheel(dc.DessiaObject):
     def __init__(self, inner_diameter:float,
                  lower_tooth_diameter:float,
                  outer_diameter:float,
-                 number_teeth:int,
+                 teeth_number:int,
                  upper_tooth_ratio:float, lower_tooth_ratio:float, 
                  width:float):
         self.inner_diameter = inner_diameter
@@ -27,11 +27,11 @@ class Wheel(dc.DessiaObject):
         self.outer_diameter = outer_diameter
         self.upper_tooth_ratio = upper_tooth_ratio
         self.lower_tooth_ratio = lower_tooth_ratio
-        self.number_teeth = number_teeth
+        self.teeth_number = teeth_number
         self.width = width
         
         # Computed attributes
-        self.tooth_angle = vm.TWO_PI/self.number_teeth
+        self.tooth_angle = vm.TWO_PI/self.teeth_number
         self.upper_tooth_angle = self.tooth_angle*self.upper_tooth_ratio
         self.lower_tooth_angle = self.tooth_angle*self.lower_tooth_ratio
         self.junction_angle = 0.5*(self.tooth_angle-self.upper_tooth_angle-self.lower_tooth_angle)
@@ -39,7 +39,6 @@ class Wheel(dc.DessiaObject):
         
     def outer_contour(self):
 
-        
         start_upper = vm.Point2D(0, 0.5*self.outer_diameter)
         interior_upper = start_upper.rotation(vm.O2D, 0.5*self.upper_tooth_angle)
         end_upper = start_upper.rotation(vm.O2D, self.upper_tooth_angle)
@@ -56,18 +55,21 @@ class Wheel(dc.DessiaObject):
         junction2 = vme.LineSegment2D(arc_lower.end, next_tooth_start)
         
         primitives = [arc_upper, junction1, arc_lower, junction2]
-        for i in range(1, self.number_teeth):
+        for i in range(1, self.teeth_number):
             primitives.extend([arc_upper.rotation(vm.O2D, i*self.tooth_angle),
                                 junction1.rotation(vm.O2D, i*self.tooth_angle),
                                 arc_lower.rotation(vm.O2D, i*self.tooth_angle),
                                 junction2.rotation(vm.O2D, i*self.tooth_angle)])
         return vmw.Contour2D(primitives)
-    
+
+    def inner_contour(self):
+        return vmw.Circle2D(vm.O2D, 0.5*self.inner_diameter)
+
     def plot_data(self):
-        return [plot_data.PrimitiveGroup([self.outer_contour().plot_data()])]
+        return [plot_data.PrimitiveGroup([self.outer_contour().plot_data(),
+                                          self.inner_contour().plot_data()])]
         
     def volmdlr_primitives(self, frame=vm.OXYZ):
-        inner_contour = vmw.Circle2D(vm.O2D, 0.5*self.inner_diameter)
         return [p3d.ExtrudedProfile(frame.origin, frame.v, frame.w,
                                     self.outer_contour(), [inner_contour],
                                     frame.u*self.width)]
@@ -78,7 +80,7 @@ class Pawl(dc.DessiaObject):
                  axis_inner_diameter:float, axis_outer_diameter:float,
                  finger_height:float, finger_angle:float,
                  finger_width:float,
-                 slope_height_start, slope_length,
+                 slope_start_height, slope_length,
                  slope_offset:float, slope_angle:float,
                  width:float):
         self.axis_position = axis_position
@@ -86,14 +88,14 @@ class Pawl(dc.DessiaObject):
         self.finger_height = finger_height
         self.finger_angle = finger_angle
         self.finger_width = finger_width
-        self.slope_height_start = slope_height_start
+        self.slope_start_height = slope_start_height
         self.slope_length = slope_length
         self.slope_offset = slope_offset
         self.slope_angle = slope_angle
         self.axis_inner_diameter = axis_inner_diameter
         self.axis_outer_diameter = axis_outer_diameter
         self.width = width
-        
+
     def outer_contour(self):
         
         p1 = vm.Point2D(-0.5*self.finger_width, self.contact_radius)
@@ -106,7 +108,7 @@ class Pawl(dc.DessiaObject):
                              self.finger_height)
         
         p4 = p3 + vm.Point2D(self.slope_offset, 0)
-        p5 = vm.Point2D(p4.x, self.contact_radius + self.slope_height_start)
+        p5 = vm.Point2D(p4.x, self.contact_radius + self.slope_start_height)
         p6 = p5 - vm.Point2D(self.slope_length, 0.).rotation(vm.O2D, -self.slope_angle)
         
         pa1 = self.axis_position + vm.Point2D(0., 0.5*self.axis_outer_diameter)
@@ -119,37 +121,52 @@ class Pawl(dc.DessiaObject):
                                                       {}).primitives)
         
         return vmw.Contour2D(primitives)
-        
+
+    def inner_contour(self):
+        return vmw.Circle2D(self.axis_position, 0.5*self.axis_inner_diameter)
+
+    def plot_data(self):
+        return [plot_data.PrimitiveGroup([self.outer_contour().plot_data(),
+                                          self.inner_contour().plot_data()])]
+
     def volmdlr_primitives(self, frame=vm.OXYZ):
-        inner_contour = vmw.Circle2D(self.axis_position, 0.5*self.axis_inner_diameter)
         return [p3d.ExtrudedProfile(frame.origin, frame.v, frame.w,
-                                    self.outer_contour(), [inner_contour],
+                                    self.outer_contour(), [self.inner_contour()],
                                     frame.u*self.width)]
     
 class ParkingPawl(dc.DessiaObject):
     def __init__(self,
                  wheel_inner_diameter:float, wheel_lower_tooth_diameter:float,
                  outer_diameter:float,
-                 number_teeth:int,
+                 teeth_number:int,
                  upper_tooth_ratio:float, lower_tooth_ratio:float, 
                  width:float,
-                 axis_position:vm.Point2D,
+                 pawl_offset:float,
                  axis_inner_diameter:float, axis_outer_diameter:float,
                  finger_height:float, finger_angle:float,
                  finger_width:float,
-                 slope_height_start, slope_length,
+                 slope_start_height, slope_length,
                  slope_offset:float, slope_angle:float,
                  ):
-        self.wheel = Wheel(wheel_inner_diameter, wheel_lower_tooth_diameter,
-                           outer_diameter, number_teeth,
-                           upper_tooth_ratio, lower_tooth_ratio,
-                           width)
-        self.pawl = Pawl(axis_position,
-                         axis_inner_diameter,
-                         wheel_lower_tooth_diameter,
-                         axis_outer_diameter,
-                         finger_height, finger_angle, finger_width,
-                         slope_height_start=slope_height_start,
+
+
+        self.wheel = Wheel(inner_diameter=wheel_inner_diameter,
+                           lower_tooth_diameter=wheel_lower_tooth_diameter,
+                           outer_diameter=outer_diameter,
+                           teeth_number=teeth_number,
+                           upper_tooth_ratio=upper_tooth_ratio,
+                           lower_tooth_ratio=lower_tooth_ratio,
+                           width=width)
+        self.slope_end_height = 0.5*wheel_lower_tooth_diameter + slope_start_height + slope_length*math.sin(slope_angle)
+
+        self.pawl = Pawl(axis_position=vm.Point2D(-pawl_offset, self.slope_end_height-0.5*axis_outer_diameter),
+                         contact_radius=0.5*wheel_lower_tooth_diameter,
+                         axis_inner_diameter=axis_inner_diameter,
+                         axis_outer_diameter=axis_outer_diameter,
+                         finger_height=finger_height,
+                         finger_angle=finger_angle,
+                         finger_width=finger_width,
+                         slope_start_height=slope_start_height,
                          slope_length=slope_length,
                          slope_offset=slope_offset,
                          slope_angle=slope_angle,
@@ -163,6 +180,21 @@ class ParkingPawl(dc.DessiaObject):
         return (self.wheel.volmdlr_primitives(frame=wheel_frame)
                 + self.pawl.volmdlr_primitives(frame=frame))
 
+    def engaged_slack(self):
+        return self.wheel.lower_tooth_angle * 0.5 * self.wheel.lower_tooth_diameter - self.pawl.finger_width
+
+    def check(self):
+        if self.engaged_slack() < 0:
+            return False
+        return True
+
+    def plot_data(self):
+
+        wheel_contour = self.wheel.outer_contour().rotation(vm.O2D, self.engaged_wheel_angle)
+
+        return [plot_data.PrimitiveGroup([wheel_contour.plot_data(),
+                                         self.wheel.inner_contour().plot_data()]
+                                         +self.pawl.plot_data()[0].primitives)]
 
 # wheel = Wheel(0.020, 0.080, 0.060, 9, 0.25, 0.3, 0.035)
 # wheel.outer_contour().plot()
@@ -173,17 +205,19 @@ class ParkingPawl(dc.DessiaObject):
 #             width=0.030)
 
 # parking_pawl = ParkingPawl(wheel, pawl)
-parking_pawl = ParkingPawl(0.020, 0.060, 0.080,
+parking_pawl = ParkingPawl(0.030, 0.060, 0.080,
                            9, 0.25, 0.3, width = 0.035,
-                           axis_position = vm.Point2D(-0.06, 0.042),
+                           pawl_offset = 0.06,
                            axis_inner_diameter=0.025,
                            axis_outer_diameter=0.030,
                            finger_height=0.012,
                            finger_angle=math.radians(20), finger_width=0.008,
-                           slope_height_start=0.015,
+                           slope_start_height=0.015,
                            slope_angle=math.radians(12),
                            slope_offset=0.005, slope_length=0.035)
-parking_pawl.pawl.outer_contour().plot()
-parking_pawl.wheel.outer_contour().plot()
-plot_data.plot_canvas(plot_data_object=parking_pawl.wheel.plot_data()[0], debug_mode=True)
-parking_pawl.babylonjs()
+# parking_pawl.pawl.outer_contour().plot()
+# parking_pawl.wheel.outer_contour().plot()
+# plot_data.plot_canvas(plot_data_object=parking_pawl.wheel.plot_data()[0], debug_mode=True)
+# parking_pawl.babylonjs()
+parking_pawl.mpl_plot()
+print(parking_pawl.check())
