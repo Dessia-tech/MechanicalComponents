@@ -208,13 +208,16 @@ class ParkingPawl(dc.DessiaObject):
         return True
 
     def plot_data(self):
+        red_dashed = plot_data.EdgeStyle(color_stroke=plot_data.colors.RED,
+                                         dashline=[3,1,1,3])
 
         wheel_contour = self.wheel.outer_contour().rotation(vm.O2D, self.engaged_wheel_angle)
         action_line = self.wheel.action_line.rotation(vm.O2D, self.engaged_wheel_angle)
-        red_dashed = plot_data.EdgeStyle(color_stroke=plot_data.colors.RED,
-                                         dashline=[3,1,1,3])
+        # basis_circle = plot_data.Circle2D(0, 0, 0.5*self.wheel.basis_diameter, edge_style=red_dashed)
         return [plot_data.PrimitiveGroup([wheel_contour.plot_data(),
                                          self.wheel.inner_contour().plot_data(),
-                                         action_line.plot_data(edge_style=red_dashed)]
+                                         action_line.plot_data(edge_style=red_dashed),
+                                         # basis_circle,
+                                         ]
                                          +self.pawl.plot_data()[0].primitives)]
 
