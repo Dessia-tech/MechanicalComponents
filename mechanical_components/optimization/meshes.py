@@ -25,7 +25,7 @@ except (ModuleNotFoundError, ImportError) as _:
 class RackOpti(DessiaObject):
      _standalone_in_db = True
 
-     def __init__(self, transverse_pressure_angle: float=None, module: float=None,
+     def __init__(self, transverse_pressure_angle: List[float]=None, module: List[float]=None,
                  coeff_gear_addendum : List[float]=None, coeff_gear_dedendum: List[float]=None,
                  coeff_root_radius: List[float]=None, coeff_circular_tooth_thickness: List[float]=None,
                  helix_angle: Tuple[float,float]=None ,name : str=''):
@@ -40,6 +40,7 @@ class RackOpti(DessiaObject):
          self.coeff_gear_dedendum=coeff_gear_dedendum
          self.coeff_root_radius=coeff_root_radius
          self.coeff_circular_tooth_thickness=coeff_circular_tooth_thickness
+         self.list_gear=[]
          self.name=name
          DessiaObject.__init__(self, name=name)
 
@@ -128,6 +129,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         number_rack=0
         self.list_gearing_interior=[]
         material={}
+        list_rack_gear={}
         for i,gear in enumerate(list_gear):
             gear_speeds[i]=gear.speed_input
             if gear.rack:
@@ -141,11 +143,22 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                 self.list_gearing_interior.append(i)
             if gear.material:
                 material[i]=gear.material
+            
             if not gear.rack in rack_list:
                 rack_dict[number_rack]=gear.rack
                 rack_list.append(gear.rack)
+                list_rack_gear[number_rack]=[i]
                 number_rack+=1
+            else:
+                num_rack=rack_list.index(gear.rack)
+                list_rack_gear[num_rack].append(i)
+                
+        
+            
             rack_choice[i]=[rack_list.index(gear.rack)]
+            
+        for num_rack,rack in enumerate(rack_list):
+            rack.list_gear=list_rack_gear[num_rack]
         a=0
         for num_gear in rack_dict:
             if rack_dict[num_gear]!=None:
@@ -239,9 +252,9 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             rack_list={0:RackOpti()}
         for num_rack, rack in rack_list.items():
             if  not rack.module:
-                rack_list[num_rack].module = [1*1e-3,2.5*1e-3]
+                rack_list[num_rack].module = [1*1e-3,5*1e-3]
             if  not rack.transverse_pressure_angle:
-                rack_list[num_rack].transverse_pressure_angle =[15/180.*math.pi,30/180.*math.pi]
+                rack_list[num_rack].transverse_pressure_angle =[20/180.*math.pi,20/180.*math.pi]
             if  not  rack.coeff_gear_addendum:
                 rack_list[num_rack].coeff_gear_addendum = [1,1]
             if  not  rack.coeff_gear_dedendum:

@@ -72,7 +72,9 @@ class ContinuousMeshesAssemblyOptimizer:
         self.cycles = cycles
         # Initailization
         self.solutions=[]
-
+        
+        
+        
 #        # NetworkX graph construction
 #        list_gear=[] # list of all gears
 #        compt_mesh=0 # number of gear mesh
@@ -178,7 +180,10 @@ class ContinuousMeshesAssemblyOptimizer:
 
         # Definition of the Bound matrix for the optimizer
         Bounds = []
+        Bounds_helix_angle=[]
         list_order_unknown = []
+        
+        self.list_gear_rack=[]
         for key,list_unknown in dict_unknown.items():
             if len(list_unknown)>0:
                 if key=='db':
@@ -204,11 +209,13 @@ class ContinuousMeshesAssemblyOptimizer:
                                    'coeff_root_radius':self.rack_list[num_rack].coeff_root_radius,
                                    'coeff_circular_tooth_thickness':self.rack_list[num_rack].coeff_circular_tooth_thickness,
                                    'helix_angle':self.rack_list[num_rack].helix_angle}
-                        
+                        if key=='helix_angle':
+                            Bounds_helix_angle.append(rack_dict[key])
+                            self.list_gear_rack.append(self.rack_list[num_rack].list_gear)
                         Bounds.append(rack_dict[key])
 #        self.Bounds = npy.array(Bounds)
         self.Bounds = Bounds
-        
+        self.Bounds_helix_angle=Bounds_helix_angle
         self.list_order_unknown = list_order_unknown
 
         # Definition initial condition
@@ -304,6 +311,13 @@ class ContinuousMeshesAssemblyOptimizer:
     def CondInit(self):
         X0=[]
         for interval in self.Bounds:
+            X0.append((interval[1]-interval[0])*float(npy.random.random(1))+interval[0])
+        return X0
+    
+    def CondInit_helix_angle(self):
+        X0=[]
+        
+        for interval in self.Bounds_helix_angle:
             X0.append((interval[1]-interval[0])*float(npy.random.random(1))+interval[0])
         return X0
 
@@ -462,6 +476,16 @@ class ContinuousMeshesAssemblyOptimizer:
         optimizer_data = self._convert_X2x(X)
         _ = self.mesh_assembly.update(optimizer_data)
         return optimizer_data
+    
+    def update_helix_angle(self,X):
+
+        optimizer_data = {'helix_angle':{} }
+        
+        for i,helix_angle in enumerate(X):
+            for num_eng in self.list_gear_rack[i]:
+                optimizer_data['helix_angle'][num_eng]=helix_angle
+        _ = self.mesh_assembly.update_helix_angle(optimizer_data)
+        return optimizer_data
 
     def Fineq(self,X):
 
@@ -547,7 +571,23 @@ class ContinuousMeshesAssemblyOptimizer:
                 obj+=0.000001*i
 
         return obj
-
+    
+    
+        
+    def Objective_helix_angle(self,helix_angle):
+        
+        self.update_helix_angle(helix_angle)
+        obj=0
+        print(25682)
+        for mesh_combination in self.mesh_assembly.mesh_combinations:
+            for value in mesh_combination.radial_contact_ratio:
+                obj+=1/value
+                print(value)
+            for key in mesh_combination.axial_load.keys():
+                obj+=abs(mesh_combination.axial_load[key]*5e-5)
+        print(helix_angle)
+        print(obj)
+        return obj
     def Optimize(self, verbose = False):
         """ Optimizer function
 
@@ -561,7 +601,7 @@ class ContinuousMeshesAssemblyOptimizer:
 
         i = 0
         arret = 0
-
+       
         while i < max_iter and arret == 0:
             X0 = self.CondInit()
             _ = self.update(X0)
@@ -583,10 +623,35 @@ class ContinuousMeshesAssemblyOptimizer:
 
             if min(self.Fineq(Xsol)) > -1: #TODO
                 input_dat = dict(list(output_x.items())+list(self.general_data.items()))
-                self.solutions.append(MeshAssembly.create(**input_dat))
+                
 
                 arret = 1
             i += 1
+            
+            
+        if arret:
+            X0 = self.CondInit_helix_angle()
+            _ = self.update_helix_angle(X0)
+            
+            
+            cx = minimize(self.Objective_helix_angle, X0, bounds=self.Bounds_helix_angle)
+    
+           
+            Xsol = cx.x
+    
+            output_x = self.update_helix_angle(Xsol)
+            # if verbose:
+            #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
+            #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
+    
+    
+            
+            input_dat['helix_angle'] = output_x['helix_angle']
+            self.solutions.append(MeshAssembly.create(**input_dat))
+            print(self.solutions)
+            
+            
+      
 
 
 class MeshAssemblyOptimizer:
@@ -1047,12 +1112,13 @@ class MeshAssemblyOptimizer:
                     del self.plex_calcul[ind_plex]['dw']
                     liste_plex.append(self.plex_calcul[ind_plex])
                 nb_sol=len(liste_plex)
-
+            
             for plex in liste_plex:
                 try:
 
                     ga = ContinuousMeshesAssemblyOptimizer(**plex)
                 except AttributeError:
+                   
                     if verbose:
                         print('Convergence problem')
                     continue
@@ -1063,12 +1129,14 @@ class MeshAssemblyOptimizer:
                 try:
                     ga.Optimize(verbose)
                 except ValueError:
+                    
                     if verbose:
                         print('Convergence problem')
                 if len(ga.solutions)>0:
                     sol1=ga.solutions[-1]
                     self.solutions.append(sol1)
-
+                    print(258)
+                    print(self.solutions)
                     compt_nb_sol+=1
     #                if verbose:
     #                    print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
