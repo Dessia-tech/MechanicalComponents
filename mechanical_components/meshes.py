@@ -213,8 +213,8 @@ class Material(DessiaObject):
     _standalone_in_db = False
     
 
-    def __init__(self, volumic_mass: float, data_coeff_YB_Iso: Data, data_wholer_curve: Data,
-                 data_gear_material: Data, name: str=''):
+    def __init__(self, volumic_mass: float=7850, data_coeff_YB_Iso: Data=evol_coeff_yb_iso, data_wholer_curve: Data=wholer_hardened_alloy_steel,
+                 data_gear_material: Data=sigma_hardened_alloy_steel, name: str=''):
         self.volumic_mass = volumic_mass
         self.data_coeff_YB_Iso = data_coeff_YB_Iso
         self.data_wholer_curve = data_wholer_curve
@@ -1234,7 +1234,7 @@ class MeshCombination(DessiaObject):
             check = True
         return check, list_ineq,obj
 
-    def check_transverse_contact_ratio(self, transverse_contact_ratio_min=1):
+    def check_total_contact_ratio(self, total_contact_ratio_min=1):
         """ Define constraint and functional for the optimizer on radial contact ratio
 
         :param transverse_contact_ratio_min: minimum radial contact ratio available
@@ -1246,12 +1246,12 @@ class MeshCombination(DessiaObject):
         list_ineq = []
         obj = 0
         for num_mesh, (eng1, eng2) in enumerate(self.connections):
-            rca = self.transverse_contact_ratio[num_mesh]
-            list_ineq.append(rca-transverse_contact_ratio_min)
-            if rca > transverse_contact_ratio_min:
-                obj += 0.001*(rca-transverse_contact_ratio_min)
+            rca = self.total_contact_ratio[num_mesh]
+            list_ineq.append(rca-total_contact_ratio_min)
+            if rca > total_contact_ratio_min:
+                obj += 0.001*(rca-total_contact_ratio_min)
             else:
-                obj += 1000*(transverse_contact_ratio_min-rca)
+                obj += 1000*(total_contact_ratio_min-rca)
         check = False
         if min(list_ineq) > 0:
             check = True
@@ -1264,7 +1264,7 @@ class MeshCombination(DessiaObject):
         """
         _, ineq, _ = self.check_minimum_backlash(4*1e-4)
 
-        _, list_ineq, _ = self.check_transverse_contact_ratio(1)
+        _, list_ineq, _ = self.check_total_contact_ratio(1)
 
         ineq.extend(list_ineq)
 
@@ -1275,13 +1275,13 @@ class MeshCombination(DessiaObject):
 
         return ineq
 
-    def functional(self,transverse_contact_ratio_min=1):
+    def functional(self,total_contact_ratio_min=1):
         """ Compilation method for a part of the functional used by the optimizer
 
         :results: scalar add to the global functional of the optimizer
         """
         check1,ineq1,obj1 = self.check_minimum_backlash(4*1e-4)
-        check2,ineq2,obj2 = self.check_transverse_contact_ratio(transverse_contact_ratio_min)
+        check2,ineq2,obj2 = self.check_total_contact_ratio(total_contact_ratio_min)
         obj = obj1 + obj2
         return obj
 

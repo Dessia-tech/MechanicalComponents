@@ -73,11 +73,11 @@ class ContinuousMeshesAssemblyOptimizer:
         # Initailization
         self.solutions=[]
         self.axial_contact_ratio={}
-        self.transverse_contact_ratio={}
+        self.total_contact_ratio={}
         for gear in rack_choice.keys():
            
             self.axial_contact_ratio[gear]=rack_list[rack_choice[gear]].axial_contact_ratio
-            self.transverse_contact_ratio[gear]=rack_list[rack_choice[gear]].transverse_contact_ratio
+            self.total_contact_ratio[gear]=rack_list[rack_choice[gear]].total_contact_ratio
         
         
         
@@ -561,8 +561,8 @@ class ContinuousMeshesAssemblyOptimizer:
                 if match[2]==num_mesh:
                     num_gear=match[0]
                     break
-            if self.transverse_contact_ratio[num_gear]:
-                tranverse_contact_ratio_min=self.transverse_contact_ratio[num_gear]
+            if self.total_contact_ratio[num_gear]:
+                tranverse_contact_ratio_min=self.total_contact_ratio[num_gear]
             obj+=mesh_assembly_iter.functional(tranverse_contact_ratio_min)
         # maximization of the gear modulus
         for ne,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
