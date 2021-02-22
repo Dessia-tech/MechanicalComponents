@@ -28,7 +28,7 @@ class RackOpti(DessiaObject):
      def __init__(self, transverse_pressure_angle: List[float]=None, module: List[float]=None,
                  coeff_gear_addendum : List[float]=None, coeff_gear_dedendum: List[float]=None,
                  coeff_root_radius: List[float]=None, coeff_circular_tooth_thickness: List[float]=None,
-                 helix_angle: Tuple[float,float]=None ,name : str=''):
+                 helix_angle: List[float]=None ,transverse_contact_ratio: float=None,axial_contact_ratio: float=0.8,name : str=''):
 
          self.transverse_pressure_angle=transverse_pressure_angle
          self.module=module
@@ -41,6 +41,8 @@ class RackOpti(DessiaObject):
          self.coeff_root_radius=coeff_root_radius
          self.coeff_circular_tooth_thickness=coeff_circular_tooth_thickness
          self.list_gear=[]
+         self.transverse_contact_ratio=transverse_contact_ratio
+         self.axial_contact_ratio=axial_contact_ratio
          self.name=name
          DessiaObject.__init__(self, name=name)
 
@@ -126,6 +128,8 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         rack_choice={}
         transverse_pressure_angle={}
         coefficient_profile_shift={}
+        axial_contact_ratio={}
+        transverse_contact_ratio={}
         number_rack=0
         self.list_gearing_interior=[]
         material={}
@@ -135,6 +139,8 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             if gear.rack:
                 
                 transverse_pressure_angle[i]=gear.rack.transverse_pressure_angle
+                axial_contact_ratio[i]=gear.rack.axial_contact_ratio
+                transverse_contact_ratio[i]=gear.rack.transverse_contact_ratio
             external_torques[i]=gear.torque_input
             coefficient_profile_shift[i]=gear.coefficient_profile_shift
             if gear.Z:
@@ -148,6 +154,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                 rack_dict[number_rack]=gear.rack
                 rack_list.append(gear.rack)
                 list_rack_gear[number_rack]=[i]
+                
                 number_rack+=1
             else:
                 num_rack=rack_list.index(gear.rack)
@@ -174,6 +181,9 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             for i,element in enumerate(cycles):
                 cycles2[i]=element
             cycles=cycles2
+            
+        self.transverse_contact_ratio = transverse_contact_ratio
+        self.axial_contact_ratio = axial_contact_ratio
         self.initialisation(connections=connections,gear_speeds=gear_speeds,center_distances=cd,
                             external_torques=external_torques,cycles=cycles, rigid_links=rigid_links,Z=Z,
                             rack_list=rack_dict,rack_choice=rack_choice,safety_factor=safety_factor,

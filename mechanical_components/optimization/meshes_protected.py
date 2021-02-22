@@ -72,6 +72,12 @@ class ContinuousMeshesAssemblyOptimizer:
         self.cycles = cycles
         # Initailization
         self.solutions=[]
+        self.axial_contact_ratio={}
+        self.transverse_contact_ratio={}
+        for gear in rack_choice.keys():
+           
+            self.axial_contact_ratio[gear]=rack_list[rack_choice[gear]].axial_contact_ratio
+            self.transverse_contact_ratio[gear]=rack_list[rack_choice[gear]].transverse_contact_ratio
         
         
         
@@ -549,8 +555,15 @@ class ContinuousMeshesAssemblyOptimizer:
         _ = self.update(X)
         fineq=self.Fineq(X)
         obj=0
-        for mesh_assembly_iter in self.mesh_assembly.mesh_combinations:
-            obj+=mesh_assembly_iter.functional()
+        for num_mesh,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
+            tranverse_contact_ratio_min=1
+            for match in self.mesh_assembly.num_gear_match:
+                if match[2]==num_mesh:
+                    num_gear=match[0]
+                    break
+            if self.transverse_contact_ratio[num_gear]:
+                tranverse_contact_ratio_min=self.transverse_contact_ratio[num_gear]
+            obj+=mesh_assembly_iter.functional(tranverse_contact_ratio_min)
         # maximization of the gear modulus
         for ne,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
             for gs in mesh_assembly_iter.connections:
@@ -578,15 +591,15 @@ class ContinuousMeshesAssemblyOptimizer:
         
         self.update_helix_angle(helix_angle)
         obj=0
-        print(25682)
+        
         for mesh_combination in self.mesh_assembly.mesh_combinations:
-            for value in mesh_combination.radial_contact_ratio:
-                obj+=1/value
-                print(value)
+            for i,value in enumerate(mesh_combination.axial_contact_ratio):
+                
+                obj+=((self.axial_contact_ratio[i]-value)*1e2)**2
+                
             for key in mesh_combination.axial_load.keys():
                 obj+=abs(mesh_combination.axial_load[key]*5e-5)
-        print(helix_angle)
-        print(obj)
+       
         return obj
     def Optimize(self, verbose = False):
         """ Optimizer function
@@ -630,23 +643,24 @@ class ContinuousMeshesAssemblyOptimizer:
             
             
         if arret:
-            X0 = self.CondInit_helix_angle()
-            _ = self.update_helix_angle(X0)
-            
-            
-            cx = minimize(self.Objective_helix_angle, X0, bounds=self.Bounds_helix_angle)
-    
-           
-            Xsol = cx.x
-    
-            output_x = self.update_helix_angle(Xsol)
-            # if verbose:
-            #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
-            #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
-    
-    
-            
-            input_dat['helix_angle'] = output_x['helix_angle']
+            if self.Bounds_helix_angle:
+                X0 = self.CondInit_helix_angle()
+                _ = self.update_helix_angle(X0)
+                
+                
+                cx = minimize(self.Objective_helix_angle, X0, bounds=self.Bounds_helix_angle)
+        
+               
+                Xsol = cx.x
+        
+                output_x = self.update_helix_angle(Xsol)
+                # if verbose:
+                #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
+                #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
+        
+        
+                
+                input_dat['helix_angle'] = output_x['helix_angle']
             self.solutions.append(MeshAssembly.create(**input_dat))
             print(self.solutions)
             
