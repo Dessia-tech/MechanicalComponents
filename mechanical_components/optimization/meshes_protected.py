@@ -73,11 +73,11 @@ class ContinuousMeshesAssemblyOptimizer:
         # Initailization
         self.solutions=[]
         self.axial_contact_ratio={}
-        self.total_contact_ratio={}
+        self.total_contact_ratio_min={}
         for gear in rack_choice.keys():
            
             self.axial_contact_ratio[gear]=rack_list[rack_choice[gear]].axial_contact_ratio
-            self.total_contact_ratio[gear]=rack_list[rack_choice[gear]].total_contact_ratio
+            self.total_contact_ratio_min[gear]=rack_list[rack_choice[gear]].total_contact_ratio_min
         
         
         
@@ -498,14 +498,14 @@ class ContinuousMeshesAssemblyOptimizer:
         _ = self.update(X)
         ineq=[]
         for num_mesh,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
-            tranverse_contact_ratio_min=1
+            total_contact_ratio_min=1
             for match in self.mesh_assembly.num_gear_match:
                 if match[2]==num_mesh:
                     num_gear=match[0]
                     break
-            if self.total_contact_ratio[num_gear]:
-                tranverse_contact_ratio_min=self.total_contact_ratio[num_gear]
-            ineq.extend(mesh_assembly_iter.liste_ineq(tranverse_contact_ratio_min))
+            if self.total_contact_ratio_min[num_gear]:
+                total_contact_ratio_min=self.total_contact_ratio_min[num_gear]
+            ineq.extend(mesh_assembly_iter.liste_ineq(total_contact_ratio_min))
             
             #geometric constraint
             for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
@@ -568,14 +568,14 @@ class ContinuousMeshesAssemblyOptimizer:
         fineq=self.Fineq(X)
         obj=0
         for num_mesh,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
-            tranverse_contact_ratio_min=1
+            total_contact_ratio_min=1
             for match in self.mesh_assembly.num_gear_match:
                 if match[2]==num_mesh:
                     num_gear=match[0]
                     break
-            if self.total_contact_ratio[num_gear]:
-                tranverse_contact_ratio_min=self.total_contact_ratio[num_gear]
-            obj+=mesh_assembly_iter.functional(tranverse_contact_ratio_min)
+            if self.total_contact_ratio_min[num_gear]:
+                total_contact_ratio_min=self.total_contact_ratio_min[num_gear]
+            obj+=mesh_assembly_iter.functional(total_contact_ratio_min)
         # maximization of the gear modulus
         for ne,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
             for gs in mesh_assembly_iter.connections:
@@ -610,8 +610,8 @@ class ContinuousMeshesAssemblyOptimizer:
                 obj+=((self.axial_contact_ratio[i]-value)*1e2)**2
                 
             for i,value in enumerate(mesh_combination.total_contact_ratio):
-                if value<self.total_contact_ratio[i]:
-                    obj+=((self.total_contact_ratio[i]-value)*1e2)**2
+                if value<self.total_contact_ratio_min[i]:
+                    obj+=((self.total_contact_ratio_min[i]-value)*1e2)**2
                 
             for key in mesh_combination.axial_load.keys():
                 obj+=abs(mesh_combination.axial_load[key]*5e-5)
