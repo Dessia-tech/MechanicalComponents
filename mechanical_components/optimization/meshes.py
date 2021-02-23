@@ -28,7 +28,7 @@ class RackOpti(DessiaObject):
      def __init__(self, transverse_pressure_angle: List[float]=None, module: List[float]=None,
                  coeff_gear_addendum : List[float]=None, coeff_gear_dedendum: List[float]=None,
                  coeff_root_radius: List[float]=None, coeff_circular_tooth_thickness: List[float]=None,
-                 helix_angle: List[float]=None ,total_contact_ratio: float=None,axial_contact_ratio: float=0.8,name : str=''):
+                 helix_angle: List[float]=None ,total_contact_ratio: float=1,axial_contact_ratio: float=0.7,name : str=''):
 
          self.transverse_pressure_angle=transverse_pressure_angle
          self.module=module
@@ -60,7 +60,7 @@ class MeshOpti(DessiaObject):
         self.gearing_interior=gearing_interior
         
         if coefficient_profile_shift==None:
-            coefficient_profile_shift=[0.8,0.8]
+            coefficient_profile_shift=[0.01,0.8]
         self.coefficient_profile_shift=coefficient_profile_shift
         DessiaObject.__init__(self, name=name)
 

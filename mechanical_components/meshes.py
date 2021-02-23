@@ -50,8 +50,8 @@ evol_coeff_yb_iso = Data(data=[[0.0, 1.0029325508401201],
                              [40.0, 0.7492668574805859]
                              ], x='Linear', y='Linear')
 
-#data_wholer_curve
-wholer_hardened_alloy_steel = Data(data=[[4.296196199237153, 2.9797762011105589],
+#data_wohler_curve
+wohler_hardened_alloy_steel = Data(data=[[4.296196199237153, 2.9797762011105589],
                                        [4.824840106199563, 2.9413306094362142],
                                        [5.3344338175705674, 2.908892154601565],
                                        [6.115493253679078, 2.8632380197445122],
@@ -61,7 +61,7 @@ wholer_hardened_alloy_steel = Data(data=[[4.296196199237153, 2.9797762011105589]
                                        [8.010991340520903, 2.8524252154829133]
                                        ], x='Log', y='Log')
 
-wholer_nitrided_alloy_steel = Data(data=[[4.104865629699472, 2.9252942042661974],
+wohler_nitrided_alloy_steel = Data(data=[[4.104865629699472, 2.9252942042661974],
                                        [4.568697315952783, 2.8521640228225367],
                                        [4.887581626297173, 2.8046294185503593],
                                        [5.438381821440599, 2.7900033864666123],
@@ -70,7 +70,7 @@ wholer_nitrided_alloy_steel = Data(data=[[4.104865629699472, 2.9252942042661974]
                                        [7.989456220850952, 2.793659894487549]
                                        ], x='Log', y='Log')
 
-wholer_through_hardened_steel = Data(data=[[4.172369719531124, 2.895676495604088],
+wohler_through_hardened_steel = Data(data=[[4.172369719531124, 2.895676495604088],
                                          [4.677200861168087, 2.7983611100752137],
                                          [4.9677168648417585, 2.741894170956562],
                                          [5.329671247836526, 2.6842258044699714],
@@ -80,7 +80,7 @@ wholer_through_hardened_steel = Data(data=[[4.172369719531124, 2.895676495604088
                                          [8.00146620105282, 2.6758158339193243]
                                          ], x='Log',y='Log')
 
-wholer_surface_hardened_steel = Data(data=[[4.281908490035029, 2.7611169667937343],
+wohler_surface_hardened_steel = Data(data=[[4.281908490035029, 2.7611169667937343],
                                          [4.701013626493532, 2.6998443182033265],
                                          [5.015342395492649, 2.6553916107142128],
                                          [5.358246582896013, 2.6109389032250994],
@@ -91,7 +91,7 @@ wholer_surface_hardened_steel = Data(data=[[4.281908490035029, 2.761116966793734
                                          [7.996703631318779, 2.5772990210225108]
                                          ], x='Log', y='Log')
 
-wholer_carbon_steel = Data(data=[[4.307791955971963, 2.6419147590563592],
+wohler_carbon_steel = Data(data=[[4.307791955971963, 2.6419147590563592],
                                [5.242702822291173, 2.535876005424268],
                                [5.938450393343521, 2.4700588400224806],
                                [6.518240063668731, 2.431665495290182],
@@ -99,7 +99,7 @@ wholer_carbon_steel = Data(data=[[4.307791955971963, 2.6419147590563592],
                                [7.989456220850952, 2.4353220033111185]
                                ], x='Log', y='Log')
 
-wholer_cast_iron = Data(data=[[4.307791955971963, 2.6419147590563592],
+wohler_cast_iron = Data(data=[[4.307791955971963, 2.6419147590563592],
                             [5.242702822291173, 2.535876005424268],
                             [5.938450393343521, 2.4700588400224806],
                             [6.518240063668731, 2.431665495290182],
@@ -107,7 +107,7 @@ wholer_cast_iron = Data(data=[[4.307791955971963, 2.6419147590563592],
                             [7.989456220850952, 2.4353220033111185]
                             ], x='Log', y='Log')
 
-wholer_bronze = Data(data=[[4.307791955971963, 2.6419147590563592],
+wohler_bronze = Data(data=[[4.307791955971963, 2.6419147590563592],
                          [5.242702822291173, 2.535876005424268],
                          [5.938450393343521, 2.4700588400224806],
                          [6.518240063668731, 2.431665495290182],
@@ -115,7 +115,7 @@ wholer_bronze = Data(data=[[4.307791955971963, 2.6419147590563592],
                          [7.989456220850952, 2.4353220033111185]
                          ], x='Log', y='Log')
 
-wholer_grey_iron = Data(data=[[4.307791955971963, 2.6419147590563592],
+wohler_grey_iron = Data(data=[[4.307791955971963, 2.6419147590563592],
                             [5.242702822291173, 2.535876005424268],
                             [5.938450393343521, 2.4700588400224806],
                             [6.518240063668731, 2.431665495290182],
@@ -178,18 +178,18 @@ class Material(DessiaObject):
 
     :param volumic_mass: A float to define the gear volumic mass
     :param data_coeff_YB_Iso: a dictionary to define the YB parameter of the ISO description
-    :param data_wholer_curve: a dictionary to define the wholer slope of the ISO description
+    :param data_wohler_curve: a dictionary to define the wohler slope of the ISO description
     :param data_gear_material: a dictionary to define the maximum gear stress
 
     :data_coeff_YB_Iso: - **'data'** matrix define points of the YB curve in the plane (YB, helix_angle)
         - **'x'** string define the x axis evolution ('Log' or 'Linear')
         - **'y'** string define the y axis evolution ('Log' or 'Linear')
 
-    :data_wholer_curve: - **'data'** matrix define points of the wholer slope in the plane (wholer slope, number of cycle)
+    :data_wohler_curve: - **'data'** matrix define points of the wohler slope in the plane (wohler slope, number of cycle)
         - **'x'** string define the x axis evolution ('Log' or 'Linear')
         - **'y'** string define the y axis evolution ('Log' or 'Linear')
 
-    :data_gear_material: - **'data'** matrix define points of the maximum gear stress (maximum gear stress, wholer slope)
+    :data_gear_material: - **'data'** matrix define points of the maximum gear stress (maximum gear stress, wohler slope)
         - **'x'** string define the x axis evolution ('Log' or 'Linear')
         - **'y'** string define the y axis evolution ('Log' or 'Linear')
 
@@ -199,7 +199,7 @@ class Material(DessiaObject):
                            [23.955224059269884,0.7609970656504502],
                            [40.0,0.7492668574805859]
                           ], 'x':'Linear','y':'Linear'}
-    >>> data_wholer_curve={'data':[[4.307791955971963,1.6419147590563592],
+    >>> data_wohler_curve={'data':[[4.307791955971963,1.6419147590563592],
                        [6.518240063668731,1.431665495290182],
                        [7.989456220850952,1.4353220033111185]
                       ], 'x':'Log','y':'Log'}
@@ -208,16 +208,16 @@ class Material(DessiaObject):
                       [1.4551288380965028,0.9097910273994609]
                      ], 'x':'Log','y':'Log'}
     >>> material1=Material(volumic_mass, data_coeff_YB_Iso,
-                           data_wholer_curve, data_gear_material)
+                           data_wohler_curve, data_gear_material)
     """
     _standalone_in_db = False
     
 
-    def __init__(self, volumic_mass: float=7850, data_coeff_YB_Iso: Data=evol_coeff_yb_iso, data_wholer_curve: Data=wholer_hardened_alloy_steel,
+    def __init__(self, volumic_mass: float=7850, data_coeff_YB_Iso: Data=evol_coeff_yb_iso, data_wohler_curve: Data=wohler_hardened_alloy_steel,
                  data_gear_material: Data=sigma_hardened_alloy_steel, name: str=''):
         self.volumic_mass = volumic_mass
         self.data_coeff_YB_Iso = data_coeff_YB_Iso
-        self.data_wholer_curve = data_wholer_curve
+        self.data_wohler_curve = data_wohler_curve
         self.data_gear_material = data_gear_material
 
         DessiaObject.__init__(self, name=name)
@@ -225,7 +225,7 @@ class Material(DessiaObject):
     # def __eq__(self, other_eb):
     #     equal = (self.volumic_mass == other_eb.volumic_mass
     #              and self.data_coeff_YB_Iso == other_eb.data_coeff_YB_Iso
-    #              and self.data_wholer_curve == other_eb.data_wholer_curve
+    #              and self.data_wohler_curve == other_eb.data_wohler_curve
     #              and self.data_gear_material == other_eb.data_gear_material)
     #     return equal
 
@@ -243,7 +243,7 @@ class Material(DessiaObject):
 
         :returns:  interpolation value
 
-        >>> interp1=material1.FunCoeff(x = 5.2,data = data_wholer_curve,
+        >>> interp1=material1.FunCoeff(x = 5.2,data = data_wohler_curve,
                                        type_x = 'Log',type_y = 'Log')
         """
         if type_x == 'Log':
@@ -262,7 +262,7 @@ class Material(DessiaObject):
     #     d = {'name' : self.name} # TODO Change this to DessiaObject.__init__
     #     d['volumic_mass'] = self.volumic_mass
     #     d['data_coeff_YB_Iso'] = self.data_coeff_YB_Iso
-    #     d['data_wholer_curve'] = self.data_wholer_curve
+    #     d['data_wohler_curve'] = self.data_wohler_curve
     #     d['data_gear_material'] = self.data_gear_material
     #     return d
 
@@ -270,40 +270,40 @@ class Material(DessiaObject):
     # def dict_to_object(cls, d):
     #     material = cls(volumic_mass=d['volumic_mass'],
     #                    data_coeff_YB_Iso=d['data_coeff_YB_Iso'],
-    #                    data_wholer_curve=d['data_wholer_curve'],
+    #                    data_wohler_curve=d['data_wohler_curve'],
     #                    data_gear_material=d['data_gear_material'],
     #                    name=d['name'])
     #     return material
 
 hardened_alloy_steel = Material(7850, evol_coeff_yb_iso,
-                                wholer_hardened_alloy_steel,
+                                wohler_hardened_alloy_steel,
                                 sigma_hardened_alloy_steel,
                                 name='Hardened alloy steel')
 
-nitrided_alloy_steel = Material(7850, evol_coeff_yb_iso, wholer_nitrided_alloy_steel,
+nitrided_alloy_steel = Material(7850, evol_coeff_yb_iso, wohler_nitrided_alloy_steel,
                                 sigma_nitrided_alloy_steel,
                                 name='Nitrided alloy steel')
 
 through_hardened_steel = Material(7850, evol_coeff_yb_iso,
-                                  wholer_through_hardened_steel,
+                                  wohler_through_hardened_steel,
                                   sigma_through_hardened_steel,
                                   name='Through hardened steel')
 
 surface_hardened_steel = Material(7850, evol_coeff_yb_iso,
-                                  wholer_surface_hardened_steel,
+                                  wohler_surface_hardened_steel,
                                   sigma_surface_hardened_steel,
                                   name='Surface hardened steel')
 
-carbon_steel = Material(7850, evol_coeff_yb_iso, wholer_carbon_steel, sigma_carbon_steel,
+carbon_steel = Material(7850, evol_coeff_yb_iso, wohler_carbon_steel, sigma_carbon_steel,
                         name='Carbon steel')
 
-cast_iron = Material(7200, evol_coeff_yb_iso, wholer_cast_iron, sigma_cast_iron,
+cast_iron = Material(7200, evol_coeff_yb_iso, wohler_cast_iron, sigma_cast_iron,
                      name='Cast iron')
 
-bronze = Material(8200, evol_coeff_yb_iso, wholer_bronze, sigma_bronze,
+bronze = Material(8200, evol_coeff_yb_iso, wohler_bronze, sigma_bronze,
                   name='Bronze')
 
-grey_iron = Material(7200, evol_coeff_yb_iso, wholer_grey_iron, sigma_grey_iron,
+grey_iron = Material(7200, evol_coeff_yb_iso, wohler_grey_iron, sigma_grey_iron,
                      name='Grey iron')
 
 
@@ -1248,6 +1248,7 @@ class MeshCombination(DessiaObject):
         for num_mesh, (eng1, eng2) in enumerate(self.connections):
             rca = self.total_contact_ratio[num_mesh]
             list_ineq.append(rca-total_contact_ratio_min)
+            
             if rca > total_contact_ratio_min:
                 obj += 0.001*(rca-total_contact_ratio_min)
             else:
@@ -1257,15 +1258,15 @@ class MeshCombination(DessiaObject):
             check = True
         return check, list_ineq, obj
 
-    def liste_ineq(self):
+    def liste_ineq(self,total_contact_ratio_min=1):
         """ Compilation method for inequality list used by the optimizer
 
         :results: vector of data that should be positive
         """
         _, ineq, _ = self.check_minimum_backlash(4*1e-4)
-
-        _, list_ineq, _ = self.check_total_contact_ratio(1)
-
+       
+        _, list_ineq, _ = self.check_total_contact_ratio(total_contact_ratio_min)
+        
         ineq.extend(list_ineq)
 
         for mesh in self.meshes:
@@ -1650,22 +1651,22 @@ class MeshCombination(DessiaObject):
         for num_mesh,(eng1,eng2) in enumerate(connections):
             sigma_lim[num_mesh] = {}
 
-            matrice_wholer = material[eng1].data_wholer_curve
+            matrice_wohler = material[eng1].data_wohler_curve
             matrice_material = material[eng1].data_gear_material
-            sgla = material[eng1].FunCoeff(cycle[eng1],npy.array(matrice_wholer.data), matrice_wholer.x, matrice_wholer.y)
+            sgla = material[eng1].FunCoeff(cycle[eng1],npy.array(matrice_wohler.data), matrice_wohler.x, matrice_wohler.y)
             # sgl1 = material[eng1].FunCoeff(sgla,npy.array(matrice_material.data), matrice_material.x, matrice_material.y)
             s_thickness_iso_1,h_height_iso_1 = meshes[eng1].gear_iso_section(angle)
             coeff_ys_iso = meshes[eng1]._iso_YS(s_thickness_iso_1)
-            sigma_lim[num_mesh][eng1] = float((sgla/(safety_factor))*10**6)
+            sigma_lim[num_mesh][eng1] = float((sgla/(safety_factor*coeff_ys_iso))*10**6)
 
-            matrice_wholer = material[eng2].data_wholer_curve
+            matrice_wohler = material[eng2].data_wohler_curve
             matrice_material = material[eng2].data_gear_material
-            sglb = material[eng2].FunCoeff(cycle[eng2], npy.array(matrice_wholer.data), matrice_wholer.x, matrice_wholer.y)
+            sglb = material[eng2].FunCoeff(cycle[eng2], npy.array(matrice_wohler.data), matrice_wohler.x, matrice_wohler.y)
             # sgl2 = material[eng2].FunCoeff(sglb, npy.array(matrice_material.data), matrice_material.x, matrice_material.y)
             s_thickness_iso_2,h_height_iso_2 = meshes[eng2].gear_iso_section(angle)
             coeff_ys_iso = meshes[eng2]._iso_YS(s_thickness_iso_2)
            
-            sigma_lim[num_mesh][eng2] = float((sglb/(safety_factor))*10**6)
+            sigma_lim[num_mesh][eng2] = float((sglb/(safety_factor*coeff_ys_iso))*10**6)
          
         return sigma_lim
 

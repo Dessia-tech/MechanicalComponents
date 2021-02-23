@@ -497,9 +497,16 @@ class ContinuousMeshesAssemblyOptimizer:
 
         _ = self.update(X)
         ineq=[]
-        for mesh_assembly_iter in self.mesh_assembly.mesh_combinations:
-            ineq.extend(mesh_assembly_iter.liste_ineq())
-
+        for num_mesh,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
+            tranverse_contact_ratio_min=1
+            for match in self.mesh_assembly.num_gear_match:
+                if match[2]==num_mesh:
+                    num_gear=match[0]
+                    break
+            if self.total_contact_ratio[num_gear]:
+                tranverse_contact_ratio_min=self.total_contact_ratio[num_gear]
+            ineq.extend(mesh_assembly_iter.liste_ineq(tranverse_contact_ratio_min))
+            
             #geometric constraint
             for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
                 dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
@@ -518,28 +525,31 @@ class ContinuousMeshesAssemblyOptimizer:
                 else:
                     ineq.append(cd- 0.5*(de1+dia2))
                     ineq.append(cd- 0.5*(de2+dia1))
-
+                
                 oaa1=mesh_assembly_iter.meshes_dico[engr1].outside_active_angle
                 oaa2=mesh_assembly_iter.meshes_dico[engr2].outside_active_angle
                 ineq.append(oaa1)
                 ineq.append(oaa2)
+                
                 df1=abs(mesh_assembly_iter.DF[num_mesh][engr1])
                 df2=abs(mesh_assembly_iter.DF[num_mesh][engr2])
                 db1=abs(mesh_assembly_iter.meshes_dico[engr1].db)
                 db2=abs(mesh_assembly_iter.meshes_dico[engr2].db)
-
+                
                 ineq.append(df1-db1)
                 ineq.append(df2-db2)
+                
+                
 
             # modulus constraint (not in the open-source part because this parameter is not a ddl)
             for ne,gs in enumerate(mesh_assembly_iter.connections):
                 for g in gs:
-
+                    
                     mo=mesh_assembly_iter.meshes_dico[g].rack.module
                     list_module=self.rack_list[self.rack_choice[g]].module
                     ineq.append(abs(mo)-list_module[0])
                     ineq.append(list_module[1]-abs(mo))
-
+                    
 
             # center-distance constraint (not in the open-source part because this parameter is not a ddl)
             for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
@@ -549,6 +559,8 @@ class ContinuousMeshesAssemblyOptimizer:
                 ineq.append(abs(cd)-limit_cd[0])
                 ineq.append(limit_cd[1]-abs(cd))
 
+
+     
         return ineq
 
     def Objective(self,X):
@@ -580,9 +592,9 @@ class ContinuousMeshesAssemblyOptimizer:
         for i in fineq:
             if i < 0:
                 obj+=1000*i**2
-            else:
-                obj+=0.000001*i
-
+            # else:
+            #     obj+=0.000001*i
+        
         return obj
     
     
@@ -596,6 +608,10 @@ class ContinuousMeshesAssemblyOptimizer:
             for i,value in enumerate(mesh_combination.axial_contact_ratio):
                 
                 obj+=((self.axial_contact_ratio[i]-value)*1e2)**2
+                
+            for i,value in enumerate(mesh_combination.total_contact_ratio):
+                if value<self.total_contact_ratio[i]:
+                    obj+=((self.total_contact_ratio[i]-value)*1e2)**2
                 
             for key in mesh_combination.axial_load.keys():
                 obj+=abs(mesh_combination.axial_load[key]*5e-5)
@@ -633,8 +649,8 @@ class ContinuousMeshesAssemblyOptimizer:
             #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
             #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
 
-
-            if min(self.Fineq(Xsol)) > -1: #TODO
+            
+            if min(self.Fineq(Xsol)) > -5e-2: #TODO
                 input_dat = dict(list(output_x.items())+list(self.general_data.items()))
                 
 
@@ -662,7 +678,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 
                 input_dat['helix_angle'] = output_x['helix_angle']
             self.solutions.append(MeshAssembly.create(**input_dat))
-            print(self.solutions)
+           
             
             
       
@@ -1149,9 +1165,9 @@ class MeshAssemblyOptimizer:
                 if len(ga.solutions)>0:
                     sol1=ga.solutions[-1]
                     self.solutions.append(sol1)
-                    print(258)
-                    print(self.solutions)
+                   
                     compt_nb_sol+=1
+                    
     #                if verbose:
     #                    print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
     #                    print('Numbers of teeth: {}'.format(plex['Z']))
