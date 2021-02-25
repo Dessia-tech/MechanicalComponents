@@ -117,6 +117,7 @@ class Wiring(DessiaObject):
     
     """
     _standalone_in_db = True
+    _non_serializable_attributes = ['wires_from_waypoints', 'wires']
     def __init__(self, single_wires:List[Wire],
                  wire_harnesses:List[WireHarness],
                  name:str=''):
