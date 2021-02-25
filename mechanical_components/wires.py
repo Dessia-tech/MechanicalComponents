@@ -7,6 +7,8 @@ Created on Tue Sep 25 15:11:29 2018
 
 from dessia_common.core import DessiaObject
 import volmdlr as vm
+import volmdlr.edges as vme
+import volmdlr.wires as vmw
 import volmdlr.primitives3d as primitives3d
 import matplotlib.pyplot as plt
 import math
@@ -29,9 +31,12 @@ class Wire(DessiaObject):
         radii = {}
         for i in range(len(self.waypoints)-2):
             # if lines are not colinear
-            if vm.Line2D(self.waypoints[i],self.waypoints[i+1]).DirectionVector(unit=True).Dot(vm.Line2D(self.waypoints[i+1], self.waypoints[i+2]).DirectionVector(unit=True))!=1:                
+            if vme.Line2D(self.waypoints[i],
+                          self.waypoints[i+1]).unit_direction_vector()\
+                    .dot(vme.Line2D(self.waypoints[i+1],
+                                    self.waypoints[i+2]).unit_direction_vector())!=1:
                 radii[i+1] = 4*self.diameter
-        return  primitives3d.OpenedRoundedLineSegments3D(self.waypoints, radii, adapt_radius = True)        
+        return  primitives3d.OpenRoundedLineSegments3D(self.waypoints, radii, adapt_radius = True)
 #        return  primitives3d.RoundedLineSegments3D(self.waypoints, {}, adapt_radius = True)        
     
     def _get_path(self):
@@ -42,14 +47,14 @@ class Wire(DessiaObject):
     
     path = property(_get_path)    
     
-    def Length(self, estimate = False):
+    def length(self, estimate = False):
         if estimate:
             length_estimate = 0.
             for wpt1, wpt2 in zip(self.waypoints[:-1], self.waypoints[1:]):
                 length_estimate += wpt2.point_distance(wpt1)
             return length_estimate
         else:
-            return self.path.Length()
+            return self.path.length()
     
     def Draw(self, ax):
         x = []
@@ -60,16 +65,9 @@ class Wire(DessiaObject):
         ax.plot(x, y, '-k')
         ax.plot([x[0], x[-1]], [y[0], y[-1]], 'ok')
     
-    def volume_model(self):
-        first_dir = self.waypoints[1] - self.waypoints[0]
-        section = vm.Contour3D([vm.Circle3D(self.waypoints[0], 0.5 * self.diameter, first_dir)])
-        li_box = primitives3d.Sweep(section, self.path, name=self.name)
-        model = vm.VolumeModel(primitives=[li_box])
-        return model
-    
-    def volmdlr_volume_model(self):
-        model = self.volume_model()
-        return model
+    def volmdlr_primitives(self):
+        section = vmw.Circle2D(vm.O2D, 0.5 * self.diameter)
+        return [primitives3d.Sweep(section, self.path, name=self.name)]
 
 class AWGWire(Wire):
     def __init__(self, waypoints, n, name=''):
@@ -92,10 +90,10 @@ class WireHarness(DessiaObject):
     def __init__(self, wires):
         self.wires = wires
         
-    def Length(self):
+    def length(self):
         length = 0.
         for wire in self.wires:
-            length += wire.Length()
+            length += wire.length()
         return length
         
     def Draw(self, ax=None):
@@ -109,11 +107,11 @@ class WireHarness(DessiaObject):
         
         return ax
         
-    def CADVolumes(self):
-        volumes = []
-        for wire in self.wires:
-            volumes.append(wire.CADVolume())
-        return volumes
+    # def CADVolumes(self):
+    #     volumes = []
+    #     for wire in self.wires:
+    #         volumes.append(wire.CADVolume())
+    #     return volumes
 
 class Wiring(DessiaObject):
     """
@@ -139,7 +137,7 @@ class Wiring(DessiaObject):
         else:
             return []
         
-    def Length(self, estimate=False):
+    def length(self, estimate=False):
         """
         Gives the cumulative length of wires
         
@@ -149,7 +147,7 @@ class Wiring(DessiaObject):
         
         length = 0.
         for wire in self.wires:
-            length += wire.Length(estimate)
+            length += wire.length(estimate)
         return length
     
     def Draw(self, x3D=vm.X3D, y3D=vm.Y3D, ax=None):
@@ -171,19 +169,14 @@ class Wiring(DessiaObject):
             nwires = len(wires)
             # getting intermediate waypoints
             waypoints = nx.shortest_path(G, source = w1, target = w2)
-#            print(waypoints)
             for waypoint1, waypoint2 in zip(waypoints[:-1], waypoints[1:]):
-                l3D = vm.LineSegment3D(waypoint1, waypoint2)
-                l2D = l3D.PlaneProjection2D(x3D, y3D)
-                if l2D.Length() > 0.:                    
-                    v2D = l2D.NormalVector()
-                    v2D.Normalize()
+                l3D = vme.LineSegment3D(waypoint1, waypoint2)
+                l2D = l3D.plane_projection2d(vm.O3D, x3D, y3D)
+                if l2D.length() > 0.:                    
+                    v2D = l2D.normal_vector()
                     for iwire, wire in enumerate(wires):
                         delta_wire = (iwire - 0.5 * (nwires-1)) * wire_sep * v2D
-    #                    print(nwires)
-                        lwire = l2D.Translation(delta_wire, True)
-    #                    lines.append(l2D)     
-    #                    lwire.MPLPlot(ax)
+                        lwire = l2D.translation(delta_wire, True)
                         wire_lines[wire][frozenset((waypoint1, waypoint2))] = lwire
                 else:
                     for iwire, wire in enumerate(wires):
@@ -192,7 +185,7 @@ class Wiring(DessiaObject):
 
                         
         for wire in self.wires:
-            waypoint0_2D = wire.waypoints[0].PlaneProjection2D(x3D, y3D)
+            waypoint0_2D = wire.waypoints[0].plane_projection2d(vm.O3D, x3D, y3D)
             line = wire_lines[wire][frozenset((wire.waypoints[0], wire.waypoints[1]))]
             if line.points[0].point_distance(waypoint0_2D) < line.points[1].point_distance(waypoint0_2D):
                 waypoints_draw = [line.points[0]]
@@ -201,46 +194,34 @@ class Wiring(DessiaObject):
 
             nwaypoints = len(wire.waypoints)
             for iwaypoint in range(nwaypoints-2):
-                waypoint1_2D = wire.waypoints[iwaypoint].PlaneProjection2D(x3D, y3D)
-                waypoint2_2D = wire.waypoints[iwaypoint+1].PlaneProjection2D(x3D, y3D)
-                waypoint3_2D = wire.waypoints[iwaypoint+2].PlaneProjection2D(x3D, y3D)
-                line1 = vm.LineSegment2D(waypoint1_2D, waypoint2_2D)
-                line2 = vm.LineSegment2D(waypoint2_2D, waypoint3_2D)
+                waypoint1_2D = wire.waypoints[iwaypoint].plane_projection2d(vm.O3D, x3D, y3D)
+                waypoint2_2D = wire.waypoints[iwaypoint+1].plane_projection2d(vm.O3D, x3D, y3D)
+                waypoint3_2D = wire.waypoints[iwaypoint+2].plane_projection2d(vm.O3D, x3D, y3D)
+                line1 = vme.LineSegment2D(waypoint1_2D, waypoint2_2D)
+                line2 = vme.LineSegment2D(waypoint2_2D, waypoint3_2D)
                 
                 line1_draw = wire_lines[wire][frozenset((wire.waypoints[iwaypoint], wire.waypoints[iwaypoint+1]))]
                 line2_draw = wire_lines[wire][frozenset((wire.waypoints[iwaypoint+1], wire.waypoints[iwaypoint+2]))]
                 
-#                line1.MPLPlot(ax)
-#                line2.MPLPlot(ax)
-                
-                if (line1.Length() == 0) or (line2.Length() == 0):
+                if (line1.length() == 0) or (line2.length() == 0):
                     waypoints_draw.append(wire.waypoints[iwaypoint+1])
                 else:
-                    u1 = line1.DirectionVector(unit = True)
-                    u2 = line2.DirectionVector(unit = True)
-                    if abs(u1.Dot(u2)) != 1:
-#                        waypoints_draw.append(vm.Point2D.LinesIntersection(line1, line2))
+                    u1 = line1.unit_direction_vector()
+                    u2 = line2.unit_direction_vector()
+                    if abs(u1.dot(u2)) != 1:
                         bv = u2 - u1# bissector vector towards inner of corner
-                        bl = vm.Line2D(waypoint2_2D, waypoint2_2D+bv)
-#                        bl.MPLPlot(ax, style='--')
-                        i1 = vm.Point2D.LinesIntersection(bl, line1_draw)
-                        i2 = vm.Point2D.LinesIntersection(bl, line2_draw)
-#                        i1.MPLPlot(ax, style='xb')
-#                        i2.MPLPlot(ax, style='or')
+                        bl = vme.Line2D(waypoint2_2D, waypoint2_2D+bv)
+                        i1 = vm.Point2D.line_intersection(bl, line1_draw)
+                        i2 = vm.Point2D.line_intersection(bl, line2_draw)
                         if waypoint2_2D.point_distance(i1) < waypoint2_2D.point_distance(i2):
                             waypoints_draw.append(i2)
                         else:
                             waypoints_draw.append(i1)
 
-#                        b.Normalize()
-                        
-#                        if waypoints_draw[-1] is None:
-#                            print(line1.points, line2.points, line1.Length(), line2.Length())
                     else:
-#                        pass
                         waypoints_draw.append(line2.points[0])
 
-            waypointn_2D = wire.waypoints[-1].PlaneProjection2D(x3D, y3D)
+            waypointn_2D = wire.waypoints[-1].plane_projection2d(vm.O3D, x3D, y3D)
             line = wire_lines[wire][frozenset((wire.waypoints[-2], wire.waypoints[-1]))]
             if line.points[0].point_distance(waypointn_2D) < line.points[1].point_distance(waypointn_2D):
                 waypoints_draw.append(line.points[0])
@@ -328,29 +309,8 @@ class Wiring(DessiaObject):
 #        nx.draw_kamada_kawai(G)
         return G
     
-    def volume_model(self):
-        groups = []
+    def volmdlr_primitives(self):
         wire_volumes = []
         for wire in self.wires:
-            wire_vol = wire.volume_model()
-            wire_volumes.extend(wire_vol.primitives)
-        groups.extend(wire_volumes)
-        
-##        harnesses_volumes = []
-#        for harness in self.wire_harnesses:
-#            groups.append(harness.CADVolumes())
-            
-        model = vm.VolumeModel(groups)
-        return model
-    
-    def volmdlr_volume_model(self):
-        model = self.volume_model()
-        return model
-        
-    def CADExport(self, name='An_unnamed_wiring',
-                  python_path='python',
-                  path_lib_freecad='/usr/lib/freecad/lib/',
-                  export_types=['fcstd']):
-        
-        m = self.volume_model()
-        m.FreeCADExport(name, python_path, path_lib_freecad, export_types)
+            wire_volumes.extend(wire.volmdlr_primitives())
+        return wire_volumes

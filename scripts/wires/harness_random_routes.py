@@ -23,7 +23,7 @@ waypoints = []
 for i in range(n_wpts[0]):
     for j in range(n_wpts[1]):
         for k in range(n_wpts[2]):
-            grid_point = vm.Point3D((i*grid_size[0], j*grid_size[1], k*grid_size[2]))
+            grid_point = vm.Point3D(i*grid_size[0], j*grid_size[1], k*grid_size[2])
 #            random_deviation = vm.Point3D(0.2 * (npy.dot((npy.random.random(3)-0.5), grid_size)))
             waypoints.append(grid_point)
 
@@ -61,10 +61,10 @@ for i in range(n_wires):
 
 wo = wires_opt.WiringOptimizer(waypoints, routes)
 
-wiring = wo.Route(wires_specs)
+wiring = wo.route(wires_specs)
 
-wiring.CADExport('harness')
+wiring.babylonjs()
 
-wiring.Draw(vm.x3D, vm.y3D)
-wiring.Draw(vm.y3D, vm.z3D)
-wiring.Draw(vm.z3D, vm.x3D)
+wiring.Draw(vm.X3D, vm.Y3D)
+wiring.Draw(vm.Y3D, vm.Z3D)
+wiring.Draw(vm.Z3D, vm.X3D)

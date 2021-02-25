@@ -8,7 +8,7 @@ Created on Wed Jul 10 15:21:32 2019
 """
 
 import networkx as nx
-from common import RoutingOptimizer
+from .common import RoutingOptimizer
 import mechanical_components.wires as wires
 
 class WiringOptimizer(RoutingOptimizer):
@@ -29,7 +29,7 @@ class WiringOptimizer(RoutingOptimizer):
         return nx.number_connected_components(G)
         
     
-    def Route(self, wires_specs):
+    def route(self, wires_specs):
         shortest_paths = []
         shortest_paths_lengths = []
         for wire_spec in wires_specs:

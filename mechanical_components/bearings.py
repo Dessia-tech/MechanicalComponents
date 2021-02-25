@@ -911,8 +911,10 @@ class AngularBallBearing(RadialBearing):
         return Pr
 
     def equivalent_dynamic_load(self, fr, fa = 0):
+       
         alphap = fsolve((lambda alphap:math.cos(self.alpha)/math.cos(alphap) \
                     -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2)*math.sin(alphap)))**(2/3.))),self.alpha + 1)[0]
+    
         if self.alpha <= 5/180.*math.pi:
             if self.i == 1:
                 ksi = 1.05
