@@ -309,10 +309,10 @@ class Pawl(dc.DessiaObject):
     def plot_data(self, angle=0.):
         line_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.FERN,
                                          dashline=[5, 5, 20, 5])
-        primitives = [self.outer_contour().rotation(vm.O2D, angle).plot_data(),
-                     self.inner_contour().rotation(vm.O2D, angle).plot_data(),
-                     self.action_line1.rotation(vm.O2D, angle).plot_data(edge_style=line_style),
-                     self.action_line2.rotation(vm.O2D, angle).plot_data(edge_style=line_style)]
+        primitives = [self.outer_contour().rotation(self.axis_position, angle).plot_data(),
+                     self.inner_contour().rotation(self.axis_position, angle).plot_data(),
+                     self.action_line1.rotation(self.axis_position, angle).plot_data(edge_style=line_style),
+                     self.action_line2.rotation(self.axis_position, angle).plot_data(edge_style=line_style)]
 
 
         return [plot_data.PrimitiveGroup(primitives)]
@@ -386,14 +386,15 @@ class ParkingPawl(dc.DessiaObject):
             return False
         return True
 
-    def plot_data(self):
+    def plot_data(self, pawl_angle=0, wheel_angle=0):
 
-        primitives_p1 = self.pawl.plot_data()[0].primitives
+        primitives_p1 = self.pawl.plot_data(angle=pawl_angle)[0].primitives
         primitives_p1 += self.wheel.plot_data(angle=self.contact1_wheel_angle)[0].primitives
 
-        primitives_p2 = self.pawl.plot_data()[0].primitives
-        primitives_p2 += self.wheel.plot_data(angle=self.contact2_wheel_angle)[0].primitives
+        return [plot_data.PrimitiveGroup(primitives_p1)]
+        # primitives_p2 = self.pawl.plot_data()[0].primitives
+        # primitives_p2 += self.wheel.plot_data(angle=self.contact2_wheel_angle)[0].primitives
 
-        return [plot_data.PrimitiveGroup(primitives_p1),
-                plot_data.PrimitiveGroup(primitives_p2)]
+        # return [plot_data.PrimitiveGroup(primitives_p1),
+        #         plot_data.PrimitiveGroup(primitives_p2)]
 
