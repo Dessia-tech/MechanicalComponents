@@ -19,7 +19,7 @@ import shutil
 from distutils import log as logger
 
 import hashlib
-import netifaces
+# import netifaces
 
 import wheel.bdist_wheel
 from wheel.wheelfile import WheelFile
