@@ -228,7 +228,7 @@ class Pawl(dc.DessiaObject):
         self.contact_point2 = contact_middle_point.rotation(vm.O2D, 0.5 * self.contact_angle)
         action_point12 = vm.O2D.rotation(self.contact_point1,
                                           math.asin(self.basis_diameter/self.contact_diameter))
-        action_point22 = vm.O2D.rotation(self.contact_point1,
+        action_point22 = vm.O2D.rotation(self.contact_point2,
                                           -math.asin(self.basis_diameter/self.contact_diameter))
 
         self.action_line1 = vme.Line2D(self.contact_point1, action_point12)
@@ -306,12 +306,13 @@ class Pawl(dc.DessiaObject):
     def inner_contour(self):
         return vmw.Circle2D(self.axis_position, 0.5*self.axis_inner_diameter)
 
-    def plot_data(self):
+    def plot_data(self, angle=0.):
         line_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.FERN,
                                          dashline=[5, 5, 20, 5])
-        primitives = [self.outer_contour().plot_data(),
-                     self.inner_contour().plot_data(),
-                     self.action_line1.plot_data(edge_style=line_style)]
+        primitives = [self.outer_contour().rotation(vm.O2D, angle).plot_data(),
+                     self.inner_contour().rotation(vm.O2D, angle).plot_data(),
+                     self.action_line1.rotation(vm.O2D, angle).plot_data(edge_style=line_style),
+                     self.action_line2.rotation(vm.O2D, angle).plot_data(edge_style=line_style)]
 
 
         return [plot_data.PrimitiveGroup(primitives)]
@@ -327,7 +328,6 @@ class ParkingPawl(dc.DessiaObject):
                  wheel_lower_tooth_diameter:float,
                  wheel_outer_diameter:float,
                  teeth_number:int,
-                 # upper_tooth_ratio:float,
                  lower_tooth_ratio:float,
                  basis_diameter:float,
                  contact_diameter:float,
@@ -335,7 +335,6 @@ class ParkingPawl(dc.DessiaObject):
                  pawl_offset:float,
                  axis_inner_diameter:float, axis_outer_diameter:float,
                  finger_height:float,
-                 # finger_angle:float,
                  finger_width:float,
                  slope_start_height, slope_length,
                  slope_offset:float, slope_angle:float,
