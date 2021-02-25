@@ -5,6 +5,7 @@ Created on Tue Sep 25 15:11:29 2018
 
 """
 
+from typing import List
 from dessia_common.core import DessiaObject
 import volmdlr as vm
 import volmdlr.edges as vme
@@ -18,12 +19,12 @@ class Wire(DessiaObject):
     """
     :param waypoints: a list of volmdlr.Point3D waypoints
     """
-    def __init__(self, waypoints, diameter, name=''):
+    _standalone_in_db = True
+    
+    def __init__(self, waypoints:List[vm.Point3D], diameter:float, name:str=''):
         self.waypoints = waypoints
         self.diameter = diameter
         self.name = name
-        
-
                 
         self._utd_path = False
         
@@ -87,6 +88,8 @@ class IECWire(Wire):
         Wire.__init__(self, waypoints, diameter, name)
 
 class WireHarness(DessiaObject):
+    _standalone_in_db = True
+    
     def __init__(self, wires):
         self.wires = wires
         
@@ -106,21 +109,16 @@ class WireHarness(DessiaObject):
             wire.Draw(ax)
         
         return ax
-        
-    # def CADVolumes(self):
-    #     volumes = []
-    #     for wire in self.wires:
-    #         volumes.append(wire.CADVolume())
-    #     return volumes
 
 class Wiring(DessiaObject):
     """
     Defines a combination of single wires and wire harnesses.
     
     """
-    def __init__(self, single_wires, wire_harnesses):
+    def __init__(self, single_wires:List[Wire], wire_harnesses:List[WireHarness], name:str=''):
         self.single_wires = single_wires
         self.wire_harnesses = wire_harnesses
+        self.name = ''
 
 
         wires = single_wires[:]
