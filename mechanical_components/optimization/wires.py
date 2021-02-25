@@ -22,8 +22,8 @@ from  mechanical_components.optimization.common import RoutingOptimizer
 
 class WiringOptimizer(protected_module.WiringOptimizer if _open_source==True else RoutingOptimizer):
     def __init__(self, waypoints, routes):
-        WiringOptimizer.__init__(self, waypoints, routes)
-    
+        super().__init__(waypoints, routes)
+
 
             
             

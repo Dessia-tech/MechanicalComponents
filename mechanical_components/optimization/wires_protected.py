@@ -29,7 +29,7 @@ class WiringOptimizer(RoutingOptimizer):
         return nx.number_connected_components(G)
         
     
-    def Route(self, wires_specs):
+    def route(self, wires_specs):
         shortest_paths = []
         shortest_paths_lengths = []
         for wire_spec in wires_specs:
