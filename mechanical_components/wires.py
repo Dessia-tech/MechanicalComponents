@@ -90,8 +90,9 @@ class IECWire(Wire):
 class WireHarness(DessiaObject):
     _standalone_in_db = True
     
-    def __init__(self, wires):
+    def __init__(self, wires:List[Wire], name:str=''):
         self.wires = wires
+        self.name = name
         
     def length(self):
         length = 0.
@@ -115,10 +116,13 @@ class Wiring(DessiaObject):
     Defines a combination of single wires and wire harnesses.
     
     """
-    def __init__(self, single_wires:List[Wire], wire_harnesses:List[WireHarness], name:str=''):
+    _standalone_in_db = True
+    def __init__(self, single_wires:List[Wire],
+                 wire_harnesses:List[WireHarness],
+                 name:str=''):
         self.single_wires = single_wires
         self.wire_harnesses = wire_harnesses
-        self.name = ''
+        self.name = name
 
 
         wires = single_wires[:]
