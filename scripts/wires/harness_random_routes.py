@@ -56,7 +56,7 @@ for i in range(n_wires):
     
     wires_specs.append({'source': source,
                         'destination': destination,
-                        'diameter': 0.005 + 0.005*random.random()})
+                        'diameter': 0.005 + 0.010*random.random()})
     
 
 wo = wires_opt.WiringOptimizer(waypoints, routes)

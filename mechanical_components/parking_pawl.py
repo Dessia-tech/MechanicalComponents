@@ -212,7 +212,7 @@ class Pawl(dc.DessiaObject):
         self.axis_outer_diameter = axis_outer_diameter
         self.width = width
 
-        self.side_tooth_radius = 2*self.contact_diameter
+        self.side_tooth_radius = self.contact_diameter
 
 
         pa1 = self.axis_position + vm.Point2D(0., 0.5*self.axis_outer_diameter)
@@ -392,9 +392,4 @@ class ParkingPawl(dc.DessiaObject):
         primitives_p1 += self.wheel.plot_data(angle=self.contact1_wheel_angle)[0].primitives
 
         return [plot_data.PrimitiveGroup(primitives_p1)]
-        # primitives_p2 = self.pawl.plot_data()[0].primitives
-        # primitives_p2 += self.wheel.plot_data(angle=self.contact2_wheel_angle)[0].primitives
-
-        # return [plot_data.PrimitiveGroup(primitives_p1),
-        #         plot_data.PrimitiveGroup(primitives_p2)]
 
