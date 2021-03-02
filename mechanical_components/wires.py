@@ -111,6 +111,14 @@ class WireHarness(DessiaObject):
         
         return ax
 
+class RoutingSpec(DessiaObject):
+    _standalone_in_db = True
+    def __init__(self, source:vm.Point3D, destination:vm.Point3D, diameter:float, name:str=''):
+        self.source = source
+        self.destination = destination
+        self.diameter = diameter
+        self.name = name
+
 class Wiring(DessiaObject):
     """
     Defines a combination of single wires and wire harnesses.
