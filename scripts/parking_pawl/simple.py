@@ -15,6 +15,9 @@ import mechanical_components.parking_pawl as mcpp
 #             width=0.030)
 
 # parking_pawl = ParkingPawl(wheel, pawl)
+locking_mechanism = mcpp.RollerLockingMechanism(roller_diameter=0.010,
+                                                center_distance=0.062,
+                                                width = 0.025)
 parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
                                 wheel_lower_tooth_diameter=0.060,
                                 wheel_outer_diameter=0.080,
@@ -31,13 +34,14 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
                                 # finger_angle=math.radians(20),
                                 finger_width=0.018,
                                 slope_start_height=0.015,
-                                slope_angle=math.radians(12),
-                                slope_offset=0.005, slope_length=0.035)
+                                slope_angle=math.radians(16),
+                                slope_offset=0.005, slope_length=0.035,
+                                locking_mechanism=locking_mechanism)
 # parking_pawl.pawl.outer_contour().plot()
 # parking_pawl.wheel.outer_contour().plot()
 # plot_data.plot_canvas(plot_data_object=parking_pawl.wheel.plot_data()[0], debug_mode=True)
 # parking_pawl.babylonjs()
-parking_pawl.mpl_plot(pawl_angle=math.radians(23), wheel_angle=0)
+parking_pawl.mpl_plot()#pawl_angle=parking_pawl.up_pawl_angle, wheel_angle=0)
 # parking_pawl.wheel.mpl_plot()
 # parking_pawl.pawl.mpl_plot()
 print(parking_pawl.check())
