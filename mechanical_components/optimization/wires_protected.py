@@ -27,30 +27,35 @@ class WiringOptimizer(RoutingOptimizer):
 #        nx.draw_kamada_kawai(G)
         return nx.number_connected_components(G)
         
-    
-    def route(self, wires_specs:List[wires.RoutingSpec]):
+    def route(self, wires_specs: List[wires.RoutingSpec]):
         shortest_paths = []
         shortest_paths_lengths = []
         for wire_spec in wires_specs:
             # Checking if pat is in cache
 
-            if (wire_spec.source, wire_spec.destination) in self._shortest_paths_cache:
-                shortest_path = self._shortest_paths_cache[(wire_spec.source, wire_spec.destination)]
-            elif (wire_spec.source, wire_spec.destination) in self._shortest_paths_cache:
-                shortest_path = self._shortest_paths_cache[(wire_spec.source, wire_spec.destination)]
+            if (wire_spec.source, wire_spec.destination) in \
+                    self._shortest_paths_cache:
+                shortest_path = self._shortest_paths_cache[
+                    (wire_spec.source, wire_spec.destination)]
+            elif (wire_spec.source, wire_spec.destination) in \
+                    self._shortest_paths_cache:
+                shortest_path = self._shortest_paths_cache[
+                    (wire_spec.source, wire_spec.destination)]
             else:            
                 shortest_path = nx.shortest_path(self.graph,
                                                  wire_spec.source,
                                                  wire_spec.destination,
-                                                 weight = 'distance')
-                self._shortest_paths_cache[(wire_spec.source, wire_spec.destination)] = shortest_path
+                                                 weight='distance')
+                self._shortest_paths_cache[
+                    (wire_spec.source, wire_spec.destination)] = shortest_path
                 
             shortest_paths.append(shortest_path)
             length = self.PathLength(shortest_path)
             shortest_paths_lengths.append(length)
             
-
         wires2 = []
         for ipath, path in enumerate(shortest_paths):
-            wires2.append(wires.Wire(path, wires_specs[ipath].diameter, name=wires_specs[ipath].name))
+            wires2.append(wires.Wire(path, wires_specs[ipath].diameter,
+                                     color=wires_specs[ipath].color,
+                                     name=wires_specs[ipath].name))
         return wires.Wiring(wires2, [])
