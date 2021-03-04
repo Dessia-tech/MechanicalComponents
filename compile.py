@@ -57,30 +57,30 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
         ('delete-pyx=', None, 'delete compilation files')
     ]
 
-    addresses_determination_lines = ['import netifaces\n',
-                                     'addrs = []\n',
-                                     'for i in netifaces.interfaces():\n',
-                                     "    if i != 'lo':\n",
-                                     "        for k, v in netifaces.ifaddresses(i).items():\n",
-                                     "            for v2 in v:\n",
-                                     "                if 'addr' in v2:\n",
-                                     "                    a = v2['addr']\n",
-                                     "                    if len(a) == 17:\n",
-                                     "                        addrs.append(a.replace(':',''))\n",
-                                     "addrs = set(addrs)\n\n"
-                                     ]
-
-    def get_machine_macs(self):
-        addrs = []
-        for i in netifaces.interfaces():
-            if i != 'lo':
-                for k, v in netifaces.ifaddresses(i).items():
-                    for v2 in v:
-                        if 'addr' in v2:
-                            a = v2['addr']
-                            if len(a) == 17:
-                                addrs.append(a.replace(':', ''))
-        return list(set(addrs))
+    # addresses_determination_lines = ['import netifaces\n',
+    #                                  'addrs = []\n',
+    #                                  'for i in netifaces.interfaces():\n',
+    #                                  "    if i != 'lo':\n",
+    #                                  "        for k, v in netifaces.ifaddresses(i).items():\n",
+    #                                  "            for v2 in v:\n",
+    #                                  "                if 'addr' in v2:\n",
+    #                                  "                    a = v2['addr']\n",
+    #                                  "                    if len(a) == 17:\n",
+    #                                  "                        addrs.append(a.replace(':',''))\n",
+    #                                  "addrs = set(addrs)\n\n"
+    #                                  ]
+    #
+    # def get_machine_macs(self):
+    #     addrs = []
+    #     for i in netifaces.interfaces():
+    #         if i != 'lo':
+    #             for k, v in netifaces.ifaddresses(i).items():
+    #                 for v2 in v:
+    #                     if 'addr' in v2:
+    #                         a = v2['addr']
+    #                         if len(a) == 17:
+    #                             addrs.append(a.replace(':', ''))
+    #     return list(set(addrs))
 
     def initialize_options(self):
         """Set default values for options."""
@@ -104,34 +104,34 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
         wheel.bdist_wheel.bdist_wheel.finalize_options(self)
 
         self.detect_macs = self.detect_macs is not None
-        if not self.detect_macs:
+        # if not self.detect_macs:
 
-            macs = []
-            if self.macs is not None:
-                self.macs = self.macs.replace('[', '')
-                self.macs = self.macs.replace(']', '')
-                self.macs = self.macs.replace(':', '')
+        macs = []
+        if self.macs is not None:
+            self.macs = self.macs.replace('[', '')
+            self.macs = self.macs.replace(']', '')
+            self.macs = self.macs.replace(':', '')
 
-                for mac in self.macs.split(','):
-                    if len(mac) != 12:
-                        raise ValueError(
-                            'A mac address must be 12 digits long, got: {} instead'.format(
-                                mac))
-                    macs.append(mac)
-                self.macs = macs
-                print('\nCompiling for macs: {}'.format(self.macs))
+            for mac in self.macs.split(','):
+                if len(mac) != 12:
+                    raise ValueError(
+                        'A mac address must be 12 digits long, got: {} instead'.format(
+                            mac))
+                macs.append(mac)
+            self.macs = macs
+            print('\nCompiling for macs: {}'.format(self.macs))
 
-            getnodes = []
-            if self.getnodes is not None:
-                for getnode in self.getnodes.split(','):
-                    getnodes.append(getnode)
-                self.getnodes = getnodes
-                print('\nCompiling for getnodes: {}'.format(
-                    [str(g for g in self.getnodes)]))
+        getnodes = []
+        if self.getnodes is not None:
+            for getnode in self.getnodes.split(','):
+                getnodes.append(getnode)
+            self.getnodes = getnodes
+            print('\nCompiling for getnodes: {}'.format(
+                [str(g for g in self.getnodes)]))
 
-        else:
-            self.macs = self.get_machine_macs()
-            print('Using detected mac of this machine: {}'.format(self.macs))
+        # else:
+        #     self.macs = self.get_machine_macs()
+        #     print('Using detected mac of this machine: {}'.format(self.macs))
 
         if not self.detect_macs and self.getnodes is None and self.macs is None:
             print('Warning: no macs protection')
@@ -229,8 +229,8 @@ class ClientWheelDist(wheel.bdist_wheel.bdist_wheel):
                 new_file_lines.append('import time as time_package\n')
                 if self.getnodes is not None:
                     new_file_lines.append('from uuid import getnode\n')
-                if self.macs is not None:
-                    new_file_lines.extend(self.addresses_determination_lines)
+                # if self.macs is not None:
+                #     new_file_lines.extend(self.addresses_determination_lines)
 
                 while line_index < len(lines):
                     line = lines[line_index]

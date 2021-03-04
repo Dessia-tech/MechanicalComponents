@@ -111,6 +111,14 @@ class WireHarness(DessiaObject):
         
         return ax
 
+class RoutingSpec(DessiaObject):
+    _standalone_in_db = True
+    def __init__(self, source:vm.Point3D, destination:vm.Point3D, diameter:float, name:str=''):
+        self.source = source
+        self.destination = destination
+        self.diameter = diameter
+        self.name = name
+
 class Wiring(DessiaObject):
     """
     Defines a combination of single wires and wire harnesses.
@@ -118,6 +126,7 @@ class Wiring(DessiaObject):
     """
     _standalone_in_db = True
     _non_serializable_attributes = ['wires_from_waypoints', 'wires']
+
     def __init__(self, single_wires:List[Wire],
                  wire_harnesses:List[WireHarness],
                  name:str=''):
@@ -150,7 +159,7 @@ class Wiring(DessiaObject):
         
         length = 0.
         for wire in self.wires:
-            length += wire.length(estimate)
+            length += wire.length(estimate=estimate)
         return length
     
     def Draw(self, x3D=vm.X3D, y3D=vm.Y3D, ax=None):
@@ -311,7 +320,14 @@ class Wiring(DessiaObject):
                 
 #        nx.draw_kamada_kawai(G)
         return G
-    
+
+    def spaced_wires(self):
+        spaced_wires = {}
+        G, common_routes = self.CommonRoutes()
+        pos = nx.kamada_kawai_layout(G)
+        nx.draw_networkx_nodes(G, pos)
+        nx.draw_networkx_edges(G, pos)
+
     def volmdlr_primitives(self):
         wire_volumes = []
         for wire in self.wires:
