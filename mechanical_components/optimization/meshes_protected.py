@@ -522,7 +522,8 @@ class ContinuousMeshesAssemblyOptimizer:
             if self.transverse_contact_ratio_min[num_gear]:
                 transverse_contact_ratio_min=self.transverse_contact_ratio_min[num_gear]
             ineq.extend(mesh_assembly_iter.liste_ineq(total_contact_ratio_min,transverse_contact_ratio_min))
-
+            print(25)
+            print(ineq[-1])
                 
             
             #geometric constraint
@@ -541,8 +542,12 @@ class ContinuousMeshesAssemblyOptimizer:
                     ineq.append(cd- 0.5*(-de1+dia2))
                     ineq.append(cd- 0.5*(de2-dia1))
                 else:
-                    ineq.append(cd- 0.5*(de1+dia2))
-                    ineq.append(cd- 0.5*(de2+dia1))
+                    ineq.append((cd- 0.5*(de1+dia2))-0.002)
+                    ineq.append((cd- 0.5*(de2+dia1))-0.002)
+                    print(1)
+                    print(ineq[-1])
+                    print(dia1)
+                    print(mesh_assembly_iter.meshes_dico[engr1].root_diameter)
                 
                 oaa1=mesh_assembly_iter.meshes_dico[engr1].outside_active_angle
                 oaa2=mesh_assembly_iter.meshes_dico[engr2].outside_active_angle
@@ -655,9 +660,9 @@ class ContinuousMeshesAssemblyOptimizer:
             
         
         for i in fineq:
-            if i < -5e-2:
+            if i < 0:
                 
-                obj+=1000*i**2
+                obj+=1000000*i**2
                 
                 
             # else:
@@ -708,12 +713,12 @@ class ContinuousMeshesAssemblyOptimizer:
             else:
                 cons = {'type': 'ineq','fun' : self.Fineq_without_constraint_ratio_contact}
             try:
-                # print('erty')
+                print('erty')
              
                 cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons)
                
-                # print('fefe')
-                # print(cx.fun)
+                print('fefe')
+                print(cx.fun)
             except ValidGearDiameterError:
             
                 i += 1

@@ -647,6 +647,7 @@ class Mesh(DessiaObject):
         # if self.z<0:
         #     r=-r
         phi = -(a+b*math.tan(math.pi/2-self.rack.transverse_pressure_angle_0))/r
+        
         root_diameter_active = 2*norm(self._trochoide(phi))
         return root_diameter_active, phi
 
