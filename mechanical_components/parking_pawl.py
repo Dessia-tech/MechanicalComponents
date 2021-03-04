@@ -25,7 +25,8 @@ class Wheel(dc.DessiaObject):
                  lower_tooth_ratio:float,
                  basis_diameter:float,
                  contact_diameter:float,
-                 width:float):
+                 width:float,
+                 name:str=''):
         self.inner_diameter = inner_diameter
         self.lower_tooth_diameter = lower_tooth_diameter
         self.outer_diameter = outer_diameter
@@ -35,6 +36,7 @@ class Wheel(dc.DessiaObject):
         self.basis_diameter = basis_diameter
         self.contact_diameter = contact_diameter
         self.width = width
+        self.name = name
         
         # Computed attributes
         self.tooth_angle = vm.TWO_PI/self.teeth_number
@@ -196,7 +198,8 @@ class Pawl(dc.DessiaObject):
                  finger_width:float,
                  slope_start_height, slope_length,
                  slope_offset:float, slope_angle:float,
-                 width:float):
+                 width:float,
+                 name:str=''):
         self.axis_position = axis_position
         self.wheel_lower_tooth_diameter = wheel_lower_tooth_diameter
         self.contact_diameter = contact_diameter
@@ -212,6 +215,7 @@ class Pawl(dc.DessiaObject):
         self.axis_inner_diameter = axis_inner_diameter
         self.axis_outer_diameter = axis_outer_diameter
         self.width = width
+        self.name = name
 
         self.side_tooth_radius = self.contact_diameter
 
