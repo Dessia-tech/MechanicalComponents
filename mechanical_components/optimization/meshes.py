@@ -270,15 +270,15 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             rack_list={0:RackOpti()}
         for num_rack, rack in rack_list.items():
             if  not rack.module:
-                rack_list[num_rack].module = [1*1e-3,5*1e-3]
+                rack_list[num_rack].module = [1*1e-3,2.5*1e-3]
             if  not rack.transverse_pressure_angle_0:
                 rack_list[num_rack].transverse_pressure_angle_0 =[15/180.*math.pi,30/180.*math.pi]
             if  not  rack.coeff_gear_addendum:
                 rack_list[num_rack].coeff_gear_addendum = [1,1]
             if  not  rack.coeff_gear_dedendum:
-                rack_list[num_rack].coeff_gear_dedendum = [1.1,1.3]
+                rack_list[num_rack].coeff_gear_dedendum = [1.25,1.25]
             if  not  rack.coeff_root_radius:
-                rack_list[num_rack].coeff_root_radius = [0.3,0.5]
+                rack_list[num_rack].coeff_root_radius = [0.38,0.38]
             if not  rack.coeff_circular_tooth_thickness:
                 rack_list[num_rack].coeff_circular_tooth_thickness = [0.5,0.5]
             

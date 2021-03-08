@@ -1629,7 +1629,7 @@ class MeshCombination(DessiaObject):
             # print(contact_ratio[1][0])
             # print(x)
             if contact_ratio[1][0]<total_contact_ratio_min:
-                f_contact_ratio_min=total_contact_ratio_min-contact_ratio[1][0]
+                f_contact_ratio_min=abs(total_contact_ratio_min-1.6-contact_ratio[3][0])
             else:
                 f_contact_ratio_min=0
         

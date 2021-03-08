@@ -10,7 +10,7 @@ import copy
 import numpy as npy
 import networkx as nx
 import dectree
-
+import cma
 from mechanical_components.meshes import MeshAssembly,\
         gear_graph_simple, gear_graph_complex, ValidGearDiameterError
 
@@ -522,8 +522,9 @@ class ContinuousMeshesAssemblyOptimizer:
             if self.transverse_contact_ratio_min[num_gear]:
                 transverse_contact_ratio_min=self.transverse_contact_ratio_min[num_gear]
             ineq.extend(mesh_assembly_iter.liste_ineq(total_contact_ratio_min,transverse_contact_ratio_min))
-            print(25)
-            print(ineq[-1])
+            # print(25)
+            # print(ineq[-1])
+            # print(ineq[-2])
                 
             
             #geometric constraint
@@ -542,12 +543,12 @@ class ContinuousMeshesAssemblyOptimizer:
                     ineq.append(cd- 0.5*(-de1+dia2))
                     ineq.append(cd- 0.5*(de2-dia1))
                 else:
-                    ineq.append((cd- 0.5*(de1+dia2))-0.002)
-                    ineq.append((cd- 0.5*(de2+dia1))-0.002)
-                    print(1)
-                    print(ineq[-1])
-                    print(dia1)
-                    print(mesh_assembly_iter.meshes_dico[engr1].root_diameter)
+                    ineq.append((cd- 0.5*(de1+dia2)))
+                    ineq.append((cd- 0.5*(de2+dia1)))
+                    # print(1)
+                    # print(ineq[-1])
+                    # print(dia1)
+                    # print(mesh_assembly_iter.meshes_dico[engr1].root_diameter)
                 
                 oaa1=mesh_assembly_iter.meshes_dico[engr1].outside_active_angle
                 oaa2=mesh_assembly_iter.meshes_dico[engr2].outside_active_angle
@@ -575,22 +576,22 @@ class ContinuousMeshesAssemblyOptimizer:
             
             #geometric constraint
             for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
-                dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
-                dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
-                de1=mesh_assembly_iter.meshes_dico[engr1].outside_diameter
-                de2=mesh_assembly_iter.meshes_dico[engr2].outside_diameter
-                cd=mesh_assembly_iter.center_distance[num_mesh]
-                Z1=self.Z[engr1]
-                Z2=self.Z[engr2]
-                if Z2<0:
-                    ineq.append(cd- 0.5*(de1-dia2))
-                    ineq.append(cd- 0.5*(-de2+dia1))
-                elif Z1<0:
-                    ineq.append(cd- 0.5*(-de1+dia2))
-                    ineq.append(cd- 0.5*(de2-dia1))
-                else:
-                    ineq.append(cd- 0.5*(de1+dia2))
-                    ineq.append(cd- 0.5*(de2+dia1))
+            #     dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
+            #     dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
+            #     de1=mesh_assembly_iter.meshes_dico[engr1].outside_diameter
+            #     de2=mesh_assembly_iter.meshes_dico[engr2].outside_diameter
+            #     cd=mesh_assembly_iter.center_distance[num_mesh]
+            #     Z1=self.Z[engr1]
+            #     Z2=self.Z[engr2]
+            #     if Z2<0:
+            #         ineq.append(cd- 0.5*(de1-dia2))
+            #         ineq.append(cd- 0.5*(-de2+dia1))
+            #     elif Z1<0:
+            #         ineq.append(cd- 0.5*(-de1+dia2))
+            #         ineq.append(cd- 0.5*(de2-dia1))
+            #     else:
+            #         ineq.append(cd- 0.5*(de1+dia2))
+                    # ineq.append(cd- 0.5*(de2+dia1))
                 
                 oaa1=mesh_assembly_iter.meshes_dico[engr1].outside_active_angle
                 oaa2=mesh_assembly_iter.meshes_dico[engr2].outside_active_angle
@@ -633,6 +634,7 @@ class ContinuousMeshesAssemblyOptimizer:
         _ = self.update(X)
         fineq=self.Fineq(X)
         obj=0
+        
         for num_mesh,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
             total_contact_ratio_min=1
             for match in self.mesh_assembly.num_gear_match:
@@ -642,7 +644,7 @@ class ContinuousMeshesAssemblyOptimizer:
             if self.total_contact_ratio_min[num_gear]:
                 total_contact_ratio_min=self.total_contact_ratio_min[num_gear]
            
-            # obj+=mesh_assembly_iter.functional(total_contact_ratio_min)
+            obj+=mesh_assembly_iter.functional(total_contact_ratio_min)
             
         # maximization of the gear modulus
         for ne,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
@@ -662,11 +664,11 @@ class ContinuousMeshesAssemblyOptimizer:
         for i in fineq:
             if i < 0:
                 
-                obj+=1000000*i**2
+                obj+=10000*i**2
                 
                 
-            # else:
-            #     obj+=0.000001*i
+            else:
+                obj+=0.000001*i
         
         
         return obj
@@ -709,12 +711,28 @@ class ContinuousMeshesAssemblyOptimizer:
             X0 = self.CondInit()
             _ = self.update(X0)
             if constraint_ratio_contact:
-                cons = {'type': 'ineq','fun' : self.Fineq}
+                cons = {'type': 'ineq','fun' : self.Fineq_without_constraint_ratio_contact}
             else:
                 cons = {'type': 'ineq','fun' : self.Fineq_without_constraint_ratio_contact}
+            
+            # min_x = []
+            # max_x = []
+            # for i in range(len(self.Bounds)):
+            #     min_x.append(self.Bounds[i][0])
+            #     max_x.append(self.Bounds[i][1])
+            # x=cma.fmin(self.Objective, X0, 1*10e-4, options={'bounds':[min_x, max_x]}
+            #                                                  'bounds':[min_x, max_x]})
+            
             try:
                 print('erty')
-             
+                print(self.Bounds)
+                min_x = []
+                max_x = []
+                for i in range(len(self.Bounds)):
+                    min_x.append(self.Bounds[i][0])
+                    max_x.append(self.Bounds[i][1])
+              
+                                                                                                                                           
                 cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons)
                
                 print('fefe')
@@ -730,8 +748,8 @@ class ContinuousMeshesAssemblyOptimizer:
             #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
             #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
 
-            
-            if min(self.Fineq(Xsol)) > -5e-2: #TODO
+            print(min(self.Fineq(Xsol)))
+            if min(self.Fineq(Xsol)) > -1e-3: #TODO
                 input_dat = dict(list(output_x.items())+list(self.general_data.items()))
                 # print('velid')
                 # for num_engr,list_cd in enumerate(self.center_distances):
@@ -1244,7 +1262,7 @@ class MeshAssemblyOptimizer:
                 try:
                     ga.Optimize(verbose,constraint_ratio_contact)
                 except ValueError:
-                
+                   
                     if verbose:
                         print('Convergence problem')
                 if len(ga.solutions)>0:
