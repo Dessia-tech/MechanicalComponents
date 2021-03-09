@@ -42,10 +42,14 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
 # parking_pawl.wheel.outer_contour().plot()
 # plot_data.plot_canvas(plot_data_object=parking_pawl.wheel.plot_data()[0], debug_mode=True)
 # parking_pawl.babylonjs()
-parking_pawl.mpl_plot()#pawl_angle=parking_pawl.up_pawl_angle, wheel_angle=0)
+# parking_pawl.mpl_plot()#pawl_angle=parking_pawl.up_pawl_angle, wheel_angle=0)
 # parking_pawl.wheel.mpl_plot()
 # parking_pawl.pawl.mpl_plot()
 # simulation = parking_pawl.static_locking_simulation()
 simulation = parking_pawl.locking_simulation()
 print(parking_pawl.check())
 simulation.babylonjs()
+simulation.plot()
+w = 3/3.6/0.73/2*12
+t = (parking_pawl.wheel.junction_angle+parking_pawl.wheel.lower_tooth_angle)/w
+print('engaging time margin', t-simulation.time[-1])
