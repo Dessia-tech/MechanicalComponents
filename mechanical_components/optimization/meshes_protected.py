@@ -242,7 +242,8 @@ class ContinuousMeshesAssemblyOptimizer:
 
             self.general_data = {'Z': Z, 'connections': connections,
                      'material':material,'internal_torque':dic_torque,'external_torque':self.external_torques,'cycle':dic_cycle,
-                     'safety_factor':safety_factor ,'total_contact_ratio_min':self.total_contact_ratio_min}
+                     'safety_factor':safety_factor ,'total_contact_ratio_min':self.total_contact_ratio_min,
+                     'transverse_contact_ratio_min':self.transverse_contact_ratio_min}
             input_dat = dict(list(optimizer_data.items())+list(self.general_data.items()))
             
             try:
@@ -460,7 +461,7 @@ class ContinuousMeshesAssemblyOptimizer:
 
         for num_cd,list_connection in enumerate(self.connections):
 #            print('optimizer_data {} dict_cd {} num_cd {}'.format(optimizer_data, dict_cd, num_cd))
-            
+           
             optimizer_data['center_distance'].append(dict_cd[num_cd])
 
             for num_mesh_iter,(eng1,eng2) in enumerate(list_connection):
@@ -489,6 +490,7 @@ class ContinuousMeshesAssemblyOptimizer:
 
         optimizer_data = self._convert_X2x(X)
         optimizer_data['total_contact_ratio_min']=self.total_contact_ratio_min
+        optimizer_data['transverse_contact_ratio_min']=self.transverse_contact_ratio_min
         _ = self.mesh_assembly.update(optimizer_data)
         return optimizer_data
     
@@ -500,6 +502,7 @@ class ContinuousMeshesAssemblyOptimizer:
             for num_eng in self.list_gear_rack[i]:
                 optimizer_data['helix_angle'][num_eng]=helix_angle
         optimizer_data['total_contact_ratio_min']=self.total_contact_ratio_min
+        optimizer_data['transverse_contact_ratio_min']=self.transverse_contact_ratio_min
         _ = self.mesh_assembly.update_helix_angle(optimizer_data)
         return optimizer_data
 
@@ -522,9 +525,9 @@ class ContinuousMeshesAssemblyOptimizer:
             if self.transverse_contact_ratio_min[num_gear]:
                 transverse_contact_ratio_min=self.transverse_contact_ratio_min[num_gear]
             ineq.extend(mesh_assembly_iter.liste_ineq(total_contact_ratio_min,transverse_contact_ratio_min))
-            # print(25)
-            # print(ineq[-1])
-            # print(ineq[-2])
+            print(25)
+            print(ineq[-1])
+            print(ineq[-2])
                 
             
             #geometric constraint
@@ -545,10 +548,14 @@ class ContinuousMeshesAssemblyOptimizer:
                 else:
                     ineq.append((cd- 0.5*(de1+dia2)))
                     ineq.append((cd- 0.5*(de2+dia1)))
-                    # print(1)
-                    # print(ineq[-1])
-                    # print(dia1)
-                    # print(mesh_assembly_iter.meshes_dico[engr1].root_diameter)
+                    print(1)
+                    print(ineq[-1])
+                    print(dia1)
+                    print(de1)
+                    print(mesh_assembly_iter.meshes_dico[engr1].root_diameter)
+                    print(mesh_assembly_iter.meshes_dico[engr1].z)
+                    print(mesh_assembly_iter.meshes_dico[engr1].rack.gear_addendum)
+                    print(mesh_assembly_iter.meshes_dico[engr1].db)
                 
                 oaa1=mesh_assembly_iter.meshes_dico[engr1].outside_active_angle
                 oaa2=mesh_assembly_iter.meshes_dico[engr2].outside_active_angle
@@ -644,7 +651,7 @@ class ContinuousMeshesAssemblyOptimizer:
             if self.total_contact_ratio_min[num_gear]:
                 total_contact_ratio_min=self.total_contact_ratio_min[num_gear]
            
-            obj+=mesh_assembly_iter.functional(total_contact_ratio_min)
+            # obj+=mesh_assembly_iter.functional(total_contact_ratio_min)
             
         # maximization of the gear modulus
         for ne,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
@@ -664,13 +671,13 @@ class ContinuousMeshesAssemblyOptimizer:
         for i in fineq:
             if i < 0:
                 
-                obj+=10000*i**2
+                obj+=10000*abs(i)
                 
                 
             else:
                 obj+=0.000001*i
         
-        
+        print(X)
         return obj
     
     
@@ -715,13 +722,16 @@ class ContinuousMeshesAssemblyOptimizer:
             else:
                 cons = {'type': 'ineq','fun' : self.Fineq_without_constraint_ratio_contact}
             
-            # min_x = []
-            # max_x = []
-            # for i in range(len(self.Bounds)):
-            #     min_x.append(self.Bounds[i][0])
-            #     max_x.append(self.Bounds[i][1])
-            # x=cma.fmin(self.Objective, X0, 1*10e-4, options={'bounds':[min_x, max_x]}
-            #                                                  'bounds':[min_x, max_x]})
+            min_x = []
+            max_x = []
+            for i in range(len(self.Bounds)):
+                min_x.append(self.Bounds[i][0])
+                max_x.append(self.Bounds[i][1])
+           
+            
+            x=cma.fmin(self.Objective, X0, 1*10e-4, options={'bounds':[min_x, max_x],'tolfun':1e-15})
+            print(x)
+            dededed
             
             try:
                 print('erty')
@@ -749,7 +759,7 @@ class ContinuousMeshesAssemblyOptimizer:
             #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
 
             print(min(self.Fineq(Xsol)))
-            if min(self.Fineq(Xsol)) > -1e-3: #TODO
+            if min(self.Fineq(Xsol)) > -2e-3: #TODO
                 input_dat = dict(list(output_x.items())+list(self.general_data.items()))
                 # print('velid')
                 # for num_engr,list_cd in enumerate(self.center_distances):
@@ -1160,10 +1170,10 @@ class MeshAssemblyOptimizer:
                             df2_max=abs(2*cd_max-2*cd_max*z1/float(z1+z2))
                             db2_max=abs(df2_max*math.cos(tpa1_min))
                             try:
-                                db[eng2]=[max(db2_min,db[eng2][0]),min(db2_max,db[eng2][1])]
+                                db[eng2]=[max(db2_min,db[eng2][0])*0.7,min(db2_max,db[eng2][1])*1.3]
                             except KeyError:
-                                db[eng2]=[db2_min,db2_max]
-                            db[eng1]=[abs(db[eng2][0]*z1/float(z2)),abs(db[eng2][1]*z1/float(z2))]
+                                db[eng2]=[db2_min*0.9,db2_max*1.1]
+                            db[eng1]=[abs(db[eng2][0]*z1/float(z2))*0.7,abs(db[eng2][1]*z1/float(z2))*1.3]
                         else:
                             break
 
