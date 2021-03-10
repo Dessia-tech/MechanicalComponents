@@ -202,6 +202,7 @@ class Pawl(dc.DessiaObject):
                  slope_start_height, slope_length,
                  slope_offset:float, slope_angle:float,
                  width:float,
+                 pawl_spring_stiffness:float,
                  name:str=''):
         self.axis_position = axis_position
         self.wheel_lower_tooth_diameter = wheel_lower_tooth_diameter
@@ -218,6 +219,7 @@ class Pawl(dc.DessiaObject):
         self.axis_inner_diameter = axis_inner_diameter
         self.axis_outer_diameter = axis_outer_diameter
         self.width = width
+        self.pawl_spring_stiffness = pawl_spring_stiffness
         self.name = name
 
         self.side_tooth_radius = self.contact_diameter
@@ -372,11 +374,13 @@ class RollerLockingMechanism(dc.DessiaObject):
         contact_point = center + 0.5*self.roller_diameter*slope.normal_vector()
         return p.x-(distance-0.5*self.roller_diameter)/math.sin(slope_angle), contact_point
 
-    def force(self, position):
+    def spring_force(self, position):
+        print('p', position)
         if position > self.spring_active_length:
+            print(0)
             return 0.
         else:
-            print('p', position)
+
             print(self.spring_stiffness*(self.spring_active_length - position))
             return self.spring_stiffness*(self.spring_active_length - position)
 
@@ -440,6 +444,7 @@ class ParkingPawl(dc.DessiaObject):
                  finger_width:float,
                  slope_start_height, slope_length,
                  slope_offset:float, slope_angle:float,
+                 pawl_spring_stiffness:float,
                  locking_mechanism:RollerLockingMechanism,
                  open_clearance:float=0.002,
                  # travel_margin:
@@ -475,7 +480,8 @@ class ParkingPawl(dc.DessiaObject):
                          slope_length=slope_length,
                          slope_offset=slope_offset,
                          slope_angle=slope_angle,
-                         width=width
+                         width=width,
+                         pawl_spring_stiffness=pawl_spring_stiffness
                          )
         
 
@@ -651,15 +657,27 @@ class ParkingPawl(dc.DessiaObject):
                                      locking_positions, locking_forces,
                                      name='Locking simulation')
 
-    def locking_simulation(self, initial_time_step=0.005, targeted_step_number=10):
-        wheel_angles = []
-        pawl_angles = []
-        locking_positions = []
-        locking_forces = []
-        time = []
+    def locking_simulation(self, wheel_speed=0., initial_time_step=0.001, min_step_number=10):
+
+        locking_position = self.locking_mechanism_start_position
+
+        if wheel_speed > 0:
+            wheel_angle = -(self.wheel.junction_angle+self.wheel.lower_junction_angle+self.wheel.lower_tooth_angle)
+        elif wheel_speed < 0:
+            wheel_angle = self.contact2_wheel_angle-(self.wheel.junction_angle+self.wheel.lower_junction_angle+self.wheel.lower_tooth_angle)
+        else:
+            wheel_angle = 0.
+
+        print('wheel_angle', wheel_angle)
+
+        wheel_angles = [wheel_angle]
+        pawl_angles = [self.up_pawl_angle]
+        locking_positions = [locking_position]
+        locking_forces = [0.]
+        time = [0.]
 
         pawl_angle = self.up_pawl_angle
-        locking_position = self.locking_mechanism_start_position
+
         # distance_step = travel/distance_step
         # print(travel)
         t = 0.
@@ -668,16 +686,21 @@ class ParkingPawl(dc.DessiaObject):
         angular_speed = 0.
         
         time_step = initial_time_step
-        max_delta_angle = self.up_pawl_angle / targeted_step_number
+        max_delta_angle = self.up_pawl_angle / min_step_number
         
-        n_step = 0
-        while n_step < targeted_step_number*20:
-            n_step += 1
-            time.append(t)
-            locking_force = self.locking_mechanism.force(self.locking_mechanism_start_position-locking_position)
+        n_step = 1
+        last_step_step_change = 0
+        while n_step < min_step_number*10:
+            print('====\nStep n°{} time step: {}s @{}s'.format(n_step, time_step, t))
+
 
             contact_point = self.contact_point_from_locking_position(locking_position)
             contact_normal = self.contact_normal_from_locking_position(locking_position)
+
+            spring_force = self.locking_mechanism.spring_force(
+                self.locking_mechanism_start_position-locking_position)
+            locking_force = -spring_force*vm.Y2D.dot(contact_normal)
+
 
             # print('contact_normal', contact_normal, contact_point)
             # contact_normal.plot()
@@ -685,41 +708,65 @@ class ParkingPawl(dc.DessiaObject):
             angular_acceleration = sum_moments/inertia
 
             delta_pawl_angle = 0.5*angular_acceleration*time_step**2 + angular_speed*time_step
-            if delta_pawl_angle > max_delta_angle:
-                time_step /= 1.6
-                print('reducing time step to ', time_step)
-                continue
-            
+            angular_speed += angular_acceleration*time_step
+
+            print('angle ratio: ', abs(delta_pawl_angle)/max_delta_angle)
+
+            if last_step_step_change != n_step:
+                if abs(delta_pawl_angle) > max_delta_angle:
+                    time_step /= (2*abs(delta_pawl_angle)/max_delta_angle)
+                    print('reducing time step to ', time_step)
+                    last_step_step_change = n_step
+                    delta_pawl_angle = 0.5 * angular_acceleration * time_step ** 2 + angular_speed * time_step
+                    angular_speed += angular_acceleration * time_step
+                    continue
+
+                if abs(delta_pawl_angle) < 0.2 * max_delta_angle:
+                    time_step *= 1.5
+                    print('increasing time step to ', time_step)
+                    last_step_step_change = n_step
+                    delta_pawl_angle = 0.5 * angular_acceleration * time_step ** 2 + angular_speed * time_step
+                    angular_speed += angular_acceleration * time_step
+                    continue
+
             # if delta_pawl_angle < 0.01*max_delta_angle:
             #     time_step *= 1.5
             #     print('increasing time step to ', time_step)
             #     continue
-            
-            
+
+            n_step += 1
+
             pawl_angle += delta_pawl_angle
             angular_speed += angular_speed * time_step
-
+            wheel_angle += wheel_speed*time_step
+            t += time_step
             
             locking_position = self.locking_position_from_pawl_angle(pawl_angle)
             # locking_position = self.locking_mechanism_start_position + i/(number_steps)*travel# CHANGE!
 
-            # print('locking_force', locking_force)
-            # print('sum_moments', sum_moments)
-            # print('angular_acceleration', angular_acceleration)
-            # print('pawl_angle', pawl_angle)
-            # print('locking_position', locking_position)
+            print('spring_force', spring_force)
+            print('locking_force', locking_force)
+            print('sum_moments', sum_moments)
+            print('angular_acceleration', angular_acceleration)
+            print('angular_speed', angular_speed)
+            print('pawl_angle', pawl_angle)
+            print('locking_position', locking_position)
 
 
             # Saving results
-            wheel_angles.append(0.)
+
+            wheel_angles.append(wheel_angle)
             locking_forces.append(locking_force)
             locking_positions.append(locking_position)
             pawl_angles.append(pawl_angle)
+            time.append(t)
 
-            if pawl_angle < 0:                
+
+            if pawl_angle < 0:
+                print('finishing simulation as angle<0')
                 break
-            t += time_step
 
+        locking_forces[0] = locking_forces[1]
 
         return ParkingPawlSimulation(self, time, wheel_angles, pawl_angles,
                                      locking_positions, locking_forces,
@@ -736,19 +783,25 @@ class ParkingPawlSimulation(dc.DessiaObject):
                  locking_mechanism_positions:List[float],
                  locking_mechanism_forces:List[float],
                  name:str=''):
+
+        max_locking_speed = (parking_pawl.wheel.junction_angle
+                             + parking_pawl.wheel.lower_tooth_angle)/time[-1]
+
         dc.DessiaObject.__init__(self, parking_pawl=parking_pawl,
                                  time=time,
                                  wheel_angles=wheel_angles,
                                  pawl_angles=pawl_angles,
                                  locking_mechanism_positions=locking_mechanism_positions,
                                  locking_mechanism_forces=locking_mechanism_forces,
+                                 max_locking_speed=max_locking_speed,
                                  name=name)
-        
+
+
+
     def volmdlr_primitives(self):
-        primitives = self.parking_pawl.volmdlr_primitives()
-        wheel = primitives[0]
-        pawl = primitives[1]
-        lock_primitives = primitives[2:]
+        wheel = self.parking_pawl.wheel.volmdlr_primitives()[0]
+        pawl = self.parking_pawl.pawl.volmdlr_primitives()[0]
+        lock_primitives = self.parking_pawl.locking_mechanism.volmdlr_primitives()
 
         pawl = pawl.translation(vm.Point3D(0,
                                     -self.parking_pawl.pawl.axis_position.x,
@@ -773,35 +826,43 @@ class ParkingPawlSimulation(dc.DessiaObject):
         return frames
 
     def plot_data(self):
-        to_disp_attribute_names = ['time', 'locking_force', 'pawl_angle']
-        tooltip = plot_data.Tooltip(to_disp_attribute_names=to_disp_attribute_names)
+        # to_disp_attribute_names = ['time', 'locking_force', 'pawl_angle']
+        # tooltip = plot_data.Tooltip(to_disp_attribute_names=to_disp_attribute_names)
         elements1 = []
         elements2 = []
-        for t, locking_force, pawl_angle in zip(self.time,
+        elements3 = []
+        for t, locking_force, pawl_angle, locking_position in zip(self.time,
                                                 self.locking_mechanism_forces,
-                                                self.pawl_angles):
+                                                self.pawl_angles,
+                                                self.locking_mechanism_positions):
             elements1.append({'time': t,
-                             'locking_force': locking_force,
-                             'pawl angle': pawl_angle})
+                             'locking_force': locking_force})
             elements2.append({'time': t,
-                              'pawl angle': pawl_angle})
+                              'pawl_angle': pawl_angle})
+            elements3.append({'time': t,
+                              'locking_position': locking_position})
 
         # The previous line instantiates a dataset with limited arguments but
         # several customizations are available
-        point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED,
-                                           color_stroke=plot_data.colors.BLACK)
-        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE,
-                                         dashline=[10, 5])
+        # point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED,
+        #                                    color_stroke=plot_data.colors.BLACK)
+        # edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE,
+        #                                  dashline=[10, 5])
 
         dataset1 = plot_data.Dataset(elements=elements1,
-                                    name='simulation',
-                                    tooltip=tooltip)
+                                    name='locking_force')
         dataset2 = plot_data.Dataset(elements=elements2,
-                                    name='pawl_angle',
-                                    tooltip=tooltip)
-
-        return [plot_data.Graph2D(graphs=[dataset1, dataset2],
-                                  to_disp_attribute_names=to_disp_attribute_names)]
+                                     name='pawl_angle')
+        dataset3 = plot_data.Dataset(elements=elements3,
+                                     name='locking_position')
+        # print(elements1)
+        # print(elements2)
+        return [plot_data.Graph2D(graphs=[dataset1], to_disp_attribute_names=['time', 'locking_force']),
+                plot_data.Graph2D(graphs=[dataset2], to_disp_attribute_names=['time', 'pawl_angle']),
+                plot_data.Graph2D(graphs=[dataset3],
+                                  to_disp_attribute_names=['time',
+                                                           'locking_position'])
+                ]
 
 class ParkingPawlOptimizationSpecifications(dc_opt.Specifications):
     def __init__(self, name:str=''):

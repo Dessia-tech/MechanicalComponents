@@ -29,7 +29,7 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
                                 contact_diameter=0.070,
                                 width = 0.025,
                                 pawl_offset = 0.06,
-                                axis_inner_diameter=0.025,
+                                axis_inner_diameter=0.020,
                                 axis_outer_diameter=0.030,
                                 finger_height=0.012,
                                 # finger_angle=math.radians(20),
@@ -37,6 +37,7 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
                                 slope_start_height=0.015,
                                 slope_angle=math.radians(26),
                                 slope_offset=0.005, slope_length=0.035,
+                                pawl_spring_stiffness=20,
                                 locking_mechanism=locking_mechanism)
 # parking_pawl.pawl.outer_contour().plot()
 # parking_pawl.wheel.outer_contour().plot()
@@ -46,10 +47,12 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
 # parking_pawl.wheel.mpl_plot()
 # parking_pawl.pawl.mpl_plot()
 # simulation = parking_pawl.static_locking_simulation()
-simulation = parking_pawl.locking_simulation()
+w = 3/3.6/(0.73/2)*12
+simulation = parking_pawl.locking_simulation(wheel_speed=w)
 print(parking_pawl.check())
 simulation.babylonjs()
-simulation.plot()
-w = 3/3.6/0.73/2*12
+simulation.mpl_plot()
+
 t = (parking_pawl.wheel.junction_angle+parking_pawl.wheel.lower_tooth_angle)/w
 print('engaging time margin', t-simulation.time[-1])
+print('speed begin engagment', simulation.max_locking_speed/12*0.73/2*3.6, 'km/h')
