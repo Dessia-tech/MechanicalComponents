@@ -15,9 +15,6 @@ from dessia_common.core import DessiaObject
 
 class HexagonNut(DessiaObject):
     _standalone_in_db = True
-    _editable_variables = ['d', 't', 'h', 'e', 'name']
-    _ordered_variables = ['d', 'name', 'h']
-    _titled_variables = {'d' : 'd', 'name' : 'Name'}
 
     def __init__(self, d:float, t:float, h:float, name:str=''):
         self.d = d
@@ -49,7 +46,7 @@ class HexagonNut(DessiaObject):
         return vmw.Contour2D([l1, l2, l3, l4, l5, l6])
 
     def inner_contour(self):
-        return vm.Circle2D(vm.O2D, 0.5*self.d)
+        return vmw.Circle2D(vm.O2D, 0.5*self.d)
 
     def volmdlr_primitives(self, center=vm.O3D, x=vm.X3D, y=vm.Y3D, z=vm.Z3D):
         extrusion = volmdlr.primitives3d.ExtrudedProfile(center, x, y,
@@ -138,10 +135,10 @@ class FlatWasher(DessiaObject):
             and self.e1 == other_nut.e1
 
     def outer_contour(self):
-        return vm.Circle2D(vm.O2D, 0.5*self.A)
+        return vmw.Circle2D(vm.O2D, 0.5*self.A)
 
     def inner_contour(self):
-        return [vm.Circle2D(vm.O2D, 0.5*self.D)]
+        return [vmw.Circle2D(vm.O2D, 0.5*self.D)]
 
     def volmdlr_primitives(self, center=vm.O3D, x=vm.X3D, y=vm.Y3D, z=vm.Z3D):
         extrusion = volmdlr.primitives3d.ExtrudedProfile(center, x, y,
