@@ -1,3 +1,7 @@
+*.pyx
+*.c
+*.whl
+
 # CMA files
 outcmaes/*.dat
 
