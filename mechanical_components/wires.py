@@ -5,7 +5,7 @@ Created on Tue Sep 25 15:11:29 2018
 
 """
 
-from typing import List
+from typing import List, Tuple
 from dessia_common.core import DessiaObject
 import volmdlr as vm
 import volmdlr.edges as vme
@@ -15,15 +15,18 @@ import matplotlib.pyplot as plt
 import math
 import networkx as nx
 
+
 class Wire(DessiaObject):
     """
     :param waypoints: a list of volmdlr.Point3D waypoints
     """
     _standalone_in_db = True
     
-    def __init__(self, waypoints:List[vm.Point3D], diameter:float, name:str=''):
+    def __init__(self, waypoints: List[vm.Point3D], diameter: float,
+                 color: Tuple[float, float, float] = None, name: str = ''):
         self.waypoints = waypoints
         self.diameter = diameter
+        self.color = color
         self.name = name
                 
         self._utd_path = False
@@ -37,7 +40,8 @@ class Wire(DessiaObject):
                     .dot(vme.Line2D(self.waypoints[i+1],
                                     self.waypoints[i+2]).unit_direction_vector())!=1:
                 radii[i+1] = 4*self.diameter
-        return  primitives3d.OpenRoundedLineSegments3D(self.waypoints, radii, adapt_radius = True)
+        return primitives3d.OpenRoundedLineSegments3D(
+            self.waypoints, radii, adapt_radius = True)
 #        return  primitives3d.RoundedLineSegments3D(self.waypoints, {}, adapt_radius = True)        
     
     def _get_path(self):
@@ -68,18 +72,24 @@ class Wire(DessiaObject):
     
     def volmdlr_primitives(self):
         section = vmw.Circle2D(vm.O2D, 0.5 * self.diameter)
-        return [primitives3d.Sweep(section, self.path, name=self.name)]
+        if self.color is not None:
+            return [primitives3d.Sweep(section, self.path,
+                                       color=self.color, name=self.name)]
+        else:
+            return [primitives3d.Sweep(section, self.path, name=self.name)]
 
 class AWGWire(Wire):
     def __init__(self, waypoints, n, name=''):
         diameter = 0.001 * math.exp(2.1104 - 0.11594*n)
         self.n = n
         Wire.__init__(self, waypoints, diameter, name)
-        
+
+
 iec_sections = [0.5e-6,	0.75e-6, 1e-6, 1.5e-6, 2.5e-6, 4e-6, 6e-6, 10e-6, 16e-6,
                 25e-6, 35e-6, 50e-6, 70e-6, 95e-6, 120e-6, 150e-6, 185e-6,
                 240e-6, 300e-6, 400e-6, 500e-6, 630e-6, 800e-6, 1000e-6,
                 1200e-6, 1400e-6, 1600e-6, 1800e-6, 	2000e-6, 2500e-6]
+
 
 class IECWire(Wire):
     def __init__(self, waypoints, section, name=''):
@@ -87,10 +97,11 @@ class IECWire(Wire):
         diameter = 2 * math.sqrt(section/math.pi)
         Wire.__init__(self, waypoints, diameter, name)
 
+
 class WireHarness(DessiaObject):
     _standalone_in_db = True
     
-    def __init__(self, wires:List[Wire], name:str=''):
+    def __init__(self, wires: List[Wire], name: str = ''):
         self.wires = wires
         self.name = name
         
@@ -105,19 +116,24 @@ class WireHarness(DessiaObject):
             fig = plt.figure()
             ax = fig.add_subplot(111)
 
-        
         for wire in self.wires:
             wire.Draw(ax)
         
         return ax
 
+
 class RoutingSpec(DessiaObject):
     _standalone_in_db = True
-    def __init__(self, source:vm.Point3D, destination:vm.Point3D, diameter:float, name:str=''):
+
+    def __init__(self, source: vm.Point3D, destination: vm.Point3D,
+                 diameter: float, color: Tuple[float, float, float] = None,
+                 name: str = ''):
         self.source = source
         self.destination = destination
         self.diameter = diameter
+        self.color = color
         self.name = name
+
 
 class Wiring(DessiaObject):
     """
@@ -127,13 +143,12 @@ class Wiring(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes = ['wires_from_waypoints', 'wires']
 
-    def __init__(self, single_wires:List[Wire],
-                 wire_harnesses:List[WireHarness],
-                 name:str=''):
+    def __init__(self, single_wires: List[Wire],
+                 wire_harnesses: List[WireHarness],
+                 name: str = ''):
         self.single_wires = single_wires
         self.wire_harnesses = wire_harnesses
         self.name = name
-
 
         wires = single_wires[:]
         for harness in wire_harnesses:
@@ -193,9 +208,7 @@ class Wiring(DessiaObject):
                 else:
                     for iwire, wire in enumerate(wires):
                         wire_lines[wire][frozenset((waypoint1, waypoint2))] = l2D
-                                        
 
-                        
         for wire in self.wires:
             waypoint0_2D = wire.waypoints[0].plane_projection2d(vm.O3D, x3D, y3D)
             line = wire_lines[wire][frozenset((wire.waypoints[0], wire.waypoints[1]))]
@@ -221,7 +234,7 @@ class Wiring(DessiaObject):
                     u1 = line1.unit_direction_vector()
                     u2 = line2.unit_direction_vector()
                     if abs(u1.dot(u2)) != 1:
-                        bv = u2 - u1# bissector vector towards inner of corner
+                        bv = u2 - u1  # bissector vector towards inner of corner
                         bl = vme.Line2D(waypoint2_2D, waypoint2_2D+bv)
                         i1 = vm.Point2D.line_intersection(bl, line1_draw)
                         i2 = vm.Point2D.line_intersection(bl, line2_draw)
@@ -250,7 +263,7 @@ class Wiring(DessiaObject):
     def CommonRoutes(self):
         wires_from_waypoints = self.WiresFromWaypoints()
         # Computing reduced graph
-        Gr = self.Graph()# This needs to be a copy of the graph!
+        Gr = self.Graph()  # This needs to be a copy of the graph!
         node_delete = True
         while node_delete:
             node_delete = False
@@ -271,10 +284,8 @@ class Wiring(DessiaObject):
                         node_delete = True
                         break
         
-        
         return Gr, wires_from_waypoints
                     
-                
     # TODO: Performance caching this and graph
     def WiresFromWaypoints(self):
         wires = {}
@@ -282,7 +293,7 @@ class Wiring(DessiaObject):
         for wire in self.wires:
             for waypoint1, waypoint2 in zip(wire.waypoints[:-1], wire.waypoints[1:]):
                 key = frozenset((waypoint1, waypoint2))
-                if not key in wires:
+                if key not in wires:
                     wires[key] = [wire]
                 else:
                     wires[key].append(wire)
