@@ -56,3 +56,5 @@ simulation.mpl_plot()
 t = (parking_pawl.wheel.junction_angle+parking_pawl.wheel.lower_tooth_angle)/w
 print('engaging time margin', t-simulation.time[-1])
 print('speed begin engagment', simulation.max_locking_speed/12*0.73/2*3.6, 'km/h')
+
+simulation._check_platform()

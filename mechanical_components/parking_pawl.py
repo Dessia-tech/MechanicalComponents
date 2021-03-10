@@ -429,6 +429,16 @@ class RollerLockingMechanism(dc.DessiaObject):
 
 class ParkingPawl(dc.DessiaObject):
     _standalone_in_db = True
+    def volmdlr_primitives(self, frame=vm.OXYZ):
+        wheel_frame = frame.rotation(frame.origin, frame.u, self.contact1_wheel_angle)
+        locking_mech_frame = vm.OXYZ.copy()
+        locking_mech_frame.origin.z = self.locking_mechanism_center_distance
+        return (
+                self.wheel.volmdlr_primitives(frame=wheel_frame)
+                + self.pawl.volmdlr_primitives()
+                + self.locking_mechanism.volmdlr_primitives(frame=locking_mech_frame))
+
+
     def __init__(self,
                  wheel_inner_diameter:float,
                  wheel_lower_tooth_diameter:float,
@@ -442,14 +452,36 @@ class ParkingPawl(dc.DessiaObject):
                  axis_inner_diameter:float, axis_outer_diameter:float,
                  finger_height:float,
                  finger_width:float,
-                 slope_start_height, slope_length,
-                 slope_offset:float, slope_angle:float,
+                 slope_start_height:float,
+                 slope_length:float,
+                 slope_offset:float,
+                 slope_angle:float,
                  pawl_spring_stiffness:float,
                  locking_mechanism:RollerLockingMechanism,
                  open_clearance:float=0.002,
                  # travel_margin:
                  name:str=''
                  ):
+
+        self.wheel_inner_diameter = wheel_inner_diameter
+        self.wheel_lower_tooth_diameter = wheel_lower_tooth_diameter
+        self.wheel_outer_diameter = wheel_outer_diameter
+        self.teeth_number = teeth_number
+        self.lower_tooth_ratio = lower_tooth_ratio
+        self.basis_diameter = basis_diameter
+        self.contact_diameter = contact_diameter
+        self.width = width
+        self.pawl_offset = pawl_offset
+        self.axis_inner_diameter = axis_inner_diameter
+        self.axis_outer_diameter = axis_outer_diameter
+        self.finger_height = finger_height
+        self.finger_width = finger_width
+        self.slope_start_height = slope_start_height
+        self.slope_length = slope_length
+        self.slope_offset = slope_offset
+        self.slope_angle = slope_angle
+        self.pawl_spring_stiffness = pawl_spring_stiffness
+
         self.locking_mechanism = locking_mechanism
         self.open_clearance = open_clearance
         self.name = name
@@ -483,7 +515,7 @@ class ParkingPawl(dc.DessiaObject):
                          width=width,
                          pawl_spring_stiffness=pawl_spring_stiffness
                          )
-        
+
 
 
         self.contact1_wheel_angle = -0.5*self.pawl.contact_angle
@@ -507,16 +539,6 @@ class ParkingPawl(dc.DessiaObject):
         # self.locking_mechanism_start_position = y -
         self.locking_mechanism_start_position = self.locking_contact_results[1][-1]
         self.locking_mechanism_end_position = self.pawl.slope.end.x
-
-
-    def volmdlr_primitives(self, frame=vm.OXYZ):
-        wheel_frame = frame.rotation(frame.origin, frame.u, self.contact1_wheel_angle)
-        locking_mech_frame = vm.OXYZ.copy()
-        locking_mech_frame.origin.z = self.locking_mechanism_center_distance
-        return (
-                self.wheel.volmdlr_primitives(frame=wheel_frame)
-                + self.pawl.volmdlr_primitives()
-                + self.locking_mechanism.volmdlr_primitives(frame=locking_mech_frame))
 
     def engaged_slack(self):
         return self.wheel.lower_tooth_angle * 0.5 * self.wheel.lower_tooth_diameter - self.pawl.finger_width
