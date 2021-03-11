@@ -870,16 +870,19 @@ class ParkingPawlSimulation(dc.DessiaObject):
 
         # The previous line instantiates a dataset with limited arguments but
         # several customizations are available
-        # point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED,
-        #                                    color_stroke=plot_data.colors.BLACK)
-        # edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE,
-        #                                  dashline=[10, 5])
+        point_style = plot_data.PointStyle(color_fill=plot_data.colors.BLUE,
+                                            color_stroke=plot_data.colors.BLACK)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE,
+                                          )
 
-        dataset1 = plot_data.Dataset(elements=elements1,
+        dataset1 = plot_data.Dataset(elements=elements1, edge_style=edge_style,
+                                     point_style=point_style,
                                     name='locking_force')
-        dataset2 = plot_data.Dataset(elements=elements2,
+        dataset2 = plot_data.Dataset(elements=elements2, edge_style=edge_style,
+                                     point_style=point_style,
                                      name='pawl_angle')
-        dataset3 = plot_data.Dataset(elements=elements3,
+        dataset3 = plot_data.Dataset(elements=elements3, edge_style=edge_style,
+                                     point_style=point_style,
                                      name='locking_position')
         # print(elements1)
         # print(elements2)
