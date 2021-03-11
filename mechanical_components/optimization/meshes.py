@@ -25,12 +25,12 @@ except (ModuleNotFoundError, ImportError) as _:
 class RackOpti(DessiaObject):
      _standalone_in_db = True
 
-     def __init__(self, transverse_pressure_angle: List[float]=None, module: List[float]=None,
+     def __init__(self, transverse_pressure_angle_0: List[float]=None, module: List[float]=None,
                  coeff_gear_addendum : List[float]=None, coeff_gear_dedendum: List[float]=None,
                  coeff_root_radius: List[float]=None, coeff_circular_tooth_thickness: List[float]=None,
-                 helix_angle: List[float]=None ,total_contact_ratio_min: float=1,axial_contact_ratio: float=0.7,name : str=''):
+                 helix_angle: List[float]=None ,total_contact_ratio_min: float=1,axial_contact_ratio: float=0.7,transverse_contact_ratio_min: float=1,name : str=''):
 
-         self.transverse_pressure_angle=transverse_pressure_angle
+         self.transverse_pressure_angle_0=transverse_pressure_angle_0
          self.module=module
          if helix_angle==None:
              helix_angle=[0,0]
@@ -44,13 +44,14 @@ class RackOpti(DessiaObject):
          self.total_contact_ratio_min=total_contact_ratio_min
          self.axial_contact_ratio=axial_contact_ratio
          self.name=name
+         self.transverse_contact_ratio_min=transverse_contact_ratio_min
          DessiaObject.__init__(self, name=name)
 
 class MeshOpti(DessiaObject):
     _standalone_in_db = True
 
     def __init__(self,torque_input: float,speed_input : Tuple[float,float],Z:int=0 ,rack: RackOpti=None,gearing_interior:str='False',
-                 coefficient_profile_shift: Tuple[float,float]=None,material: Material=None, name: str=''):
+                 coefficient_profile_shift: Tuple[float,float]=None,material: Material=None,transverse_pressure_angle: Tuple[float,float]=None, name: str=''):
         self.rack=rack
         self.name=name
         self.torque_input=torque_input
@@ -58,9 +59,10 @@ class MeshOpti(DessiaObject):
         self.material=material
         self.speed_input=speed_input
         self.gearing_interior=gearing_interior
+        self.transverse_pressure_angle=transverse_pressure_angle
         
         if coefficient_profile_shift==None:
-            coefficient_profile_shift=[0.01,0.8]
+            coefficient_profile_shift=[0.00000000000001,1]
         self.coefficient_profile_shift=coefficient_profile_shift
         DessiaObject.__init__(self, name=name)
 
@@ -130,6 +132,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         coefficient_profile_shift={}
         axial_contact_ratio={}
         total_contact_ratio_min={}
+        transverse_contact_ratio_min={}
         number_rack=0
         self.list_gearing_interior=[]
         material={}
@@ -138,9 +141,10 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             gear_speeds[i]=gear.speed_input
             if gear.rack:
                 
-                transverse_pressure_angle[i]=gear.rack.transverse_pressure_angle
+                
                 axial_contact_ratio[i]=gear.rack.axial_contact_ratio
                 total_contact_ratio_min[i]=gear.rack.total_contact_ratio_min
+                transverse_contact_ratio_min[i]=gear.rack.transverse_contact_ratio_min
             external_torques[i]=gear.torque_input
             coefficient_profile_shift[i]=gear.coefficient_profile_shift
             if gear.Z:
@@ -150,6 +154,8 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             if gear.material:
                 material[i]=gear.material
             
+            if gear.transverse_pressure_angle:
+                transverse_pressure_angle[i]=gear.transverse_pressure_angle
             if not gear.rack in rack_list:
                 rack_dict[number_rack]=gear.rack
                 rack_list.append(gear.rack)
@@ -184,11 +190,13 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             
         self.total_contact_ratio_min = total_contact_ratio_min
         self.axial_contact_ratio = axial_contact_ratio
+        self.transverse_contact_ratio_min=transverse_contact_ratio_min
         self.initialisation(connections=connections,gear_speeds=gear_speeds,center_distances=cd,
                             external_torques=external_torques,cycles=cycles, rigid_links=rigid_links,Z=Z,
                             rack_list=rack_dict,rack_choice=rack_choice,safety_factor=safety_factor,
                             material=material,
-                            coefficient_profile_shift=coefficient_profile_shift,verbose=verbose)
+                            coefficient_profile_shift=coefficient_profile_shift,
+                            transverse_pressure_angle=transverse_pressure_angle,verbose=verbose)
 
 
 
@@ -222,7 +230,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         if len(transverse_pressure_angle.keys())<number_mesh:
             for num_mesh in list_gear:
                 if num_mesh not in transverse_pressure_angle.keys():
-                    transverse_pressure_angle[num_mesh]=[15/180.*math.pi,30/180.*math.pi]
+                    transverse_pressure_angle[num_mesh]=[19/180.*math.pi,20/180.*math.pi]
 
         # if helix_angle==None:
         #     helix_angle={list_gear[0]:[15/180.*math.pi,25/180.*math.pi]}
@@ -262,17 +270,19 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             rack_list={0:RackOpti()}
         for num_rack, rack in rack_list.items():
             if  not rack.module:
-                rack_list[num_rack].module = [1*1e-3,5*1e-3]
-            if  not rack.transverse_pressure_angle:
-                rack_list[num_rack].transverse_pressure_angle =[20/180.*math.pi,20/180.*math.pi]
+                rack_list[num_rack].module = [1.2*1e-3,5*1e-3]
+            if  not rack.transverse_pressure_angle_0:
+                rack_list[num_rack].transverse_pressure_angle_0 =[19/180.*math.pi,20/180.*math.pi]
             if  not  rack.coeff_gear_addendum:
-                rack_list[num_rack].coeff_gear_addendum = [1,1]
+                rack_list[num_rack].coeff_gear_addendum = [1,2]
             if  not  rack.coeff_gear_dedendum:
-                rack_list[num_rack].coeff_gear_dedendum = [1.25,1.25]
+                rack_list[num_rack].coeff_gear_dedendum = [1,2]
             if  not  rack.coeff_root_radius:
-                rack_list[num_rack].coeff_root_radius = [0.38,0.38]
+                rack_list[num_rack].coeff_root_radius = [0.1,1]
             if not  rack.coeff_circular_tooth_thickness:
-                rack_list[num_rack].coeff_circular_tooth_thickness = [0.5,0.5]
+                rack_list[num_rack].coeff_circular_tooth_thickness = [0.1,1]
+            
+            
             if not  rack.helix_angle:
                 rack_list[num_rack].helix_angle = [0,0]
             if  not  rack.name:
