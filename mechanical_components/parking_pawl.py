@@ -409,15 +409,15 @@ class RollerLockingMechanism(dc.DessiaObject):
         # roller = p3d.ExtrudedProfile(frame.origin, frame.v, frame.w,
         #                             self.outer_contour(), [],
         #                             frame.u*self.width)
-        roller1 = p3d.HollowCylinder(position=0.5*self.roller_width*vm.X3D,
-                                     axis=vm.X3D,
+        roller1 = p3d.HollowCylinder(position=frame.origin+0.5*self.roller_width*frame.u,
+                                     axis=frame.u,
                                      inner_radius=0.25*self.roller_diameter,
                                      outer_radius=0.5*self.roller_diameter,
                                      length=self.roller_width)
-        roller2 = p3d.HollowCylinder(position=vm.Point3D(0.5*self.roller_width,
-                                                         0.,
-                                                         self.roller_diameter),
-                                     axis=vm.X3D,
+        roller2 = p3d.HollowCylinder(position=(frame.origin
+                                               + 0.5*self.roller_width*frame.u
+                                               + self.roller_diameter*frame.w),
+                                     axis=frame.u,
                                      inner_radius=0.25*self.roller_diameter,
                                      outer_radius=0.5*self.roller_diameter,
                                      length=self.roller_width)
@@ -429,14 +429,8 @@ class RollerLockingMechanism(dc.DessiaObject):
 
 class ParkingPawl(dc.DessiaObject):
     _standalone_in_db = True
-    def volmdlr_primitives(self, frame=vm.OXYZ):
-        wheel_frame = frame.rotation(frame.origin, frame.u, self.contact1_wheel_angle)
-        locking_mech_frame = vm.OXYZ.copy()
-        locking_mech_frame.origin.z = self.locking_mechanism_center_distance
-        return (
-                self.wheel.volmdlr_primitives(frame=wheel_frame)
-                + self.pawl.volmdlr_primitives()
-                + self.locking_mechanism.volmdlr_primitives(frame=locking_mech_frame))
+    
+
 
 
     def __init__(self,
@@ -539,6 +533,15 @@ class ParkingPawl(dc.DessiaObject):
         # self.locking_mechanism_start_position = y -
         self.locking_mechanism_start_position = self.locking_contact_results[1][-1]
         self.locking_mechanism_end_position = self.pawl.slope.end.x
+
+    def volmdlr_primitives(self, frame=vm.OXYZ):
+        wheel_frame = frame.rotation(frame.origin, frame.u, self.contact1_wheel_angle)
+        locking_mech_frame = vm.OXYZ.copy()
+        locking_mech_frame.origin.z = self.locking_mechanism_center_distance
+        return (
+                self.wheel.volmdlr_primitives(frame=wheel_frame)
+                + self.pawl.volmdlr_primitives()
+                + self.locking_mechanism.volmdlr_primitives(frame=locking_mech_frame))
 
     def engaged_slack(self):
         return self.wheel.lower_tooth_angle * 0.5 * self.wheel.lower_tooth_diameter - self.pawl.finger_width
@@ -797,6 +800,7 @@ class ParkingPawl(dc.DessiaObject):
 
 class ParkingPawlSimulation(dc.DessiaObject):
     _standalone_in_db = True
+    _non_serializable_attributes = ['wheel', 'pawl']
 
     def __init__(self, parking_pawl:ParkingPawl,
                  time:List[float],
