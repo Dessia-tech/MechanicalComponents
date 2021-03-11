@@ -1958,6 +1958,166 @@ class MeshCombination(DessiaObject):
             C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
             plot_datas.extend([C1_plot_data,C2_plot_data])
         return vmp.PrimitiveGroup(primitives= plot_datas)
+    
+    
+    def plot_data_2(self,centers={}, axis=(1, 0, 0), name=''):
+        
+        x = vm.Vector3D(axis[0],axis[1],axis[2])
+        # y = x.RandomUnitNormalVector()
+        # y= vm.Vector3D((0,1,0))
+        y = x.deterministic_unit_normal_vector()
+
+        z = x.cross(y)
+        if len(centers) == 0:
+            centers = {}
+            center_var = self.pos_axis({self.list_gear[0]:[0, 0]})
+
+            for engr_num in center_var.keys():
+                centers[engr_num]=[0, center_var[engr_num][0], center_var[engr_num][1]]
+        else:
+            center_var = {}
+            for engr_num in centers.keys():
+
+                center_var[engr_num] = npy.dot(centers[engr_num],(x[0],x[1],x[2]))*x+npy.dot(centers[engr_num],(y[0],y[1],y[2]))*y+npy.dot(centers[engr_num],(z[0],z[1],z[2]))*z
+                center_var[engr_num] = (center_var[engr_num][0],center_var[engr_num][1],center_var[engr_num][2])
+            centers = center_var
+
+
+
+        Gears3D = {}
+        Struct = []
+        Rotation = {}
+        plot_datas = []
+        # plt.figure()
+        # plt.axis('equal')
+
+        for set_pos_dfs, (eng1, eng2) in enumerate(self.connections_dfs):
+
+            position1 = centers[eng1]
+            position2 = centers[eng2]
+
+            if (eng1, eng2) in self.connections:
+                set_pos = self.connections.index((eng1, eng2))
+                list_rot = self.initial_position(set_pos, (eng1, eng2))
+
+            elif (eng2, eng1) in self.connections:
+                set_pos = self.connections.index((eng2, eng1))
+                list_rot = self.initial_position(set_pos, (eng2, eng1))
+            Rotation[set_pos] = {}
+            if set_pos_dfs == 0:
+                Gears3D[eng1] = self.meshes_dico[eng1].contour(3)
+            Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1]/2.))
+            Gears3D[eng2] = self.meshes_dico[eng2].contour(3)
+            Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2]/2.))
+
+            if position2[1] == position1[1]:
+                if position2[2]-position1[2] > 0:
+                    angle0 = math.pi/2.
+                else:
+                    angle0 = -math.pi/2.
+
+            else:
+                angle0 = -math.atan((position2[2]-position1[2])/(position2[1]-position1[1]))
+                if (position2[2]-position1[2]) < 0:
+                    angle0 = angle0+math.pi
+            if set_pos_dfs == 0:
+                Rotation[set_pos][eng1] = list_rot[0]+angle0
+                Rotation[set_pos][eng2] = list_rot[1]+angle0
+
+            else:
+                for k1, rot in Rotation.items():
+                    if eng1 in rot.keys():
+                        Rotation[set_pos][eng1] = rot[eng1]
+                        delta_rot = Rotation[set_pos][eng1]-(list_rot[0]-angle0)
+                Rotation[set_pos][eng2] = list_rot[1]-angle0-delta_rot*((self.meshes_dico[eng1].z)/(self.meshes_dico[eng2].z))
+
+            vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
+            vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
+            Gears3D_Rotate = self.gear_rotate_2([Gears3D[eng1],Gears3D[eng2]],
+                                                [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
+                                                list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
+
+
+
+            
+
+            # for Gears in Gears3D_Rotate:
+            #     for element in Gears:
+            #         for point in element.points:
+            #             x2.append(point.vector[0])
+            #             y2.append(point.vector[1])
+            # plt.plot(x2,y2)
+
+
+            L = []
+            L_vector = []
+            i=0
+            for element in Gears3D_Rotate[0]:
+                    for point in element.points:
+                       if not point in L_vector:
+                           # if i==100:
+                               L_vector.append(point)
+                               L.append(point)
+                           #     i=0
+                           # else:
+                           #     i+=1
+                           
+                       # else:
+                       #     # print(point.vector)
+                       # print(point)
+            # L.append(L[0])
+
+            C1 = vm.wires.ClosedPolygon2D(L,{})
+            # vmp.plot([C1.plot_data('contour')])
+            L2 = []
+            L2_vector = []
+            i=0
+            for element in Gears3D_Rotate[1]:
+                    for point in element.points:
+                       if not point in L2_vector:
+                           # if i==100:
+                               L2_vector.append(point)
+                               L2.append(point)
+                               i=0
+                           # else:
+                           #     i+=1
+                              
+            # L2.append(L2[0])
+
+            # L2=set(L2)
+            surface_style=vmp.SurfaceStyle(color_fill=None,opacity=0)
+            
+            circle_db=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].db/2)
+            circle_DFf=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].dff/2)
+            circle_SAP=vm.wires.Circle2D(center=vect_position_1,radius=self.DF[0][eng1]/2)
+            circle_df=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].root_diameter/2)
+            circle_da=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].outside_diameter/2)
+            circle_root_diameter_actif=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].outside_diameter/2)
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLUE)
+            circle_db_plot_data=circle_db.plot_data(edge_style=edge_style)
+            
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.RED)
+            circle_DFf_plot_data=circle_DFf.plot_data( edge_style=edge_style)
+            
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.GREEN)
+            circle_SAP_plot_data=circle_SAP.plot_data( edge_style=edge_style)
+            
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.CYAN)
+            circle_df_plot_data=circle_df.plot_data( edge_style=edge_style)
+            
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.VIOLET)
+            circle_da_plot_data=circle_da.plot_data(edge_style=edge_style)
+            
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.VIOLET)
+            circle_da_plot_data=circle_da.plot_data(edge_style=edge_style)
+            
+            
+            
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLACK)
+            C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
+            
+            plot_datas.extend([circle_da_plot_data,circle_SAP_plot_data,circle_DFf_plot_data,circle_db_plot_data,circle_df_plot_data,C1_plot_data])
+        return vmp.PrimitiveGroup(primitives= plot_datas)
             
         
     def volmdlr_primitives(self, centers={}, axis=(1, 0, 0), name=''):
