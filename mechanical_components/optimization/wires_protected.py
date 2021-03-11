@@ -9,6 +9,7 @@ from typing import List
 import networkx as nx
 from .common import RoutingOptimizer
 import mechanical_components.wires as wires
+import volmdlr.primitives3d as vmp3d
 
 class WiringOptimizer(RoutingOptimizer):
 
@@ -59,3 +60,13 @@ class WiringOptimizer(RoutingOptimizer):
                                      color=wires_specs[ipath].color,
                                      name=wires_specs[ipath].name))
         return wires.Wiring(wires2, [])
+
+    def volmdlr_primitives(self):
+        volumes = []
+        for route in self.routes:
+            point1, point2 = route[0], route[1]
+            if point1 != point2:
+                cylinder = vmp3d.Cylinder((point1+point2)/2, point2-point1, 0.05,
+                                          (point2-point1).norm())
+                volumes.append(cylinder)
+        return volumes
