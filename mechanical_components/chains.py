@@ -34,7 +34,7 @@ class RollerChain(dc.DessiaObject):
         p2 =  sorted(circle2.circle_intersections(circle3), key=lambda p:p.x)[0]
         p3 =  sorted(circle2.circle_intersections(circle4), key=lambda p:p.x)[0]
         p4 =  sorted(circle1.circle_intersections(circle4), key=lambda p:p.x)[1]
-        # ax = circle1.plot()
+        ax = circle1.plot()
         # circle2.plot(ax=ax)        
         # circle3.plot(ax=ax)        
         # circle4.plot(ax=ax)        
@@ -42,10 +42,16 @@ class RollerChain(dc.DessiaObject):
         # p2.plot(ax=ax, color='g')
         # p3.plot(ax=ax, color='b')
         # p4.plot(ax=ax)
-        _, arc1  = circle1.split(p4, p1)
-        arc2, _ = circle3.split(p1, p2)
+        arc1, _  = circle1.split(p4, p1)
+        arc2, a = circle3.split(p1, p2)
+        arc2.plot(color='r', ax=ax)
+        arc2.interior.plot(ax=ax, color='r')
+        a.plot(color='b', ax=ax)
+        
+        ax.set_aspect('equal')
         _, arc3 = circle2.split(p2, p3)
-        _, arc4 = circle4.split(p3, p4)
+        arc4, _ = circle4.split(p3, p4)
+        
         # arc4.plot(ax=ax, color='g')
         return vmw.Contour2D([arc1, arc2, arc3, arc4])
         
@@ -79,5 +85,5 @@ iso_chains = [RollerChain(pitch=0.006, inner_width=0.002,
                           overall_width=0.0083, roller_outer_diameter=0.004,
                           pin_diameter=0.00185)]
         
-iso_chains[0].plate_outer_contour()
+iso_chains[0].plate_outer_contour().plot()
         
