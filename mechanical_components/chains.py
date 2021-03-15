@@ -22,11 +22,12 @@ class RollerChain(dc.DessiaObject):
         dc.DessiaObject.__init__(self, pitch=pitch,
                                  pin_diameter=pin_diameter,
                                  roller_diameter=roller_diameter,
+                                 outer_plates_width=outer_plates_width,
                                  inner_plates_width=inner_plates_width,
                                  overall_width=overall_width,
                                  plate_height=plate_height)
         self.bushing_diameter = 0.5*(self.roller_diameter+self.pin_diameter)
-        self.plate_width = 0.5*(self.overall_width - self.inner_width)*self.slack_plate_ratio/(2*self.slack_plate_ratio+1)
+        self.plate_width = 0.5*(self.outer_plates_width - self.inner_plates_width)*self.slack_plate_ratio/(2*self.slack_plate_ratio+1)
         self.slack = self.plate_width/self.slack_plate_ratio
         self.plate_diameter = 1.2*self.roller_diameter
         self.outer_plates_distance = self.overall_width - 2*self.slack
@@ -76,8 +77,8 @@ class RollerChain(dc.DessiaObject):
             point1_3d = point1_2d.to_3d(frame.origin, frame.u, frame.v)
             point2_3d = point2_2d.to_3d(frame.origin, frame.u, frame.v)
             point3_3d = point3_2d.to_3d(frame.origin, frame.u, frame.v)
-            u1 = (point2_3d - point1_3d).to_vector()
-            u2 = (point3_3d - point2_3d).to_vector()
+            u1 = (point2_3d - point1_3d)
+            u2 = (point3_3d - point2_3d)
             u1.normalize()
             u2.normalize()
             v1 = frame.w.cross(u1)
@@ -90,12 +91,12 @@ class RollerChain(dc.DessiaObject):
                                 name='pin 2')
             roller1 = p3d.HollowCylinder(point1_3d, frame.w,
                                           0.5*self.bushing_diameter,
-                                          0.5*self.roller_outer_diameter,
-                                          self.inner_width, name='roller 1')
+                                          0.5*self.roller_diameter,
+                                          self.inner_plates_width, name='roller 1')
             roller2 = p3d.HollowCylinder(point2_3d, frame.w,
                                           0.5*self.bushing_diameter,
-                                          0.5*self.roller_outer_diameter,
-                                          self.inner_width, name='roller 2')
+                                          0.5*self.roller_diameter,
+                                          self.inner_plates_width, name='roller 2')
             outer_plate1 = p3d.ExtrudedProfile(point1_3d+(0.5*self.overall_width-self.slack)*frame.w,
                                                 u1, v1,
                                                 plate_outer_contour,
@@ -136,7 +137,7 @@ class RollerChain(dc.DessiaObject):
 
 class Sprocket(dc.DessiaObject):
     def __init__(self, pitch:float, number_teeth:int, roller_diameter, width:float, name:str=''):
-        diameter = number_teeth*pitch/vm.TWO_PI
+        diameter = number_teeth*pitch/math.pi
         dc.DessiaObject.__init__(self,
                                  pitch=pitch,
                                  roller_diameter=roller_diameter,
@@ -178,7 +179,7 @@ class Sprocket(dc.DessiaObject):
         sprocket = p3d.Cylinder(frame.origin, frame.w,
                                 0.5*self.pitch*self.number_teeth,
                                 self.width)
-        sprocket = p3d.ExtrudedProfile(frame.origin, frame.u, frame.v,
+        sprocket = p3d.ExtrudedProfile(frame.origin-0.5*self.width*frame.w, frame.u, frame.v,
                                        self.outer_contour(), [self.inner_contour()],
                                        self.width*frame.w)
         return [sprocket]#, outer_plate2, inner_plate1, inner_plate2]
@@ -316,9 +317,9 @@ class RollerChainLayout(dc.DessiaObject):
     def volmdlr_primitives(self):
         primitives = []
         for sprocket_layout in self.sprocket_layouts:
-            sprocket_origin = sprocket_layout.position.to_3d(self.frame.origin, self.frame.u, self.frame.v)
+            # sprocket_origin = sprocket_layout.position.to_3d(self.frame.origin, self.frame.u, self.frame.v)
             
-            primitives.extend(sprocket_layout.volmdlr_primitives(vm.Frame3D(sprocket_origin,
+            primitives.extend(sprocket_layout.volmdlr_primitives(vm.Frame3D(vm.O3D,
                                                                             self.frame.u,
                                                                             self.frame.v,
                                                                             self.frame.w)))

@@ -21,4 +21,10 @@ iso_chain3 = mcc.RollerChain(pitch=0.00952, inner_plates_width=0.00572,
                              plate_height=0.00826,
                              pin_diameter=0.00328)
 
-iso_chains = [iso_chain1, iso_chain2, iso_chain3]
+iso_chain8 = mcc.RollerChain(pitch=0.01587, inner_plates_width=0.00640,
+                             outer_plates_width=0.0108,
+                             overall_width=0.0162, roller_diameter=0.01016,
+                             plate_height=0.01470,
+                             pin_diameter=0.00508)
+
+iso_chains = [iso_chain1, iso_chain2, iso_chain3, iso_chain8]
