@@ -15,7 +15,7 @@ import mechanical_components.parking_pawl as mcpp
 #             width=0.030)
 
 # parking_pawl = ParkingPawl(wheel, pawl)
-locking_mechanism = mcpp.RollerLockingMechanism(roller_diameter=0.025,
+locking_mechanism = mcpp.RollerLockingMechanism(roller_diameter=0.020,
                                                 roller_width = 0.025,
                                                 spring_stiffness=23000,
                                                 spring_active_length=0.011
@@ -36,7 +36,7 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
                                 finger_width=0.018,
                                 slope_start_height=0.015,
                                 slope_angle=math.radians(26),
-                                slope_offset=0.005, slope_length=0.035,
+                                slope_offset=0.005, slope_length=0.015,
                                 pawl_spring_stiffness=20,
                                 locking_mechanism=locking_mechanism)
 # parking_pawl.pawl.outer_contour().plot()
@@ -47,13 +47,13 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
 # parking_pawl.wheel.mpl_plot()
 # parking_pawl.pawl.mpl_plot()
 # simulation = parking_pawl.static_locking_simulation()
-w = 3/3.6/(0.73/2)*12
+w = -3/3.6/(0.73/2)*12
 simulation = parking_pawl.locking_simulation(wheel_speed=w)
 print(parking_pawl.check())
 simulation.babylonjs()
 simulation.mpl_plot()
 
-t = (parking_pawl.wheel.junction_angle+parking_pawl.wheel.lower_tooth_angle)/w
+t = abs((parking_pawl.wheel.junction_angle+parking_pawl.wheel.lower_tooth_angle)/w)
 print('engaging time margin', t-simulation.time[-1])
 print('speed begin engagment', simulation.max_locking_speed/12*0.73/2*3.6, 'km/h')
 

@@ -304,13 +304,18 @@ class Pawl(dc.DessiaObject):
         # p5 = vm.Point2D(p4.x,
         #                 0.5*self.wheel_lower_tooth_diameter + self.slope_start_height)
         # p6 = p5 - vm.Point2D(self.slope_length, 0.).rotation(vm.O2D, -self.slope_angle)
-        
 
+        radius = 0.05*self.slope_length
+        profile = p2d.OpenedRoundedLineSegments2D([self.junction3.start,
+                                                   self.slope.start,
+                                                   self.junction4.start,
+                                                   self.junction4.end],
+                                                  {1:radius, 2:radius})
         
         primitives = [self.axis_arc, self.junction1, self.arc_side2,
                       self.lower_finger_line, self.arc_side1, self.junction2,
-                      self.junction3, self.slope, self.junction4]
-        
+                      # self.junction3, self.slope, self.junction4]
+                      ]+profile.primitives
         return vmw.Contour2D(primitives)
 
     def inertia(self):
@@ -353,26 +358,51 @@ class RollerLockingMechanism(dc.DessiaObject):
         self.spring_active_length = spring_active_length
         self.name = name
 
-    def contact_from_slope(self, slope:vme.LineSegment2D, center_distance:float):
+    def contact_from_profile(self, profile:vmw.Wire2D, center_distance:float):
         # ax = slope.plot()
         locking_mechanism_line = vme.Line2D(vm.Point2D(0, center_distance),
                                             vm.Point2D(0.1, center_distance))
         # locking_mechanism_line.plot(ax=ax, color='grey')
-        slope_middle = slope.point_at_abscissa(0.5*slope.length())
-        normal_line = vme.Line2D(slope_middle,
-                                 slope_middle + slope.normal_vector())
-        # normal_line.plot(ax=ax)
+        # slope_middle = slope.point_at_abscissa(0.5*slope.length())
+        # normal_line = vme.Line2D(slope.start,
+        #                          slope.start + slope.normal_vector())
+        # # normal_line.plot(ax=ax)
+        #
+        # p = vm.Point2D.line_intersection(locking_mechanism_line, normal_line)
+        # # p.plot(ax=ax, color='r')
+        # distance = p.point_distance(slope.start)
+        # x, y = slope.direction_vector()
+        # slope_angle = math.atan2(y, -x)
+        #
+        # travel = p.x-(distance-0.5*self.roller_diameter)/math.sin(slope_angle)
+        # roller_center = vm.Point2D(travel, p.y)
+        #
+        # # circle = vmw.Circle2D(roller_center, 0.5*self.roller_diameter)
+        # # circle.plot(ax=ax, color='grey')
+        #
+        # contact_point = roller_center + 0.5*self.roller_diameter*slope.normal_vector()
+        # # contact_point.plot(ax=ax, color='b')
+        # contact_abs = slope.to_line().abscissa(contact_point)
+        # if contact_abs < 0:
+        #     contact_point = slope.start
+        #     roller_center = contact_point - 0.5*self.roller_diameter*slope.normal_vector()
+        # elif contact_abs > slope.length():
+        #     contact_point = slope.end
+        #     roller_center = contact_point - 0.5*self.roller_diameter*slope.normal_vector()
 
-        p = vm.Point2D.line_intersection(locking_mechanism_line, normal_line)
-        # p.plot(ax=ax, color='r')
-        distance = p.point_distance(slope_middle)
-        x, y = slope.direction_vector()
-        slope_angle = math.atan2(y, -x)
-        center = vm.Point2D(p.x-(distance-0.5*self.roller_diameter)/math.sin(slope_angle), p.y)
-        # circle = vmw.Circle2D(real_point, 0.5*self.roller_diameter)
-        # circle.plot(ax=ax, color='grey')
-        contact_point = center + 0.5*self.roller_diameter*slope.normal_vector()
-        return p.x-(distance-0.5*self.roller_diameter)/math.sin(slope_angle), contact_point
+        offset_profile = profile.offset(-0.5*self.roller_diameter)
+        ax = offset_profile.plot(color='grey')
+        profile.plot(ax=ax)
+        locking_mechanism_line.plot(ax=ax, color='grey')
+        points = []
+        roller_center, offset_edge = sorted(offset_profile.line_intersections(locking_mechanism_line),
+                                  key=lambda p:p[0].x)[-1]
+
+        contact_point = roller_center + 0.5*self.roller_diameter*offset_edge.normal_vector(offset_edge.abscissa(roller_center))
+        contact_point.plot(ax=ax, color='r')
+        roller_center.plot(ax=ax, color='b')
+
+        return roller_center.x, contact_point
 
     def spring_force(self, position):
         print('p', position)
@@ -530,7 +560,6 @@ class ParkingPawl(dc.DessiaObject):
         y, z = self.pawl.slope.start.rotation(self.pawl.axis_position,
                                               self.up_pawl_angle)
         self.locking_mechanism_center_distance = self.pawl.slope.end.y + 0.5*self.locking_mechanism.roller_diameter
-        # self.locking_mechanism_start_position = y -
         self.locking_mechanism_start_position = self.locking_contact_results[1][-1]
         self.locking_mechanism_end_position = self.pawl.slope.end.x
 
@@ -623,7 +652,8 @@ class ParkingPawl(dc.DessiaObject):
             pawl_angle = i * self.up_pawl_angle / number_steps
             pawl_angles.append(pawl_angle)
             slope = self.pawl.slope.rotation(self.pawl.axis_position, pawl_angle)
-            travel, contact_point = self.locking_mechanism.contact_from_slope(slope, self.locking_mechanism_center_distance)
+            pawl_profile = self.pawl.outer_contour().rotation(self.pawl.axis_position, pawl_angle)
+            travel, contact_point = self.locking_mechanism.contact_from_profile(pawl_profile, self.locking_mechanism_center_distance)
             locking_travels.append(travel)
             contact_normals.append(slope.normal_vector())
             contact_points.append(contact_point)
