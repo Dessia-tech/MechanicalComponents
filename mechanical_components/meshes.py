@@ -594,7 +594,7 @@ class Mesh(DessiaObject):
 
         self.alpha_outside_diameter = math.acos(self.db/self.outside_diameter)
 
-
+        
         self.root_diameter = (self.dff
                               - 2*(self.rack.gear_dedendum
                                    - self.rack.module*self.coefficient_profile_shift)*(self.z/abs(self.z)))
@@ -648,10 +648,9 @@ class Mesh(DessiaObject):
         # if self.z<0:
         #     r=-r
         phi = -(a+b*math.tan(math.pi/2-self.rack.transverse_pressure_angle_0))/r
-        print(2588877)
-        print(phi)
+       
         root_diameter_active = 2*norm(self._trochoide(phi))
-        print(root_diameter_active)
+
         return root_diameter_active, phi
 
     ### Optimization Method
@@ -1035,7 +1034,7 @@ class MeshCombination(DessiaObject):
                                                                                                self.material, self.cycle, self.total_contact_ratio,
                                                                                                self.helix_angle,self.transverse_pressure_angle)
         self.check()
-
+        self._SAP_diameter()
         DessiaObject.__init__(self, name=name)
 
     def check(self):
@@ -1204,7 +1203,7 @@ class MeshCombination(DessiaObject):
                                                          center_distance,
                                                          self.meshes_dico, self.connections_dfs, connections,self.helix_angle,self.gear_width)
         
-            
+        self._SAP_diameter() 
             
     def update_helix_angle(self, helix_angle, total_contact_ratio_min, transverse_contact_ratio_min):
         """ update of the gear mesh assembly
@@ -1370,6 +1369,8 @@ class MeshCombination(DessiaObject):
         # Construction of pitch and base diameter
         DF = [0]*len(connections)
         db = {}
+        SAP = {}
+        SAP_diameter = {}
         dict_transverse_pressure_angle = {0: transverse_pressure_angle_ini}
         connections_dfs = list(nx.edge_dfs(gear_graph,
                             [connections[0][0], connections[0][1]]))
@@ -1410,6 +1411,8 @@ class MeshCombination(DessiaObject):
                 db2 = DF2*math.cos(dict_transverse_pressure_angle[num_mesh])
             db[engr1] = db1
             db[engr2] = db2
+           
+            
         transverse_pressure_angle = []
         for num_mesh in sorted(dict_transverse_pressure_angle.keys()):
             tpa = dict_transverse_pressure_angle[num_mesh]
@@ -1417,7 +1420,30 @@ class MeshCombination(DessiaObject):
 
 
         return DF, db, connections_dfs, transverse_pressure_angle
+    
+    
+    def _SAP_diameter(self):
+        
+        self.SAP={}
+        self.SAP_diameter={}
+        for num_mesh,(engr1,engr2) in enumerate(self.connections):
 
+        
+            self.SAP[num_mesh]=[0]*len(self.Z)
+            
+            self.SAP_diameter[num_mesh]=[0]*len(self.Z)
+            
+            teta_om=math.acos(self.DB[engr2]/self.meshes[engr2].outside_diameter)
+            self.SAP[num_mesh][engr1]=180*((self.Z[engr1]+self.Z[engr2])*math.tan(self.transverse_pressure_angle[num_mesh])-self.Z[engr2]*math.tan(teta_om))/(math.pi*self.Z[engr1])
+            
+            self.SAP_diameter[num_mesh][engr1]=self.DB[engr1]*math.sqrt((math.pi*self.SAP[num_mesh][engr1]/180)**2+1)
+            
+            
+            teta_om=math.acos(self.DB[engr1]/self.meshes[engr1].outside_diameter)
+            self.SAP[num_mesh][engr2]=180*((self.Z[engr1]+self.Z[engr2])*math.tan(self.transverse_pressure_angle[num_mesh])-self.Z[engr1]*math.tan(teta_om))/(math.pi*self.Z[engr2])
+            
+            self.SAP_diameter[num_mesh][engr2]=self.DB[engr2]*math.sqrt((math.pi*self.SAP[num_mesh][engr2]/180)**2+1)
+    
     @classmethod
     def gear_torque(cls, Z, external_torque, db, gear_graph, list_gear, connections, DF, transverse_pressure_angle,helix_angle):
         """ Calculation of the gear mesh torque
@@ -2088,35 +2114,80 @@ class MeshCombination(DessiaObject):
             surface_style=vmp.SurfaceStyle(color_fill=None,opacity=0)
             
             circle_db=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].db/2)
-            circle_DFf=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].dff/2)
-            circle_SAP=vm.wires.Circle2D(center=vect_position_1,radius=self.DF[0][eng1]/2)
-            circle_df=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].root_diameter/2)
-            circle_da=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].outside_diameter/2)
-            circle_root_diameter_actif=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].outside_diameter/2)
+            circle_dff=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].dff/2)
+            circle_DF=vm.wires.Circle2D(center=vect_position_1,radius=self.DF[0][eng1]/2)
+            circle_root_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].root_diameter/2)
+            circle_outside_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].outside_diameter/2)
+            circle_root_diameter_active=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].root_diameter_active/2)
+            circle_SAP_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.SAP_diameter[0][eng1]/2)
+            print(2589)
+            print(self.SAP_diameter[0][eng1])
+            
+            
+            
+            
+            
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLUE)
             circle_db_plot_data=circle_db.plot_data(edge_style=edge_style)
             
+            text_style=vmp.TextStyle(text_color= vmp.colors.BLUE,text_align_x='center',font_size=1.5)
+            text_db=vmp.Text(comment='db',position_x=0,position_y=self.meshes[eng1].db/2,text_style=text_style)
+            
+            
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.RED)
-            circle_DFf_plot_data=circle_DFf.plot_data( edge_style=edge_style)
+            circle_dff_plot_data=circle_dff.plot_data( edge_style=edge_style)
+            
+            text_style=vmp.TextStyle(text_color= vmp.colors.RED,text_align_x='center',font_size=1.5)
+            text_dff=vmp.Text(comment='dff',position_x=0,position_y=self.meshes[eng1].dff/2,text_style=text_style)
+            
             
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.GREEN)
-            circle_SAP_plot_data=circle_SAP.plot_data( edge_style=edge_style)
+            circle_DF_plot_data=circle_DF.plot_data( edge_style=edge_style)
+            
+            text_style=vmp.TextStyle(text_color= vmp.colors.GREEN,text_align_x='center',font_size=1.5)
+            text_DF=vmp.Text(comment='DF',position_x=0,position_y=self.DF[0][eng1]/2,text_style=text_style)
+            
             
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.CYAN)
-            circle_df_plot_data=circle_df.plot_data( edge_style=edge_style)
+            circle_root_diameter_plot_data=circle_root_diameter.plot_data( edge_style=edge_style)
+            
+            text_style=vmp.TextStyle(text_color= vmp.colors.CYAN,text_align_x='center',font_size=1.5)
+            text_root_diameter=vmp.Text(comment='root_diameter',position_x=0,
+                                        position_y=self.meshes[eng1].root_diameter/2,text_style=text_style)
+            
             
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.VIOLET)
-            circle_da_plot_data=circle_da.plot_data(edge_style=edge_style)
+            circle_outside_diameter_plot_data=circle_outside_diameter.plot_data(edge_style=edge_style)
             
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.VIOLET)
-            circle_da_plot_data=circle_da.plot_data(edge_style=edge_style)
+            text_style=vmp.TextStyle(text_color= vmp.colors.VIOLET,text_align_x='center',font_size=1.5)
+            text_outside_diameter=vmp.Text(comment='outside_diameter',position_x=0,
+                                        position_y=self.meshes[eng1].outside_diameter/2,text_style=text_style)
+            
+            
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ORANGE)
+            circle_root_diameter_active_plot_data=circle_root_diameter_active.plot_data(edge_style=edge_style)
+            
+            text_style=vmp.TextStyle(text_color= vmp.colors.ORANGE,text_align_x='center',font_size=1.5)
+            text_root_diameter_active=vmp.Text(comment='root_diameter_active',position_x=0,
+                                        position_y=self.meshes[eng1].root_diameter_active/2,text_style=text_style)
+            
+            
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ROSE)
+            circle_SAP_diameter_plot_data=circle_SAP_diameter.plot_data(edge_style=edge_style)
+            
+            text_style=vmp.TextStyle(text_color= vmp.colors.ROSE,text_align_x='center',font_size=1.5)
+            text_SAP_diameter=vmp.Text(comment='SAP_diameter',position_x=0,
+                                        position_y=self.SAP_diameter[0][eng1]/2,text_style=text_style)
             
             
             
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLACK)
             C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
             
-            plot_datas.extend([circle_da_plot_data,circle_SAP_plot_data,circle_DFf_plot_data,circle_db_plot_data,circle_df_plot_data,C1_plot_data])
+            plot_datas.extend([circle_outside_diameter_plot_data,circle_DF_plot_data,circle_dff_plot_data,
+                               circle_root_diameter_active_plot_data,circle_SAP_diameter_plot_data,circle_db_plot_data,
+                               C1_plot_data,circle_root_diameter_plot_data,text_db,text_dff,text_DF,
+                               text_root_diameter,text_root_diameter_active,text_outside_diameter,text_SAP_diameter])
         return vmp.PrimitiveGroup(primitives= plot_datas)
             
         
