@@ -1983,7 +1983,7 @@ class MeshCombination(DessiaObject):
             C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
             C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
             plot_datas.extend([C1_plot_data,C2_plot_data])
-        return vmp.PrimitiveGroup(primitives= plot_datas)
+        return [vmp.PrimitiveGroup(primitives= plot_datas)]
     
     
     def plot_data_2(self,centers={}, axis=(1, 0, 0), name=''):
@@ -2063,7 +2063,8 @@ class MeshCombination(DessiaObject):
                                                 [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
                                                 list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
 
-
+            print(vect_position_1)
+            print(vect_position_2)
 
             
 
@@ -2109,7 +2110,7 @@ class MeshCombination(DessiaObject):
                            #     i+=1
                               
             # L2.append(L2[0])
-
+            C2 = vm.wires.ClosedPolygon2D(L2, {})
             # L2=set(L2)
             surface_style=vmp.SurfaceStyle(color_fill=None,opacity=0)
             
@@ -2120,6 +2121,7 @@ class MeshCombination(DessiaObject):
             circle_outside_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].outside_diameter/2)
             circle_root_diameter_active=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].root_diameter_active/2)
             circle_SAP_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.SAP_diameter[0][eng1]/2)
+            circle_SAP_diameter_2=vm.wires.Circle2D(center=vect_position_2,radius=self.SAP_diameter[0][eng2]/2)
             print(2589)
             print(self.SAP_diameter[0][eng1])
             
@@ -2130,63 +2132,66 @@ class MeshCombination(DessiaObject):
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLUE)
             circle_db_plot_data=circle_db.plot_data(edge_style=edge_style)
             
-            text_style=vmp.TextStyle(text_color= vmp.colors.BLUE,text_align_x='center',font_size=1.5)
-            text_db=vmp.Text(comment='db',position_x=0,position_y=self.meshes[eng1].db/2,text_style=text_style)
+            text_style=vmp.TextStyle(text_color= vmp.colors.BLUE,text_align_x='center',font_size=0.7)
+            text_db=vmp.Text(comment='db',position_x=0,position_y=self.meshes[eng1].db/2,text_style=text_style,text_scaling=True)
             
             
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.RED)
             circle_dff_plot_data=circle_dff.plot_data( edge_style=edge_style)
             
-            text_style=vmp.TextStyle(text_color= vmp.colors.RED,text_align_x='center',font_size=1.5)
-            text_dff=vmp.Text(comment='dff',position_x=0,position_y=self.meshes[eng1].dff/2,text_style=text_style)
+            text_style=vmp.TextStyle(text_color= vmp.colors.RED,text_align_x='center',font_size=0.7)
+            text_dff=vmp.Text(comment='dff',position_x=0,position_y=self.meshes[eng1].dff/2,text_style=text_style,text_scaling=True)
             
             
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.GREEN)
             circle_DF_plot_data=circle_DF.plot_data( edge_style=edge_style)
             
-            text_style=vmp.TextStyle(text_color= vmp.colors.GREEN,text_align_x='center',font_size=1.5)
+            text_style=vmp.TextStyle(text_color= vmp.colors.GREEN,text_align_x='center',font_size=0.7)
             text_DF=vmp.Text(comment='DF',position_x=0,position_y=self.DF[0][eng1]/2,text_style=text_style)
             
             
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.CYAN)
             circle_root_diameter_plot_data=circle_root_diameter.plot_data( edge_style=edge_style)
             
-            text_style=vmp.TextStyle(text_color= vmp.colors.CYAN,text_align_x='center',font_size=1.5)
+            text_style=vmp.TextStyle(text_color= vmp.colors.CYAN,text_align_x='center',font_size=0.7)
             text_root_diameter=vmp.Text(comment='root_diameter',position_x=0,
-                                        position_y=self.meshes[eng1].root_diameter/2,text_style=text_style)
+                                        position_y=self.meshes[eng1].root_diameter/2,text_style=text_style,text_scaling=True)
             
             
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.VIOLET)
             circle_outside_diameter_plot_data=circle_outside_diameter.plot_data(edge_style=edge_style)
             
-            text_style=vmp.TextStyle(text_color= vmp.colors.VIOLET,text_align_x='center',font_size=1.5)
+            text_style=vmp.TextStyle(text_color= vmp.colors.VIOLET,text_align_x='center',font_size=0.7)
             text_outside_diameter=vmp.Text(comment='outside_diameter',position_x=0,
-                                        position_y=self.meshes[eng1].outside_diameter/2,text_style=text_style)
+                                        position_y=self.meshes[eng1].outside_diameter/2,text_style=text_style,text_scaling=True)
             
             
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ORANGE)
             circle_root_diameter_active_plot_data=circle_root_diameter_active.plot_data(edge_style=edge_style)
             
-            text_style=vmp.TextStyle(text_color= vmp.colors.ORANGE,text_align_x='center',font_size=1.5)
+            text_style=vmp.TextStyle(text_color= vmp.colors.ORANGE,text_align_x='center',font_size=0.7)
             text_root_diameter_active=vmp.Text(comment='root_diameter_active',position_x=0,
-                                        position_y=self.meshes[eng1].root_diameter_active/2,text_style=text_style)
+                                        position_y=self.meshes[eng1].root_diameter_active/2,text_style=text_style,text_scaling=True)
             
             
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ROSE)
             circle_SAP_diameter_plot_data=circle_SAP_diameter.plot_data(edge_style=edge_style)
             
-            text_style=vmp.TextStyle(text_color= vmp.colors.ROSE,text_align_x='center',font_size=1.5)
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ROSE)
+            circle_SAP_diameter_2_plot_data=circle_SAP_diameter_2.plot_data(edge_style=edge_style)
+            
+            text_style=vmp.TextStyle(text_color= vmp.colors.ROSE,text_align_x='center',font_size=0.7)
             text_SAP_diameter=vmp.Text(comment='SAP_diameter',position_x=0,
-                                        position_y=self.SAP_diameter[0][eng1]/2,text_style=text_style)
+                                        position_y=self.SAP_diameter[0][eng1]/2,text_style=text_style,text_scaling=True)
             
             
             
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLACK)
             C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
-            
+            C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
             plot_datas.extend([circle_outside_diameter_plot_data,circle_DF_plot_data,circle_dff_plot_data,
-                               circle_root_diameter_active_plot_data,circle_SAP_diameter_plot_data,circle_db_plot_data,
-                               C1_plot_data,circle_root_diameter_plot_data,text_db,text_dff,text_DF,
+                               circle_SAP_diameter_plot_data,circle_root_diameter_active_plot_data,circle_db_plot_data,
+                               C1_plot_data,C2_plot_data,circle_root_diameter_plot_data,text_db,text_dff,text_DF,
                                text_root_diameter,text_root_diameter_active,text_outside_diameter,text_SAP_diameter])
         return vmp.PrimitiveGroup(primitives= plot_datas)
             
