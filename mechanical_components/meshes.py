@@ -896,7 +896,7 @@ class Mesh(DessiaObject):
 
     ### Export and graph method
 
-    def plot_data(self, x, heights, y, z, labels = True):
+    def _plot_data(self, x, heights, y, z, labels = True):
         transversal_plot_data = []
         axial_plot_data = []
 
@@ -1983,7 +1983,7 @@ class MeshCombination(DessiaObject):
             C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
             C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
             plot_datas.extend([C1_plot_data,C2_plot_data])
-        return [vmp.PrimitiveGroup(primitives= [plot_datas])]
+        return [vmp.PrimitiveGroup(primitives= plot_datas)]
     
     
     def plot_data_2(self,centers={}, axis=(1, 0, 0), name=''):
