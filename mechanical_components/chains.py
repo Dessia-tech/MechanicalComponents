@@ -29,20 +29,20 @@ class RollerChain(dc.DessiaObject):
         self.bushing_diameter = 0.5*(self.roller_diameter+self.pin_diameter)
         self.plate_width = 0.5*(self.outer_plates_width - self.inner_plates_width)*self.slack_plate_ratio/(2*self.slack_plate_ratio+1)
         self.slack = self.plate_width/self.slack_plate_ratio
-        self.plate_diameter = 1.2*self.roller_diameter
-        self.outer_plates_distance = self.overall_width - 2*self.slack
-        self.inner_plates_distance = self.outer_plates_distance-self.plate_width
+        # self.plate_diameter = 1.2*self.roller_diameter
+        # self.outer_plates_distance = self.overall_width - 2*self.slack
+        # self.inner_plates_distance = self.outer_plates_distance-self.plate_width
         
     def plate_outer_contour(self):
-        circle1 = vmw.Circle2D(vm.O2D, 0.5*self.plate_diameter)
-        circle2 = vmw.Circle2D(self.pitch*vm.X2D, 0.5*self.plate_diameter)
+        circle1 = vmw.Circle2D(vm.O2D, 0.5*self.plate_height)
+        circle2 = vmw.Circle2D(self.pitch*vm.X2D, 0.5*self.plate_height)
 
-        center3 = vm.Point2D(0.5*self.pitch, 2.5*self.plate_diameter)
+        center3 = vm.Point2D(0.5*self.pitch, 2.5*self.plate_height)
         line1 = vme.Line2D(circle1.center, center3)
         p1 = sorted(circle1.line_intersections(line1), key=lambda p:p.x)[1]
         circle3 = vmw.Circle2D(center3, center3.point_distance(p1))
 
-        center4 = vm.Point2D(0.5*self.pitch, -2.5*self.plate_diameter)
+        center4 = vm.Point2D(0.5*self.pitch, -2.5*self.plate_height)
 
         circle4 = vmw.Circle2D(center4, circle3.radius)
         
@@ -110,25 +110,21 @@ class RollerChain(dc.DessiaObject):
                                                 self.plate_width*frame.w,
                                                 name='outer plate 2')
             inner_plate1_position = (point2_3d
-                                      + (0.5 * self.overall_width
-                                        - self.plate_diameter
-                                        - self.slack) * frame.w
+                                      + (0.5 * self.inner_plates_width) * frame.w
                                       )
             inner_plate1 = p3d.ExtrudedProfile(inner_plate1_position, u2, v2,
                                                 plate_outer_contour,
                                                 plate_inner_contours,
-                                                -self.plate_width*frame.w,
+                                                self.plate_width*frame.w,
                                                 name='inner plate 1')
             inner_plate2_position = (point2_3d
-                                      - (0.5 * self.overall_width
-                                        - self.plate_diameter
-                                        - self.slack) * frame.w
+                                      - (0.5 * self.inner_plates_width) * frame.w
                                       )
     
             inner_plate2 = p3d.ExtrudedProfile(inner_plate2_position, u2, v2,
                                                 plate_outer_contour,
                                                 plate_inner_contours,
-                                                self.plate_width*frame.w,
+                                                -self.plate_width*frame.w,
                                                 name='inner plate 2')
             primitives += [outer_plate1, outer_plate2, inner_plate1, inner_plate2,
                             pin1, pin2, roller1, roller2]
@@ -152,23 +148,24 @@ class Sprocket(dc.DessiaObject):
         s = i.rotation(c, 0.5*math.pi)
         e = i.rotation(c, -0.5*math.pi)
         arc = vme.Arc2D(s, i, e)
-        teeth_angle = 2*math.pi/self.number_teeth
+        pattern_angle = 2*math.pi/self.number_teeth
         roller_angle = math.atan(2*self.roller_diameter/self.diameter)
-        junction_angle = 0.5*roller_angle
-        crest_angle = teeth_angle -roller_angle - 2*junction_angle
+        teeth_angle = pattern_angle -roller_angle 
+        crest_angle =  0.5*teeth_angle
+        junction_angle = 0.5*(teeth_angle - crest_angle)
         crest_start = vm.Point2D(0, 0.5*(self.diameter + self.roller_diameter)).rotation(vm.O2D, 0.5*(roller_angle)+junction_angle)
         crest_interior = crest_start.rotation(vm.O2D, 0.5*crest_angle)
         crest_end = crest_start.rotation(vm.O2D, crest_angle)
         crest = vme.Arc2D(crest_start, crest_interior, crest_end)
         
         junction1 = vme.LineSegment2D(arc.end, crest.start)
-        junction2 = vme.LineSegment2D(crest.end, s.rotation(vm.O2D, teeth_angle))
+        junction2 = vme.LineSegment2D(crest.end, s.rotation(vm.O2D, pattern_angle))
         edges = [arc, junction1, crest, junction2]
         for i in range(1, self.number_teeth):
-            edges.append(arc.rotation(vm.O2D, i*teeth_angle))
-            edges.append(junction1.rotation(vm.O2D, i*teeth_angle))
-            edges.append(crest.rotation(vm.O2D, i*teeth_angle))
-            edges.append(junction2.rotation(vm.O2D, i*teeth_angle))
+            edges.append(arc.rotation(vm.O2D, i*pattern_angle))
+            edges.append(junction1.rotation(vm.O2D, i*pattern_angle))
+            edges.append(crest.rotation(vm.O2D, i*pattern_angle))
+            edges.append(junction2.rotation(vm.O2D, i*pattern_angle))
             
         return vmw.Contour2D(edges)
     
