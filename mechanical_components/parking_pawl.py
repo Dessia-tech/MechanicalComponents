@@ -189,7 +189,11 @@ class Wheel(dc.DessiaObject):
                                     self.outer_contour(), [self.inner_contour()],
                                     frame.u*self.width)]
 
-        
+class TorsionSpring(dc.DessiaObject):
+    def __init__(self, torque, name=''):
+        self.torque = torque
+        self.name = name
+    
 class Pawl(dc.DessiaObject):
     def __init__(self, axis_position:vm.Point2D,
                  wheel_lower_tooth_diameter:float,
@@ -288,6 +292,8 @@ class Pawl(dc.DessiaObject):
         slope_stop = slope_start - vm.Point2D(self.slope_length, 0.).rotation(vm.O2D, -self.slope_angle)
         self.slope = vme.LineSegment2D(slope_start, slope_stop)
         self.junction4 = vme.LineSegment2D(slope_stop, pa1)
+        
+        self.torsion_spring = None
 
     def outer_contour(self):
         
@@ -305,7 +311,7 @@ class Pawl(dc.DessiaObject):
         #                 0.5*self.wheel_lower_tooth_diameter + self.slope_start_height)
         # p6 = p5 - vm.Point2D(self.slope_length, 0.).rotation(vm.O2D, -self.slope_angle)
 
-        radius = 0.05*self.slope_length
+        radius = 0.15*self.slope_length
         profile = p2d.OpenedRoundedLineSegments2D([self.junction3.start,
                                                    self.slope.start,
                                                    self.junction4.start,
@@ -321,6 +327,11 @@ class Pawl(dc.DessiaObject):
     def inertia(self):
         Ix, Iy, _ = self.outer_contour().second_moment_area(self.axis_position)
         return 7800*(Ix+Iy)*self.width
+
+    def mass(self):
+        area = self.outer_contour().area()
+        return 7800*area*self.width
+
 
     def inner_contour(self):
         return vmw.Circle2D(self.axis_position, 0.5*self.axis_inner_diameter)
@@ -340,6 +351,16 @@ class Pawl(dc.DessiaObject):
         return [p3d.ExtrudedProfile(frame.origin, frame.v, frame.w,
                                     self.outer_contour(), [self.inner_contour()],
                                     frame.u*self.width)]
+
+    def size_torsion_spring(self, max_acceleration):
+        cog = self.outer_contour().center_of_mass()
+        max_lever = cog.point_distance(self.axis_position)
+        max_force = self.mass() * max_acceleration
+        torque_up = max_force * max_lever
+
+        ax = self.outer_contour().plot()
+        cog.plot(ax=ax, color='r')
+        self.torsion_spring = TorsionSpring(torque_up)
 
 class RollerLockingMechanism(dc.DessiaObject):
     _standalone_in_db = True
@@ -391,16 +412,17 @@ class RollerLockingMechanism(dc.DessiaObject):
         #     roller_center = contact_point - 0.5*self.roller_diameter*slope.normal_vector()
 
         offset_profile = profile.offset(-0.5*self.roller_diameter)
-        ax = offset_profile.plot(color='grey')
-        profile.plot(ax=ax)
-        locking_mechanism_line.plot(ax=ax, color='grey')
+
+        # ax = offset_profile.plot(color='grey')
+        # profile.plot(ax=ax)
+        # locking_mechanism_line.plot(ax=ax, color='grey')
         points = []
         roller_center, offset_edge = sorted(offset_profile.line_intersections(locking_mechanism_line),
                                   key=lambda p:p[0].x)[-1]
 
         contact_point = roller_center + 0.5*self.roller_diameter*offset_edge.normal_vector(offset_edge.abscissa(roller_center))
-        contact_point.plot(ax=ax, color='r')
-        roller_center.plot(ax=ax, color='b')
+        # contact_point.plot(ax=ax, color='r')
+        # roller_center.plot(ax=ax, color='b')
 
         return roller_center.x, contact_point
 
@@ -712,7 +734,7 @@ class ParkingPawl(dc.DessiaObject):
                                      locking_positions, locking_forces,
                                      name='Locking simulation')
 
-    def locking_simulation(self, wheel_speed=0., initial_time_step=0.001, min_step_number=10):
+    def locking_simulation(self, wheel_speed=0., initial_time_step=0.001, min_step_number=10)->'ParkingPawlSimulation':
 
         locking_position = self.locking_mechanism_start_position
 
@@ -745,6 +767,9 @@ class ParkingPawl(dc.DessiaObject):
         
         n_step = 1
         last_step_step_change = 0
+        if not self.pawl.torsion_spring:
+            raise NotImplementedError('No torsion spring defined')
+            
         while n_step < min_step_number*10:
             print('====\nStep n°{} time step: {}s @{}s'.format(n_step, time_step, t))
 
@@ -759,7 +784,8 @@ class ParkingPawl(dc.DessiaObject):
 
             # print('contact_normal', contact_normal, contact_point)
             # contact_normal.plot()
-            sum_moments = locking_force * (contact_point - self.pawl.axis_position).cross(contact_normal)
+            print('torsion spring torque: ', self.pawl.torsion_spring.torque)
+            sum_moments = locking_force * (contact_point - self.pawl.axis_position).cross(contact_normal) + self.pawl.torsion_spring.torque
             angular_acceleration = sum_moments/inertia
 
             delta_pawl_angle = 0.5*angular_acceleration*time_step**2 + angular_speed*time_step
