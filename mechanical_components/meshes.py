@@ -1983,7 +1983,7 @@ class MeshCombination(DessiaObject):
             C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
             C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
             plot_datas.extend([C1_plot_data,C2_plot_data])
-        return [vmp.PrimitiveGroup(primitives= plot_datas)]
+        return [vmp.PrimitiveGroup(primitives= [plot_datas])]
     
     
     def plot_data_2(self,centers={}, axis=(1, 0, 0), name=''):
@@ -2081,17 +2081,17 @@ class MeshCombination(DessiaObject):
             i=0
             for element in Gears3D_Rotate[0]:
                     for point in element.points:
-                       if not point in L_vector:
-                           # if i==100:
-                               L_vector.append(point)
-                               L.append(point)
-                           #     i=0
-                           # else:
-                           #     i+=1
+                        if not point in L_vector:
+                            # if i==100:
+                                L_vector.append(point)
+                                L.append(point)
+                            #     i=0
+                            # else:
+                            #     i+=1
                            
-                       # else:
-                       #     # print(point.vector)
-                       # print(point)
+                        # else:
+                        #     # print(point.vector)
+                        # print(point)
             # L.append(L[0])
 
             C1 = vm.wires.ClosedPolygon2D(L,{})
@@ -2101,13 +2101,13 @@ class MeshCombination(DessiaObject):
             i=0
             for element in Gears3D_Rotate[1]:
                     for point in element.points:
-                       if not point in L2_vector:
-                           # if i==100:
-                               L2_vector.append(point)
-                               L2.append(point)
-                               i=0
-                           # else:
-                           #     i+=1
+                        if not point in L2_vector:
+                            # if i==100:
+                                L2_vector.append(point)
+                                L2.append(point)
+                                i=0
+                            # else:
+                            #     i+=1
                               
             # L2.append(L2[0])
             C2 = vm.wires.ClosedPolygon2D(L2, {})
@@ -2190,9 +2190,9 @@ class MeshCombination(DessiaObject):
             C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
             C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
             plot_datas.extend([circle_outside_diameter_plot_data,circle_DF_plot_data,circle_dff_plot_data,
-                               circle_SAP_diameter_plot_data,circle_root_diameter_active_plot_data,circle_db_plot_data,
-                               C1_plot_data,C2_plot_data,circle_root_diameter_plot_data,text_db,text_dff,text_DF,
-                               text_root_diameter,text_root_diameter_active,text_outside_diameter,text_SAP_diameter])
+                                circle_SAP_diameter_plot_data,circle_root_diameter_active_plot_data,circle_db_plot_data,
+                                C1_plot_data,C2_plot_data,circle_root_diameter_plot_data,text_db,text_dff,text_DF,
+                                text_root_diameter,text_root_diameter_active,text_outside_diameter,text_SAP_diameter])
         return vmp.PrimitiveGroup(primitives= plot_datas)
             
         
