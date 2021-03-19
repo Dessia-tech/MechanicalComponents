@@ -53,7 +53,7 @@ w = -3/3.6/(0.73/2)*12
 simulation = parking_pawl.locking_simulation(wheel_speed=w)
 print(parking_pawl.check())
 simulation.babylonjs()
-simulation.plot()
+# simulation.plot()
 
 t = abs((parking_pawl.wheel.junction_angle+parking_pawl.wheel.lower_tooth_angle)/w)
 print('engaging time margin', t-simulation.time[-1])

@@ -10,6 +10,7 @@ from typing import List
 import volmdlr as vm
 import volmdlr.edges as vme
 import volmdlr.wires as vmw
+import volmdlr.faces as vmf
 import volmdlr.primitives2d as p2d
 import volmdlr.primitives3d as p3d
 import dessia_common as dc
@@ -325,16 +326,19 @@ class Pawl(dc.DessiaObject):
         return vmw.Contour2D(primitives)
 
     def inertia(self):
-        Ix, Iy, _ = self.outer_contour().second_moment_area(self.axis_position)
+        Ix, Iy, _ = self.surface2d().second_moment_area(self.axis_position)
         return 7800*(Ix+Iy)*self.width
 
     def mass(self):
-        area = self.outer_contour().area()
+        area = self.surface2d().area()
         return 7800*area*self.width
 
 
     def inner_contour(self):
         return vmw.Circle2D(self.axis_position, 0.5*self.axis_inner_diameter)
+
+    def surface2d(self):
+        return vmf.Surface2D(self.outer_contour(), [self.inner_contour()])
 
     def plot_data(self, angle=0.):
         line_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.FERN,
@@ -353,13 +357,12 @@ class Pawl(dc.DessiaObject):
                                     frame.u*self.width)]
 
     def size_torsion_spring(self, max_acceleration):
-        cog = self.outer_contour().center_of_mass()
+        cog = self.surface2d().center_of_mass()
         max_lever = cog.point_distance(self.axis_position)
         max_force = self.mass() * max_acceleration
         torque_up = max_force * max_lever
 
-        ax = self.outer_contour().plot()
-        cog.plot(ax=ax, color='r')
+
         self.torsion_spring = TorsionSpring(torque_up)
 
 class RollerLockingMechanism(dc.DessiaObject):
@@ -420,16 +423,17 @@ class RollerLockingMechanism(dc.DessiaObject):
         roller_center, offset_edge = sorted(offset_profile.line_intersections(locking_mechanism_line),
                                   key=lambda p:p[0].x)[-1]
 
-        contact_point = roller_center + 0.5*self.roller_diameter*offset_edge.normal_vector(offset_edge.abscissa(roller_center))
+        contact_normal = offset_edge.normal_vector(offset_edge.abscissa(roller_center))
+        contact_point = roller_center + 0.5*self.roller_diameter*contact_normal
         # contact_point.plot(ax=ax, color='r')
         # roller_center.plot(ax=ax, color='b')
 
-        return roller_center.x, contact_point
+        contact_line = vme.LineSegment2D(contact_point, contact_point)
+
+        return roller_center.x, contact_point, contact_normal
 
     def spring_force(self, position):
-        print('p', position)
         if position > self.spring_active_length:
-            print(0)
             return 0.
         else:
 
@@ -675,9 +679,9 @@ class ParkingPawl(dc.DessiaObject):
             pawl_angles.append(pawl_angle)
             slope = self.pawl.slope.rotation(self.pawl.axis_position, pawl_angle)
             pawl_profile = self.pawl.outer_contour().rotation(self.pawl.axis_position, pawl_angle)
-            travel, contact_point = self.locking_mechanism.contact_from_profile(pawl_profile, self.locking_mechanism_center_distance)
+            travel, contact_point, contact_normal = self.locking_mechanism.contact_from_profile(pawl_profile, self.locking_mechanism_center_distance)
             locking_travels.append(travel)
-            contact_normals.append(slope.normal_vector())
+            contact_normals.append(contact_normal)
             contact_points.append(contact_point)
         return pawl_angles, locking_travels, contact_points, contact_normals
 
@@ -769,7 +773,8 @@ class ParkingPawl(dc.DessiaObject):
         last_step_step_change = 0
         if not self.pawl.torsion_spring:
             raise NotImplementedError('No torsion spring defined')
-            
+        # ax = self.pawl.surface2d().plot()
+        # ax = None
         while n_step < min_step_number*10:
             print('====\nStep n°{} time step: {}s @{}s'.format(n_step, time_step, t))
 
@@ -779,13 +784,19 @@ class ParkingPawl(dc.DessiaObject):
 
             spring_force = self.locking_mechanism.spring_force(
                 self.locking_mechanism_start_position-locking_position)
-            locking_force = -spring_force*vm.Y2D.dot(contact_normal)
-
-
+            locking_force = -spring_force*vm.X2D.dot(contact_normal)
+            print('force transmission ratio', vm.X2D.dot(contact_normal))
+            print('normal', contact_normal)
+            contact_line = vme.LineSegment2D(contact_point, contact_point+0.05*contact_normal)
+            # ax = contact_line.plot(ax= ax)
             # print('contact_normal', contact_normal, contact_point)
-            # contact_normal.plot()
+            # contact_normal.plot(ax=ax)
+            # contact_point.plot(ax=ax)
+
             print('torsion spring torque: ', self.pawl.torsion_spring.torque)
-            sum_moments = locking_force * (contact_point - self.pawl.axis_position).cross(contact_normal) + self.pawl.torsion_spring.torque
+            print('lever', (contact_point - self.pawl.axis_position).cross(contact_normal))
+            locking_moment = locking_force * (contact_point - self.pawl.axis_position).cross(contact_normal)
+            sum_moments =  locking_moment + self.pawl.torsion_spring.torque
             angular_acceleration = sum_moments/inertia
 
             delta_pawl_angle = 0.5*angular_acceleration*time_step**2 + angular_speed*time_step
