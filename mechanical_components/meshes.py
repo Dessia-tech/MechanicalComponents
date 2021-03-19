@@ -352,6 +352,8 @@ class Rack(DessiaObject):
         self.transverse_radial_pitch = self.module*math.pi
         self.gear_addendum = coeff_gear_addendum*self.module
         self.gear_dedendum = coeff_gear_dedendum*self.module
+        
+        
         self.root_radius = coeff_root_radius*self.module
         self.circular_tooth_thickness = coeff_circular_tooth_thickness*self.transverse_radial_pitch
 
@@ -396,6 +398,10 @@ class Rack(DessiaObject):
         if coeff_circular_tooth_thickness == None:
             coeff_circular_tooth_thickness = self.coeff_circular_tooth_thickness
         self.module = module
+        self.coeff_gear_addendum = coeff_gear_addendum
+        self.coeff_gear_dedendum = coeff_gear_dedendum
+        self.coeff_root_radius = coeff_root_radius
+        self.coeff_circular_tooth_thickness = coeff_circular_tooth_thickness
         
         self.rack_param(transverse_pressure_angle_0, coeff_gear_addendum,
                         coeff_gear_dedendum, coeff_root_radius, coeff_circular_tooth_thickness)
@@ -542,6 +548,8 @@ class Mesh(DessiaObject):
         self.gear_width = gear_width
         self.external_torque = external_torque
         self.cycle = cycle
+        self.reference_point_trochoide=(0,0)
+        self.reference_point_outside=(0,0)
         DessiaObject.__init__(self, name=name)
 
     def update(self, z, db, coefficient_profile_shift, transverse_pressure_angle_rack,
@@ -682,19 +690,23 @@ class Mesh(DessiaObject):
         if list_number == [None]:
             list_number = npy.arange(int(abs(self.z)))
         L = [self._outside_trace(0)]
+        self.reference_point_outside=(L[0][0],L[0][1])
         L.append(self._involute_trace(discret, 0, 'T'))
         if self.z > 0:
-            L.append(self._trochoide_trace(2*discret, 0, 'T'))
+            L.append(self._trochoide_trace(4*discret, 0, 'T'))
+            last_point=L[-1]
             L.append(self._root_circle_trace(0))
-            L.append(self._trochoide_trace(2*discret, 0, 'R'))
+            L.append(self._trochoide_trace(4*discret, 0, 'R'))
+            first_point=L[-1]
+            self.reference_point_trochoide=((first_point[0]-last_point[0])/2+last_point[0],(first_point[1]-last_point[1])/2+last_point[1])
         L.append(self._involute_trace(discret, 1, 'R'))
         for i in list_number[1::]:
             L.append(self._outside_trace(i))
             L.append(self._involute_trace(discret, i, 'T'))
             if self.z > 0:
-                L.append(self._trochoide_trace(2*discret, i, 'T'))
+                L.append(self._trochoide_trace(4*discret, i, 'T'))
                 L.append(self._root_circle_trace(i))
-                L.append(self._trochoide_trace(2*discret, i, 'R'))
+                L.append(self._trochoide_trace(4*discret, i, 'R'))
             L.append(self._involute_trace(discret, i+1, 'R'))
         return L
 
@@ -949,10 +961,10 @@ class MeshCombination(DessiaObject):
                                     
     def __init__(self, center_distance: List[float], connections: List[Tuple[int, int]],
                  meshes: List[Mesh],
-                 safety_factor: float = 1.2, name: str = ''):
+                 safety_factor: float = 1.2, transverse_pressure_angle_ini: float=None,name: str = ''):
       
         self.center_distance = center_distance
-
+        self.transverse_pressure_angle_ini=transverse_pressure_angle_ini
         self.connections = connections
         for i,connection in enumerate(self.connections):
             
@@ -994,13 +1006,14 @@ class MeshCombination(DessiaObject):
         self.gear_graph = gear_graph
         self.list_gear = list_gear
 
-        self.transverse_pressure_angle = []
+        transverse_pressure_angle = []
         for num_gear, (num1, num2) in enumerate(self.connections):
             mesh_first = self.meshes_dico[num1]
             mesh_second = self.meshes_dico[num2]
             df_first = 2*self.center_distance[num_gear]*mesh_first.z/mesh_second.z/(1+mesh_first.z/mesh_second.z)
-            self.transverse_pressure_angle.append(math.acos(mesh_first.db/df_first))
-        transverse_pressure_angle_0 = self.transverse_pressure_angle[0]
+            transverse_pressure_angle.append(math.acos(mesh_first.db/df_first))
+        if not transverse_pressure_angle_ini:
+            transverse_pressure_angle_ini = transverse_pressure_angle[0]
         self.Z=[]
         self.material=[]
         for i,mesh in enumerate(meshes):
@@ -1013,8 +1026,8 @@ class MeshCombination(DessiaObject):
             self.gear_width.append(mesh.gear_width)
             self.DB.append(mesh.db)
 
-        self.DF, DB_new, self.connections_dfs, transverse_pressure_angle_new\
-            = MeshCombination.gear_geometry_parameter(self.Z, transverse_pressure_angle_0, center_distance,
+        self.DF, DB_new, self.connections_dfs, self.transverse_pressure_angle\
+            = MeshCombination.gear_geometry_parameter(self.Z, transverse_pressure_angle_ini, center_distance,
                                                     connections, gear_graph)
         if len(self.cycle.keys())<len(list_gear): # the gear mesh optimizer calculate this dictionary
             self.cycle = MeshCombination.cycle_parameter(self.cycle, self.Z, list_gear)
@@ -1154,7 +1167,7 @@ class MeshCombination(DessiaObject):
             if num_gear in cycle.keys():
                 meshes_dico[num_gear].cycle=cycle[num_gear]
 
-        mesh_combination = cls(center_distance, connections, meshes)
+        mesh_combination = cls(center_distance, connections, meshes,transverse_pressure_angle_ini)
         return mesh_combination
 
     def update(self, Z, center_distance, connections, transverse_pressure_angle_ini,
@@ -1834,7 +1847,7 @@ class MeshCombination(DessiaObject):
             export.append(model_export)
         return export
 
-    def initial_position(self, set_pos, liste_eng=()):
+    def initial_position(self, positions, liste_eng=()):
         """ Calculation of the rotation for two gear mesh to initiate the contact
 
         :param list_gear: list of volmdlr contour [meshes.Contour, meshes.Contour ...], each contour is centered on the origin
@@ -1843,10 +1856,28 @@ class MeshCombination(DessiaObject):
 
         :results: list of volmdlr component
         """
+        
+        reference_point_trochoide_gear_1=self.meshes_dico[liste_eng[0]].reference_point_trochoide
+        reference_point_trochoide_gear_1_translate=(reference_point_trochoide_gear_1[0]+positions[0][0],reference_point_trochoide_gear_1[0]+positions[0][1])
+        
+        reference_point_outside_gear_2=self.meshes_dico[liste_eng[1]].reference_point_outside
+        reference_point_outside_gear_2_translate=(reference_point_outside_gear_2[0]+positions[1][0],reference_point_outside_gear_2[0]+positions[1][1])
+        
+        center_distance=vm.Vector2D(positions[1][0]-positions[0][0],positions[1][1]-positions[0][1])
+        vector_trochoide_gear_1=vm.Vector2D(reference_point_trochoide_gear_1_translate[0]-positions[0][0],
+                                            reference_point_trochoide_gear_1_translate[1]-positions[0][1])
+        
+        vector_outside_gear_2=vm.Vector2D(reference_point_outside_gear_2_translate[0]-positions[1][0],
+                                            reference_point_outside_gear_2_translate[1]-positions[1][1])
+        
+        angle_1=center_distance.
+        
         Angle1 = math.acos(self.meshes_dico[liste_eng[0]].db/self.DF[set_pos][liste_eng[0]])
         Angle2 = math.acos(self.meshes_dico[liste_eng[1]].db/self.DF[set_pos][liste_eng[1]])
         Gear1Angle = -(math.tan(Angle1)-Angle1)
         Gear2Angle = -(math.tan(Angle2)-Angle2)+math.pi
+        
+        
 
         return [Gear1Angle, Gear2Angle]
 

@@ -62,7 +62,7 @@ class MeshOpti(DessiaObject):
         self.transverse_pressure_angle=transverse_pressure_angle
         
         if coefficient_profile_shift==None:
-            coefficient_profile_shift=[0.01,1]
+            coefficient_profile_shift=[0.2,0.8]
         self.coefficient_profile_shift=coefficient_profile_shift
         DessiaObject.__init__(self, name=name)
 
@@ -278,13 +278,13 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             rack_list={0:RackOpti()}
         for num_rack, rack in rack_list.items():
             if  not rack.module:
-                rack_list[num_rack].module = [3*1e-3,5*1e-3]
+                rack_list[num_rack].module = [1.2*1e-3,2*1e-3]
             if  not rack.transverse_pressure_angle_0:
                 rack_list[num_rack].transverse_pressure_angle_0 =[15/180.*math.pi,30/180.*math.pi]
             if  not  rack.coeff_gear_addendum:
-                rack_list[num_rack].coeff_gear_addendum = [1,1.1]
+                rack_list[num_rack].coeff_gear_addendum = [1.08,1.2]
             if  not  rack.coeff_gear_dedendum:
-                rack_list[num_rack].coeff_gear_dedendum = [1.2,1.5]
+                rack_list[num_rack].coeff_gear_dedendum = [1.3,1.55]
             if  not  rack.coeff_root_radius:
                 rack_list[num_rack].coeff_root_radius = [0.25,0.6]
             if not  rack.coeff_circular_tooth_thickness:

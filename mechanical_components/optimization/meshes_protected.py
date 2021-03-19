@@ -781,7 +781,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 max_x.append(self.Bounds[i][1])
            
             
-            x=cma.fmin(self.Objective, X0, 1*10e-4,args=(constraint_root_diameter,CA_min), options={'bounds':[min_x, max_x],'tolfun':1e-15,'maxiter': 200})[0:2]
+            # x=cma.fmin(self.Objective, X0, 1*10e-4,args=(constraint_root_diameter,CA_min), options={'bounds':[min_x, max_x],'tolfun':1e-15,'maxiter': 200})[0:2]
             
            
             
@@ -792,7 +792,9 @@ class ContinuousMeshesAssemblyOptimizer:
                 print(self.Bounds)
             
                                                                                                                                            
-                cx = minimize(self.Objective, x[0], bounds=self.Bounds,constraints=cons,args=(constraint_root_diameter,CA_min))
+                cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons,args=(constraint_root_diameter,CA_min))
+                print(cx.x)
+                _ = self.update(cx.x)
                 for num_mesh,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
                     
                     
@@ -859,8 +861,15 @@ class ContinuousMeshesAssemblyOptimizer:
                         print(SAP2-dia2)
                         print(mesh_assembly_iter.meshes_dico[engr1].db)
                         print(mesh_assembly_iter.meshes_dico[engr2].db)
+                        print(SAP1)
+                        print(SAP2)
+                        print(dia1)
+                        print(dia2)
+                       
+                        print(mesh_assembly_iter.meshes[0].rack.a)
+                        print(mesh_assembly_iter.meshes[0].rack.b)
+                        print(cx.x)
                         
-                        print(mesh_assembly_iter.meshes_dico[engr1].rack.module)
                        
                         
                         if (cd- 0.5*(de1+dia2_root)-Ca_min)<0 or (cd- 0.5*(de2+dia1_root)-Ca_min)<0 or SAP1-dia1<0.00028 or SAP2-dia2<0.00028:
@@ -911,10 +920,51 @@ class ContinuousMeshesAssemblyOptimizer:
                 #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
         
         
-                
+                       
+                       
                 input_dat['helix_angle'] = output_x['helix_angle']
             
             self.solutions.append(MeshAssembly.create(**input_dat))
+            
+            for num_mesh,mesh_assembly_iter in enumerate(self.solutions[-1].mesh_combinations):
+                    
+                    
+                    for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
+                        
+                        dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
+                        dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
+                            
+                        if CA_min:
+                            Ca_min=0.2*mesh_assembly_iter.meshes_dico[engr1].rack.module
+                        else:
+                            Ca_min=0
+                        
+                        de1=mesh_assembly_iter.meshes_dico[engr1].outside_diameter
+                        de2=mesh_assembly_iter.meshes_dico[engr2].outside_diameter
+                        cd=mesh_assembly_iter.center_distance[num_mesh]
+                        Z1=self.Z[engr1]
+                        Z2=self.Z[engr2]
+                        dia1_root=mesh_assembly_iter.meshes_dico[engr1].root_diameter
+                        dia2_root=mesh_assembly_iter.meshes_dico[engr2].root_diameter
+                        
+                        SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][engr1]
+                        SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][engr2]
+                        
+                        print(588888)
+                        print((cd- 0.5*(de1+dia2_root)-Ca_min))
+                        print((cd- 0.5*(de2+dia1_root)-Ca_min))
+                        print(SAP1-dia1)
+                        print(SAP2-dia2)
+                        print(mesh_assembly_iter.meshes_dico[engr1].db)
+                        print(mesh_assembly_iter.meshes_dico[engr2].db)
+                        print(SAP1)
+                        print(SAP2)
+                        print(dia1)
+                        print(dia2)
+                        
+                        print(mesh_assembly_iter.meshes[0].rack.a)
+                        print(mesh_assembly_iter.meshes[0].rack.a)
+                       
             print(self.solutions)
             # print(self.solutions)
             
