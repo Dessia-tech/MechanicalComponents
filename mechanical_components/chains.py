@@ -16,33 +16,43 @@ import volmdlr.primitives3d as p3d
 class RollerChain(dc.DessiaObject):
     _standalone_in_db = True
     
-    slack_plate_ratio = 5
-    def __init__(self, pitch:float, roller_diameter:float, outer_plates_width:float,
-                 inner_plates_width:float, overall_width:float, plate_height:float, pin_diameter:float):
+    # slack_plate_ratio = 5
+    def __init__(self, pitch:float, roller_diameter:float, roller_width:float,
+                 inner_plate_width:float, outer_plate_width:float,
+                 pin_length:float, inner_plate_height:float, 
+                 outer_plate_height:float, pin_diameter:float,
+                 number_rows:int=1,
+                 name:str=''):
         dc.DessiaObject.__init__(self, pitch=pitch,
                                  pin_diameter=pin_diameter,
                                  roller_diameter=roller_diameter,
-                                 outer_plates_width=outer_plates_width,
-                                 inner_plates_width=inner_plates_width,
-                                 overall_width=overall_width,
-                                 plate_height=plate_height)
+                                 roller_width=roller_width,
+                                 outer_plate_width=outer_plate_width,
+                                 inner_plate_width=inner_plate_width,
+                                 pin_length=pin_length,
+                                 inner_plate_height=inner_plate_height,
+                                 outer_plate_height=outer_plate_height,
+                                 number_rows=number_rows,
+                                 name=name)
         self.bushing_diameter = 0.5*(self.roller_diameter+self.pin_diameter)
-        self.plate_width = 0.5*(self.outer_plates_width - self.inner_plates_width)*self.slack_plate_ratio/(2*self.slack_plate_ratio+1)
-        self.slack = self.plate_width/self.slack_plate_ratio
+        self.slack = 0.5*(0.5*(self.pin_length - self.roller_width) - self.outer_plate_width-self.inner_plate_width)
+        # self.plate_width = 0.5*(self.outer_plates_width - self.inner_plates_width)*self.slack_plate_ratio/(2*self.slack_plate_ratio+1)
+        # self.slack = self.plate_width/self.slack_plate_ratio
+        # self.roller_width = self.width
         # self.plate_diameter = 1.2*self.roller_diameter
         # self.outer_plates_distance = self.overall_width - 2*self.slack
         # self.inner_plates_distance = self.outer_plates_distance-self.plate_width
         
-    def plate_outer_contour(self):
-        circle1 = vmw.Circle2D(vm.O2D, 0.5*self.plate_height)
-        circle2 = vmw.Circle2D(self.pitch*vm.X2D, 0.5*self.plate_height)
+    def plate_outer_contour(self, plate_height):
+        circle1 = vmw.Circle2D(vm.O2D, 0.5*plate_height)
+        circle2 = vmw.Circle2D(self.pitch*vm.X2D, 0.5*plate_height)
 
-        center3 = vm.Point2D(0.5*self.pitch, 2.5*self.plate_height)
+        center3 = vm.Point2D(0.5*self.pitch, 2.5*plate_height)
         line1 = vme.Line2D(circle1.center, center3)
         p1 = sorted(circle1.line_intersections(line1), key=lambda p:p.x)[1]
         circle3 = vmw.Circle2D(center3, center3.point_distance(p1))
 
-        center4 = vm.Point2D(0.5*self.pitch, -2.5*self.plate_height)
+        center4 = vm.Point2D(0.5*self.pitch, -2.5*plate_height)
 
         circle4 = vmw.Circle2D(center4, circle3.radius)
         
@@ -65,11 +75,13 @@ class RollerChain(dc.DessiaObject):
         
     def volmdlr_primitives(self, points=None, frame=vm.OXYZ):
         if points is None:
-            points = [vm.O2D, vm.X2D*self.pitch, 2*vm.X2D*self.pitch]
+            points = [vm.Point2D(0., 0.), vm.Point2D(self.pitch, 0.),
+                      vm.Point2D(2*self.pitch, 0.)]
             
         
         primitives = []
-        plate_outer_contour = self.plate_outer_contour()
+        outer_plate_outer_contour = self.plate_outer_contour(self.outer_plate_height)
+        inner_plate_outer_contour = self.plate_outer_contour(self.inner_plate_height)
         plate_inner_contours = self.plate_inner_contours()
         for point1_2d, point2_2d, point3_2d in zip(points[::2],
                                                    (points[1:]+[points[0]])[::2],
@@ -84,47 +96,47 @@ class RollerChain(dc.DessiaObject):
             v1 = frame.w.cross(u1)
             v2 = frame.w.cross(u2)
             pin1 = p3d.Cylinder(point1_3d, frame.w, 0.5*self.pin_diameter,
-                                self.overall_width,
+                                self.pin_length,
                                 name='pin 1')
             pin2 = p3d.Cylinder(point2_3d, frame.w,
-                                0.5*self.pin_diameter, self.overall_width,
+                                0.5*self.pin_diameter, self.pin_length,
                                 name='pin 2')
             roller1 = p3d.HollowCylinder(point1_3d, frame.w,
                                           0.5*self.bushing_diameter,
                                           0.5*self.roller_diameter,
-                                          self.inner_plates_width, name='roller 1')
+                                          self.roller_width, name='roller 1')
             roller2 = p3d.HollowCylinder(point2_3d, frame.w,
                                           0.5*self.bushing_diameter,
                                           0.5*self.roller_diameter,
-                                          self.inner_plates_width, name='roller 2')
-            outer_plate1 = p3d.ExtrudedProfile(point1_3d+(0.5*self.overall_width-self.slack)*frame.w,
+                                          self.roller_width, name='roller 2')
+            outer_plate1 = p3d.ExtrudedProfile(point1_3d+(0.5*self.pin_length-self.slack)*frame.w,
                                                 u1, v1,
-                                                plate_outer_contour,
+                                                outer_plate_outer_contour,
                                                 plate_inner_contours,
-                                                -self.plate_width*frame.w,
+                                                -self.outer_plate_width*frame.w,
                                                 name='outer plate 1')
-            outer_plate2 = p3d.ExtrudedProfile(point1_3d-(0.5*self.overall_width-self.slack)*frame.w,
+            outer_plate2 = p3d.ExtrudedProfile(point1_3d-(0.5*self.pin_length-self.slack)*frame.w,
                                                 u1, v1,
-                                                plate_outer_contour,
+                                                outer_plate_outer_contour,
                                                 plate_inner_contours,
-                                                self.plate_width*frame.w,
+                                                self.outer_plate_width*frame.w,
                                                 name='outer plate 2')
             inner_plate1_position = (point2_3d
-                                      + (0.5 * self.inner_plates_width) * frame.w
+                                      + (0.5 * (self.roller_width)) * frame.w
                                       )
             inner_plate1 = p3d.ExtrudedProfile(inner_plate1_position, u2, v2,
-                                                plate_outer_contour,
+                                                inner_plate_outer_contour,
                                                 plate_inner_contours,
-                                                self.plate_width*frame.w,
+                                                self.inner_plate_width*frame.w,
                                                 name='inner plate 1')
             inner_plate2_position = (point2_3d
-                                      - (0.5 * self.inner_plates_width) * frame.w
+                                      - (0.5 * (self.roller_width)) * frame.w
                                       )
     
             inner_plate2 = p3d.ExtrudedProfile(inner_plate2_position, u2, v2,
-                                                plate_outer_contour,
+                                                inner_plate_outer_contour,
                                                 plate_inner_contours,
-                                                -self.plate_width*frame.w,
+                                                -self.inner_plate_width*frame.w,
                                                 name='inner plate 2')
             primitives += [outer_plate1, outer_plate2, inner_plate1, inner_plate2,
                             pin1, pin2, roller1, roller2]
