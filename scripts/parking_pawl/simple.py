@@ -20,6 +20,7 @@ locking_mechanism = mcpp.RollerLockingMechanism(roller_diameter=0.020,
                                                 spring_stiffness=23000,
                                                 spring_active_length=0.011
                                                 )
+
 parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
                                 wheel_lower_tooth_diameter=0.060,
                                 wheel_outer_diameter=0.080,
@@ -32,7 +33,7 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
                                 axis_inner_diameter=0.020,
                                 axis_outer_diameter=0.030,
                                 finger_height=0.012,
-                                # finger_angle=math.radians(20),
+                                roller_rest_length=0.6*locking_mechanism.roller_diameter,
                                 finger_width=0.018,
                                 slope_start_height=0.015,
                                 slope_angle=math.radians(26),

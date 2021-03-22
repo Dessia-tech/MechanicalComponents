@@ -204,7 +204,8 @@ class Pawl(dc.DessiaObject):
                  finger_height:float,
                  # finger_angle:float,
                  finger_width:float,
-                 slope_start_height, slope_length,
+                 slope_start_height:float, slope_length:float,
+                 roller_rest_length:float,
                  slope_offset:float, slope_angle:float,
                  width:float,
                  pawl_spring_stiffness:float,
@@ -218,6 +219,7 @@ class Pawl(dc.DessiaObject):
         # self.finger_angle = finger_angle
         self.finger_width = finger_width
         self.slope_start_height = slope_start_height
+        self.roller_rest_length=roller_rest_length
         self.slope_length = slope_length
         self.slope_offset = slope_offset
         self.slope_angle = slope_angle
@@ -285,16 +287,35 @@ class Pawl(dc.DessiaObject):
 
         self.junction1 = vme.LineSegment2D(pa3, side2_start)
 
-        finger_lower_end = side1_end + vm.Point2D(self.slope_offset, 0.)
-        slope_start = vm.Point2D(finger_lower_end.x, self.slope_start_height+0.5*self.wheel_lower_tooth_diameter)
-        self.junction2 = vme.LineSegment2D(side1_end, finger_lower_end)
-        self.junction3 = vme.LineSegment2D(finger_lower_end, slope_start)
+        finger_lower_end1 = side1_end + vm.Point2D(self.roller_rest_length+self.slope_offset, 0.)
+        finger_lower_end2 = vm.Point2D(finger_lower_end1.x,
+                                       self.slope_start_height+0.5*self.wheel_lower_tooth_diameter)
+        slope_start = vm.Point2D(side1_end.x+self.slope_offset, self.slope_start_height+0.5*self.wheel_lower_tooth_diameter)
+        self.junction2 = vme.LineSegment2D(side1_end, finger_lower_end1)
+        self.junction3 = vme.LineSegment2D(finger_lower_end1, finger_lower_end2)
+        self.roller_rest = vme.LineSegment2D(finger_lower_end2, slope_start)
 
-        slope_stop = slope_start - vm.Point2D(self.slope_length, 0.).rotation(vm.O2D, -self.slope_angle)
-        self.slope = vme.LineSegment2D(slope_start, slope_stop)
-        self.junction4 = vme.LineSegment2D(slope_stop, pa1)
-        
+        slope_end = slope_start - vm.Point2D(self.slope_length, 0.).rotation(vm.O2D, -self.slope_angle)
+        self.slope = vme.LineSegment2D(slope_start, slope_end)
+        self.junction4 = vme.LineSegment2D(slope_end, pa1)
+
+        # ax = self.roller_rest.plot()
+        # self.junction2.plot(ax=ax, color='grey')
+        # self.junction3.plot(ax=ax, color='g')
+        # self.slope.plot(ax=ax, color='r')
+        # self.junction4.plot(ax=ax, color='b')
+
         self.torsion_spring = None
+
+    def profile(self):
+        radius = 0.15*self.slope_length
+        profile = p2d.OpenedRoundedLineSegments2D([self.roller_rest.start,
+                                                   self.slope.start,
+                                                   self.junction4.start,
+                                                   self.junction4.end],
+                                                  {2:radius}
+                                                  )
+        return profile
 
     def outer_contour(self):
         
@@ -312,16 +333,11 @@ class Pawl(dc.DessiaObject):
         #                 0.5*self.wheel_lower_tooth_diameter + self.slope_start_height)
         # p6 = p5 - vm.Point2D(self.slope_length, 0.).rotation(vm.O2D, -self.slope_angle)
 
-        radius = 0.15*self.slope_length
-        profile = p2d.OpenedRoundedLineSegments2D([self.junction3.start,
-                                                   self.slope.start,
-                                                   self.junction4.start,
-                                                   self.junction4.end],
-                                                  {1:radius, 2:radius})
+        profile = self.profile()
         
         primitives = [self.axis_arc, self.junction1, self.arc_side2,
                       self.lower_finger_line, self.arc_side1, self.junction2,
-                      # self.junction3, self.slope, self.junction4]
+                      self.junction3,# self.slope, self.junction4]
                       ]+profile.primitives
         return vmw.Contour2D(primitives)
 
@@ -419,12 +435,16 @@ class RollerLockingMechanism(dc.DessiaObject):
         # ax = offset_profile.plot(color='grey')
         # profile.plot(ax=ax)
         # locking_mechanism_line.plot(ax=ax, color='grey')
+
+
         points = []
         roller_center, offset_edge = sorted(offset_profile.line_intersections(locking_mechanism_line),
                                   key=lambda p:p[0].x)[-1]
 
         contact_normal = offset_edge.normal_vector(offset_edge.abscissa(roller_center))
         contact_point = roller_center + 0.5*self.roller_diameter*contact_normal
+
+
         # contact_point.plot(ax=ax, color='r')
         # roller_center.plot(ax=ax, color='b')
 
@@ -502,6 +522,7 @@ class ParkingPawl(dc.DessiaObject):
                  axis_inner_diameter:float, axis_outer_diameter:float,
                  finger_height:float,
                  finger_width:float,
+                 roller_rest_length:float,
                  slope_start_height:float,
                  slope_length:float,
                  slope_offset:float,
@@ -526,6 +547,7 @@ class ParkingPawl(dc.DessiaObject):
         self.axis_outer_diameter = axis_outer_diameter
         self.finger_height = finger_height
         self.finger_width = finger_width
+        self.roller_rest_length = roller_rest_length
         self.slope_start_height = slope_start_height
         self.slope_length = slope_length
         self.slope_offset = slope_offset
@@ -556,7 +578,7 @@ class ParkingPawl(dc.DessiaObject):
                          axis_inner_diameter=axis_inner_diameter,
                          axis_outer_diameter=axis_outer_diameter,
                          finger_height=finger_height,
-                         # finger_angle=finger_angle,
+                         roller_rest_length=roller_rest_length,
                          finger_width=finger_width,
                          slope_start_height=slope_start_height,
                          slope_length=slope_length,
@@ -588,6 +610,7 @@ class ParkingPawl(dc.DessiaObject):
         self.locking_mechanism_center_distance = self.pawl.slope.end.y + 0.5*self.locking_mechanism.roller_diameter
         self.locking_mechanism_start_position = self.locking_contact_results[1][-1]
         self.locking_mechanism_end_position = self.pawl.slope.end.x
+
 
     def volmdlr_primitives(self, frame=vm.OXYZ):
         wheel_frame = frame.rotation(frame.origin, frame.u, self.contact1_wheel_angle)
@@ -678,7 +701,7 @@ class ParkingPawl(dc.DessiaObject):
             pawl_angle = i * self.up_pawl_angle / number_steps
             pawl_angles.append(pawl_angle)
             slope = self.pawl.slope.rotation(self.pawl.axis_position, pawl_angle)
-            pawl_profile = self.pawl.outer_contour().rotation(self.pawl.axis_position, pawl_angle)
+            pawl_profile = self.pawl.profile().rotation(self.pawl.axis_position, pawl_angle)
             travel, contact_point, contact_normal = self.locking_mechanism.contact_from_profile(pawl_profile, self.locking_mechanism_center_distance)
             locking_travels.append(travel)
             contact_normals.append(contact_normal)
