@@ -1030,7 +1030,7 @@ class Mesh(DessiaObject):
                             circle_root_diameter_active_plot_data,circle_db_plot_data,
                             C1_plot_data,circle_root_diameter_plot_data,text_db,text_dff,
                             text_root_diameter,text_root_diameter_active,text_outside_diameter])
-        return vmp.PrimitiveGroup(primitives= plot_datas)
+        return [vmp.PrimitiveGroup(primitives= plot_datas)]
 
 # class CenterDistance(DessiaObject):
 
