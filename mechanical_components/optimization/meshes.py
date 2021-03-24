@@ -69,12 +69,14 @@ class MeshOpti(DessiaObject):
 class CenterDistanceOpti(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self,center_distance:Tuple[float,float],meshes:List[MeshOpti], name:str='',constraint_root_diameter=True,CA_min=0 ):
+    def __init__(self,center_distance:Tuple[float,float],meshes:List[MeshOpti], name:str='',constraint_root_diameter=True,CA_min=0,constraint_SAP_diameter=True,distance_SAP_root_diameter_active_min=0 ):
 
         self.meshes = meshes
         self.center_distance = center_distance
         self.constraint_root_diameter=constraint_root_diameter
         self.CA_min=CA_min
+        self.constraint_SAP_diameter=constraint_SAP_diameter
+        self.distance_SAP_root_diameter_active_min=distance_SAP_root_diameter_active_min
         DessiaObject.__init__(self, name=name)
 
 
@@ -111,16 +113,21 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         list_gear=[]
         connections=[]
         cd = []
-        self.constraint_root_diameter=[]
-        self.CA_min=[]
+        self.constraints_root_diameter=[]
+        self.list_CA_min=[]
+        self.constraints_SAP_diameter=[]
+        self.distances_SAP_root_diameter_active_min=[]
+        
         for meshing_plan in center_distances:
             connections_plan=[]
             for center_distance in meshing_plan:
                 for gear in center_distance.meshes:
                     if not gear in list_gear:
                         list_gear.append(gear)
-                self.constraint_root_diameter.append(center_distance.constraint_root_diameter)
-                self.CA_min.append(center_distance.CA_min)
+                self.constraints_root_diameter.append(center_distance.constraint_root_diameter)
+                self.list_CA_min.append(center_distance.CA_min)
+                self.distances_SAP_root_diameter_active_min.append(center_distance.distance_SAP_root_diameter_active_min)
+                self.constraints_SAP_diameter.append(center_distance.constraint_SAP_diameter)
                 connections_plan.append((list_gear.index(center_distance.meshes[0]),list_gear.index(center_distance.meshes[1])))
 
             cd.append(meshing_plan[0].center_distance)
@@ -282,11 +289,11 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             if  not rack.transverse_pressure_angle_0:
                 rack_list[num_rack].transverse_pressure_angle_0 =[15/180.*math.pi,30/180.*math.pi]
             if  not  rack.coeff_gear_addendum:
-                rack_list[num_rack].coeff_gear_addendum = [1.08,1.2]
+                rack_list[num_rack].coeff_gear_addendum = [1.00,1.00]
             if  not  rack.coeff_gear_dedendum:
-                rack_list[num_rack].coeff_gear_dedendum = [1.3,1.55]
+                rack_list[num_rack].coeff_gear_dedendum = [1.25,1.25]
             if  not  rack.coeff_root_radius:
-                rack_list[num_rack].coeff_root_radius = [0.25,0.6]
+                rack_list[num_rack].coeff_root_radius = [0.38,0.38]
             if not  rack.coeff_circular_tooth_thickness:
                 rack_list[num_rack].coeff_circular_tooth_thickness = [0.5,0.5]
             

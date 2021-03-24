@@ -548,8 +548,8 @@ class Mesh(DessiaObject):
         self.gear_width = gear_width
         self.external_torque = external_torque
         self.cycle = cycle
-        self.reference_point_trochoide=(0,0)
-        self.reference_point_outside=(0,0)
+        self.reference_point_trochoide=vm.Point2D(0,0)
+        self.reference_point_outside=vm.Point2D(0,0)
         DessiaObject.__init__(self, name=name)
 
     def update(self, z, db, coefficient_profile_shift, transverse_pressure_angle_rack,
@@ -690,15 +690,16 @@ class Mesh(DessiaObject):
         if list_number == [None]:
             list_number = npy.arange(int(abs(self.z)))
         L = [self._outside_trace(0)]
-        self.reference_point_outside=(L[0][0],L[0][1])
+        print(L[0])
+        self.reference_point_outside=copy.copy(L[0].points[int(len(L[0].points)/2)])
         L.append(self._involute_trace(discret, 0, 'T'))
         if self.z > 0:
             L.append(self._trochoide_trace(4*discret, 0, 'T'))
-            last_point=L[-1]
+            last_point=L[-1].points[-1]
             L.append(self._root_circle_trace(0))
             L.append(self._trochoide_trace(4*discret, 0, 'R'))
-            first_point=L[-1]
-            self.reference_point_trochoide=((first_point[0]-last_point[0])/2+last_point[0],(first_point[1]-last_point[1])/2+last_point[1])
+            first_point=L[-1].points[0]
+            self.reference_point_trochoide=vm.Point2D((first_point[0]-last_point[0])/2+last_point[0],(first_point[1]-last_point[1])/2+last_point[1])
         L.append(self._involute_trace(discret, 1, 'R'))
         for i in list_number[1::]:
             L.append(self._outside_trace(i))
@@ -934,6 +935,102 @@ class Mesh(DessiaObject):
                                       'dash' : 'none',})
 
         return transversal_plot_data, axial_plot_data
+    
+    
+    
+    def plot_data(self,centers={}, axis=(1, 0, 0), name=''):
+        
+        plot_datas=[]
+
+        
+
+        Gears3D= self.contour(3)
+           
+        
+
+        L = []
+        L_vector = []
+        i=0
+        for element in Gears3D:
+                for point in element.points:
+                    if not point in L_vector:
+                        # if i==100:
+                            L_vector.append(point)
+                            L.append(point)
+                        #     i=0
+                        # else:
+                        #     i+=1
+                       
+                    # else:
+                    #     # print(point.vector)
+                    # print(point)
+        # L.append(L[0])
+
+        C1 = vm.wires.ClosedPolygon2D(L,{})
+       
+        surface_style=vmp.SurfaceStyle(color_fill=None,opacity=0)
+        vect_position_1 = vm.Vector3D(0,0,0)
+        circle_db=vm.wires.Circle2D(center=vect_position_1,radius=self.db/2)
+        circle_dff=vm.wires.Circle2D(center=vect_position_1,radius=self.dff/2)
+        circle_root_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.root_diameter/2)
+        circle_outside_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.outside_diameter/2)
+        circle_root_diameter_active=vm.wires.Circle2D(center=vect_position_1,radius=self.root_diameter_active/2)
+        
+        
+        
+        
+        
+        edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLUE)
+        circle_db_plot_data=circle_db.plot_data(edge_style=edge_style)
+        
+        text_style=vmp.TextStyle(text_color= vmp.colors.BLUE,text_align_x='center',font_size=0.7)
+        text_db=vmp.Text(comment='db',position_x=0,position_y=self.db/2,text_style=text_style,text_scaling=True)
+        
+        
+        edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.RED)
+        circle_dff_plot_data=circle_dff.plot_data( edge_style=edge_style)
+        
+        text_style=vmp.TextStyle(text_color= vmp.colors.RED,text_align_x='center',font_size=0.7)
+        text_dff=vmp.Text(comment='dff',position_x=0,position_y=self.dff/2,text_style=text_style,text_scaling=True)
+        
+        
+        
+        
+        edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.CYAN)
+        circle_root_diameter_plot_data=circle_root_diameter.plot_data( edge_style=edge_style)
+        
+        text_style=vmp.TextStyle(text_color= vmp.colors.CYAN,text_align_x='center',font_size=0.7)
+        text_root_diameter=vmp.Text(comment='root_diameter',position_x=0,
+                                    position_y=self.root_diameter/2,text_style=text_style,text_scaling=True)
+        
+        
+        edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.VIOLET)
+        circle_outside_diameter_plot_data=circle_outside_diameter.plot_data(edge_style=edge_style)
+        
+        text_style=vmp.TextStyle(text_color= vmp.colors.VIOLET,text_align_x='center',font_size=0.7)
+        text_outside_diameter=vmp.Text(comment='outside_diameter',position_x=0,
+                                    position_y=self.outside_diameter/2,text_style=text_style,text_scaling=True)
+        
+        
+        edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ORANGE)
+        circle_root_diameter_active_plot_data=circle_root_diameter_active.plot_data(edge_style=edge_style)
+        
+        text_style=vmp.TextStyle(text_color= vmp.colors.ORANGE,text_align_x='center',font_size=0.7)
+        text_root_diameter_active=vmp.Text(comment='root_diameter_active',position_x=0,
+                                    position_y=self.root_diameter_active/2,text_style=text_style,text_scaling=True)
+        
+        
+        
+        
+        
+        edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLACK)
+        C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
+
+        plot_datas.extend([circle_outside_diameter_plot_data,circle_dff_plot_data,
+                            circle_root_diameter_active_plot_data,circle_db_plot_data,
+                            C1_plot_data,circle_root_diameter_plot_data,text_db,text_dff,
+                            text_root_diameter,text_root_diameter_active,text_outside_diameter])
+        return vmp.PrimitiveGroup(primitives= plot_datas)
 
 # class CenterDistance(DessiaObject):
 
@@ -1803,7 +1900,7 @@ class MeshCombination(DessiaObject):
 
     ### Function graph and export
 
-    def gear_rotate(self, list_gear, list_center, list_rot):
+    def gear_rotate(self,gear_index, list_gear, list_center, list_rot):
         """ Displacement of the volmdlr gear profile (rotation and translation)
 
         :param list_gear: list of volmdlr contour [meshes.Contour, meshes.Contour ...], each contour is centered on the origin
@@ -1819,13 +1916,15 @@ class MeshCombination(DessiaObject):
 
             for m in i:
                 center = vm.Point2D(center)
+                
                 model_trans = m.Translation(center)
                 model_trans_rot = model_trans.Rotation(center, k)
                 model_export.append(model_trans_rot)
             export.append(model_export)
+            
         return export
 
-    def gear_rotate_2(self, list_gear, list_center, list_rot):
+    def gear_rotate_2(self,gear_index, list_gear, list_center, list_rot):
         """ Displacement of the volmdlr gear profile (rotation and translation)
 
         :param list_gear: list of volmdlr contour [meshes.Contour, meshes.Contour ...], each contour is centered on the origin
@@ -1836,14 +1935,37 @@ class MeshCombination(DessiaObject):
         """
         export = []
 
-        for (i, center, k) in zip(list_gear, list_center, list_rot):
+        for (index,i, center, k) in zip(gear_index,list_gear, list_center, list_rot):
             model_export=[]
-
+            position=[self.meshes_dico[index].reference_point_trochoide[0]+center[0],
+                      self.meshes_dico[index].reference_point_trochoide[1]+center[1]]
+            
+          
+            u = [position[0] - center[0],position[1] - center[1]]
+            v2x = math.cos(k)*u[0] - math.sin(k)*u[1] + center[0]
+            v2y = math.sin(k)*u[0] + math.cos(k)*u[1] + center[1]
+            
+            self.meshes_dico[index].reference_point_trochoide.x=v2x
+            self.meshes_dico[index].reference_point_trochoide.y=v2y
+           
+            
+            position=[self.meshes_dico[index].reference_point_outside[0]+center[0],
+                      self.meshes_dico[index].reference_point_outside[1]+center[1]]
+            
+            u = [position[0] - center[0],position[1] - center[1]]
+            v2x = math.cos(k)*u[0] - math.sin(k)*u[1] + center[0]
+            v2y = math.sin(k)*u[0] + math.cos(k)*u[1] + center[1]
+            self.meshes_dico[index].reference_point_outside.x=v2x
+            self.meshes_dico[index].reference_point_outside.y=v2y
+          
+            
+            
             for m in i:
                 center = vm.Point2D(center[0],center[1])
                 model_trans = m.translation(center)
                 model_trans_rot = model_trans.rotation(center, k)
-                model_export.append(model_trans)
+             
+                model_export.append(model_trans_rot)
             export.append(model_export)
         return export
 
@@ -1858,28 +1980,29 @@ class MeshCombination(DessiaObject):
         """
         
         reference_point_trochoide_gear_1=self.meshes_dico[liste_eng[0]].reference_point_trochoide
-        reference_point_trochoide_gear_1_translate=(reference_point_trochoide_gear_1[0]+positions[0][0],reference_point_trochoide_gear_1[0]+positions[0][1])
+        reference_point_trochoide_gear_1_translate=(reference_point_trochoide_gear_1[0]+positions[0][1],reference_point_trochoide_gear_1[1]+positions[0][2])
         
         reference_point_outside_gear_2=self.meshes_dico[liste_eng[1]].reference_point_outside
-        reference_point_outside_gear_2_translate=(reference_point_outside_gear_2[0]+positions[1][0],reference_point_outside_gear_2[0]+positions[1][1])
+        reference_point_outside_gear_2_translate=(reference_point_outside_gear_2[0]+positions[1][1],reference_point_outside_gear_2[1]+positions[1][2])
         
-        center_distance=vm.Vector2D(positions[1][0]-positions[0][0],positions[1][1]-positions[0][1])
-        vector_trochoide_gear_1=vm.Vector2D(reference_point_trochoide_gear_1_translate[0]-positions[0][0],
-                                            reference_point_trochoide_gear_1_translate[1]-positions[0][1])
+        center_distance=vm.Vector2D((positions[1][1]-positions[0][1]),(positions[1][2]-positions[0][2]))
+        vector_trochoide_gear_1=vm.Vector2D(reference_point_trochoide_gear_1_translate[0]-positions[0][1],
+                                            reference_point_trochoide_gear_1_translate[1]-positions[0][2])
         
-        vector_outside_gear_2=vm.Vector2D(reference_point_outside_gear_2_translate[0]-positions[1][0],
-                                            reference_point_outside_gear_2_translate[1]-positions[1][1])
+        vector_outside_gear_2=vm.Vector2D(reference_point_outside_gear_2_translate[0]-positions[1][1],
+                                            reference_point_outside_gear_2_translate[1]-positions[1][2])
         
-        angle_1=center_distance.
+        angle_1=math.acos(center_distance.dot(vector_trochoide_gear_1)/(center_distance.norm()*vector_trochoide_gear_1.norm()))
+        angle_2=math.acos(center_distance.dot(vector_outside_gear_2)/(center_distance.norm()*vector_outside_gear_2.norm()))
+       
+        sign_angle_1=npy.sign(vector_trochoide_gear_1.x*center_distance.y-center_distance.x*vector_trochoide_gear_1.y)
+        sign_angle_2=npy.sign(vector_outside_gear_2.x*center_distance.y-center_distance.x*vector_outside_gear_2.y)
         
-        Angle1 = math.acos(self.meshes_dico[liste_eng[0]].db/self.DF[set_pos][liste_eng[0]])
-        Angle2 = math.acos(self.meshes_dico[liste_eng[1]].db/self.DF[set_pos][liste_eng[1]])
-        Gear1Angle = -(math.tan(Angle1)-Angle1)
-        Gear2Angle = -(math.tan(Angle2)-Angle2)+math.pi
+        print(sign_angle_1)
+        print(sign_angle_2)
         
-        
-
-        return [Gear1Angle, Gear2Angle]
+        rotation_gear_2=sign_angle_2*(angle_2-math.pi)+sign_angle_1*angle_1*self.meshes_dico[liste_eng[0]].z/self.meshes_dico[liste_eng[1]].z
+        return 0,rotation_gear_2
 
     # TODO: use volmdlr Vector and points
     def plot_data(self,centers={}, axis=(1, 0, 0), name=''):
@@ -1917,60 +2040,50 @@ class MeshCombination(DessiaObject):
 
             position1 = centers[eng1]
             position2 = centers[eng2]
-
+            if set_pos_dfs == 0:
+                Gears3D[eng1] = self.meshes_dico[eng1].contour(3)
+            
+            Gears3D[eng2] = self.meshes_dico[eng2].contour(3)
+            
             if (eng1, eng2) in self.connections:
                 set_pos = self.connections.index((eng1, eng2))
-                list_rot = self.initial_position(set_pos, (eng1, eng2))
+                rot_gear_2= self.initial_position([position1,position2], (eng1, eng2))
 
             elif (eng2, eng1) in self.connections:
                 set_pos = self.connections.index((eng2, eng1))
-                list_rot = self.initial_position(set_pos, (eng2, eng1))
+                rot_gear_2= self.initial_position([position2,position1], (eng2, eng1))
             Rotation[set_pos] = {}
-            if set_pos_dfs == 0:
-                Gears3D[eng1] = self.meshes_dico[eng1].contour(3)
             Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1]/2.))
-            Gears3D[eng2] = self.meshes_dico[eng2].contour(3)
             Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2]/2.))
 
-            if position2[1] == position1[1]:
-                if position2[2]-position1[2] > 0:
-                    angle0 = math.pi/2.
-                else:
-                    angle0 = -math.pi/2.
-
-            else:
-                angle0 = -math.atan((position2[2]-position1[2])/(position2[1]-position1[1]))
-                if (position2[2]-position1[2]) < 0:
-                    angle0 = angle0+math.pi
-            if set_pos_dfs == 0:
-                Rotation[set_pos][eng1] = list_rot[0]+angle0
-                Rotation[set_pos][eng2] = list_rot[1]+angle0
-
-            else:
-                for k1, rot in Rotation.items():
-                    if eng1 in rot.keys():
-                        Rotation[set_pos][eng1] = rot[eng1]
-                        delta_rot = Rotation[set_pos][eng1]-(list_rot[0]-angle0)
-                Rotation[set_pos][eng2] = list_rot[1]-angle0-delta_rot*((self.meshes_dico[eng1].z)/(self.meshes_dico[eng2].z))
-
-            vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
-            vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
-            Gears3D_Rotate = self.gear_rotate_2([Gears3D[eng1],Gears3D[eng2]],
-                                                [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
-                                                list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
-
-
+           
 
             
+       
+            
+            
+            
+            
+       
+            
+            vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
+            vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
+            Gears3D_Rotate = self.gear_rotate_2([eng1, eng2],
+                                                [Gears3D[eng1],Gears3D[eng2]],
+                                                [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
+                                                list_rot=[rot_gear_2[0],rot_gear_2[1]])
 
-            # for Gears in Gears3D_Rotate:
-            #     for element in Gears:
-            #         for point in element.points:
-            #             x2.append(point.vector[0])
-            #             y2.append(point.vector[1])
-            # plt.plot(x2,y2)
 
 
+           
+
+
+
+           
+            
+            
+            
+            
             L = []
             L_vector = []
             i=0
@@ -2008,17 +2121,63 @@ class MeshCombination(DessiaObject):
 
             # L2=set(L2)
             C2 = vm.wires.ClosedPolygon2D(L2, {})
+            
+            
+            
+           
+           
+            circle_DF=vm.wires.Circle2D(center=vect_position_1,radius=self.DF[0][eng1]/2)
+            
+            circle_SAP_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.SAP_diameter[0][eng1]/2)
+            
+            
+            
+            
+            
+            
+           
+            
+            
+            
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.GREEN)
+            circle_DF_plot_data=circle_DF.plot_data( edge_style=edge_style)
+            
+            text_style=vmp.TextStyle(text_color= vmp.colors.GREEN,text_align_x='center',font_size=0.7)
+            text_DF=vmp.Text(comment='DF',position_x=0,position_y=self.DF[0][eng1]/2,text_style=text_style)
+            
+            
+            
+            
+            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ROSE)
+            circle_SAP_diameter_plot_data=circle_SAP_diameter.plot_data(edge_style=edge_style)
+            
+           
+            
+            text_style=vmp.TextStyle(text_color= vmp.colors.ROSE,text_align_x='center',font_size=0.7)
+            text_SAP_diameter=vmp.Text(comment='SAP_diameter',position_x=0,
+                                        position_y=self.SAP_diameter[0][eng1]/2,text_style=text_style,text_scaling=True)
         
             surface_style=vmp.SurfaceStyle(color_fill=vmp.colors.WHITE)
             edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLACK)
             C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
             C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
-            plot_datas.extend([C1_plot_data,C2_plot_data])
+            plot_datas.extend([circle_DF_plot_data,circle_SAP_diameter_plot_data,C1_plot_data,C2_plot_data,text_SAP_diameter,text_DF])
         return [vmp.PrimitiveGroup(primitives= plot_datas)]
     
     
-    def plot_data_2(self,centers={}, axis=(1, 0, 0), name=''):
+   
+            
         
+    def volmdlr_primitives(self, centers={}, axis=(1, 0, 0), name=''):
+        """ Generation of the 3D volume for all the gear mesh
+
+        :param center: list of tuple define the final position of the gear mesh center (a translation is perform, then a rotation around this axis)
+        :param axis: direction of gear mesh rotation
+
+        :results: list of 3D volmdlr component
+        """
+        primitives=[]
+        print(centers)
         x = vm.Vector3D(axis[0],axis[1],axis[2])
         # y = x.RandomUnitNormalVector()
         # y= vm.Vector3D((0,1,0))
@@ -2052,265 +2211,33 @@ class MeshCombination(DessiaObject):
 
             position1 = centers[eng1]
             position2 = centers[eng2]
-
+            if set_pos_dfs == 0:
+                Gears3D[eng1] = self.meshes_dico[eng1].contour(3)
+            
+            Gears3D[eng2] = self.meshes_dico[eng2].contour(3)
+            
             if (eng1, eng2) in self.connections:
                 set_pos = self.connections.index((eng1, eng2))
-                list_rot = self.initial_position(set_pos, (eng1, eng2))
+                rot_gear_2= self.initial_position([position1,position2], (eng1, eng2))
 
             elif (eng2, eng1) in self.connections:
                 set_pos = self.connections.index((eng2, eng1))
-                list_rot = self.initial_position(set_pos, (eng2, eng1))
+                rot_gear_2= self.initial_position([position2,position1], (eng2, eng1))
             Rotation[set_pos] = {}
-            if set_pos_dfs == 0:
-                Gears3D[eng1] = self.meshes_dico[eng1].contour(3)
             Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1]/2.))
-            Gears3D[eng2] = self.meshes_dico[eng2].contour(3)
             Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2]/2.))
 
-            if position2[1] == position1[1]:
-                if position2[2]-position1[2] > 0:
-                    angle0 = math.pi/2.
-                else:
-                    angle0 = -math.pi/2.
+           
 
-            else:
-                angle0 = -math.atan((position2[2]-position1[2])/(position2[1]-position1[1]))
-                if (position2[2]-position1[2]) < 0:
-                    angle0 = angle0+math.pi
-            if set_pos_dfs == 0:
-                Rotation[set_pos][eng1] = list_rot[0]+angle0
-                Rotation[set_pos][eng2] = list_rot[1]+angle0
-
-            else:
-                for k1, rot in Rotation.items():
-                    if eng1 in rot.keys():
-                        Rotation[set_pos][eng1] = rot[eng1]
-                        delta_rot = Rotation[set_pos][eng1]-(list_rot[0]-angle0)
-                Rotation[set_pos][eng2] = list_rot[1]-angle0-delta_rot*((self.meshes_dico[eng1].z)/(self.meshes_dico[eng2].z))
-
+            
+       
+            
             vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
             vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
-            Gears3D_Rotate = self.gear_rotate_2([Gears3D[eng1],Gears3D[eng2]],
+            Gears3D_Rotate = self.gear_rotate_2([eng1, eng2],
+                                                [Gears3D[eng1],Gears3D[eng2]],
                                                 [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
-                                                list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
-
-            print(vect_position_1)
-            print(vect_position_2)
-
-            
-
-            # for Gears in Gears3D_Rotate:
-            #     for element in Gears:
-            #         for point in element.points:
-            #             x2.append(point.vector[0])
-            #             y2.append(point.vector[1])
-            # plt.plot(x2,y2)
-
-
-            L = []
-            L_vector = []
-            i=0
-            for element in Gears3D_Rotate[0]:
-                    for point in element.points:
-                        if not point in L_vector:
-                            # if i==100:
-                                L_vector.append(point)
-                                L.append(point)
-                            #     i=0
-                            # else:
-                            #     i+=1
-                           
-                        # else:
-                        #     # print(point.vector)
-                        # print(point)
-            # L.append(L[0])
-
-            C1 = vm.wires.ClosedPolygon2D(L,{})
-            # vmp.plot([C1.plot_data('contour')])
-            L2 = []
-            L2_vector = []
-            i=0
-            for element in Gears3D_Rotate[1]:
-                    for point in element.points:
-                        if not point in L2_vector:
-                            # if i==100:
-                                L2_vector.append(point)
-                                L2.append(point)
-                                i=0
-                            # else:
-                            #     i+=1
-                              
-            # L2.append(L2[0])
-            C2 = vm.wires.ClosedPolygon2D(L2, {})
-            # L2=set(L2)
-            surface_style=vmp.SurfaceStyle(color_fill=None,opacity=0)
-            
-            circle_db=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].db/2)
-            circle_dff=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].dff/2)
-            circle_DF=vm.wires.Circle2D(center=vect_position_1,radius=self.DF[0][eng1]/2)
-            circle_root_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].root_diameter/2)
-            circle_outside_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].outside_diameter/2)
-            circle_root_diameter_active=vm.wires.Circle2D(center=vect_position_1,radius=self.meshes[eng1].root_diameter_active/2)
-            circle_SAP_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.SAP_diameter[0][eng1]/2)
-            circle_SAP_diameter_2=vm.wires.Circle2D(center=vect_position_2,radius=self.SAP_diameter[0][eng2]/2)
-            print(2589)
-            print(self.SAP_diameter[0][eng1])
-            
-            
-            
-            
-            
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLUE)
-            circle_db_plot_data=circle_db.plot_data(edge_style=edge_style)
-            
-            text_style=vmp.TextStyle(text_color= vmp.colors.BLUE,text_align_x='center',font_size=0.7)
-            text_db=vmp.Text(comment='db',position_x=0,position_y=self.meshes[eng1].db/2,text_style=text_style,text_scaling=True)
-            
-            
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.RED)
-            circle_dff_plot_data=circle_dff.plot_data( edge_style=edge_style)
-            
-            text_style=vmp.TextStyle(text_color= vmp.colors.RED,text_align_x='center',font_size=0.7)
-            text_dff=vmp.Text(comment='dff',position_x=0,position_y=self.meshes[eng1].dff/2,text_style=text_style,text_scaling=True)
-            
-            
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.GREEN)
-            circle_DF_plot_data=circle_DF.plot_data( edge_style=edge_style)
-            
-            text_style=vmp.TextStyle(text_color= vmp.colors.GREEN,text_align_x='center',font_size=0.7)
-            text_DF=vmp.Text(comment='DF',position_x=0,position_y=self.DF[0][eng1]/2,text_style=text_style)
-            
-            
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.CYAN)
-            circle_root_diameter_plot_data=circle_root_diameter.plot_data( edge_style=edge_style)
-            
-            text_style=vmp.TextStyle(text_color= vmp.colors.CYAN,text_align_x='center',font_size=0.7)
-            text_root_diameter=vmp.Text(comment='root_diameter',position_x=0,
-                                        position_y=self.meshes[eng1].root_diameter/2,text_style=text_style,text_scaling=True)
-            
-            
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.VIOLET)
-            circle_outside_diameter_plot_data=circle_outside_diameter.plot_data(edge_style=edge_style)
-            
-            text_style=vmp.TextStyle(text_color= vmp.colors.VIOLET,text_align_x='center',font_size=0.7)
-            text_outside_diameter=vmp.Text(comment='outside_diameter',position_x=0,
-                                        position_y=self.meshes[eng1].outside_diameter/2,text_style=text_style,text_scaling=True)
-            
-            
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ORANGE)
-            circle_root_diameter_active_plot_data=circle_root_diameter_active.plot_data(edge_style=edge_style)
-            
-            text_style=vmp.TextStyle(text_color= vmp.colors.ORANGE,text_align_x='center',font_size=0.7)
-            text_root_diameter_active=vmp.Text(comment='root_diameter_active',position_x=0,
-                                        position_y=self.meshes[eng1].root_diameter_active/2,text_style=text_style,text_scaling=True)
-            
-            
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ROSE)
-            circle_SAP_diameter_plot_data=circle_SAP_diameter.plot_data(edge_style=edge_style)
-            
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ROSE)
-            circle_SAP_diameter_2_plot_data=circle_SAP_diameter_2.plot_data(edge_style=edge_style)
-            
-            text_style=vmp.TextStyle(text_color= vmp.colors.ROSE,text_align_x='center',font_size=0.7)
-            text_SAP_diameter=vmp.Text(comment='SAP_diameter',position_x=0,
-                                        position_y=self.SAP_diameter[0][eng1]/2,text_style=text_style,text_scaling=True)
-            
-            
-            
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLACK)
-            C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
-            C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
-            plot_datas.extend([circle_outside_diameter_plot_data,circle_DF_plot_data,circle_dff_plot_data,
-                                circle_SAP_diameter_plot_data,circle_root_diameter_active_plot_data,circle_db_plot_data,
-                                C1_plot_data,C2_plot_data,circle_root_diameter_plot_data,text_db,text_dff,text_DF,
-                                text_root_diameter,text_root_diameter_active,text_outside_diameter,text_SAP_diameter])
-        return vmp.PrimitiveGroup(primitives= plot_datas)
-            
-        
-    def volmdlr_primitives(self, centers={}, axis=(1, 0, 0), name=''):
-        """ Generation of the 3D volume for all the gear mesh
-
-        :param center: list of tuple define the final position of the gear mesh center (a translation is perform, then a rotation around this axis)
-        :param axis: direction of gear mesh rotation
-
-        :results: list of 3D volmdlr component
-        """
-        x = vm.Vector3D(axis[0],axis[1],axis[2])
-        # y = x.RandomUnitNormalVector()
-        # y= vm.Vector3D((0,1,0))
-        y = x.deterministic_unit_normal_vector()
-
-        z = x.cross(y)
-        if len(centers) == 0:
-            centers = {}
-            center_var = self.pos_axis({self.list_gear[0]:[0, 0]})
-
-            for engr_num in center_var.keys():
-                centers[engr_num]=[0, center_var[engr_num][0], center_var[engr_num][1]]
-        else:
-            center_var = {}
-            for engr_num in centers.keys():
-
-                center_var[engr_num] = npy.dot(centers[engr_num],(x[0],x[1],x[2]))*x+npy.dot(centers[engr_num],(y[0],y[1],y[2]))*y+npy.dot(centers[engr_num],(z[0],z[1],z[2]))*z
-                center_var[engr_num] = (center_var[engr_num][0],center_var[engr_num][1],center_var[engr_num][2])
-            centers = center_var
-
-
-
-        Gears3D = {}
-        Struct = []
-        Rotation = {}
-        primitives = []
-        # plt.figure()
-        # plt.axis('equal')
-
-        for set_pos_dfs, (eng1, eng2) in enumerate(self.connections_dfs):
-
-            position1 = centers[eng1]
-            position2 = centers[eng2]
-
-            if (eng1, eng2) in self.connections:
-                set_pos = self.connections.index((eng1, eng2))
-                list_rot = self.initial_position(set_pos, (eng1, eng2))
-
-            elif (eng2, eng1) in self.connections:
-                set_pos = self.connections.index((eng2, eng1))
-                list_rot = self.initial_position(set_pos, (eng2, eng1))
-            Rotation[set_pos] = {}
-            if set_pos_dfs == 0:
-                Gears3D[eng1] = self.meshes_dico[eng1].contour(3)
-            Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1]/2.))
-            Gears3D[eng2] = self.meshes_dico[eng2].contour(3)
-            Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2]/2.))
-
-            if position2[1] == position1[1]:
-                if position2[2]-position1[2] > 0:
-                    angle0 = math.pi/2.
-                else:
-                    angle0 = -math.pi/2.
-
-            else:
-                angle0 = -math.atan((position2[2]-position1[2])/(position2[1]-position1[1]))
-                if (position2[2]-position1[2]) < 0:
-                    angle0 = angle0+math.pi
-            if set_pos_dfs == 0:
-                Rotation[set_pos][eng1] = list_rot[0]+angle0
-                Rotation[set_pos][eng2] = list_rot[1]+angle0
-
-            else:
-                for k1, rot in Rotation.items():
-                    if eng1 in rot.keys():
-                        Rotation[set_pos][eng1] = rot[eng1]
-                        delta_rot = Rotation[set_pos][eng1]-(list_rot[0]-angle0)
-                Rotation[set_pos][eng2] = list_rot[1]-angle0-delta_rot*((self.meshes_dico[eng1].z)/(self.meshes_dico[eng2].z))
-
-            vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
-            vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
-            Gears3D_Rotate = self.gear_rotate_2([Gears3D[eng1],Gears3D[eng2]],
-                                                [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
-                                                list_rot=[Rotation[set_pos][eng1],Rotation[set_pos][eng2]])
-
-
+                                                list_rot=[rot_gear_2[0],rot_gear_2[1]])
 
             
 

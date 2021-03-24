@@ -506,7 +506,7 @@ class ContinuousMeshesAssemblyOptimizer:
         _ = self.mesh_assembly.update_helix_angle(optimizer_data)
         return optimizer_data
 
-    def Fineq(self,X,constraint_root_diameter,CA_min):
+    def Fineq(self,X,constraints_root_diameter,list_CA_min,constraints_SAP_diameter,distances_SAP_root_diameter_active_min):
 
         _ = self.update(X)
         ineq=[]
@@ -535,59 +535,80 @@ class ContinuousMeshesAssemblyOptimizer:
                 
                 dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
                 dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
-                SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][engr1]
-                SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][engr2]
-                ineq.append((SAP1-dia1-0.00028)*100)
-                ineq.append((SAP2-dia2-0.00028)*100)
+                dia1_root=mesh_assembly_iter.meshes_dico[engr1].root_diameter
+                dia2_root=mesh_assembly_iter.meshes_dico[engr2].root_diameter
                 
-                if CA_min:
-                    Ca_min=0.2*mesh_assembly_iter.meshes_dico[engr1].rack.module
-                else:
-                    Ca_min=0
+                Z1=self.Z[engr1]
+                Z2=self.Z[engr2]
+            
+                
+                d_sap_root=0
+                if distances_SAP_root_diameter_active_min:
+                    if distances_SAP_root_diameter_active_min[num_mesh]:
+                        d_sap_root=distances_SAP_root_diameter_active_min[num_mesh]
+              
+                if constraints_SAP_diameter:
+                    if constraints_SAP_diameter[num_mesh]:
+                        
+     
+                        SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][engr1]
+                        SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][engr2]
+                        
+                        if Z1<0:
+                            ineq.append((-SAP1+dia1-d_sap_root)*100)
+                        else:
+                            ineq.append((SAP1-dia1-d_sap_root)*100)
+                        if Z2<0:
+                            ineq.append((-SAP2+dia2-d_sap_root)*100)
+                        else:
+                            ineq.append((SAP2-dia2-d_sap_root)*100)
+                        
+                Ca_min=0
+                
+                if list_CA_min:
+                    if list_CA_min[num_mesh]:
+                        Ca_min=list_CA_min[num_mesh]*mesh_assembly_iter.meshes_dico[engr1].rack.module
+             
                 
                 de1=mesh_assembly_iter.meshes_dico[engr1].outside_diameter
                 de2=mesh_assembly_iter.meshes_dico[engr2].outside_diameter
                 cd=mesh_assembly_iter.center_distance[num_mesh]
-                Z1=self.Z[engr1]
-                Z2=self.Z[engr2]
+                
                 if Z2<0:
                     ineq.append(cd- 0.5*(de1-dia2))
                     ineq.append(cd- 0.5*(-de2+dia1))
                     
-                    if constraint_root_diameter:
+                    if constraints_root_diameter:
                     
-                        if constraint_root_diameter[num_mesh]:
+                        if constraints_root_diameter[num_mesh]:
                             
-                            dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter
-                            dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter
                             
-                            ineq.append((cd- 0.5*(de1-dia2)-Ca_min))
-                            ineq.append((cd- 0.5*(-de2+dia1)-Ca_min))
+                            
+                            ineq.append((cd- 0.5*(de1-dia2_root)-Ca_min))
+                            ineq.append((cd- 0.5*(-de2+dia1_root)-Ca_min))
                     
                     
                 elif Z1<0:
                     ineq.append(cd- 0.5*(-de1+dia2))
                     ineq.append(cd- 0.5*(de2-dia1))
                         
-                    if constraint_root_diameter:
+                    if constraints_root_diameter:
                     
-                        if constraint_root_diameter[num_mesh]:
+                        if constraints_root_diameter[num_mesh]:
                             
-                            dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter
-                            dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter
                             
-                            ineq.append((cd- 0.5*(-de1+dia2)-Ca_min))
-                            ineq.append((cd- 0.5*(de2-dia1)-Ca_min))
+                            
+                            ineq.append((cd- 0.5*(-de1+dia2_root)-Ca_min))
+                            ineq.append((cd- 0.5*(de2-dia1_root)-Ca_min))
                 else:
                     ineq.append((cd- 0.5*(de1+dia2))+0.001)
                     ineq.append((cd- 0.5*(de2+dia1))+0.001)
                     
-                    if constraint_root_diameter:
+                    if constraints_root_diameter:
                     
-                        if constraint_root_diameter[num_mesh]:
+                        if constraints_root_diameter[num_mesh]:
                             
-                            dia1_root=mesh_assembly_iter.meshes_dico[engr1].root_diameter
-                            dia2_root=mesh_assembly_iter.meshes_dico[engr2].root_diameter
+                            
                             
                             ineq.append((cd- 0.5*(de1+dia2_root)-Ca_min))
                             ineq.append((cd- 0.5*(de2+dia1_root)-Ca_min))
@@ -612,7 +633,7 @@ class ContinuousMeshesAssemblyOptimizer:
        
                
         return ineq
-    def Fineq_without_constraint_ratio_contact(self,X,constraint_root_diameter,CA_min):
+    def Fineq_constraint(self,X):
 
         _ = self.update(X)
         ineq=[]
@@ -625,31 +646,9 @@ class ContinuousMeshesAssemblyOptimizer:
             #geometric constraint
             for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
                 
-
-                dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
-                dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
-                    
-              
-                Ca_min=0
                 
                 
                 
-                
-               
-                # de1=mesh_assembly_iter.meshes_dico[engr1].outside_diameter
-                # de2=mesh_assembly_iter.meshes_dico[engr2].outside_diameter
-                # cd=mesh_assembly_iter.center_distance[num_mesh]
-                # Z1=self.Z[engr1]
-                # Z2=self.Z[engr2]
-                # if Z2<0:
-                #     ineq.append(cd- 0.5*(de1-dia2)-Ca_min)
-                #     ineq.append(cd- 0.5*(-de2+dia1)-Ca_min)
-                # elif Z1<0:
-                #     ineq.append(cd- 0.5*(-de1+dia2)-Ca_min)
-                #     ineq.append(cd- 0.5*(de2-dia1)-Ca_min)
-                # else:
-                #     ineq.append(cd- 0.5*(de1+dia2)-Ca_min)
-                #     ineq.append(cd- 0.5*(de2+dia1)-Ca_min)
                 
                 oaa1=mesh_assembly_iter.meshes_dico[engr1].outside_active_angle
                 oaa2=mesh_assembly_iter.meshes_dico[engr2].outside_active_angle
@@ -688,9 +687,13 @@ class ContinuousMeshesAssemblyOptimizer:
      
         return ineq
 
-    def Objective(self,X,constraint_root_diameter,CA_min):
+    def Objective(self,X,constraints_root_diameter,list_CA_min,
+                  constraints_SAP_diameter,
+                  distances_SAP_root_diameter_active_min):
         _ = self.update(X)
-        fineq=self.Fineq(X,constraint_root_diameter,CA_min)
+        fineq=self.Fineq(X,constraints_root_diameter,list_CA_min,
+                         constraints_SAP_diameter,
+                         distances_SAP_root_diameter_active_min)
         obj=0
         
         for num_mesh,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
@@ -751,7 +754,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 obj+=abs(mesh_combination.axial_load[key]*5e-5)
        
         return obj
-    def Optimize(self, verbose = False,constraint_ratio_contact=True,constraint_root_diameter=None,CA_min=None):
+    def Optimize(self, verbose = False,constraints_root_diameter=None,list_CA_min=None,constraints_SAP_diameter=None,distances_SAP_root_diameter_active_min=None):
         """ Optimizer function
 
         >>> cmao1.Optimize(verbose = True)
@@ -768,10 +771,9 @@ class ContinuousMeshesAssemblyOptimizer:
         while i < max_iter and arret == 0:
             X0 = self.CondInit()
             _ = self.update(X0)
-            if constraint_ratio_contact:
-                cons = {'type': 'ineq','fun' : self.Fineq_without_constraint_ratio_contact,'args':(constraint_root_diameter,CA_min)}
-            else:
-                cons = {'type': 'ineq','fun' : self.Fineq_without_constraint_ratio_contact,'args':(constraint_root_diameter,CA_min)}
+          
+            cons = {'type': 'ineq','fun' : self.Fineq_constraint}
+            
             
            
             min_x = []
@@ -788,47 +790,17 @@ class ContinuousMeshesAssemblyOptimizer:
            
             
             try:
-                print('erty')
-                print(self.Bounds)
+            
             
                                                                                                                                            
-                cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons,args=(constraint_root_diameter,CA_min))
-                print(cx.x)
+                cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons,
+                              args=(constraints_root_diameter,list_CA_min,constraints_SAP_diameter,
+                                    distances_SAP_root_diameter_active_min))
+                
                 _ = self.update(cx.x)
-                for num_mesh,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
-                    
-                    
-                    for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
-                        
-                        dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
-                        dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
-                            
-                        if CA_min:
-                            Ca_min=0.2*mesh_assembly_iter.meshes_dico[engr1].rack.module
-                        else:
-                            Ca_min=0
-                        
-                        de1=mesh_assembly_iter.meshes_dico[engr1].outside_diameter
-                        de2=mesh_assembly_iter.meshes_dico[engr2].outside_diameter
-                        cd=mesh_assembly_iter.center_distance[num_mesh]
-                        Z1=self.Z[engr1]
-                        Z2=self.Z[engr2]
-                        dia1_root=mesh_assembly_iter.meshes_dico[engr1].root_diameter
-                        dia2_root=mesh_assembly_iter.meshes_dico[engr2].root_diameter
-                        SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][engr1]
-                        SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][engr2]
-                        
-                        
-                        print((cd- 0.5*(de1+dia2_root)-Ca_min))
-                        print((cd- 0.5*(de2+dia1_root)-Ca_min))
-                        print(SAP1-dia1)
-                        print(SAP2-dia2)
-                        
-                        if (cd- 0.5*(de1+dia2_root)-Ca_min)<0 or (cd- 0.5*(de2+dia1_root)-Ca_min)<0 or SAP1-dia1<0.00028 or SAP2-dia2<0.00028:
-                            valid=False
+                
                        
-                print('fefe')
-                print(cx.fun)
+                
                 valid=True
                 for num_mesh,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
                     
@@ -837,44 +809,92 @@ class ContinuousMeshesAssemblyOptimizer:
                         
                         dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
                         dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
-                            
-                        if CA_min:
-                            Ca_min=0.2*mesh_assembly_iter.meshes_dico[engr1].rack.module
-                        else:
-                            Ca_min=0
+                        dia1_root=mesh_assembly_iter.meshes_dico[engr1].root_diameter
+                        dia2_root=mesh_assembly_iter.meshes_dico[engr2].root_diameter
+                        
+                        Z1=self.Z[engr1]
+                        Z2=self.Z[engr2]
+                    
+                        
+                        d_sap_root=0
+                        if distances_SAP_root_diameter_active_min:
+                            if distances_SAP_root_diameter_active_min[num_mesh]:
+                                d_sap_root=distances_SAP_root_diameter_active_min[num_mesh]
+                      
+                        if constraints_SAP_diameter:
+                            if constraints_SAP_diameter[num_mesh]:
+                                
+             
+                                SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][engr1]
+                                SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][engr2]
+                                
+                                if Z1<0:
+                                    if (-SAP1+dia1-d_sap_root)<0:
+                                        valid=False
+                                else:
+                                    if (SAP1-dia1-d_sap_root)<0:
+                                        valid=False
+                                if Z2<0:
+                                    if (-SAP2+dia2-d_sap_root)<0:
+                                        valid=False
+                                else:
+                                    if (SAP2-dia2-d_sap_root)<0:
+                                        valid=False
+                                
+                        Ca_min=0
+                        
+                        if list_CA_min:
+                            if list_CA_min[num_mesh]:
+                                Ca_min=list_CA_min[num_mesh]*mesh_assembly_iter.meshes_dico[engr1].rack.module
+                     
                         
                         de1=mesh_assembly_iter.meshes_dico[engr1].outside_diameter
                         de2=mesh_assembly_iter.meshes_dico[engr2].outside_diameter
                         cd=mesh_assembly_iter.center_distance[num_mesh]
-                        Z1=self.Z[engr1]
-                        Z2=self.Z[engr2]
-                        dia1_root=mesh_assembly_iter.meshes_dico[engr1].root_diameter
-                        dia2_root=mesh_assembly_iter.meshes_dico[engr2].root_diameter
                         
-                        SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][engr1]
-                        SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][engr2]
+                        if Z2<0:
+                    
+                            
+                            if constraints_root_diameter:
+                            
+                                if constraints_root_diameter[num_mesh]:
+                                    
+                                    
+                                    
+                                    if (cd- 0.5*(de1-dia2_root)-Ca_min)<0 or (cd- 0.5*(-de2+dia1_root)-Ca_min)<0:
+                                        valid=False
+                            
+                            
+                        elif Z1<0:
+                            
+                                
+                            if constraints_root_diameter:
+                            
+                                if constraints_root_diameter[num_mesh]:
+                                    
+                                    
+                                    
+                                    if (cd- 0.5*(-de1+dia2_root)-Ca_min)<0 or (cd- 0.5*(de2-dia1_root)-Ca_min)<0:
+                                        valid=False
+                        else:
+
+                            
+                            if constraints_root_diameter:
+                            
+                                if constraints_root_diameter[num_mesh]:
+                                    
+                                    
+                                    
+                                    if (cd- 0.5*(de1+dia2_root)-Ca_min)<0 or (cd- 0.5*(de2+dia1_root)-Ca_min)<0:
+                                        valid=False
                         
                         
-                        print((cd- 0.5*(de1+dia2_root)-Ca_min))
-                        print((cd- 0.5*(de2+dia1_root)-Ca_min))
-                        print(SAP1-dia1)
-                        print(SAP2-dia2)
-                        print(mesh_assembly_iter.meshes_dico[engr1].db)
-                        print(mesh_assembly_iter.meshes_dico[engr2].db)
-                        print(SAP1)
-                        print(SAP2)
-                        print(dia1)
-                        print(dia2)
                        
-                        print(mesh_assembly_iter.meshes[0].rack.a)
-                        print(mesh_assembly_iter.meshes[0].rack.b)
-                        print(cx.x)
                         
                        
                         
-                        if (cd- 0.5*(de1+dia2_root)-Ca_min)<0 or (cd- 0.5*(de2+dia1_root)-Ca_min)<0 or SAP1-dia1<0.00028 or SAP2-dia2<0.00028:
-                            valid=False
-                        print(valid)
+
+                        
             except ValidGearDiameterError:
             
                 i += 1
@@ -886,13 +906,13 @@ class ContinuousMeshesAssemblyOptimizer:
             #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
             #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
 
-            print(min(self.Fineq(Xsol,constraint_root_diameter,CA_min)))
-            print(self.Fineq(Xsol,constraint_root_diameter,CA_min))
-            if min(self.Fineq(Xsol,constraint_root_diameter,CA_min)) > -1e-3: #TODO
-                print(valid)
+            
+            if min(self.Fineq(Xsol,constraints_root_diameter, list_CA_min,
+                              constraints_SAP_diameter, distances_SAP_root_diameter_active_min)) > -1e-3: #TODO
+               
                 if valid:
                     input_dat = dict(list(output_x.items())+list(self.general_data.items()))
-                    print(input_dat)
+                    
                     
                 # print('velid')
                 # for num_engr,list_cd in enumerate(self.center_distances):
@@ -926,47 +946,7 @@ class ContinuousMeshesAssemblyOptimizer:
             
             self.solutions.append(MeshAssembly.create(**input_dat))
             
-            for num_mesh,mesh_assembly_iter in enumerate(self.solutions[-1].mesh_combinations):
-                    
-                    
-                    for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
-                        
-                        dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
-                        dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
-                            
-                        if CA_min:
-                            Ca_min=0.2*mesh_assembly_iter.meshes_dico[engr1].rack.module
-                        else:
-                            Ca_min=0
-                        
-                        de1=mesh_assembly_iter.meshes_dico[engr1].outside_diameter
-                        de2=mesh_assembly_iter.meshes_dico[engr2].outside_diameter
-                        cd=mesh_assembly_iter.center_distance[num_mesh]
-                        Z1=self.Z[engr1]
-                        Z2=self.Z[engr2]
-                        dia1_root=mesh_assembly_iter.meshes_dico[engr1].root_diameter
-                        dia2_root=mesh_assembly_iter.meshes_dico[engr2].root_diameter
-                        
-                        SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][engr1]
-                        SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][engr2]
-                        
-                        print(588888)
-                        print((cd- 0.5*(de1+dia2_root)-Ca_min))
-                        print((cd- 0.5*(de2+dia1_root)-Ca_min))
-                        print(SAP1-dia1)
-                        print(SAP2-dia2)
-                        print(mesh_assembly_iter.meshes_dico[engr1].db)
-                        print(mesh_assembly_iter.meshes_dico[engr2].db)
-                        print(SAP1)
-                        print(SAP2)
-                        print(dia1)
-                        print(dia2)
-                        
-                        print(mesh_assembly_iter.meshes[0].rack.a)
-                        print(mesh_assembly_iter.meshes[0].rack.a)
-                       
-            print(self.solutions)
-            # print(self.solutions)
+           
             
             
       
@@ -1387,7 +1367,7 @@ class MeshAssemblyOptimizer:
         return plex_calcul
 
 
-    def Optimize(self,nb_sol=1, list_sol=None, verbose=False,constraint_ratio_contact=True):
+    def Optimize(self,nb_sol=1, list_sol=None, verbose=False):
         """ Gear mesh assembly optimization for given plex configuration
 
         :param nb_sol: number of solution desired, if list_sol = None we take nb_sol = len(plex) the optimize function analyse all the plex possibility
@@ -1449,7 +1429,9 @@ class MeshAssemblyOptimizer:
                         print('Convergence problem')
                     continue
                 try:
-                    ga.Optimize(verbose,constraint_ratio_contact,self.constraint_root_diameter,self.CA_min)
+                    ga.Optimize(verbose, self.constraints_root_diameter, self.list_CA_min,
+                                self.constraints_SAP_diameter,
+                                self.distances_SAP_root_diameter_active_min)
                 except ValueError:
                    
                     if verbose:
