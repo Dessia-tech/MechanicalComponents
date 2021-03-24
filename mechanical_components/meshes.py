@@ -983,14 +983,14 @@ class Mesh(DessiaObject):
         edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLUE)
         circle_db_plot_data=circle_db.plot_data(edge_style=edge_style)
         
-        text_style=vmp.TextStyle(text_color= vmp.colors.BLUE,text_align_x='center',font_size=0.7)
+        text_style=vmp.TextStyle(text_color= vmp.colors.BLUE,text_align_x='center',font_size=1)
         text_db=vmp.Text(comment='db',position_x=0,position_y=self.db/2,text_style=text_style,text_scaling=True)
         
         
         edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.RED)
         circle_dff_plot_data=circle_dff.plot_data( edge_style=edge_style)
         
-        text_style=vmp.TextStyle(text_color= vmp.colors.RED,text_align_x='center',font_size=0.7)
+        text_style=vmp.TextStyle(text_color= vmp.colors.RED,text_align_x='center',font_size=1)
         text_dff=vmp.Text(comment='dff',position_x=0,position_y=self.dff/2,text_style=text_style,text_scaling=True)
         
         
@@ -999,7 +999,7 @@ class Mesh(DessiaObject):
         edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.CYAN)
         circle_root_diameter_plot_data=circle_root_diameter.plot_data( edge_style=edge_style)
         
-        text_style=vmp.TextStyle(text_color= vmp.colors.CYAN,text_align_x='center',font_size=0.7)
+        text_style=vmp.TextStyle(text_color= vmp.colors.CYAN,text_align_x='center',font_size=1)
         text_root_diameter=vmp.Text(comment='root_diameter',position_x=0,
                                     position_y=self.root_diameter/2,text_style=text_style,text_scaling=True)
         
@@ -1007,7 +1007,7 @@ class Mesh(DessiaObject):
         edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.VIOLET)
         circle_outside_diameter_plot_data=circle_outside_diameter.plot_data(edge_style=edge_style)
         
-        text_style=vmp.TextStyle(text_color= vmp.colors.VIOLET,text_align_x='center',font_size=0.7)
+        text_style=vmp.TextStyle(text_color= vmp.colors.VIOLET,text_align_x='center',font_size=1)
         text_outside_diameter=vmp.Text(comment='outside_diameter',position_x=0,
                                     position_y=self.outside_diameter/2,text_style=text_style,text_scaling=True)
         
@@ -1015,7 +1015,7 @@ class Mesh(DessiaObject):
         edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ORANGE)
         circle_root_diameter_active_plot_data=circle_root_diameter_active.plot_data(edge_style=edge_style)
         
-        text_style=vmp.TextStyle(text_color= vmp.colors.ORANGE,text_align_x='center',font_size=0.7)
+        text_style=vmp.TextStyle(text_color= vmp.colors.ORANGE,text_align_x='center',font_size=1)
         text_root_diameter_active=vmp.Text(comment='root_diameter_active',position_x=0,
                                     position_y=self.root_diameter_active/2,text_style=text_style,text_scaling=True)
         
