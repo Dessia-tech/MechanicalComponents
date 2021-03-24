@@ -95,51 +95,58 @@ class RollerChain(dc.DessiaObject):
             u2.normalize()
             v1 = frame.w.cross(u1)
             v2 = frame.w.cross(u2)
+            
             pin1 = p3d.Cylinder(point1_3d, frame.w, 0.5*self.pin_diameter,
                                 self.pin_length,
                                 name='pin 1')
             pin2 = p3d.Cylinder(point2_3d, frame.w,
                                 0.5*self.pin_diameter, self.pin_length,
                                 name='pin 2')
-            roller1 = p3d.HollowCylinder(point1_3d, frame.w,
-                                          0.5*self.bushing_diameter,
-                                          0.5*self.roller_diameter,
-                                          self.roller_width, name='roller 1')
-            roller2 = p3d.HollowCylinder(point2_3d, frame.w,
-                                          0.5*self.bushing_diameter,
-                                          0.5*self.roller_diameter,
-                                          self.roller_width, name='roller 2')
-            outer_plate1 = p3d.ExtrudedProfile(point1_3d+(0.5*self.pin_length-self.slack)*frame.w,
-                                                u1, v1,
-                                                outer_plate_outer_contour,
-                                                plate_inner_contours,
-                                                -self.outer_plate_width*frame.w,
-                                                name='outer plate 1')
-            outer_plate2 = p3d.ExtrudedProfile(point1_3d-(0.5*self.pin_length-self.slack)*frame.w,
-                                                u1, v1,
-                                                outer_plate_outer_contour,
-                                                plate_inner_contours,
-                                                self.outer_plate_width*frame.w,
-                                                name='outer plate 2')
-            inner_plate1_position = (point2_3d
-                                      + (0.5 * (self.roller_width)) * frame.w
-                                      )
-            inner_plate1 = p3d.ExtrudedProfile(inner_plate1_position, u2, v2,
-                                                inner_plate_outer_contour,
-                                                plate_inner_contours,
-                                                self.inner_plate_width*frame.w,
-                                                name='inner plate 1')
-            inner_plate2_position = (point2_3d
-                                      - (0.5 * (self.roller_width)) * frame.w
-                                      )
-    
-            inner_plate2 = p3d.ExtrudedProfile(inner_plate2_position, u2, v2,
-                                                inner_plate_outer_contour,
-                                                plate_inner_contours,
-                                                -self.inner_plate_width*frame.w,
-                                                name='inner plate 2')
-            primitives += [outer_plate1, outer_plate2, inner_plate1, inner_plate2,
-                            pin1, pin2, roller1, roller2]
+            delta_w = -((self.number_rows)/2)*(self.pin_length-2*self.slack)*frame.w
+            primitives.extend([pin1, pin2])
+            for row_index in range(self.number_rows):
+                point1_row = point1_3d + row_index*delta_w
+                point2_row = point2_3d + row_index*delta_w
+                
+                roller1 = p3d.HollowCylinder(point1_row, frame.w,
+                                              0.5*self.bushing_diameter,
+                                              0.5*self.roller_diameter,
+                                              self.roller_width, name='roller 1')
+                roller2 = p3d.HollowCylinder(point2_row, frame.w,
+                                              0.5*self.bushing_diameter,
+                                              0.5*self.roller_diameter,
+                                              self.roller_width, name='roller 2')
+                outer_plate1 = p3d.ExtrudedProfile(point1_row+(0.5*self.pin_length-self.slack)*frame.w,
+                                                    u1, v1,
+                                                    outer_plate_outer_contour,
+                                                    plate_inner_contours,
+                                                    -self.outer_plate_width*frame.w,
+                                                    name='outer plate 1')
+                outer_plate2 = p3d.ExtrudedProfile(point1_row-(0.5*self.pin_length-self.slack)*frame.w,
+                                                    u1, v1,
+                                                    outer_plate_outer_contour,
+                                                    plate_inner_contours,
+                                                    self.outer_plate_width*frame.w,
+                                                    name='outer plate 2')
+                inner_plate1_position = (point2_row
+                                          + (0.5 * (self.roller_width)) * frame.w
+                                          )
+                inner_plate1 = p3d.ExtrudedProfile(inner_plate1_position, u2, v2,
+                                                    inner_plate_outer_contour,
+                                                    plate_inner_contours,
+                                                    self.inner_plate_width*frame.w,
+                                                    name='inner plate 1')
+                inner_plate2_position = (point2_row
+                                          - (0.5 * (self.roller_width)) * frame.w
+                                          )
+        
+                inner_plate2 = p3d.ExtrudedProfile(inner_plate2_position, u2, v2,
+                                                    inner_plate_outer_contour,
+                                                    plate_inner_contours,
+                                                    -self.inner_plate_width*frame.w,
+                                                    name='inner plate 2')
+                primitives += [outer_plate1, outer_plate2, inner_plate1, inner_plate2,
+                               roller1, roller2]
             # primitives += [pin1, pin2, roller1, ro, outer_plate1]
         return primitives
 
