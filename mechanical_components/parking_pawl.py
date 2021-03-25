@@ -60,7 +60,7 @@ class Wheel(dc.DessiaObject):
         self.action_line1 = vme.Line2D(self.contact_point1, action_point12)
 
         self.basis_circle = vmw.Circle2D(vm.O2D, 0.5 * self.basis_diameter)
-        self.side_tooth_radius = self.contact_diameter
+        self.side_tooth_radius = 4*self.contact_diameter
 
         side1_center = self.contact_point1 + self.side_tooth_radius * self.action_line1.unit_direction_vector()
         side1_circle = vmw.Circle2D(side1_center, self.side_tooth_radius)
@@ -136,22 +136,22 @@ class Wheel(dc.DessiaObject):
         corrected_upper_start = corrected_next_tooth_start.rotation(vm.O2D,
                                                                     -self.tooth_angle,
                                                                     )
-        # a = side1_circle.plot()
-        # # side2_circle.plot(ax=a, color='grey')
-        # self.action_line1.plot(ax=a, color='k')
-        # action_point12.plot(ax=a, color='grey')
-        # # self.action_line2.plot(ax=a, color='grey')
-        # arc_upper.plot(ax=a, color='r')
-        # arc_lower.plot(ax=a, color='b')
-        # self.contact_point1.plot(ax=a)
-        # self.contact_point2.plot(ax=a)
-        # corrected_next_tooth_start.plot(ax=a, color='grey')
-        # corrected_upper_start.plot(ax=a, color='g')
-        # corrected_upper_end.plot(ax=a, color='r')
-        # corrected_lower_start.plot(ax=a, color='r')
-        # corrected_lower_end.plot(ax=a, color='r')
-        # self.basis_circle.plot(ax=a, color='grey')
-        # a.set_aspect('equal')
+        a = side1_circle.plot()
+        # side2_circle.plot(ax=a, color='grey')
+        self.action_line1.plot(ax=a, color='k')
+        action_point12.plot(ax=a, color='grey')
+        # self.action_line2.plot(ax=a, color='grey')
+        arc_upper.plot(ax=a, color='r')
+        arc_lower.plot(ax=a, color='b')
+        self.contact_point1.plot(ax=a)
+        self.contact_point2.plot(ax=a)
+        corrected_next_tooth_start.plot(ax=a, color='grey')
+        corrected_upper_start.plot(ax=a, color='g')
+        corrected_upper_end.plot(ax=a, color='r')
+        corrected_lower_start.plot(ax=a, color='r')
+        corrected_lower_end.plot(ax=a, color='g')
+        self.basis_circle.plot(ax=a, color='grey')
+        a.set_aspect('equal')
 
         arc_upper = arc_upper.split(corrected_upper_start)[1]
         self.arc_upper = arc_upper.split(corrected_upper_end)[0]
@@ -204,7 +204,7 @@ class Pawl(dc.DessiaObject):
                  axis_inner_diameter:float, axis_outer_diameter:float,
                  finger_height:float,
                  # finger_angle:float,
-                 finger_width:float,
+                 finger_width_ratio:float,
                  slope_start_height:float, slope_length:float,
                  roller_rest_length:float,
                  slope_offset:float, slope_angle:float,
@@ -218,7 +218,7 @@ class Pawl(dc.DessiaObject):
 
         self.finger_height = finger_height
         # self.finger_angle = finger_angle
-        self.finger_width = finger_width
+        self.finger_width_ratio = finger_width_ratio
         self.slope_start_height = slope_start_height
         self.roller_rest_length=roller_rest_length
         self.slope_length = slope_length
@@ -230,7 +230,7 @@ class Pawl(dc.DessiaObject):
         self.pawl_spring_stiffness = pawl_spring_stiffness
         self.name = name
 
-        self.side_tooth_radius = self.contact_diameter
+        self.side_tooth_radius = 4*self.contact_diameter
 
 
         pa1 = self.axis_position + vm.Point2D(0., 0.5*self.axis_outer_diameter)
@@ -239,6 +239,8 @@ class Pawl(dc.DessiaObject):
         pa3.rotation(self.axis_position, math.radians(60), copy=False)
 
         self.axis_arc = vme.Arc2D(pa1, pa2, pa3)
+
+        self.finger_width = self.contact_diameter * finger_width_ratio
 
         contact_middle_point = vm.Point2D(0, 0.5*self.contact_diameter)
         self.contact_angle = math.asin(self.finger_width/self.contact_diameter)
@@ -264,11 +266,6 @@ class Pawl(dc.DessiaObject):
         upper_finger_line = vme.Line2D(vm.Point2D(0, 0.5*self.wheel_lower_tooth_diameter+self.finger_height),
                                        vm.Point2D(1, 0.5*self.wheel_lower_tooth_diameter+self.finger_height))
 
-        side1_start  = sorted(side1_circle.line_intersections(lower_finger_line), key=lambda p:p.x)[1]
-        side1_end  = sorted(side1_circle.line_intersections(upper_finger_line), key=lambda p:p.x)[1]
-
-        side2_end  = sorted(side2_circle.line_intersections(lower_finger_line), key=lambda p:p.x)[0]
-        side2_start  = sorted(side2_circle.line_intersections(upper_finger_line), key=lambda p:p.x)[0]
 
         # ax = side1_circle.plot(color='grey')
         # side2_circle.plot(ax=ax, color='grey')
@@ -276,6 +273,16 @@ class Pawl(dc.DessiaObject):
         # self.action_line2.plot(ax=ax, color='grey')
         # self.contact_point1.plot(ax=ax)
         # self.contact_point2.plot(ax=ax)
+        # lower_finger_line.plot(ax=ax)
+        # upper_finger_line.plot(ax=ax)
+        
+
+        side1_start  = sorted(side1_circle.line_intersections(lower_finger_line), key=lambda p:p.x)[1]
+        side1_end  = sorted(side1_circle.line_intersections(upper_finger_line), key=lambda p:p.x)[1]
+
+        side2_end  = sorted(side2_circle.line_intersections(lower_finger_line), key=lambda p:p.x)[0]
+        side2_start  = sorted(side2_circle.line_intersections(upper_finger_line), key=lambda p:p.x)[0]
+
         # side1_start.plot(ax=ax, color='r')
         # side1_end.plot(ax=ax, color='g')
         # side2_start.plot(ax=ax, color='g')
@@ -433,9 +440,9 @@ class RollerLockingMechanism(dc.DessiaObject):
 
         offset_profile = profile.offset(-0.5*self.roller_diameter)
 
-        ax = offset_profile.plot(color='grey')
-        profile.plot(ax=ax)
-        locking_mechanism_line.plot(ax=ax, color='grey')
+        # ax = offset_profile.plot(color='grey')
+        # profile.plot(ax=ax)
+        # locking_mechanism_line.plot(ax=ax, color='grey')
 
 
         points = []
@@ -451,8 +458,8 @@ class RollerLockingMechanism(dc.DessiaObject):
         contact_point = roller_center + 0.5*self.roller_diameter*contact_normal
 
 
-        contact_point.plot(ax=ax, color='r')
-        roller_center.plot(ax=ax, color='b')
+        # contact_point.plot(ax=ax, color='r')
+        # roller_center.plot(ax=ax, color='b')
 
         contact_line = vme.LineSegment2D(contact_point, contact_point)
 
@@ -527,7 +534,7 @@ class ParkingPawl(dc.DessiaObject):
                  pawl_offset:float,
                  axis_inner_diameter:float, axis_outer_diameter:float,
                  finger_height:float,
-                 finger_width:float,
+                 finger_overwidth:float,
                  roller_rest_length:float,
                  slope_start_height:float,
                  slope_length:float,
@@ -552,7 +559,7 @@ class ParkingPawl(dc.DessiaObject):
         self.axis_inner_diameter = axis_inner_diameter
         self.axis_outer_diameter = axis_outer_diameter
         self.finger_height = finger_height
-        self.finger_width = finger_width
+        self.finger_overwidth = finger_overwidth
         self.roller_rest_length = roller_rest_length
         self.slope_start_height = slope_start_height
         self.slope_length = slope_length
@@ -585,7 +592,7 @@ class ParkingPawl(dc.DessiaObject):
                          axis_outer_diameter=axis_outer_diameter,
                          finger_height=finger_height,
                          roller_rest_length=roller_rest_length,
-                         finger_width=finger_width,
+                         finger_width_ratio=finger_width_ratio,
                          slope_start_height=slope_start_height,
                          slope_length=slope_length,
                          slope_offset=slope_offset,
@@ -1009,12 +1016,28 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         self.optimization_bounds = optimization_bounds
         self.name = name
 
+        self.number_parameters = len(self.optimization_bounds)
+    
+    def scipy_bounds(self):
+        return [(b.min_value, b.max_value) for b in self.optimization_bounds]
+    
     def optimize_gradient(self):
-        x0 =
+        
+        x0 = npy.random.random(self.number_parameters)
+        bounds = self.scipy_bounds()
+        result = scipy.optimize.minimize(self.objective_from_dimensionless_vector,
+                                         x0, bounds=bounds)
 
-        model = self.instantiate_model(x)
+        attributes_values = self.vector_to_attributes_values(
+            self.dimensionless_vector_to_vector(result.x))
 
+        model = self.instantiate_model(attributes_values)
+        return model
+    
+    
     def instantiate_model(self, attributes_values):
+        print('attributes_values')
+        print(attributes_values)
         wheel_lower_tooth_diameter = attributes_values['wheel_lower_tooth_diameter']
         basis_diameter = wheel_lower_tooth_diameter + attributes_values['relative_basis_diameter']
         contact_diameter = basis_diameter + attributes_values['relative_contact_diameter']
@@ -1025,8 +1048,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
                                                    spring_active_length=self.locking_mechanism_travel
                                                   )
 
-        slope_angle = math.radians(45)
-        parking_pawl = ParkingPawl(wheel_inner_diameter=0.030,
+        parking_pawl = ParkingPawl(wheel_inner_diameter=0.5*wheel_lower_tooth_diameter,
                                    wheel_lower_tooth_diameter=wheel_lower_tooth_diameter,
                                    wheel_outer_diameter=wheel_outer_diameter,
                                    teeth_number=9,
@@ -1039,7 +1061,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
                                    axis_outer_diameter=0.030,
                                    finger_height=0.012,
                                    roller_rest_length=0.6 * locking_mechanism.roller_diameter,
-                                   finger_width=0.018,
+                                   finger_width_ratio=attributes_values['finger_width_ratio'],
                                    slope_start_height=0.015,
                                    slope_angle=attributes_values['slope_angle'],
                                    slope_offset=0.005,
@@ -1047,8 +1069,24 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
                                         attributes_values['slope_angle']),
                                    pawl_spring_stiffness=20,
                                    locking_mechanism=locking_mechanism)
+        return parking_pawl
 
-    def objective(self, model):
+    def dimensionless_vector_to_vector(self, dl_vector):
+        return [bound.dimensionless_to_value(dl_xi) for dl_xi, bound in zip(dl_vector, self.optimization_bounds)]
+
+    def vector_to_attributes_values(self, vector:List[float]):
+        attributes = {}
+        for bound, xi in zip(self.optimization_bounds, vector):
+            attributes[bound.attribute_name] = xi
+        return attributes
+
+    def objective_from_dimensionless_vector(self, dl_vector):
+        attributes_values = self.vector_to_attributes_values(self.dimensionless_vector_to_vector(dl_vector))
+
+        model = self.instantiate_model(attributes_values)
+        return self.objective_from_model(model)        
+        
+    def objective_from_model(self, model):
 
 
         objective = 0.
@@ -1061,8 +1099,11 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
 
         tooth_time = abs((model.wheel.junction_angle+model.wheel.lower_tooth_angle)/self.wheel_locking_speed)
         locking_time_ratio = (tooth_time-simulation.time[-1])/tooth_time
-        if locking_time_ratio >
-
-        print('model mark', objective)
+        if locking_time_ratio < 0:
+            objective += 1000*abs(locking_time_ratio)
+            
+        print('rest margin/locking time ratio', model.rest_margin(), locking_time_ratio)
+        print('\tmodel mark', objective)
+        
         return objective
 
