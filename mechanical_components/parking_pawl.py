@@ -136,22 +136,22 @@ class Wheel(dc.DessiaObject):
         corrected_upper_start = corrected_next_tooth_start.rotation(vm.O2D,
                                                                     -self.tooth_angle,
                                                                     )
-        a = side1_circle.plot()
-        # side2_circle.plot(ax=a, color='grey')
-        self.action_line1.plot(ax=a, color='k')
-        action_point12.plot(ax=a, color='grey')
-        # self.action_line2.plot(ax=a, color='grey')
-        arc_upper.plot(ax=a, color='r')
-        arc_lower.plot(ax=a, color='b')
-        self.contact_point1.plot(ax=a)
-        self.contact_point2.plot(ax=a)
-        corrected_next_tooth_start.plot(ax=a, color='grey')
-        corrected_upper_start.plot(ax=a, color='g')
-        corrected_upper_end.plot(ax=a, color='r')
-        corrected_lower_start.plot(ax=a, color='r')
-        corrected_lower_end.plot(ax=a, color='g')
-        self.basis_circle.plot(ax=a, color='grey')
-        a.set_aspect('equal')
+        # a = side1_circle.plot()
+        # # side2_circle.plot(ax=a, color='grey')
+        # self.action_line1.plot(ax=a, color='k')
+        # action_point12.plot(ax=a, color='grey')
+        # # self.action_line2.plot(ax=a, color='grey')
+        # arc_upper.plot(ax=a, color='r')
+        # arc_lower.plot(ax=a, color='b')
+        # self.contact_point1.plot(ax=a)
+        # self.contact_point2.plot(ax=a)
+        # corrected_next_tooth_start.plot(ax=a, color='grey')
+        # corrected_upper_start.plot(ax=a, color='g')
+        # corrected_upper_end.plot(ax=a, color='r')
+        # corrected_lower_start.plot(ax=a, color='r')
+        # corrected_lower_end.plot(ax=a, color='g')
+        # self.basis_circle.plot(ax=a, color='grey')
+        # a.set_aspect('equal')
 
         arc_upper = arc_upper.split(corrected_upper_start)[1]
         self.arc_upper = arc_upper.split(corrected_upper_end)[0]
@@ -204,7 +204,7 @@ class Pawl(dc.DessiaObject):
                  axis_inner_diameter:float, axis_outer_diameter:float,
                  finger_height:float,
                  # finger_angle:float,
-                 finger_width_ratio:float,
+                 finger_width:float,
                  slope_start_height:float, slope_length:float,
                  roller_rest_length:float,
                  slope_offset:float, slope_angle:float,
@@ -218,7 +218,7 @@ class Pawl(dc.DessiaObject):
 
         self.finger_height = finger_height
         # self.finger_angle = finger_angle
-        self.finger_width_ratio = finger_width_ratio
+        self.finger_width = finger_width
         self.slope_start_height = slope_start_height
         self.roller_rest_length=roller_rest_length
         self.slope_length = slope_length
@@ -240,16 +240,20 @@ class Pawl(dc.DessiaObject):
 
         self.axis_arc = vme.Arc2D(pa1, pa2, pa3)
 
-        self.finger_width = self.contact_diameter * finger_width_ratio
 
         contact_middle_point = vm.Point2D(0, 0.5*self.contact_diameter)
-        self.contact_angle = math.asin(self.finger_width/self.contact_diameter)
+        # Find minimal contact width
+        self.action_angle = math.asin(self.basis_diameter/self.contact_diameter)
+        self.pressure_angle = math.acos(self.basis_diameter/self.contact_diameter)
+        print('pa', math.degrees(self.pressure_angle))
+        self.min_finger_width = (self.contact_diameter - self.wheel_lower_tooth_diameter)*math.tan(self.pressure_angle)
+
+        self.contact_finger_width = self.finger_width + self.min_finger_width
+        self.contact_angle = math.asin(self.contact_finger_width/self.contact_diameter)
         self.contact_point1 = contact_middle_point.rotation(vm.O2D, -0.5*self.contact_angle)
         self.contact_point2 = contact_middle_point.rotation(vm.O2D, 0.5 * self.contact_angle)
-        action_point12 = vm.O2D.rotation(self.contact_point1,
-                                          math.asin(self.basis_diameter/self.contact_diameter))
-        action_point22 = vm.O2D.rotation(self.contact_point2,
-                                          -math.asin(self.basis_diameter/self.contact_diameter))
+        action_point12 = vm.O2D.rotation(self.contact_point1, self.action_angle)
+        action_point22 = vm.O2D.rotation(self.contact_point2, -self.action_angle)
 
         self.action_line1 = vme.Line2D(self.contact_point1, action_point12)
         self.action_line2 = vme.Line2D(self.contact_point2, action_point22)
@@ -267,14 +271,14 @@ class Pawl(dc.DessiaObject):
                                        vm.Point2D(1, 0.5*self.wheel_lower_tooth_diameter+self.finger_height))
 
 
-        # ax = side1_circle.plot(color='grey')
-        # side2_circle.plot(ax=ax, color='grey')
-        # self.action_line1.plot(ax=ax, color='grey')
-        # self.action_line2.plot(ax=ax, color='grey')
-        # self.contact_point1.plot(ax=ax)
-        # self.contact_point2.plot(ax=ax)
-        # lower_finger_line.plot(ax=ax)
-        # upper_finger_line.plot(ax=ax)
+        ax = side1_circle.plot(color='grey')
+        side2_circle.plot(ax=ax, color='grey')
+        self.action_line1.plot(ax=ax, color='grey')
+        self.action_line2.plot(ax=ax, color='grey')
+        self.contact_point1.plot(ax=ax)
+        self.contact_point2.plot(ax=ax)
+        lower_finger_line.plot(ax=ax)
+        upper_finger_line.plot(ax=ax)
         
 
         side1_start  = sorted(side1_circle.line_intersections(lower_finger_line), key=lambda p:p.x)[1]
@@ -534,7 +538,7 @@ class ParkingPawl(dc.DessiaObject):
                  pawl_offset:float,
                  axis_inner_diameter:float, axis_outer_diameter:float,
                  finger_height:float,
-                 finger_overwidth:float,
+                 finger_width:float,
                  roller_rest_length:float,
                  slope_start_height:float,
                  slope_length:float,
@@ -559,7 +563,7 @@ class ParkingPawl(dc.DessiaObject):
         self.axis_inner_diameter = axis_inner_diameter
         self.axis_outer_diameter = axis_outer_diameter
         self.finger_height = finger_height
-        self.finger_overwidth = finger_overwidth
+        self.finger_width = finger_width
         self.roller_rest_length = roller_rest_length
         self.slope_start_height = slope_start_height
         self.slope_length = slope_length
@@ -592,7 +596,7 @@ class ParkingPawl(dc.DessiaObject):
                          axis_outer_diameter=axis_outer_diameter,
                          finger_height=finger_height,
                          roller_rest_length=roller_rest_length,
-                         finger_width_ratio=finger_width_ratio,
+                         finger_width=finger_width,
                          slope_start_height=slope_start_height,
                          slope_length=slope_length,
                          slope_offset=slope_offset,
