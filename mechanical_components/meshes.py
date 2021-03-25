@@ -29,7 +29,7 @@ from scipy.optimize import fsolve
 class Data(DessiaObject):
     _standalone_in_db = False
     
-    def __init__(self,data,x,y):
+    def __init__(self,data: List[Tuple[float,float]],x: str,y: str):
         self.data=data
         self.x=x
         self.y=y
