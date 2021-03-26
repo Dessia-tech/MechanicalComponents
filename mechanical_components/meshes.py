@@ -528,7 +528,7 @@ class Mesh(DessiaObject):
     """
     _standalone_in_db = True
     _eq_is_data_eq = True
-    _non_serializable_attributes = ['rac']
+    _non_serializable_attributes = ['rac','reference_point_trochoide','reference_point_outside']
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
 
