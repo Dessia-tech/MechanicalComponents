@@ -53,7 +53,7 @@ parking_pawl.pawl.size_torsion_spring(10*9.81)
 
 print('rest margin',parking_pawl.rest_margin()*1000, 'mm')
 
-parking_pawl.mpl_plot()
+# parking_pawl.mpl_plot()
 # w = -3/3.6/(0.73/2)*12
 # simulation = parking_pawl.locking_simulation(wheel_speed=w)
 # print(parking_pawl.check())

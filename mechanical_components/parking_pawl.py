@@ -245,13 +245,14 @@ class Pawl(dc.DessiaObject):
         # Find minimal contact width
         self.action_angle = math.asin(self.basis_diameter/self.contact_diameter)
         self.pressure_angle = math.acos(self.basis_diameter/self.contact_diameter)
-        print('pa', math.degrees(self.pressure_angle))
+        print('pressure angle', math.degrees(self.pressure_angle))
         self.min_finger_width = (self.contact_diameter - self.wheel_lower_tooth_diameter)*math.tan(self.pressure_angle)
-
-        self.contact_finger_width = self.finger_width + self.min_finger_width
-        self.contact_angle = math.asin(self.contact_finger_width/self.contact_diameter)
-        self.contact_point1 = contact_middle_point.rotation(vm.O2D, -0.5*self.contact_angle)
-        self.contact_point2 = contact_middle_point.rotation(vm.O2D, 0.5 * self.contact_angle)
+        print('self.min_finger_width', self.min_finger_width)
+        self.finger_contact_width = self.finger_width + self.min_finger_width
+        self.contact_angle = math.atan(self.finger_contact_width/self.contact_diameter)
+        print('contact angle', math.degrees(self.contact_angle))
+        self.contact_point1 = contact_middle_point.rotation(vm.O2D, -self.contact_angle)
+        self.contact_point2 = contact_middle_point.rotation(vm.O2D, self.contact_angle)
         action_point12 = vm.O2D.rotation(self.contact_point1, self.action_angle)
         action_point22 = vm.O2D.rotation(self.contact_point2, -self.action_angle)
 
@@ -275,11 +276,26 @@ class Pawl(dc.DessiaObject):
         side2_circle.plot(ax=ax, color='grey')
         self.action_line1.plot(ax=ax, color='grey')
         self.action_line2.plot(ax=ax, color='grey')
+        action_point12.plot(ax=ax, color='g')
+        action_point22.plot(ax=ax, color='g')
         self.contact_point1.plot(ax=ax)
         self.contact_point2.plot(ax=ax)
         lower_finger_line.plot(ax=ax)
         upper_finger_line.plot(ax=ax)
         
+        lower_finger_angle = math.atan(self.finger_width/self.wheel_lower_tooth_diameter)
+        ideal_finger_corner_right = vm.Point2D(0, 0.5*wheel_lower_tooth_diameter).rotation(vm.O2D, lower_finger_angle)
+        ideal_finger_corner_left = vm.Point2D(0, 0.5*wheel_lower_tooth_diameter).rotation(vm.O2D, -lower_finger_angle)
+        
+        ideal_finger_side_right = vme.Line2D(ideal_finger_corner_right)
+        
+        debug_line1 = vme.Line2D(vm.Point2D(), vm.Y2D).rotation(vm.Point2D(0, 0.5*self.wheel_lower_tooth_diameter),
+                                                         self.pressure_angle)
+        debug_line2 = vme.Line2D(vm.O2D, vm.Y2D).rotation(vm.Point2D(0, 0.5*self.wheel_lower_tooth_diameter),
+                                                         -self.pressure_angle)
+        debug_line1.plot(ax=ax, color='r')
+        debug_line2.plot(ax=ax, color='r')
+        ax.set_aspect('equal')
 
         side1_start  = sorted(side1_circle.line_intersections(lower_finger_line), key=lambda p:p.x)[1]
         side1_end  = sorted(side1_circle.line_intersections(upper_finger_line), key=lambda p:p.x)[1]
