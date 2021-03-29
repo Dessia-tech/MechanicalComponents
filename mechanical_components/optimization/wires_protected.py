@@ -38,10 +38,10 @@ class WiringOptimizer(RoutingOptimizer):
                     self._shortest_paths_cache:
                 shortest_path = self._shortest_paths_cache[
                     (wire_spec.source, wire_spec.destination)]
-            elif (wire_spec.source, wire_spec.destination) in \
+            elif (wire_spec.destination, wire_spec.source) in \
                     self._shortest_paths_cache:
                 shortest_path = self._shortest_paths_cache[
-                    (wire_spec.source, wire_spec.destination)]
+                    (wire_spec.destination, wire_spec.source)]
             else:            
                 shortest_path = nx.shortest_path(self.graph,
                                                  wire_spec.source,
@@ -49,7 +49,9 @@ class WiringOptimizer(RoutingOptimizer):
                                                  weight='distance')
                 self._shortest_paths_cache[
                     (wire_spec.source, wire_spec.destination)] = shortest_path
-                
+                self._shortest_paths_cache[
+                    (wire_spec.destination, wire_spec.source)] = shortest_path
+
             shortest_paths.append(shortest_path)
             length = self.PathLength(shortest_path)
             shortest_paths_lengths.append(length)
