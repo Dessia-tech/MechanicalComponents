@@ -179,9 +179,9 @@ class Wheel(dc.DessiaObject):
         line_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.WATERCRESS,
                                          dashline=[5, 5, 20, 5])
 
-        primitives = [self.outer_contour().rotation(vm.O2D, angle).plot_data(),
+        primitives = [self.basis_circle.plot_data(edge_style=line_style),
+                      self.outer_contour().rotation(vm.O2D, angle).plot_data(),
                       self.inner_contour().rotation(vm.O2D, angle).plot_data(),
-                      self.basis_circle.plot_data(edge_style=line_style),
                       self.action_line1.rotation(vm.O2D, angle).plot_data(edge_style=line_style),
                       self.action_line2.rotation(vm.O2D, angle).plot_data(edge_style=line_style)]
         return [plot_data.PrimitiveGroup(primitives)]
@@ -189,7 +189,8 @@ class Wheel(dc.DessiaObject):
     def volmdlr_primitives(self, frame=vm.OXYZ):
         return [p3d.ExtrudedProfile(frame.origin, frame.v, frame.w,
                                     self.outer_contour(), [self.inner_contour()],
-                                    frame.u*self.width)]
+                                    frame.u*self.width,
+                                    name='Wheel {}'.format(self.name))]
 
 class TorsionSpring(dc.DessiaObject):
     def __init__(self, torque, name=''):
@@ -230,7 +231,7 @@ class Pawl(dc.DessiaObject):
         self.pawl_spring_stiffness = pawl_spring_stiffness
         self.name = name
 
-        self.side_tooth_radius = 4*self.contact_diameter
+        self.side_tooth_radius = 10*self.contact_diameter
 
 
         pa1 = self.axis_position + vm.Point2D(0., 0.5*self.axis_outer_diameter)
@@ -243,18 +244,24 @@ class Pawl(dc.DessiaObject):
 
         contact_middle_point = vm.Point2D(0, 0.5*self.contact_diameter)
         # Find minimal contact width
-        self.action_angle = math.asin(self.basis_diameter/self.contact_diameter)
+        # self.action_angle = math.asin(self.basis_diameter/self.contact_diameter)
         self.pressure_angle = math.acos(self.basis_diameter/self.contact_diameter)
         print('pressure angle', math.degrees(self.pressure_angle))
         self.min_finger_width = (self.contact_diameter - self.wheel_lower_tooth_diameter)*math.tan(self.pressure_angle)
         print('self.min_finger_width', self.min_finger_width)
-        self.finger_contact_width = self.finger_width + self.min_finger_width
-        self.contact_angle = math.atan(self.finger_contact_width/self.contact_diameter)
+        self.finger_lower_angle =  math.atan(self.finger_width/self.wheel_lower_tooth_diameter)
+        print('finger_lower_angle', math.degrees(self.finger_lower_angle))
+        print('check', math.sin(self.finger_lower_angle)*self.wheel_lower_tooth_diameter)
+        self.finger_side_angle = math.asin((self.contact_diameter-self.wheel_lower_tooth_diameter)/self.wheel_lower_tooth_diameter*math.tan(self.pressure_angle))
+        print('finger_side_angle', math.degrees(self.finger_side_angle))
+        # self.finger_contact_width = self.finger_width + self.min_finger_width
+        # self.contact_angle = math.atan(self.finger_contact_width/self.contact_diameter)
+        self.contact_angle = (self.finger_lower_angle + self.finger_side_angle)
         print('contact angle', math.degrees(self.contact_angle))
         self.contact_point1 = contact_middle_point.rotation(vm.O2D, -self.contact_angle)
         self.contact_point2 = contact_middle_point.rotation(vm.O2D, self.contact_angle)
-        action_point12 = vm.O2D.rotation(self.contact_point1, self.action_angle)
-        action_point22 = vm.O2D.rotation(self.contact_point2, -self.action_angle)
+        action_point12 = vm.O2D.rotation(self.contact_point1, 0.5*math.pi - self.pressure_angle)
+        action_point22 = vm.O2D.rotation(self.contact_point2, -(0.5*math.pi - self.pressure_angle))
 
         self.action_line1 = vme.Line2D(self.contact_point1, action_point12)
         self.action_line2 = vme.Line2D(self.contact_point2, action_point22)
@@ -272,30 +279,31 @@ class Pawl(dc.DessiaObject):
                                        vm.Point2D(1, 0.5*self.wheel_lower_tooth_diameter+self.finger_height))
 
 
-        ax = side1_circle.plot(color='grey')
-        side2_circle.plot(ax=ax, color='grey')
-        self.action_line1.plot(ax=ax, color='grey')
-        self.action_line2.plot(ax=ax, color='grey')
-        action_point12.plot(ax=ax, color='g')
-        action_point22.plot(ax=ax, color='g')
-        self.contact_point1.plot(ax=ax)
-        self.contact_point2.plot(ax=ax)
-        lower_finger_line.plot(ax=ax)
-        upper_finger_line.plot(ax=ax)
-        
-        lower_finger_angle = math.atan(self.finger_width/self.wheel_lower_tooth_diameter)
-        ideal_finger_corner_right = vm.Point2D(0, 0.5*wheel_lower_tooth_diameter).rotation(vm.O2D, lower_finger_angle)
-        ideal_finger_corner_left = vm.Point2D(0, 0.5*wheel_lower_tooth_diameter).rotation(vm.O2D, -lower_finger_angle)
-        
-        ideal_finger_side_right = vme.Line2D(ideal_finger_corner_right)
-        
-        debug_line1 = vme.Line2D(vm.Point2D(), vm.Y2D).rotation(vm.Point2D(0, 0.5*self.wheel_lower_tooth_diameter),
-                                                         self.pressure_angle)
-        debug_line2 = vme.Line2D(vm.O2D, vm.Y2D).rotation(vm.Point2D(0, 0.5*self.wheel_lower_tooth_diameter),
-                                                         -self.pressure_angle)
-        debug_line1.plot(ax=ax, color='r')
-        debug_line2.plot(ax=ax, color='r')
-        ax.set_aspect('equal')
+        # ax = side1_circle.plot(color='grey')
+        # vmw.Circle2D(vm.O2D, 0.5*self.basis_diameter).plot(color='grey', ax=ax)
+        # side2_circle.plot(ax=ax, color='grey')
+        # self.action_line1.plot(ax=ax, color='grey')
+        # self.action_line2.plot(ax=ax, color='grey')
+        # action_point12.plot(ax=ax, color='g')
+        # action_point22.plot(ax=ax, color='g')
+        # self.contact_point1.plot(ax=ax)
+        # self.contact_point2.plot(ax=ax)
+        # lower_finger_line.plot(ax=ax)
+        # upper_finger_line.plot(ax=ax)
+        #
+        # cp11 = contact_middle_point.rotation(vm.O2D, -self.finger_lower_angle)
+        # cp11.plot(ax=ax, color='y')
+        # cp12 = contact_middle_point.rotation(vm.O2D, -(self.finger_lower_angle+self.finger_side_angle))
+        # cp12.plot(ax=ax, color='y')
+        # dl1 = vme.LineSegment2D(vm.O2D, cp11)
+        # dl1.plot(ax=ax, color='y', alpha=0.5)
+        # dl2 = vme.LineSegment2D(vm.O2D, cp12)
+        # dl2.plot(ax=ax, color='y', alpha=0.5)
+
+
+        # ax.set_xlim(-0.5*self.wheel_lower_tooth_diameter, 0.5*self.wheel_lower_tooth_diameter)
+        # ax.set_ylim(0.35*self.wheel_lower_tooth_diameter, 1.5*self.wheel_lower_tooth_diameter)
+        # ax.set_aspect('equal')
 
         side1_start  = sorted(side1_circle.line_intersections(lower_finger_line), key=lambda p:p.x)[1]
         side1_end  = sorted(side1_circle.line_intersections(upper_finger_line), key=lambda p:p.x)[1]
@@ -398,7 +406,8 @@ class Pawl(dc.DessiaObject):
     def volmdlr_primitives(self, frame=vm.OXYZ):
         return [p3d.ExtrudedProfile(frame.origin, frame.v, frame.w,
                                     self.outer_contour(), [self.inner_contour()],
-                                    frame.u*self.width)]
+                                    frame.u*self.width,
+                                    name='Pawl {}'.format(self.name))]
 
     def size_torsion_spring(self, max_acceleration):
         cog = self.surface2d().center_of_mass()
@@ -522,14 +531,16 @@ class RollerLockingMechanism(dc.DessiaObject):
                                      axis=frame.u,
                                      inner_radius=0.25*self.roller_diameter,
                                      outer_radius=0.5*self.roller_diameter,
-                                     length=self.roller_width)
+                                     length=self.roller_width,
+                                     name='Roller 1 {}'.format(self.name))
         roller2 = p3d.HollowCylinder(position=(frame.origin
                                                + 0.5*self.roller_width*frame.u
                                                + self.roller_diameter*frame.w),
                                      axis=frame.u,
                                      inner_radius=0.25*self.roller_diameter,
                                      outer_radius=0.5*self.roller_diameter,
-                                     length=self.roller_width)
+                                     length=self.roller_width,
+                                     name='Roller 2 {}'.format(self.name))
         # roller = p3d.HollowCylinder(0.1 * vm.Y3D, vm.X3D,
         #                                         0.02, 0.06, 0.03,
         #                                         name='cylinder2')
@@ -538,9 +549,6 @@ class RollerLockingMechanism(dc.DessiaObject):
 
 class ParkingPawl(dc.DessiaObject):
     _standalone_in_db = True
-    
-
-
 
     def __init__(self,
                  wheel_inner_diameter:float,
