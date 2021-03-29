@@ -1054,7 +1054,8 @@ class MeshCombination(DessiaObject):
     _non_hash_attributes = ['name']
     _non_serializable_attributes = ['internal_torque','normal_load','tangential_load','radial_load',
                                     'linear_backlash','total_contact_ratio','sigma_iso', 'sigma_lim',
-                                    'cycle','external_torque','gear_graph','axial_load']
+                                    'cycle','external_torque','gear_graph','axial_load','SAP',
+                                    'SAP_diameter']
                                     
     def __init__(self, center_distance: List[float], connections: List[Tuple[int, int]],
                  meshes: List[Mesh],
