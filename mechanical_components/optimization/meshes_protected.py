@@ -551,8 +551,8 @@ class ContinuousMeshesAssemblyOptimizer:
                     if constraints_SAP_diameter[num_mesh]:
                         
      
-                        SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][engr1]
-                        SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][engr2]
+                        SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][0]
+                        SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][1]
                         
                         if Z1<0:
                             ineq.append((-SAP1+dia1-d_sap_root)*100)

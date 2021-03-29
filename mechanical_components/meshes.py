@@ -1054,8 +1054,7 @@ class MeshCombination(DessiaObject):
     _non_hash_attributes = ['name']
     _non_serializable_attributes = ['internal_torque','normal_load','tangential_load','radial_load',
                                     'linear_backlash','total_contact_ratio','sigma_iso', 'sigma_lim',
-                                    'cycle','external_torque','gear_graph','axial_load','SAP',
-                                    'SAP_diameter']
+                                    'cycle','external_torque','gear_graph','axial_load' ]
                                     
     def __init__(self, center_distance: List[float], connections: List[Tuple[int, int]],
                  meshes: List[Mesh],
@@ -1441,14 +1440,21 @@ class MeshCombination(DessiaObject):
         for engr1, engr2 in connections_dfs:
             if (engr1, engr2) in connections:
                 num_mesh = connections.index((engr1, engr2))
+                engr1_position=0
+                engr2_position=1
+                
             elif (engr2, engr1) in connections:
                 num_mesh = connections.index((engr2, engr1))
+                engr1_position=1
+                engr2_position=0
+                
+                
             else:
                 raise RuntimeError
-            circular_tooth_thickness1 = meshes[engr1].gear_section(DF[num_mesh][engr1])
-            circular_tooth_thickness2 = meshes[engr2].gear_section(DF[num_mesh][engr2])
+            circular_tooth_thickness1 = meshes[engr1].gear_section(DF[num_mesh][engr1_position])
+            circular_tooth_thickness2 = meshes[engr2].gear_section(DF[num_mesh][engr2_position])
 
-            transverse_radial_pitch1 = math.pi*DF[num_mesh][engr1]/abs(meshes[engr1].z)
+            transverse_radial_pitch1 = math.pi*DF[num_mesh][engr1_position]/abs(meshes[engr1].z)
             space_width1 = transverse_radial_pitch1-circular_tooth_thickness1
             space_width2 = transverse_radial_pitch1-circular_tooth_thickness2
 
@@ -1480,8 +1486,8 @@ class MeshCombination(DessiaObject):
         # Construction of pitch and base diameter
         DF = [0]*len(connections)
         db = {}
-        SAP = {}
-        SAP_diameter = {}
+       
+        
         dict_transverse_pressure_angle = {0: transverse_pressure_angle_ini}
         connections_dfs = list(nx.edge_dfs(gear_graph,
                             [connections[0][0], connections[0][1]]))
@@ -1489,8 +1495,12 @@ class MeshCombination(DessiaObject):
           
             if (engr1, engr2) in connections:
                 num_mesh = connections.index((engr1,engr2))
+                engr1_position=0
+                engr2_position=1
             else:
                 num_mesh = connections.index((engr2,engr1))
+                engr1_position=1
+                engr2_position=0
             Z1 = Z[engr1]
             Z2 = Z[engr2]
             if Z1<0:
@@ -1505,9 +1515,9 @@ class MeshCombination(DessiaObject):
                 DF1 = abs(2*cd*Z1/Z2/(1+Z1/Z2))
                 DF2 = abs(2*cd-DF1)
 
-            DF[num_mesh] =[0]*len(Z)
-            DF[num_mesh][engr1] = DF1
-            DF[num_mesh][engr2] = DF2
+            DF[num_mesh] =[0]*2
+            DF[num_mesh][engr1_position] = DF1
+            DF[num_mesh][engr2_position] = DF2
             if num_mesh == 0:
                 db1 = float(DF1*math.cos(transverse_pressure_angle_ini))
                 db2 = float(DF2*math.cos(transverse_pressure_angle_ini))
@@ -1535,25 +1545,25 @@ class MeshCombination(DessiaObject):
     
     def _SAP_diameter(self):
         
-        self.SAP={}
-        self.SAP_diameter={}
+        self.SAP=[0]*len(self.connections)
+        self.SAP_diameter=[0]*len(self.connections)
         for num_mesh,(engr1,engr2) in enumerate(self.connections):
 
         
-            self.SAP[num_mesh]=[0]*len(self.Z)
+            self.SAP[num_mesh]=[0]*2
             
-            self.SAP_diameter[num_mesh]=[0]*len(self.Z)
+            self.SAP_diameter[num_mesh]=[0]*2
             
             teta_om=math.acos(self.DB[engr2]/self.meshes[engr2].outside_diameter)
-            self.SAP[num_mesh][engr1]=180*((self.Z[engr1]+self.Z[engr2])*math.tan(self.transverse_pressure_angle[num_mesh])-self.Z[engr2]*math.tan(teta_om))/(math.pi*self.Z[engr1])
+            self.SAP[num_mesh][0]=180*((self.Z[engr1]+self.Z[engr2])*math.tan(self.transverse_pressure_angle[num_mesh])-self.Z[engr2]*math.tan(teta_om))/(math.pi*self.Z[engr1])
             
-            self.SAP_diameter[num_mesh][engr1]=self.DB[engr1]*math.sqrt((math.pi*self.SAP[num_mesh][engr1]/180)**2+1)
+            self.SAP_diameter[num_mesh][0]=self.DB[engr1]*math.sqrt((math.pi*self.SAP[num_mesh][engr1]/180)**2+1)
             
             
             teta_om=math.acos(self.DB[engr1]/self.meshes[engr1].outside_diameter)
-            self.SAP[num_mesh][engr2]=180*((self.Z[engr1]+self.Z[engr2])*math.tan(self.transverse_pressure_angle[num_mesh])-self.Z[engr1]*math.tan(teta_om))/(math.pi*self.Z[engr2])
+            self.SAP[num_mesh][1]=180*((self.Z[engr1]+self.Z[engr2])*math.tan(self.transverse_pressure_angle[num_mesh])-self.Z[engr1]*math.tan(teta_om))/(math.pi*self.Z[engr2])
             
-            self.SAP_diameter[num_mesh][engr2]=self.DB[engr2]*math.sqrt((math.pi*self.SAP[num_mesh][engr2]/180)**2+1)
+            self.SAP_diameter[num_mesh][1]=self.DB[engr2]*math.sqrt((math.pi*self.SAP[num_mesh][engr2]/180)**2+1)
     
     @classmethod
     def gear_torque(cls, Z, external_torque, db, gear_graph, list_gear, connections, DF, transverse_pressure_angle,helix_angle):
@@ -1626,17 +1636,20 @@ class MeshCombination(DessiaObject):
             #     dic_torque=external_torque
             try:
                 tq = dic_torque[(eng1, eng2)]
-                
+                eng1_position=0
+                eng2_position=1
                 normal_load[num_mesh] = abs(tq)*2/(db[eng1])
-                tangential_load[num_mesh] = abs(tq)*2/(DF[num_mesh][eng1])
+                tangential_load[num_mesh] = abs(tq)*2/(DF[num_mesh][eng1_position])
                 
                 axial_load[num_mesh]=tangential_load[num_mesh]*math.tan(helix_angle[eng1])
                 radial_load[num_mesh] = math.tan(transverse_pressure_angle[num_mesh])*tangential_load[num_mesh]/math.cos(helix_angle[eng1])
             except:
                 tq = dic_torque[(eng2, eng1)]
-
+                eng1_position=1
+                eng2_position=0
+                
                 normal_load[num_mesh] = abs(tq)*2/(db[eng2])
-                tangential_load[num_mesh] = abs(tq)*2/(DF[num_mesh][eng2])
+                tangential_load[num_mesh] = abs(tq)*2/(DF[num_mesh][eng2_position])
                 
                 axial_load[num_mesh]=tangential_load[num_mesh]*math.tan(helix_angle[eng2])
                 radial_load[num_mesh] = math.tan(transverse_pressure_angle[num_mesh])*tangential_load[num_mesh]/math.cos(helix_angle[eng2])
@@ -2049,13 +2062,18 @@ class MeshCombination(DessiaObject):
             if (eng1, eng2) in self.connections:
                 set_pos = self.connections.index((eng1, eng2))
                 rot_gear_2= self.initial_position([position1,position2], (eng1, eng2))
+                eng1_position=0
+                eng2_position=1
 
             elif (eng2, eng1) in self.connections:
                 set_pos = self.connections.index((eng2, eng1))
                 rot_gear_2= self.initial_position([position2,position1], (eng2, eng1))
+                eng2_position=0
+                eng1_position=1
+                
             Rotation[set_pos] = {}
-            Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1]/2.))
-            Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2]/2.))
+            Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1_position]/2.))
+            Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2_position]/2.))
 
            
 
@@ -2125,44 +2143,52 @@ class MeshCombination(DessiaObject):
             
             
             
+            if set_pos_dfs==0:
            
-           
-            circle_DF=vm.wires.Circle2D(center=vect_position_1,radius=self.DF[0][eng1]/2)
+                circle_DF=vm.wires.Circle2D(center=vect_position_1,radius=self.DF[0][eng1_position]/2)
+                
+                circle_SAP_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.SAP_diameter[0][eng1_position]/2)
+                
+                
+                
+                
+                
+                
+               
+                
+                
+                
+                edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.GREEN)
+                circle_DF_plot_data=circle_DF.plot_data( edge_style=edge_style)
+                
+                text_style=vmp.TextStyle(text_color= vmp.colors.GREEN,text_align_x='center',font_size=0.7)
+                text_DF=vmp.Text(comment='DF',position_x=0,position_y=self.DF[0][eng1_position]/2,text_style=text_style)
+                
+                
+                
+                
+                edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ROSE)
+                circle_SAP_diameter_plot_data=circle_SAP_diameter.plot_data(edge_style=edge_style)
+                
+               
+                
+                text_style=vmp.TextStyle(text_color= vmp.colors.ROSE,text_align_x='center',font_size=0.7)
+                text_SAP_diameter=vmp.Text(comment='SAP_diameter',position_x=0,
+                                            position_y=self.SAP_diameter[0][eng1_position]/2,text_style=text_style,text_scaling=True)
             
-            circle_SAP_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.SAP_diameter[0][eng1]/2)
-            
-            
-            
-            
-            
-            
-           
-            
-            
-            
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.GREEN)
-            circle_DF_plot_data=circle_DF.plot_data( edge_style=edge_style)
-            
-            text_style=vmp.TextStyle(text_color= vmp.colors.GREEN,text_align_x='center',font_size=0.7)
-            text_DF=vmp.Text(comment='DF',position_x=0,position_y=self.DF[0][eng1]/2,text_style=text_style)
-            
-            
-            
-            
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ROSE)
-            circle_SAP_diameter_plot_data=circle_SAP_diameter.plot_data(edge_style=edge_style)
-            
-           
-            
-            text_style=vmp.TextStyle(text_color= vmp.colors.ROSE,text_align_x='center',font_size=0.7)
-            text_SAP_diameter=vmp.Text(comment='SAP_diameter',position_x=0,
-                                        position_y=self.SAP_diameter[0][eng1]/2,text_style=text_style,text_scaling=True)
-        
-            surface_style=vmp.SurfaceStyle(color_fill=vmp.colors.WHITE)
-            edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLACK)
-            C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
-            C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
-            plot_datas.extend([circle_DF_plot_data,circle_SAP_diameter_plot_data,C1_plot_data,C2_plot_data,text_SAP_diameter,text_DF])
+                surface_style=vmp.SurfaceStyle(color_fill=vmp.colors.WHITE)
+                edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLACK)
+                C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
+                C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
+                plot_datas.extend([circle_DF_plot_data,circle_SAP_diameter_plot_data,C1_plot_data,C2_plot_data,text_SAP_diameter,text_DF])
+                
+                
+            else:
+                
+                C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
+                C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
+                plot_datas.extend([C1_plot_data,C2_plot_data])
+                
         return [vmp.PrimitiveGroup(primitives= plot_datas)]
     
     
@@ -2220,13 +2246,19 @@ class MeshCombination(DessiaObject):
             if (eng1, eng2) in self.connections:
                 set_pos = self.connections.index((eng1, eng2))
                 rot_gear_2= self.initial_position([position1,position2], (eng1, eng2))
+                eng1_position=0
+                eng2_position=1
 
             elif (eng2, eng1) in self.connections:
                 set_pos = self.connections.index((eng2, eng1))
                 rot_gear_2= self.initial_position([position2,position1], (eng2, eng1))
+                eng1_position=1
+                eng2_position=0
+                
+                
             Rotation[set_pos] = {}
-            Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1]/2.))
-            Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2]/2.))
+            Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1_position]/2.))
+            Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2_position]/2.))
 
            
 
@@ -2342,8 +2374,8 @@ class MeshCombination(DessiaObject):
         """
         DF = {}
         for i,(ic1, ic2) in enumerate(self.connections):
-            DF[ic1] = self.DF[i][ic1]
-            DF[ic2] = self.DF[i][ic2]
+            DF[ic1] = self.DF[i][0]
+            DF[ic2] = self.DF[i][1]
 
         mass = 0.
         for i,df in DF.items():
@@ -2421,9 +2453,18 @@ class MeshCombination(DessiaObject):
             Rot[ne] = {}
             if num == 0:
                 TG[en[0]] = self.meshes[en[0]].Contour(5)
-            Struct.append(vm.Circle2D(vm.Point2D(position1), self.DF[ne][en[0]]/2.))
+            if (en[0],en[1]) in self.connections:
+                eng1_position=0
+                eng2_position=1
+
+            elif (en[1].en[0]) in self.connections:
+                eng2_position=0
+                eng1_position=1
+                
+                
+            Struct.append(vm.Circle2D(vm.Point2D(position1), self.DF[ne][eng1_position]/2.))
             TG[en[1]] = self.meshes[en[1]].Contour(5)
-            Struct.append(vm.Circle2D(vm.Point2D(position2), self.DF[ne][en[1]]/2.))
+            Struct.append(vm.Circle2D(vm.Point2D(position2), self.DF[ne][eng2_position]/2.))
             #Definition de la position angulaire initiale
             list_rot = self.initial_position(ne, en)
             if position2[0] == position1[0]:
