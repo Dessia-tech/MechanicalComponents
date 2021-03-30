@@ -21,7 +21,7 @@ locking_mechanism = mcpp.RollerLockingMechanism(roller_diameter=0.010,
                                                 spring_active_length=0.011
                                                 )
 
-slope_angle = math.radians(45)
+slope_angle = math.radians(40)
 parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
                                 wheel_lower_tooth_diameter=0.050,
                                 wheel_outer_diameter=0.075,
@@ -44,21 +44,22 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
 # parking_pawl.pawl.outer_contour().plot()
 # parking_pawl.wheel.outer_contour().plot()
 # plot_data.plot_canvas(plot_data_object=parking_pawl.wheel.plot_data()[0], debug_mode=True)
-parking_pawl.pawl.babylonjs()
-# parking_pawl.mpl_plot()#pawl_angle=parking_pawl.up_pawl_angle, wheel_angle=0)
+# parking_pawl.babylonjs()
+# parking_pawl.plot()#pawl_angle=parking_pawl.up_pawl_angle, wheel_angle=0)
 # parking_pawl.wheel.mpl_plot()
 # parking_pawl.pawl.mpl_plot()
 # simulation = parking_pawl.static_locking_simulation()
+# simulation.babylonjs()
 parking_pawl.pawl.size_torsion_spring(10*9.81)
 
 print('rest margin',parking_pawl.rest_margin()*1000, 'mm')
 
 # parking_pawl.mpl_plot()
-# w = -3/3.6/(0.73/2)*12
-# simulation = parking_pawl.locking_simulation(wheel_speed=w)
-# print(parking_pawl.check())
-# simulation.babylonjs()
-# # simulation.plot()
+w = -3/3.6/(0.73/2)*12
+simulation = parking_pawl.locking_simulation(wheel_speed=w)
+print(parking_pawl.check())
+simulation.babylonjs()
+simulation.plot()
 #
 # t = abs((parking_pawl.wheel.junction_angle+parking_pawl.wheel.lower_tooth_angle)/w)
 #
