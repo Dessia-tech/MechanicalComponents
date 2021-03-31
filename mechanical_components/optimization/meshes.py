@@ -62,17 +62,21 @@ class MeshOpti(DessiaObject):
         self.transverse_pressure_angle=transverse_pressure_angle
         
         if coefficient_profile_shift==None:
-            coefficient_profile_shift=[0.00000000000001,1]
+            coefficient_profile_shift=[0.2,0.8]
         self.coefficient_profile_shift=coefficient_profile_shift
         DessiaObject.__init__(self, name=name)
 
 class CenterDistanceOpti(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self,center_distance:Tuple[float,float],meshes:List[MeshOpti], name:str='' ):
+    def __init__(self,center_distance:Tuple[float,float],meshes:List[MeshOpti], name:str='',constraint_root_diameter=True,CA_min=0,constraint_SAP_diameter=True,distance_SAP_root_diameter_active_min=0 ):
 
         self.meshes = meshes
         self.center_distance = center_distance
+        self.constraint_root_diameter=constraint_root_diameter
+        self.CA_min=CA_min
+        self.constraint_SAP_diameter=constraint_SAP_diameter
+        self.distance_SAP_root_diameter_active_min=distance_SAP_root_diameter_active_min
         DessiaObject.__init__(self, name=name)
 
 
@@ -105,16 +109,25 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                                 center_distance = list_cd)
     """
 
-    def __init__(self,center_distances: CenterDistanceOpti,cycles : List,rigid_links: List =None,safety_factor: int =1, verbose : int =False):
+    def __init__(self,center_distances: List[CenterDistanceOpti],cycles : List[float],rigid_links: List =None,safety_factor: int =1, verbose : int =False):
         list_gear=[]
         connections=[]
         cd = []
+        self.constraints_root_diameter=[]
+        self.list_CA_min=[]
+        self.constraints_SAP_diameter=[]
+        self.distances_SAP_root_diameter_active_min=[]
+        
         for meshing_plan in center_distances:
             connections_plan=[]
             for center_distance in meshing_plan:
                 for gear in center_distance.meshes:
                     if not gear in list_gear:
                         list_gear.append(gear)
+                self.constraints_root_diameter.append(center_distance.constraint_root_diameter)
+                self.list_CA_min.append(center_distance.CA_min)
+                self.distances_SAP_root_diameter_active_min.append(center_distance.distance_SAP_root_diameter_active_min)
+                self.constraints_SAP_diameter.append(center_distance.constraint_SAP_diameter)
                 connections_plan.append((list_gear.index(center_distance.meshes[0]),list_gear.index(center_distance.meshes[1])))
 
             cd.append(meshing_plan[0].center_distance)
@@ -137,6 +150,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         self.list_gearing_interior=[]
         material={}
         list_rack_gear={}
+       
         for i,gear in enumerate(list_gear):
             gear_speeds[i]=gear.speed_input
             if gear.rack:
@@ -146,6 +160,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                 total_contact_ratio_min[i]=gear.rack.total_contact_ratio_min
                 transverse_contact_ratio_min[i]=gear.rack.transverse_contact_ratio_min
             external_torques[i]=gear.torque_input
+            
             coefficient_profile_shift[i]=gear.coefficient_profile_shift
             if gear.Z:
                 Z[i]=gear.Z
@@ -230,7 +245,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         if len(transverse_pressure_angle.keys())<number_mesh:
             for num_mesh in list_gear:
                 if num_mesh not in transverse_pressure_angle.keys():
-                    transverse_pressure_angle[num_mesh]=[19/180.*math.pi,20/180.*math.pi]
+                    transverse_pressure_angle[num_mesh]=[15/180.*math.pi,30/180.*math.pi]
 
         # if helix_angle==None:
         #     helix_angle={list_gear[0]:[15/180.*math.pi,25/180.*math.pi]}
@@ -270,17 +285,17 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
             rack_list={0:RackOpti()}
         for num_rack, rack in rack_list.items():
             if  not rack.module:
-                rack_list[num_rack].module = [1.2*1e-3,5*1e-3]
+                rack_list[num_rack].module = [1.2*1e-3,2*1e-3]
             if  not rack.transverse_pressure_angle_0:
-                rack_list[num_rack].transverse_pressure_angle_0 =[19/180.*math.pi,20/180.*math.pi]
+                rack_list[num_rack].transverse_pressure_angle_0 =[15/180.*math.pi,30/180.*math.pi]
             if  not  rack.coeff_gear_addendum:
-                rack_list[num_rack].coeff_gear_addendum = [1,2]
+                rack_list[num_rack].coeff_gear_addendum = [1.00,1.00]
             if  not  rack.coeff_gear_dedendum:
-                rack_list[num_rack].coeff_gear_dedendum = [1,2]
+                rack_list[num_rack].coeff_gear_dedendum = [1.25,1.25]
             if  not  rack.coeff_root_radius:
-                rack_list[num_rack].coeff_root_radius = [0.1,1]
+                rack_list[num_rack].coeff_root_radius = [0.38,0.38]
             if not  rack.coeff_circular_tooth_thickness:
-                rack_list[num_rack].coeff_circular_tooth_thickness = [0.1,1]
+                rack_list[num_rack].coeff_circular_tooth_thickness = [0.5,0.5]
             
             
             if not  rack.helix_angle:
