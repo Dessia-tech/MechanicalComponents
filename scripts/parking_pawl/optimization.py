@@ -21,6 +21,11 @@ optimization_bounds = [dc_opt.BoundedAttributeValue('wheel_lower_tooth_diameter'
                                                     0.004, 0.015),
                        dc_opt.BoundedAttributeValue('roller_diameter',
                                                     0.010, 0.030),
+                       dc_opt.BoundedAttributeValue('axis_outer_diameter',
+                                                    0.015, 0.035),
+                       dc_opt.BoundedAttributeValue('slope_start_finger_overheight',
+                                                    0.005, 0.025),
+                       
                        ]
 
 optimizer = mcpp.ParkingPawlOptimizer(wheel_locking_speed=w, locking_mechanism_travel=travel,
@@ -30,4 +35,5 @@ result = optimizer.optimize_gradient()
 result.pawl.size_torsion_spring(10 * 9.81)
 result_simulation = result.locking_simulation(w)
 result_simulation.babylonjs()
+result_simulation.mpl_plot()
 # result.babylonjs()
