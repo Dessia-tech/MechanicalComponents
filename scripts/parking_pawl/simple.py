@@ -50,7 +50,7 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
 # parking_pawl.pawl.mpl_plot()
 # simulation = parking_pawl.static_locking_simulation()
 # simulation.babylonjs()
-parking_pawl.pawl.size_torsion_spring(10*9.81)
+parking_pawl.pawl.size_torsion_spring(3*9.81)
 
 print('rest margin',parking_pawl.rest_margin()*1000, 'mm')
 
