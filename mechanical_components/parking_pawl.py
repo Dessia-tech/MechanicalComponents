@@ -790,12 +790,14 @@ class ParkingPawl(dc.DessiaObject):
         return self._locking_contact_results
 
     def pawl_angle_from_locking_position(self, locking_position:float):
-        pawl_angles, travels, _, _ = self.locking_contact_results
-        return npy.interp(locking_position, travels, pawl_angles)
+        pawl_angles, locking_positions, _, _ = self.locking_contact_results
+        istep = dc_utils.istep_from_value_on_list(locking_positions, locking_position)
+        return dc_utils.interpolate_from_istep(pawl_angles, istep)
 
     def locking_position_from_pawl_angle(self, pawl_angle:float):
-        pawl_angles, travels, _, _ = self.locking_contact_results
-        return npy.interp(pawl_angle, pawl_angles, travels)
+        pawl_angles, locking_positions, _, _ = self.locking_contact_results
+        istep = dc_utils.istep_from_value_on_list(pawl_angles, pawl_angle)
+        return dc_utils.interpolate_from_istep(locking_positions, istep)
 
 
     def contact_point_from_locking_position(self, locking_position:float):
