@@ -18,6 +18,7 @@ import dessia_common.utils as dc_utils
 import dessia_common.optimization as dc_opt
 import plot_data
 import scipy.optimize
+import cma
 # import dessia_common.typings as dct
 
 
@@ -99,7 +100,7 @@ class Wheel(dc.DessiaObject):
         remaining_angle = self.tooth_angle-2*self.junction_angle
         # print('remaining_angle', math.degrees(remaining_angle))
         if remaining_angle < 0:
-            raise ValueError('Negative remaining space')
+            raise ValueError('Negative remaining space: {}'.format(remaining_angle))
 
         self.lower_tooth_angle = remaining_angle * self.lower_tooth_ratio
         self.upper_tooth_angle = remaining_angle * (1-self.lower_tooth_ratio)
@@ -197,7 +198,7 @@ class Wheel(dc.DessiaObject):
                                     name='Wheel {}'.format(self.name))]
 
 class TorsionSpring(dc.DessiaObject):
-    def __init__(self, torque, name=''):
+    def __init__(self, torque:float, name:str=''):
         self.torque = torque
         self.name = name
     
@@ -412,7 +413,7 @@ class Pawl(dc.DessiaObject):
                                     frame.u*self.width,
                                     name='Pawl {}'.format(self.name))]
 
-    def size_torsion_spring(self, max_acceleration):
+    def size_torsion_spring(self, max_acceleration:float):
         cog = self.surface2d().center_of_mass()
         max_lever = cog.point_distance(self.axis_position)
         max_force = self.mass() * max_acceleration
@@ -518,7 +519,7 @@ class RollerLockingMechanism(dc.DessiaObject):
 
 class ParkingPawl(dc.DessiaObject):
     _standalone_in_db = True
-    _allowed_methods = ['locking_simulation']
+    _allowed_methods = ['static_locking_simulation', 'locking_simulation']
 
     def __init__(self,
                  wheel_inner_diameter:float,
@@ -624,6 +625,14 @@ class ParkingPawl(dc.DessiaObject):
 
     def mass(self):
         return self.wheel.mass() + self.pawl.mass()
+    
+    def functional_footprint(self):
+        xmin = self.pawl.axis_position - 0.5* self.pawl.axis_outer_diameter
+        ymax = self.locking_mechanism.center_distance + 1.5*self.locking_mechanism.roller_diameter
+        ymin = 0.5 * self.parking_pawl.wheel.outer_diameter
+        xmax = self.parking_pawl.locking_mechanism_start_position + 0.5*self.locking_mechanism.roller_diameter 
+
+        return xmin, xmax, ymin, ymax
 
     def volmdlr_primitives(self, frame=vm.OXYZ):
         wheel_frame = frame.rotation(frame.origin, frame.u, self.contact1_wheel_angle)
@@ -978,8 +987,6 @@ class ParkingPawlSimulation(dc.DessiaObject):
                                  max_locking_speed=max_locking_speed,
                                  name=name)
 
-
-
     def volmdlr_primitives(self):
         wheel = self.parking_pawl.wheel.volmdlr_primitives()[0]
         pawl = self.parking_pawl.pawl.volmdlr_primitives()[0]
@@ -1049,26 +1056,91 @@ class ParkingPawlSimulation(dc.DessiaObject):
                                                            'locking_position'])
                 ]
 
-# class ParkingPawlOptimizationSpecifications(dc_opt.Specifications):
-#     def __init__(self, wheel_locking_speed:float, name:str=''):
-#         attributes = []
-#         bounds = []
-#         dc_opt.Specifications.__init__(self, attributes, bounds, name=name)
-
+class ParkingPawSimulationlList(dc.DessiaObject):
+    _standalone_in_db = True
+    def __init__(self, parking_pawl_simulations:List[ParkingPawlSimulation], name:str=''):
+        self.parking_pawl_simulations = parking_pawl_simulations
+        self.name = name
+        
+    def plot_data(self):
+        
+        dataset = []
+        for ipls, parking_pawl_simulation in enumerate(self.parking_pawl_simulations):
+            xmin, xmax, ymin, ymax = parking_pawl_simulation.parking_pawl.functional_footprint()
+            width = xmax - xmin
+            height = ymax - ymin
+            dataset.append({'mass': parking_pawl_simulation.parking_pawl.mass(),
+                            'engaged_slack': parking_pawl_simulation.parking_pawl.engaged_slack(),
+                            'axis_wheel_clearance': parking_pawl_simulation.parking_pawl.mass(),
+                            'rest_margin': parking_pawl_simulation.parking_pawl.rest_margin(),
+                            'wheel_speed': parking_pawl_simulation.wheel_speed,
+                            'width': width,
+                            'height': height
+                            })
+        
+        objects = []
+        
+        to_disp_attribute_names = ['mass',
+                                   'wheel_speed',
+                                   'engaged_slack',
+                                   'axis_wheel_clearance', 'rest_margin', 'width', 'height']
+        
+        
+        parallel_plot = plot_data.ParallelPlot(disposition='horizontal',
+                                               to_disp_attribute_names=to_disp_attribute_names)
+        objects.append(parallel_plot)
+        
+        # Scatter        
+        scatter1 = plot_data.Scatter(elements=dataset,
+                                     tooltip = plot_data.Tooltip(to_disp_attribute_names=to_disp_attribute_names),
+                                     to_disp_attribute_names=['wheel_speed', 'mass'])
+        objects.append(scatter1)
+        
+        
+        scatter2 = plot_data.Scatter(elements=dataset,
+                                     tooltip = plot_data.Tooltip(to_disp_attribute_names=to_disp_attribute_names),
+                                     to_disp_attribute_names=['wheel_speed', 'engaged_slack'])
+        objects.append(scatter2)
+        
+        coords = [(0, 0), (400, 0), (600, 600)]
+        sizes = [plot_data.Window(width=860, height=300),
+                 plot_data.Window(width=360, height=300),
+                 plot_data.Window(width=360, height=300),
+                 ]
+        
+        
+        multipleplots = plot_data.MultiplePlots(elements=dataset, plots=objects,
+                                                sizes=sizes, coords=coords,
+                                                initial_view_on=True)
+        
+        return [multipleplots]   
+        
 class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
+    _standalone_in_db = True
+    _allowed_methods = ['optimize_gradient', 'optimize_cma', 'objective_from_model']
+    
     def __init__(self, wheel_locking_speed:float,
                  locking_mechanism_travel:float,
+                 fixed_parameters:List[dc_opt.FixedAttributeValue],
                  optimization_bounds:List[dc_opt.BoundedAttributeValue],
                  name:str=''):
         self.wheel_locking_speed = wheel_locking_speed
         self.locking_mechanism_travel = locking_mechanism_travel
+        self.fixed_parameters = fixed_parameters
         self.optimization_bounds = optimization_bounds
         self.name = name
 
         self.number_parameters = len(self.optimization_bounds)
     
     def scipy_bounds(self):
-        return [(b.min_value, b.max_value) for b in self.optimization_bounds]
+        # return [(b.min_value, b.max_value) for b in self.optimization_bounds]
+        return [(0, 1) for b in self.optimization_bounds]
+
+    def cma_bounds(self):
+        return [[0]*len(self.optimization_bounds),
+                [1]*len(self.optimization_bounds)]
+        # return [[b.min_value for b in self.optimization_bounds],
+        #         [b.max_value for b in self.optimization_bounds]]
     
     def optimize_gradient(self):
         
@@ -1076,18 +1148,42 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         bounds = self.scipy_bounds()
         result = scipy.optimize.minimize(self.objective_from_dimensionless_vector,
                                          x0, bounds=bounds)
-        print('x', result.x)
+        # print('x', result.x)
 
         attributes_values = self.vector_to_attributes_values(
             self.dimensionless_vector_to_vector(result.x))
+        
+        
 
         model = self.instantiate_model(attributes_values)
-        return model
+        return model, result.fun
+
+    def optimize_cma(self):
+        
+        x0 = npy.random.random(self.number_parameters)
+        
+        bounds = self.cma_bounds()
+        xra, fx = cma.fmin(self.objective_from_dimensionless_vector,
+                           x0, 0.6, options={'bounds': bounds,
+                                             'tolfun': 1e-2,
+                                             'verbose': 0,
+                                             'ftarget': 0.2})[0:2]
+        # print('x', result.x)
+
+        attributes_values = self.vector_to_attributes_values(
+            self.dimensionless_vector_to_vector(xra))
+        
+        
+        if fx < 10:
+            model = self.instantiate_model(attributes_values)
+        else:
+            model = None
+        return model, fx
     
     
     def instantiate_model(self, attributes_values):
-        print('attributes_values')
-        print(attributes_values)
+        # print('attributes_values')
+        # print(attributes_values)
         wheel_lower_tooth_diameter = attributes_values['wheel_lower_tooth_diameter']
         basis_diameter = wheel_lower_tooth_diameter + attributes_values['relative_basis_diameter']
         contact_diameter = basis_diameter + attributes_values['relative_contact_diameter']
@@ -1104,7 +1200,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         parking_pawl = ParkingPawl(wheel_inner_diameter=0.5*wheel_lower_tooth_diameter,
                                    wheel_lower_tooth_diameter=wheel_lower_tooth_diameter,
                                    wheel_outer_diameter=wheel_outer_diameter,
-                                   teeth_number=9,
+                                   teeth_number=attributes_values['teeth_number'],
                                    lower_tooth_ratio=0.60,
                                    basis_diameter=basis_diameter,
                                    contact_diameter=contact_diameter,
@@ -1128,7 +1224,8 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         return [bound.dimensionless_to_value(dl_xi) for dl_xi, bound in zip(dl_vector, self.optimization_bounds)]
 
     def vector_to_attributes_values(self, vector:List[float]):
-        attributes = {}
+        attributes = {fp.attribute_name: fp.value for fp in self.fixed_parameters}
+        
         for bound, xi in zip(self.optimization_bounds, vector):
             attributes[bound.attribute_name] = xi
         return attributes
@@ -1136,7 +1233,11 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
     def objective_from_dimensionless_vector(self, dl_vector):
         attributes_values = self.vector_to_attributes_values(self.dimensionless_vector_to_vector(dl_vector))
 
-        model = self.instantiate_model(attributes_values)
+        try:
+            model = self.instantiate_model(attributes_values)
+        except:
+            print('Error in instanciating model')
+            return 1000000
         return self.objective_from_model(model)        
         
     def objective_from_model(self, model:ParkingPawl, clearance:float=0.003):
@@ -1153,16 +1254,20 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
             objective += 100000*model.rest_margin()
 
         model.pawl.size_torsion_spring(10 * 9.81)
-        simulation = model.locking_simulation(wheel_speed=self.wheel_locking_speed)
-
+        try:
+            simulation = model.locking_simulation(wheel_speed=self.wheel_locking_speed)
+        except:
+            print('Something went wrong in simulation')
+            objective += 100000
+            return objective
 
         tooth_time = abs((model.wheel.junction_angle+model.wheel.lower_tooth_angle)/self.wheel_locking_speed)
         locking_time_ratio = (tooth_time-simulation.time[-1])/tooth_time
         if locking_time_ratio < 0:
-            objective += 1000*abs(locking_time_ratio)
+            objective += 10000*abs(locking_time_ratio)
             
         print('rest margin/locking time ratio', model.rest_margin(), locking_time_ratio)
-        print('\tmodel mark', objective)
+        print('\tmodel objective', objective)
         
         return objective
 

@@ -25,7 +25,7 @@ slope_angle = math.radians(40)
 parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
                                 wheel_lower_tooth_diameter=0.050,
                                 wheel_outer_diameter=0.075,
-                                teeth_number=9,
+                                teeth_number=7,
                                 lower_tooth_ratio=0.60,
                                 basis_diameter=0.067,
                                 contact_diameter=0.070,
