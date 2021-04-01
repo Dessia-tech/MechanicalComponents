@@ -44,7 +44,7 @@ for tn in range(7, 9):
         if result:
             result.pawl.size_torsion_spring(10 * 9.81)
             result_simulation = result.locking_simulation(w)
-            result_simulation.babylonjs()
+            # result_simulation.babylonjs()
             parking_pawl_simulations.append(result_simulation)
             
 simulation_list = mcpp.ParkingPawSimulationlList(parking_pawl_simulations)

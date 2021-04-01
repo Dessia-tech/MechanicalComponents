@@ -627,10 +627,10 @@ class ParkingPawl(dc.DessiaObject):
         return self.wheel.mass() + self.pawl.mass()
     
     def functional_footprint(self):
-        xmin = self.pawl.axis_position - 0.5* self.pawl.axis_outer_diameter
-        ymax = self.locking_mechanism.center_distance + 1.5*self.locking_mechanism.roller_diameter
-        ymin = 0.5 * self.parking_pawl.wheel.outer_diameter
-        xmax = self.parking_pawl.locking_mechanism_start_position + 0.5*self.locking_mechanism.roller_diameter 
+        xmin = self.pawl.axis_position.x - 0.5* self.pawl.axis_outer_diameter
+        ymax = self.locking_mechanism_center_distance + 1.5*self.locking_mechanism.roller_diameter
+        ymin = -0.5 * self.wheel.outer_diameter
+        xmax = self.locking_mechanism_start_position + 0.5*self.locking_mechanism.roller_diameter 
 
         return xmin, xmax, ymin, ymax
 
@@ -1073,7 +1073,7 @@ class ParkingPawSimulationlList(dc.DessiaObject):
                             'engaged_slack': parking_pawl_simulation.parking_pawl.engaged_slack(),
                             'axis_wheel_clearance': parking_pawl_simulation.parking_pawl.mass(),
                             'rest_margin': parking_pawl_simulation.parking_pawl.rest_margin(),
-                            'wheel_speed': parking_pawl_simulation.wheel_speed,
+                            # 'wheel_speed': parking_pawl_simulation.wheel_angles[1]/parking_pawl_simulation.time[1],
                             'width': width,
                             'height': height
                             })
@@ -1081,7 +1081,6 @@ class ParkingPawSimulationlList(dc.DessiaObject):
         objects = []
         
         to_disp_attribute_names = ['mass',
-                                   'wheel_speed',
                                    'engaged_slack',
                                    'axis_wheel_clearance', 'rest_margin', 'width', 'height']
         
@@ -1093,13 +1092,13 @@ class ParkingPawSimulationlList(dc.DessiaObject):
         # Scatter        
         scatter1 = plot_data.Scatter(elements=dataset,
                                      tooltip = plot_data.Tooltip(to_disp_attribute_names=to_disp_attribute_names),
-                                     to_disp_attribute_names=['wheel_speed', 'mass'])
+                                     to_disp_attribute_names=['width', 'mass'])
         objects.append(scatter1)
         
         
         scatter2 = plot_data.Scatter(elements=dataset,
                                      tooltip = plot_data.Tooltip(to_disp_attribute_names=to_disp_attribute_names),
-                                     to_disp_attribute_names=['wheel_speed', 'engaged_slack'])
+                                     to_disp_attribute_names=['width', 'height'])
         objects.append(scatter2)
         
         coords = [(0, 0), (400, 0), (600, 600)]
