@@ -8,9 +8,9 @@ w3 = 12*w1
 travel = 0.011
 
 optimization_bounds = [dc_opt.BoundedAttributeValue('wheel_lower_tooth_diameter',
-                                                    0.030, 0.05),
-                       dc_opt.BoundedAttributeValue('relative_basis_diameter',
-                                                    0.002, 0.02),
+                                                    0.035, 0.05),
+                       dc_opt.BoundedAttributeValue('pressure_angle',
+                                                    math.radians(5), math.radians(30)),
                        dc_opt.BoundedAttributeValue('relative_contact_diameter',
                                                     0.002, 0.02),
                        dc_opt.BoundedAttributeValue('relative_wheel_outer_diameter',
@@ -41,7 +41,7 @@ for tn in range(7, 9):
                                               optimization_bounds=optimization_bounds)
         
         result, objective = optimizer.optimize_cma()
-        if result:
+        if result.check():
             result.pawl.size_torsion_spring(10 * 9.81)
             result_simulation = result.locking_simulation(w)
             # result_simulation.babylonjs()

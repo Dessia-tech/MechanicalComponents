@@ -29,7 +29,8 @@ class Wheel(dc.DessiaObject):
                  teeth_number:int,
                  # upper_tooth_ratio:float,
                  lower_tooth_ratio:float,
-                 basis_diameter:float,
+                 # basis_diameter:float,
+                 pressure_angle:float,
                  contact_diameter:float,
                  width:float,
                  name:str=''):
@@ -39,11 +40,15 @@ class Wheel(dc.DessiaObject):
         # self.upper_tooth_ratio = upper_tooth_ratio
         self.lower_tooth_ratio = lower_tooth_ratio
         self.teeth_number = teeth_number
-        self.basis_diameter = basis_diameter
+        # self.basis_diameter = basis_diameter
+        self.pressure_angle = pressure_angle
+        self.pressure_angle = pressure_angle
         self.contact_diameter = contact_diameter
         self.width = width
         self.name = name
-        
+
+
+
         # Computed attributes
         self.tooth_angle = vm.TWO_PI/self.teeth_number
         # print('tooth_angle', math.degrees(self.tooth_angle))
@@ -54,6 +59,9 @@ class Wheel(dc.DessiaObject):
         # self.contact_height_ratio = (self.contact_diameter - self.lower_tooth_diameter)/(self.outer_diameter - self.lower_tooth_diameter)
 
         self.contact_point1 = vm.Point2D(0, 0.5*self.contact_diameter)
+
+        self.basis_diameter = self.contact_diameter * math.cos(
+            self.pressure_angle)
 
         action_point12 = vm.O2D.rotation(self.contact_point1,
                                           math.asin(self.basis_diameter/self.contact_diameter))
@@ -80,8 +88,22 @@ class Wheel(dc.DessiaObject):
         end_lower = interior_lower.rotation(vm.O2D, self.tooth_angle)
         arc_lower = vme.Arc2D(start_lower, interior_lower, end_lower)
 
-
-
+        # a = side1_circle.plot()
+        # side2_circle.plot(ax=a, color='grey')
+        # self.action_line1.plot(ax=a, color='k')
+        # action_point12.plot(ax=a, color='grey')
+        # self.action_line2.plot(ax=a, color='grey')
+        # arc_upper.plot(ax=a, color='r')
+        # arc_lower.plot(ax=a, color='b')
+        # self.contact_point1.plot(ax=a)
+        # self.contact_point2.plot(ax=a)
+        # corrected_next_tooth_start.plot(ax=a, color='grey')
+        # corrected_upper_start.plot(ax=a, color='g')
+        # corrected_upper_end.plot(ax=a, color='r')
+        # corrected_lower_start.plot(ax=a, color='r')
+        # corrected_lower_end.plot(ax=a, color='g')
+        # self.basis_circle.plot(ax=a, color='grey')
+        # a.set_aspect('equal')
 
         corrected_upper_end = side1_circle.arc_intersections(arc_upper)[0]
         corrected_lower_start = side1_circle.arc_intersections(arc_lower)[0]
@@ -95,6 +117,8 @@ class Wheel(dc.DessiaObject):
                                           corrected_lower_start.x)
                                - math.atan2(self.contact_point1.y,
                                             self.contact_point1.x))
+
+
 
 
         remaining_angle = self.tooth_angle-2*self.junction_angle
@@ -134,22 +158,7 @@ class Wheel(dc.DessiaObject):
         corrected_upper_start = corrected_next_tooth_start.rotation(vm.O2D,
                                                                     -self.tooth_angle,
                                                                     )
-        # a = side1_circle.plot()
-        # # side2_circle.plot(ax=a, color='grey')
-        # self.action_line1.plot(ax=a, color='k')
-        # action_point12.plot(ax=a, color='grey')
-        # # self.action_line2.plot(ax=a, color='grey')
-        # arc_upper.plot(ax=a, color='r')
-        # arc_lower.plot(ax=a, color='b')
-        # self.contact_point1.plot(ax=a)
-        # self.contact_point2.plot(ax=a)
-        # corrected_next_tooth_start.plot(ax=a, color='grey')
-        # corrected_upper_start.plot(ax=a, color='g')
-        # corrected_upper_end.plot(ax=a, color='r')
-        # corrected_lower_start.plot(ax=a, color='r')
-        # corrected_lower_end.plot(ax=a, color='g')
-        # self.basis_circle.plot(ax=a, color='grey')
-        # a.set_aspect('equal')
+
 
         arc_upper = arc_upper.split(corrected_upper_start)[1]
         self.arc_upper = arc_upper.split(corrected_upper_end)[0]
@@ -206,7 +215,8 @@ class Pawl(dc.DessiaObject):
     def __init__(self, axis_position:vm.Point2D,
                  wheel_lower_tooth_diameter:float,
                  contact_diameter:float,
-                 basis_diameter:float,
+                 # basis_diameter:float,
+                 pressure_angle:float,
                  axis_inner_diameter:float, axis_outer_diameter:float,
                  finger_height:float,
                  # finger_angle:float,
@@ -220,8 +230,8 @@ class Pawl(dc.DessiaObject):
         self.axis_position = axis_position
         self.wheel_lower_tooth_diameter = wheel_lower_tooth_diameter
         self.contact_diameter = contact_diameter
-        self.basis_diameter = basis_diameter
-
+        # self.basis_diameter = basis_diameter
+        self.pressure_angle = pressure_angle
         self.finger_height = finger_height
         # self.finger_angle = finger_angle
         self.finger_width = finger_width
@@ -250,8 +260,10 @@ class Pawl(dc.DessiaObject):
         contact_middle_point = vm.Point2D(0, 0.5*self.contact_diameter)
         # Find minimal contact width
         # self.action_angle = math.asin(self.basis_diameter/self.contact_diameter)
-        self.pressure_angle = math.acos(self.basis_diameter/self.contact_diameter)
+        # self.pressure_angle = math.acos(self.basis_diameter/self.contact_diameter)
+        self.basis_diameter = self.contact_diameter * math.cos(self.pressure_angle)
         # print('pressure angle', math.degrees(self.pressure_angle))
+
         self.min_finger_width = (self.contact_diameter - self.wheel_lower_tooth_diameter)*math.tan(self.pressure_angle)
         # print('self.min_finger_width', self.min_finger_width)
         self.finger_lower_angle =  math.atan(self.finger_width/self.wheel_lower_tooth_diameter)
@@ -527,8 +539,9 @@ class ParkingPawl(dc.DessiaObject):
                  wheel_outer_diameter:float,
                  teeth_number:int,
                  lower_tooth_ratio:float,
-                 basis_diameter:float,
+                 # basis_diameter:float,
                  contact_diameter:float,
+                 pressure_angle:float,
                  width:float,
                  pawl_offset:float,
                  axis_inner_diameter:float, axis_outer_diameter:float,
@@ -550,7 +563,7 @@ class ParkingPawl(dc.DessiaObject):
         self.wheel_outer_diameter = wheel_outer_diameter
         self.teeth_number = teeth_number
         self.lower_tooth_ratio = lower_tooth_ratio
-        self.basis_diameter = basis_diameter
+        self.pressure_angle = pressure_angle
         self.contact_diameter = contact_diameter
         self.width = width
         self.pawl_offset = pawl_offset
@@ -577,7 +590,7 @@ class ParkingPawl(dc.DessiaObject):
                            teeth_number=teeth_number,
                            # upper_tooth_ratio=upper_tooth_ratio,
                            lower_tooth_ratio=lower_tooth_ratio,
-                           basis_diameter=basis_diameter,
+                           pressure_angle=pressure_angle,
                            contact_diameter=contact_diameter,
                            width=width)
         self.slope_end_height = 0.5*wheel_lower_tooth_diameter + slope_start_height + slope_length*math.sin(slope_angle)
@@ -585,7 +598,7 @@ class ParkingPawl(dc.DessiaObject):
         self.pawl = Pawl(axis_position=vm.Point2D(-pawl_offset, self.slope_end_height-0.5*axis_outer_diameter),
                          wheel_lower_tooth_diameter=wheel_lower_tooth_diameter,
                          contact_diameter=contact_diameter,
-                         basis_diameter=basis_diameter,
+                         pressure_angle=pressure_angle,
                          axis_inner_diameter=axis_inner_diameter,
                          axis_outer_diameter=axis_outer_diameter,
                          finger_height=finger_height,
@@ -609,6 +622,7 @@ class ParkingPawl(dc.DessiaObject):
         R = self.pawl.arc_side2.end.point_distance(self.pawl.axis_position)
         x, y = self.pawl.arc_side2.end-self.pawl.axis_position
         alpha = math.atan2(y, x)
+
         self.up_pawl_angle = -(math.asin(math.sin(alpha)
                                -(0.5*(wheel_outer_diameter
                                       -wheel_lower_tooth_diameter)
@@ -654,11 +668,18 @@ class ParkingPawl(dc.DessiaObject):
         return (self.pawl.slope_length*math.sin(self.pawl.slope_angle-self.up_pawl_angle)
                 - self.pawl.junction4.length()*math.sin(self.up_pawl_angle))
 
-    def check(self):
+    def check(self, clearance:float=0.003):
         if self.engaged_slack() < 0:
             return False
         if self.pawl.slope_angle < self.up_pawl_angle:
             return False
+
+        if self.axis_wheel_clearance() < clearance:
+            return False
+
+        if self.rest_margin() < 0:
+            return False
+
         return True
 
     def plot_data(self, pawl_angle=None, wheel_angle=None):
@@ -905,7 +926,7 @@ class ParkingPawl(dc.DessiaObject):
             if last_step_step_change != n_step:
                 if abs(delta_pawl_angle) > max_delta_angle:
                     time_step /= (2*abs(delta_pawl_angle)/max_delta_angle)
-                    print('reducing time step to ', time_step)
+                    # print('reducing time step to ', time_step)
                     last_step_step_change = n_step
                     delta_pawl_angle = 0.5 * angular_acceleration * time_step ** 2 + angular_speed * time_step
                     angular_speed += angular_acceleration * time_step
@@ -913,7 +934,7 @@ class ParkingPawl(dc.DessiaObject):
 
                 if abs(delta_pawl_angle) < 0.2 * max_delta_angle:
                     time_step *= 1.5
-                    print('increasing time step to ', time_step)
+                    # print('increasing time step to ', time_step)
                     last_step_step_change = n_step
                     delta_pawl_angle = 0.5 * angular_acceleration * time_step ** 2 + angular_speed * time_step
                     angular_speed += angular_acceleration * time_step
@@ -953,7 +974,7 @@ class ParkingPawl(dc.DessiaObject):
 
 
             if pawl_angle < 0:
-                print('finishing simulation as angle<0')
+                # print('finishing simulation as angle<0')
                 break
 
         locking_forces[0] = locking_forces[1]
@@ -1164,7 +1185,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         bounds = self.cma_bounds()
         xra, fx = cma.fmin(self.objective_from_dimensionless_vector,
                            x0, 0.6, options={'bounds': bounds,
-                                             'tolfun': 1e-2,
+                                             'tolfun': 1e-3,
                                              'verbose': 0,
                                              'ftarget': 0.2})[0:2]
         # print('x', result.x)
@@ -1172,11 +1193,11 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         attributes_values = self.vector_to_attributes_values(
             self.dimensionless_vector_to_vector(xra))
         
-        
-        if fx < 10:
+        try:
             model = self.instantiate_model(attributes_values)
-        else:
-            model = None
+        except ValueError:
+            return None, fx
+
         return model, fx
     
     
@@ -1184,8 +1205,8 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         # print('attributes_values')
         # print(attributes_values)
         wheel_lower_tooth_diameter = attributes_values['wheel_lower_tooth_diameter']
-        basis_diameter = wheel_lower_tooth_diameter + attributes_values['relative_basis_diameter']
-        contact_diameter = basis_diameter + attributes_values['relative_contact_diameter']
+        # basis_diameter = wheel_lower_tooth_diameter + attributes_values['relative_basis_diameter']
+        contact_diameter = wheel_lower_tooth_diameter + attributes_values['relative_contact_diameter']
         wheel_outer_diameter = contact_diameter + attributes_values['relative_wheel_outer_diameter']
         finger_height = 1.1*0.5 * (wheel_outer_diameter - wheel_lower_tooth_diameter)
         slope_start_height = finger_height + attributes_values['slope_start_finger_overheight']
@@ -1201,7 +1222,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
                                    wheel_outer_diameter=wheel_outer_diameter,
                                    teeth_number=attributes_values['teeth_number'],
                                    lower_tooth_ratio=0.60,
-                                   basis_diameter=basis_diameter,
+                                   pressure_angle=attributes_values['pressure_angle'],
                                    contact_diameter=contact_diameter,
                                    width=0.025,
                                    pawl_offset=attributes_values['pawl_offset'],
@@ -1234,10 +1255,10 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
 
         try:
             model = self.instantiate_model(attributes_values)
-        except:
-            print('Error in instanciating model')
-            return 1000000
-        return self.objective_from_model(model)        
+        except Exception as err:
+            # print('Error in instanciating model')
+            return 1000000+100*random.random()
+        return self.objective_from_model(model)
         
     def objective_from_model(self, model:ParkingPawl, clearance:float=0.003):
 
@@ -1247,17 +1268,17 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
             objective += (clearance - model.axis_wheel_clearance())*10000
 
         if model.engaged_slack() < 0.:
-            objective -= (model.engaged_slack())*10000
+            objective -= (model.engaged_slack())*100000
 
         if model.rest_margin() < 0:
-            objective += 100000*model.rest_margin()
+            objective -= 100000*model.rest_margin()
 
         model.pawl.size_torsion_spring(10 * 9.81)
         try:
             simulation = model.locking_simulation(wheel_speed=self.wheel_locking_speed)
         except:
-            print('Something went wrong in simulation')
-            objective += 100000
+            # print('Something went wrong in simulation')
+            objective += 1000000
             return objective
 
         tooth_time = abs((model.wheel.junction_angle+model.wheel.lower_tooth_angle)/self.wheel_locking_speed)
@@ -1265,8 +1286,8 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         if locking_time_ratio < 0:
             objective += 10000*abs(locking_time_ratio)
             
-        print('rest margin/locking time ratio', model.rest_margin(), locking_time_ratio)
-        print('\tmodel objective', objective)
+        # print('rest margin/locking time ratio', model.rest_margin(), locking_time_ratio)
+        # print('\tmodel objective', objective)
         
         return objective
 
