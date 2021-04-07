@@ -11,6 +11,7 @@ import numpy as npy
 import networkx as nx
 import dectree
 import cma
+from typing import List, Tuple
 from mechanical_components.meshes import MeshAssembly,\
         gear_graph_simple, gear_graph_complex, ValidGearDiameterError
 
@@ -1367,7 +1368,7 @@ class MeshAssemblyOptimizer:
         return plex_calcul
 
 
-    def Optimize(self,nb_sol=1, list_sol=None, verbose=False):
+    def Optimize(self, nb_sol: int =1, list_sol: List =None, verbose: bool = False):
         """ Gear mesh assembly optimization for given plex configuration
 
         :param nb_sol: number of solution desired, if list_sol = None we take nb_sol = len(plex) the optimize function analyse all the plex possibility

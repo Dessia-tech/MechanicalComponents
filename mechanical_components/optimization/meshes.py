@@ -358,3 +358,32 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         self.solutions_search=[]
         self.analyse=[]
 
+# class Instanciate(DessiaObject):
+    
+#     def __init__(self, gear_speeds: Dict, center_distances:List, torques: Dict):
+#         self.gear_speeds = gear_speeds
+#         self.center_distances = center_distances
+#         self.torques = torques 
+        
+        
+#     def instanciate(self):
+        
+#         rack = RackOpti(transverse_pressure_angle_0=[20/180.*npy.pi,20/180.*npy.pi], module=[2*1e-3,2*1e-3],
+#              coeff_gear_addendum=[1,1],coeff_gear_dedendum=[1.25,1.25],coeff_root_radius=[0.38,0.38],
+#              coeff_circular_tooth_thickness=[0.5,0.5],helix_angle=[21,60])
+        
+#         meshoptis = []
+#         for i, speed_input in enumerate(self.gear_speeds.values()):
+#             meshoptis.append(MeshOpti(rack = rack, torque_input = self.torques[i], speed_input = speed_input))
+        
+#         center_distances = []
+#         for i, center_distance in enumerate(self.center_distances):
+#             if center_distance != self.center_distances[-1]: 
+#                 center_distances.append([CenterDistanceOpti(center_distance = center_distance, meshes = [meshoptis[i], meshoptis[i+1]])])
+#             else:
+#                 center_distances.append([CenterDistanceOpti(center_distance = center_distance, meshes= [meshoptis[0], meshoptis[-1]])])
+        
+#         return center_distances
+            
+            
+            
