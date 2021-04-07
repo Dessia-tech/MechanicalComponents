@@ -690,7 +690,7 @@ class Mesh(DessiaObject):
         if list_number == [None]:
             list_number = npy.arange(int(abs(self.z)))
         L = [self._outside_trace(0)]
-        print(L[0])
+        
         self.reference_point_outside=copy.copy(L[0].points[int(len(L[0].points)/2)])
         L.append(self._involute_trace(discret, 0, 'T'))
         if self.z > 0:
@@ -965,9 +965,9 @@ class Mesh(DessiaObject):
                     #     # print(point.vector)
                     # print(point)
         # L.append(L[0])
-
+        bezier_curve=vm.edges.BezierCurve2D(3, L)
         C1 = vm.wires.ClosedPolygon2D(L,{})
-       
+        # C1 = vm.wires.Contour2D([bezier_curve])
         surface_style=vmp.SurfaceStyle(color_fill=None,opacity=0)
         vect_position_1 = vm.Vector3D(0,0,0)
         circle_db=vm.wires.Circle2D(center=vect_position_1,radius=self.db/2)
@@ -1557,13 +1557,13 @@ class MeshCombination(DessiaObject):
             teta_om=math.acos(self.DB[engr2]/self.meshes[engr2].outside_diameter)
             self.SAP[num_mesh][0]=180*((self.Z[engr1]+self.Z[engr2])*math.tan(self.transverse_pressure_angle[num_mesh])-self.Z[engr2]*math.tan(teta_om))/(math.pi*self.Z[engr1])
             
-            self.SAP_diameter[num_mesh][0]=self.DB[engr1]*math.sqrt((math.pi*self.SAP[num_mesh][engr1]/180)**2+1)
+            self.SAP_diameter[num_mesh][0]=self.DB[engr1]*math.sqrt((math.pi*self.SAP[num_mesh][0]/180)**2+1)
             
             
             teta_om=math.acos(self.DB[engr1]/self.meshes[engr1].outside_diameter)
             self.SAP[num_mesh][1]=180*((self.Z[engr1]+self.Z[engr2])*math.tan(self.transverse_pressure_angle[num_mesh])-self.Z[engr1]*math.tan(teta_om))/(math.pi*self.Z[engr2])
             
-            self.SAP_diameter[num_mesh][1]=self.DB[engr2]*math.sqrt((math.pi*self.SAP[num_mesh][engr2]/180)**2+1)
+            self.SAP_diameter[num_mesh][1]=self.DB[engr2]*math.sqrt((math.pi*self.SAP[num_mesh][1]/180)**2+1)
     
     @classmethod
     def gear_torque(cls, Z, external_torque, db, gear_graph, list_gear, connections, DF, transverse_pressure_angle,helix_angle):
@@ -1773,7 +1773,7 @@ class MeshCombination(DessiaObject):
             
             f_eng1=abs(x[0])-abs((tangential_load[0]
                               / (sigma_lim[0][0]
-                                 * meshes[eng1].rack.module))
+                                 * meshes[0].rack.module))
                               *coeff_yf_iso[0][0]
                               *1/contact_ratio[1][0]
                               *coeff_yb_iso[0][0])
@@ -1798,13 +1798,13 @@ class MeshCombination(DessiaObject):
         
         for num_mesh, (eng1, eng2) in enumerate(connections):
             
-                
+            
             xs=fsolve(f,npy.zeros(2),args=([tangential_load[num_mesh]],
                                     [[sigma_lim[num_mesh][eng1],sigma_lim[num_mesh][eng2]]],
                                     [meshes[eng1],meshes[eng2]],
                                     [[coeff_yf_iso[num_mesh][eng1],coeff_yf_iso[num_mesh][eng2]]],
                                     [[coeff_yb_iso[num_mesh][eng1],coeff_yb_iso[num_mesh][eng2]]],
-                                    [[DF[num_mesh][eng1],DF[num_mesh][eng2]]],
+                                    [[DF[num_mesh][0],DF[num_mesh][1]]],
                                     [(0,1)],
                                     [transverse_pressure_angle[num_mesh]],
                                     [center_distance[num_mesh]],
@@ -2012,8 +2012,7 @@ class MeshCombination(DessiaObject):
         sign_angle_1=npy.sign(vector_trochoide_gear_1.x*center_distance.y-center_distance.x*vector_trochoide_gear_1.y)
         sign_angle_2=npy.sign(vector_outside_gear_2.x*center_distance.y-center_distance.x*vector_outside_gear_2.y)
         
-        print(sign_angle_1)
-        print(sign_angle_2)
+        
         
         rotation_gear_2=sign_angle_2*(angle_2-math.pi)+sign_angle_1*angle_1*self.meshes_dico[liste_eng[0]].z/self.meshes_dico[liste_eng[1]].z
         return 0,rotation_gear_2
@@ -2204,7 +2203,7 @@ class MeshCombination(DessiaObject):
         :results: list of 3D volmdlr component
         """
         primitives=[]
-        print(centers)
+        
         x = vm.Vector3D(axis[0],axis[1],axis[2])
         # y = x.RandomUnitNormalVector()
         # y= vm.Vector3D((0,1,0))
@@ -2299,8 +2298,9 @@ class MeshCombination(DessiaObject):
                        #     # print(point.vector)
                        # print(point)
             # L.append(L[0])
-
+            bezier_curve=vm.edges.BezierCurve2D(3, L)
             C1 = vm.wires.ClosedPolygon2D(L,{})
+            # C1 = vm.wires.Contour2D([bezier_curve])
             # vmp.plot([C1.plot_data('contour')])
             L2 = []
             L2_vector = []
