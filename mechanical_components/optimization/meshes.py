@@ -4,8 +4,9 @@
 """
 
 """
+import numpy as npy
 from dessia_common import DessiaObject
-from typing import  List, Tuple
+from typing import  List, Tuple, Dict
 from mechanical_components.meshes import MeshAssembly, hardened_alloy_steel,\
         gear_graph_simple,Material
 
@@ -356,3 +357,4 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         self.solutions=[]
         self.solutions_search=[]
         self.analyse=[]
+

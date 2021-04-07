@@ -1759,7 +1759,7 @@ class MeshCombination(DessiaObject):
             
             f_eng1=abs(x[0])-abs((tangential_load[0]
                               / (sigma_lim[0][0]
-                                 * meshes[eng1].rack.module))
+                                 * meshes[0].rack.module))
                               *coeff_yf_iso[0][0]
                               *1/contact_ratio[1][0]
                               *coeff_yb_iso[0][0])
