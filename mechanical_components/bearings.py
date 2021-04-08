@@ -3198,10 +3198,10 @@ class BearingAssembly(DessiaObject):
     
     def cad_shaft(self, center = vm.O3D, axis = vm.X3D):
         # TODO: mutualization of this in parent class?
-        axis.Normalize()
+        axis.normalize()
 
-        y = axis.RandomUnitNormalVector()
-        z = axis.Cross(y)
+        y = axis.random_unit_normal_vector()
+        z = axis.cross(y)
 
         #Internal Ring
         d1 = self.bearing_combinations[0].d
@@ -3231,8 +3231,7 @@ class BearingAssembly(DessiaObject):
         l1 = vm.edges.LineSegment2D(p1,p6)
         shaft_cont = vm.wires.Contour2D(shaft.primitives + [l1])
         
-        irc = primitives3d.RevolvedProfile(center, axis, z, shaft_cont, center,
-                                         axis, angle=2*math.pi, color=[204/255, 12/255, 12/255], name='Shaft')
+        irc = primitives3d.RevolvedProfile(center, z, axis, shaft_cont, center, axis, angle=2*math.pi, color=[204/255, 12/255, 12/255], name='Shaft')
         
         return [irc]
 
@@ -3467,6 +3466,15 @@ class BearingAssembly(DessiaObject):
             print('Convergence Error')
             
             pass
+    def volume_model(self):
+        groups = []
+        cad_shaft = self.cad_shaft()
+        groups.extend(cad_shaft)
+        
+        return groups
+        
+        
+    
 
 
 class BearingSimulationResult(DessiaObject):
