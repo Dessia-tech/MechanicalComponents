@@ -71,14 +71,36 @@ class MeshOpti(DessiaObject):
 class CenterDistanceOpti(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self,center_distance:Tuple[float,float],meshes:List[MeshOpti], name:str='',constraint_root_diameter=True,CA_min=0,constraint_SAP_diameter=True,distance_SAP_root_diameter_active_min=0 ):
+    def __init__(self,center_distance:Tuple[float,float],meshes:List[MeshOpti], name:str='', 
+                 constraint_root_diameter:List[bool]=None, CA_min:List[float]=None, 
+                 constraint_SAP_diameter:List[bool]=None, 
+                 distance_SAP_root_diameter_active_min:List[float]=None ):
 
         self.meshes = meshes
         self.center_distance = center_distance
-        self.constraint_root_diameter=constraint_root_diameter
-        self.CA_min=CA_min
-        self.constraint_SAP_diameter=constraint_SAP_diameter
-        self.distance_SAP_root_diameter_active_min=distance_SAP_root_diameter_active_min
+        
+        if constraint_root_diameter == None:
+            
+            self.constraint_root_diameter = [False]*(int(len(meshes)/2))
+        else:
+            self.constraint_root_diameter = constraint_root_diameter 
+        
+        if CA_min == None: 
+            self.CA_min = [0]*(int(len(meshes)/2))
+        else:
+            self.CA_min = CA_min
+            
+        if constraint_SAP_diameter == None:
+            self.constraint_SAP_diameter = [False]*(int(len(meshes)/2))
+        else:
+            self.constraint_SAP_diameter = constraint_SAP_diameter
+        
+        if distance_SAP_root_diameter_active_min == None:
+            self.distance_SAP_root_diameter_active_min = [0]*(int(len(meshes)/2))   
+        
+        else:
+            self.distance_SAP_root_diameter_active_min = distance_SAP_root_diameter_active_min
+            
         DessiaObject.__init__(self, name=name)
 
 
@@ -120,19 +142,20 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         self.constraints_SAP_diameter=[]
         self.distances_SAP_root_diameter_active_min=[]
         
-        for meshing_plan in center_distances:
+        for center_distance in center_distances:
             connections_plan=[]
-            for center_distance in meshing_plan:
-                for gear in center_distance.meshes:
-                    if not gear in list_gear:
-                        list_gear.append(gear)
-                self.constraints_root_diameter.append(center_distance.constraint_root_diameter)
-                self.list_CA_min.append(center_distance.CA_min)
-                self.distances_SAP_root_diameter_active_min.append(center_distance.distance_SAP_root_diameter_active_min)
-                self.constraints_SAP_diameter.append(center_distance.constraint_SAP_diameter)
-                connections_plan.append((list_gear.index(center_distance.meshes[0]),list_gear.index(center_distance.meshes[1])))
+            for gear in center_distance.meshes:
+                if gear not in list_gear:
+                    list_gear.append(gear)
 
-            cd.append(meshing_plan[0].center_distance)
+            self.constraints_root_diameter.extend(center_distance.constraint_root_diameter)
+            self.list_CA_min.extend(center_distance.CA_min)
+            self.distances_SAP_root_diameter_active_min.extend(center_distance.distance_SAP_root_diameter_active_min)
+            self.constraints_SAP_diameter.extend(center_distance.constraint_SAP_diameter)
+            for gear_1,gear_2 in zip(center_distance.meshes[:-1],center_distance.meshes[1:]):
+                connections_plan.append((list_gear.index(gear_1),list_gear.index(gear_2)))
+
+            cd.append(center_distance.center_distance)
             connections.append(connections_plan)
 
 
@@ -244,6 +267,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                 number_mesh+=1
 
         # default parameters
+       
         if len(transverse_pressure_angle.keys())<number_mesh:
             for num_mesh in list_gear:
                 if num_mesh not in transverse_pressure_angle.keys():
