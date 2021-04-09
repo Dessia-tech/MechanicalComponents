@@ -552,8 +552,8 @@ class ContinuousMeshesAssemblyOptimizer:
                     if constraints_SAP_diameter[num_mesh]:
                         
      
-                        SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][engr1]
-                        SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][engr2]
+                        SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][0]
+                        SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][1]
                         
                         if Z1<0:
                             ineq.append((-SAP1+dia1-d_sap_root)*100)
@@ -624,8 +624,8 @@ class ContinuousMeshesAssemblyOptimizer:
                 ineq.append(oaa1)
                 ineq.append(oaa2)
                 
-                df1=abs(mesh_assembly_iter.DF[num_mesh][engr1])
-                df2=abs(mesh_assembly_iter.DF[num_mesh][engr2])
+                df1=abs(mesh_assembly_iter.DF[num_mesh][0])
+                df2=abs(mesh_assembly_iter.DF[num_mesh][1])
                 db1=abs(mesh_assembly_iter.meshes_dico[engr1].db)
                 db2=abs(mesh_assembly_iter.meshes_dico[engr2].db)
                 
@@ -656,8 +656,8 @@ class ContinuousMeshesAssemblyOptimizer:
                 ineq.append(oaa1)
                 ineq.append(oaa2)
                 
-                df1=abs(mesh_assembly_iter.DF[num_mesh][engr1])
-                df2=abs(mesh_assembly_iter.DF[num_mesh][engr2])
+                df1=abs(mesh_assembly_iter.DF[num_mesh][0])
+                df2=abs(mesh_assembly_iter.DF[num_mesh][1])
                 db1=abs(mesh_assembly_iter.meshes_dico[engr1].db)
                 db2=abs(mesh_assembly_iter.meshes_dico[engr2].db)
                 
@@ -826,8 +826,8 @@ class ContinuousMeshesAssemblyOptimizer:
                             if constraints_SAP_diameter[num_mesh]:
                                 
              
-                                SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][engr1]
-                                SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][engr2]
+                                SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][0]
+                                SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][1]
                                 
                                 if Z1<0:
                                     if (-SAP1+dia1-d_sap_root)<0:

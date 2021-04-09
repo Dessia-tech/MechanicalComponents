@@ -3178,12 +3178,10 @@ class BearingAssembly(DessiaObject):
         shaft = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, -d1/2.),
                       vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, d1/2.),
                       vm.Point2D(pos_mid, d1/2.),
-                      vm.Point2D(pos_mid, d2/2.),
                       vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, d2/2.),
                       vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, -d2/2.),
-                      vm.Point2D(pos_mid, -d2/2.),
-                      vm.Point2D(pos_mid, -d1/2.),
-                      vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, -d1/2.)],
+                      vm.Point2D(pos_mid, -d2/2.)
+                      ],
                                                  {}, adapt_radius=False)
         # shaft = vm.Polygon2D([vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.)),
         #               vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.)),
