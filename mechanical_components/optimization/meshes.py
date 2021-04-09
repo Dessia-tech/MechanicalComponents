@@ -26,10 +26,12 @@ except (ModuleNotFoundError, ImportError) as _:
 class RackOpti(DessiaObject):
      _standalone_in_db = True
 
-     def __init__(self, transverse_pressure_angle_0: List[float]=None, module: List[float]=None,
-                 coeff_gear_addendum : List[float]=None, coeff_gear_dedendum: List[float]=None,
-                 coeff_root_radius: List[float]=None, coeff_circular_tooth_thickness: List[float]=None,
-                 helix_angle: List[float]=None ,total_contact_ratio_min: float=1,axial_contact_ratio: float=0.7,transverse_contact_ratio_min: float=1,name : str=''):
+     def __init__(self, transverse_pressure_angle_0: Tuple[float,float]=None, module: Tuple[float,float]=None,
+                 coeff_gear_addendum : Tuple[float,float]=None, coeff_gear_dedendum: Tuple[float,float]=None,
+                 coeff_root_radius: Tuple[float,float]=None, coeff_circular_tooth_thickness: Tuple[float,float]=None,
+                 helix_angle: Tuple[float,float]=None ,
+                 total_contact_ratio_min: float=1,axial_contact_ratio: float=0.7,
+                 transverse_contact_ratio_min: float=1,name : str=''):
 
          self.transverse_pressure_angle_0=transverse_pressure_angle_0
          self.module=module
