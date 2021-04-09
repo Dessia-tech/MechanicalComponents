@@ -755,7 +755,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 obj+=abs(mesh_combination.axial_load[key]*5e-5)
        
         return obj
-    def Optimize(self, verbose = False,constraints_root_diameter=None,list_CA_min=None,constraints_SAP_diameter=None,distances_SAP_root_diameter_active_min=None):
+    def Optimize(self, verbose = False, constraints_root_diameter=None,list_CA_min=None,constraints_SAP_diameter=None,distances_SAP_root_diameter_active_min=None):
         """ Optimizer function
 
         >>> cmao1.Optimize(verbose = True)
@@ -1368,7 +1368,11 @@ class MeshAssemblyOptimizer:
         return plex_calcul
 
 
+<<<<<<< HEAD
     def Optimize(self, nb_sol: int =1, list_sol: List =None, verbose: bool = False):
+=======
+    def Optimize(self,nb_sol: int = 1, list_sol: List = None, verbose:bool = False):
+>>>>>>> dev_meshes
         """ Gear mesh assembly optimization for given plex configuration
 
         :param nb_sol: number of solution desired, if list_sol = None we take nb_sol = len(plex) the optimize function analyse all the plex possibility

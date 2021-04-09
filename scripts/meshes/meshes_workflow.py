@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Apr  6 16:27:41 2021
+<<<<<<< HEAD
 
+=======
+>>>>>>> dev_meshes
 @author: dasilva
 """
 
@@ -53,7 +56,11 @@ for i, speed_input in enumerate(gear_speeds.values()):
 
 center_distances = []
 for i , center_distance in enumerate(center_dists):
+<<<<<<< HEAD
     center_distances.append([meshes_opt.CenterDistanceOpti(center_distance = center_distance, meshes = [meshoptis[connections[i][0]], meshoptis[connections[i][1]]])])
+=======
+    center_distances.append(meshes_opt.CenterDistanceOpti(center_distance = center_distance, meshes = [meshoptis[connections[i][0]], meshoptis[connections[i][1]]]))
+>>>>>>> dev_meshes
 
 cycles = {0: 1272321481513.054}
 

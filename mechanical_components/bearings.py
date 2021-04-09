@@ -3014,7 +3014,7 @@ class BearingCombination(DessiaObject):
     def volume_model(self, center = vm.Point3D(0,0,0), axis = vm.Vector3D(1,0,0)):
         groups = []
 #        position = self.axial_positions
-        center_bearing = center+0.5*(self.bearings[0].B -self.B)*axis
+        center_bearing = center+0.5*(self.bearings[0].B - self.B)*axis
         for bearing in self.bearings:
             groups.extend(bearing.volmdlr_primitives(center=center_bearing))
             center_bearing += bearing.B*axis
@@ -3464,14 +3464,28 @@ class BearingAssembly(DessiaObject):
             print('Convergence Error')
             
             pass
-    def volume_model(self):
-        groups = []
-        cad_shaft = self.cad_shaft()
-        groups.extend(cad_shaft)
+    # def volume_model(self):
+    #     groups = []
+    #     cad_shaft = self.cad_shaft()
+    #     groups.extend(cad_shaft.volmdlr_primitives)
         
-        for assembly_bg in self.bearing_combinations:
-            groups.extend(assembly_bg.volume_model)
-        return groups
+    #     # d1 = self.bearing_combinations[0].d
+    #     # d2 = self.bearing_combinations[1].d
+    #     # B1 = self.bearing_combinations[0].B
+    #     # B2 = self.bearing_combinations[1].B
+    #     # pos_mid = (self.axial_positions[0] + self.axial_positions[1])/2.
+        
+    #     # bearings_volume_models
+    #     for assembly_bg in self.bearing_combinations:
+    #         groups.extend(assembly_bg.volume_model.volmdlr_primitives)
+            
+        
+    #     # for bearing in self.bearing_combinations:
+    #     #     center_pos_bearing1 = 
+        
+    #     # for assembly_bg in self.bearing_combinations:
+    #     #     groups.extend(assembly_bg.volume_model)
+    #     return groups
         
         
     

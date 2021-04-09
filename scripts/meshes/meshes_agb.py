@@ -42,9 +42,14 @@ center_distance3 = meshes_opt.CenterDistanceOpti((0.10568352491185784, 0.1227636
 center_distance4 = meshes_opt.CenterDistanceOpti((0.14181884668124436, 0.164739064326698),[meshopti4,meshopti5])
 center_distance5 = meshes_opt.CenterDistanceOpti((0.07722003844178454, 0.0897000446545982),[meshopti1,meshopti6])
 
+<<<<<<< HEAD
 center_distances = [[center_distance1],[center_distance2],[center_distance3],
                   [center_distance4],[center_distance5]]
 
+=======
+center_distances = [center_distance1,center_distance2,center_distance3,
+                  center_distance4,center_distance5,]
+>>>>>>> dev_meshes
 cycles = {0: 1272321481513.054}
 torques = {0: 'output', 1: 40, 2: 10.0, 3: 0, 4: 0, 5: 0, 6: 0}
 
