@@ -3471,6 +3471,8 @@ class BearingAssembly(DessiaObject):
         cad_shaft = self.cad_shaft()
         groups.extend(cad_shaft)
         
+        for assembly_bg in self.bearing_combinations:
+            groups.extend(assembly_bg.volume_model)
         return groups
         
         
