@@ -1368,11 +1368,8 @@ class MeshAssemblyOptimizer:
         return plex_calcul
 
 
-<<<<<<< HEAD
-    def Optimize(self, nb_sol: int =1, list_sol: List =None, verbose: bool = False):
-=======
     def Optimize(self,nb_sol: int = 1, list_sol: List = None, verbose:bool = False):
->>>>>>> dev_meshes
+
         """ Gear mesh assembly optimization for given plex configuration
 
         :param nb_sol: number of solution desired, if list_sol = None we take nb_sol = len(plex) the optimize function analyse all the plex possibility

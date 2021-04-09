@@ -1,15 +1,7 @@
-#!/usr/bin/env python3
-<<<<<<< HEAD
-# -*- coding: utf-8 -*-
+
 """
 Created on Tue Apr  6 12:14:22 2021
 
-=======
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Apr  6 12:14:22 2021
->>>>>>> dev_meshes
 @author: dasilva
 """
 
@@ -40,11 +32,9 @@ for i, speed_input in enumerate(gear_speeds.values()):
 
 center_distances = []
 for i , center_distance in enumerate(center_dists):
-<<<<<<< HEAD
-    center_distances.append([meshes_opt.CenterDistanceOpti(center_distance = center_distance, meshes = [meshoptis[connections[i][0]], meshoptis[connections[i][1]]])])
-=======
+
     center_distances.append(meshes_opt.CenterDistanceOpti(center_distance = center_distance, meshes = [meshoptis[connections[i][0]], meshoptis[connections[i][1]]]))
->>>>>>> dev_meshes
+
 
 cycles = {0: 1272321481513.054}
 
@@ -60,11 +50,9 @@ GA = meshes_opt.MeshAssemblyOptimizer(center_distances,cycles)
 #Optimization for gear set with center-distance closed to the minimum boundary
 GA.Optimize(nb_sol =5, verbose=True)
 print('Number of solutions:',len(GA.solutions))
-<<<<<<< HEAD
-solution=GA.solutions[1]
-=======
+
 solutions = GA.solutions
->>>>>>> dev_meshes
+
 # solution.pos_axis({0:(0,0,0)})
 
 
@@ -73,9 +61,4 @@ for mesh_assembly in GA.solutions:
     m=mesh_assembly.mesh_combinations
 #solution=GA.solutions[-1]
 #solution.SVGExport('name.txt',{0 : [0,0], 1 : [0.5,0]})
-<<<<<<< HEAD
 #solution.FreeCADExport('meshes3')
-
-=======
-#solution.FreeCADExport('meshes3')
->>>>>>> dev_meshes
