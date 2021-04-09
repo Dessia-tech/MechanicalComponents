@@ -673,6 +673,18 @@ class Mesh(DessiaObject):
         return ineq
 
     ### Trace method
+    
+    def update_reference_point(self,discret=3):
+        L = [self._outside_trace(0)]
+        
+        self.reference_point_outside=copy.copy(L[0].points[int(len(L[0].points)/2)])
+        
+        if self.z > 0:
+            
+            last_point=self._trochoide_trace(4*discret, 0, 'T').points[-1]
+            first_point=self._trochoide_trace(4*discret, 0, 'R').points[0]
+            self.reference_point_trochoide=vm.Point2D((first_point[0]-last_point[0])/2+last_point[0],(first_point[1]-last_point[1])/2+last_point[1])
+        
 
     def contour(self, discret=1, list_number=[None]):
         """ Definition of the gear contour for volmdlr
@@ -1925,30 +1937,6 @@ class MeshCombination(DessiaObject):
         """
         export = []
 
-        for (i, center, k) in zip(list_gear, list_center, list_rot):
-            model_export = []
-
-            for m in i:
-                center = vm.Point2D(center)
-                
-                model_trans = m.Translation(center)
-                model_trans_rot = model_trans.Rotation(center, k)
-                model_export.append(model_trans_rot)
-            export.append(model_export)
-            
-        return export
-
-    def gear_rotate_2(self,gear_index, list_gear, list_center, list_rot):
-        """ Displacement of the volmdlr gear profile (rotation and translation)
-
-        :param list_gear: list of volmdlr contour [meshes.Contour, meshes.Contour ...], each contour is centered on the origin
-        :param list_center: list of tuple define the final position of the gear mesh center (a translation is perform, then a rotation around this axis)
-        :param list_rot: list of rotation for each gear mesh [node1 : rot1, node2 : rot2 ...]
-
-        :results: list of volmdlr component
-        """
-        export = []
-
         for (index,i, center, k) in zip(gear_index,list_gear, list_center, list_rot):
             model_export=[]
             position=[self.meshes_dico[index].reference_point_trochoide[0]+center[0],
@@ -1981,6 +1969,44 @@ class MeshCombination(DessiaObject):
              
                 model_export.append(model_trans_rot)
             export.append(model_export)
+        return export
+
+    def gear_rotate_2(self,gear_index, list_center, list_rot):
+        """ Displacement of the volmdlr gear profile (rotation and translation)
+
+        :param list_gear: list of volmdlr contour [meshes.Contour, meshes.Contour ...], each contour is centered on the origin
+        :param list_center: list of tuple define the final position of the gear mesh center (a translation is perform, then a rotation around this axis)
+        :param list_rot: list of rotation for each gear mesh [node1 : rot1, node2 : rot2 ...]
+
+        :results: list of volmdlr component
+        """
+        export = []
+
+        for (index, center, k) in zip(gear_index, list_center, list_rot):
+            model_export=[]
+            position=[self.meshes_dico[index].reference_point_trochoide[0]+center[0],
+                      self.meshes_dico[index].reference_point_trochoide[1]+center[1]]
+            
+          
+            u = [position[0] - center[0],position[1] - center[1]]
+            v2x = math.cos(k)*u[0] - math.sin(k)*u[1] + center[0]
+            v2y = math.sin(k)*u[0] + math.cos(k)*u[1] + center[1]
+            
+            self.meshes_dico[index].reference_point_trochoide.x=v2x
+            self.meshes_dico[index].reference_point_trochoide.y=v2y
+           
+            
+            position=[self.meshes_dico[index].reference_point_outside[0]+center[0],
+                      self.meshes_dico[index].reference_point_outside[1]+center[1]]
+            
+            u = [position[0] - center[0],position[1] - center[1]]
+            v2x = math.cos(k)*u[0] - math.sin(k)*u[1] + center[0]
+            v2y = math.sin(k)*u[0] + math.cos(k)*u[1] + center[1]
+            self.meshes_dico[index].reference_point_outside.x=v2x
+            self.meshes_dico[index].reference_point_outside.y=v2y
+          
+            
+
         return export
 
     def initial_position(self, positions, liste_eng=()):
@@ -2190,8 +2216,15 @@ class MeshCombination(DessiaObject):
                 
         return [vmp.PrimitiveGroup(primitives= plot_datas)]
     
-    
-   
+    def z_number_position_gears(self,vector,mesh,position):
+        
+        vector_trochoide_gear_1=vm.Vector2D(mesh.reference_point_trochoide_gear[0]-position[1],
+                                            mesh.reference_point_trochoide_gear[1]-position[2])
+        
+        angle_1=math.acos(vector.dot(vector_trochoide_gear_1)/(vector.norm()*vector_trochoide_gear_1.norm()))
+       
+        sign_angle_1=npy.sign(vector_trochoide_gear_1.x*vector.y-vector.x*vector_trochoide_gear_1.y)
+        
             
         
     def volmdlr_primitives(self, centers={}, axis=(1, 0, 0), name=''):
@@ -2266,8 +2299,182 @@ class MeshCombination(DessiaObject):
             
             vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
             vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
-            Gears3D_Rotate = self.gear_rotate_2([eng1, eng2],
+            Gears3D_Rotate = self.gear_rotate([eng1, eng2],
                                                 [Gears3D[eng1],Gears3D[eng2]],
+                                                [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
+                                                list_rot=[rot_gear_2[0],rot_gear_2[1]])
+
+            
+
+            # for Gears in Gears3D_Rotate:
+            #     for element in Gears:
+            #         for point in element.points:
+            #             x2.append(point.vector[0])
+            #             y2.append(point.vector[1])
+            # plt.plot(x2,y2)
+
+
+            L = []
+            L_vector = []
+            i=0
+            for element in Gears3D_Rotate[0]:
+                    for point in element.points:
+                       if not point in L_vector:
+                           # if i==100:
+                               L_vector.append(point)
+                               L.append(point)
+                           #     i=0
+                           # else:
+                           #     i+=1
+                           
+                       # else:
+                       #     # print(point.vector)
+                       # print(point)
+            # L.append(L[0])
+            bezier_curve=vm.edges.BezierCurve2D(3, L)
+            C1 = vm.wires.ClosedPolygon2D(L,{})
+            # C1 = vm.wires.Contour2D([bezier_curve])
+            # vmp.plot([C1.plot_data('contour')])
+            L2 = []
+            L2_vector = []
+            i=0
+            for element in Gears3D_Rotate[1]:
+                    for point in element.points:
+                       if not point in L2_vector:
+                           # if i==100:
+                               L2_vector.append(point)
+                               L2.append(point)
+                               i=0
+                           # else:
+                           #     i+=1
+                              
+            # L2.append(L2[0])
+
+            # L2=set(L2)
+            C2 = vm.wires.ClosedPolygon2D(L2, {})
+
+        #     C1=vm.Contour2D(Gears3D_Rotate[0])
+        #     # print(Gears3D_Rotate[0])
+        #     C2=vm.Contour2D(Gears3D_Rotate[1])
+
+            extrusion_vector1 = (self.gear_width[eng1]*x)
+            extrusion_vector2 = (self.gear_width[eng2]*x)
+            
+
+            if set_pos_dfs == 0:
+                vect_x = -0.5*self.gear_width[eng1]*x + x.dot(vm.Vector3D(centers[eng1][0],centers[eng1][1],centers[eng1][2]))*x
+
+                if self.Z[eng1] < 0:
+                    vect_center = vm.Vector3D(centers[eng1][0],centers[eng1][1],centers[eng1][2])
+                    vector=vm.Vector2D(vect_center.dot(y),vect_center.dot(z))
+                    circle = vm.wires.Circle2D(vm.Point2D(vector[0],vector[1]),(self.DB[eng1]*1.3)/2)
+                    t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z,circle , [C1], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
+                else:
+                    try:                    
+                        t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, C1, [], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
+                    except ZeroDivisionError or ValueError:
+                        vector=vm.Vector2D(vect_center.dot(y),vect_center.dot(z))
+                        circle = vm.wires.Circle2D(vm.Point2D(vector[0],vector[1]),(self.DB[eng1])/2)
+                        t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, circle, [], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
+                        
+                primitives.append(t1)
+            vect_x = -0.5*self.gear_width[eng2]*x + x.dot(vm.Vector3D(centers[eng2][0],centers[eng2][1],centers[eng2][2]))*x
+
+            if self.Z[eng2] < 0:
+                    vect_center = vm.Vector3D(centers[eng2][0],centers[eng2][1],centers[eng2][2])
+
+                    circle = vm.wires.Circle2D(vm.Point2D(vect_center.dot(y),vect_center.dot(z)),(self.DB[eng2]*1.3)/2)
+
+                    t2 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z,circle , [C2], vm.Vector3D(extrusion_vector2[0],extrusion_vector2[1],extrusion_vector2[2]))
+            
+            else:
+                t2 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, C2, [], vm.Vector3D(extrusion_vector2[0],extrusion_vector2[1],extrusion_vector2[2]))
+
+
+            primitives.append(t2)
+
+
+
+
+
+        return primitives
+    
+    
+    
+    def volmdlr_primitives_2(self, centers, axis=(1, 0, 0), name=''):
+        """ Generation of the 3D volume for all the gear mesh
+
+        :param center: list of tuple define the final position of the gear mesh center (a translation is perform, then a rotation around this axis)
+        :param axis: direction of gear mesh rotation
+
+        :results: list of 3D volmdlr component
+        """
+        primitives=[]
+        
+        x = vm.Vector3D(axis[0],axis[1],axis[2])
+        # y = x.RandomUnitNormalVector()
+        # y= vm.Vector3D((0,1,0))
+        y = x.deterministic_unit_normal_vector()
+
+        z = x.cross(y)
+        if len(centers) == 0:
+            centers = {}
+            center_var = self.pos_axis({self.list_gear[0]:[0, 0]})
+
+            for engr_num in center_var.keys():
+                centers[engr_num]=[0, center_var[engr_num][0], center_var[engr_num][1]]
+        else:
+            center_var = {}
+            for engr_num in centers.keys():
+
+                center_var[engr_num] = npy.dot(centers[engr_num],(x[0],x[1],x[2]))*x+npy.dot(centers[engr_num],(y[0],y[1],y[2]))*y+npy.dot(centers[engr_num],(z[0],z[1],z[2]))*z
+                center_var[engr_num] = (center_var[engr_num][0],center_var[engr_num][1],center_var[engr_num][2])
+            centers = center_var
+
+
+
+        Gears3D = {}
+        Struct = []
+        Rotation = {}
+        plot_datas = []
+        # plt.figure()
+        # plt.axis('equal')
+
+        for set_pos_dfs, (eng1, eng2) in enumerate(self.connections_dfs):
+
+            position1 = centers[eng1]
+            position2 = centers[eng2]
+            # if set_pos_dfs == 0:
+            #     Gears3D[eng1] = self.meshes_dico[eng1].contour(3)
+            
+            # Gears3D[eng2] = self.meshes_dico[eng2].contour(3)
+            self.meshes_dico[eng1].update_reference_point()
+            self.meshes_dico[eng2].update_reference_point()
+            if (eng1, eng2) in self.connections:
+                set_pos = self.connections.index((eng1, eng2))
+                rot_gear_2= self.initial_position([position1,position2], (eng1, eng2))
+                eng1_position=0
+                eng2_position=1
+
+            elif (eng2, eng1) in self.connections:
+                set_pos = self.connections.index((eng2, eng1))
+                rot_gear_2= self.initial_position([position2,position1], (eng2, eng1))
+                eng1_position=1
+                eng2_position=0
+                
+                
+            Rotation[set_pos] = {}
+            Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1_position]/2.))
+            Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2_position]/2.))
+
+           
+
+            
+       
+            
+            vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
+            vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
+            Gears3D_Rotate = self.gear_rotate_2([eng1, eng2],
                                                 [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
                                                 list_rot=[rot_gear_2[0],rot_gear_2[1]])
 
