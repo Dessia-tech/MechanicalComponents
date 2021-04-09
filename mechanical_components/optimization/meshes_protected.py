@@ -1368,7 +1368,7 @@ class MeshAssemblyOptimizer:
         return plex_calcul
 
 
-    def Optimize(self,nb_sol: int = 1, list_sol: List = None, verbose:bool = False):
+    def Optimize(self,nb_sol: int = 1, list_sol: List[int] = None, verbose:bool = False):
 
         """ Gear mesh assembly optimization for given plex configuration
 

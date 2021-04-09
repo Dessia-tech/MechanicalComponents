@@ -20,11 +20,11 @@ block_optimizer = wf.InstanciateModel(meshes_opt.MeshAssemblyOptimizer, name = '
 block_optimize= wf.ModelMethod(meshes_opt.MeshAssemblyOptimizer, 'Optimize', name = 'Optimizer')
 
 block_attributs = wf.ModelAttribute(attribute_name= 'solutions', name= 'Solutions')
-filters = [{'attribute' : 'mesh_combinations.axial_contact_ratio', 'operator' : 'gt', 'bound' : -100},
-           {'attribute' : 'mesh_combinations.center_distance', 'operator': 'gt', 'bound' : -100}
-            ]
+# filters = [{'attribute' : 'mesh_combinations.axial_contact_ratio', 'operator' : 'gt', 'bound' : -100},
+#            {'attribute' : 'mesh_combinations.center_distance', 'operator': 'gt', 'bound' : -100}
+#             ]
 
-filter_analyze= wf.Filter(filters)
+# filter_analyze= wf.Filter(filters)
 
 # attributes = []
 # display = wf.MultiPlot(attributes=attributes, order = 1, name = 'Display')
@@ -33,14 +33,19 @@ filter_analyze= wf.Filter(filters)
 # pipe_workflow = [wf.Pipe(block_optimizer.outputs[0], block_optimize.inputs[0]),
 #                  wf.Pipe(block_optimize.outputs[0], display.inputs[0])]
 
-block_workflow = [block_optimizer, block_optimize, block_attributs, filter_analyze]
+block_workflow = [block_optimizer, block_optimize, block_attributs,
+                  # filter_analyze
+                  ]
 
 pipe_workflow = [wf.Pipe(block_optimizer.outputs[0], block_optimize.inputs[0]),
                  wf.Pipe(block_optimize.outputs[1], block_attributs.inputs[0]),
-                 wf.Pipe(block_attributs.outputs[0], filter_analyze.inputs[0])]
+                 # wf.Pipe(block_attributs.outputs[0], filter_analyze.inputs[0])
+                 ]
 
 
-workflow = wf.Workflow(block_workflow, pipe_workflow, filter_analyze.outputs[0])
+workflow = wf.Workflow(block_workflow, pipe_workflow, block_attributs.outputs[0]
+                       # filter_analyze.outputs[0]
+                       )
 workflow.plot_jointjs()
 
 connections = [(0, 1)]
@@ -80,11 +85,11 @@ workflow_run = workflow.run(input_values)
 
 d1 = workflow_run.to_dict()
 obj = wf.WorkflowRun.dict_to_object(d1)
-import json
+# import json
 
-object1=json.dumps(d1)
+# object1=json.dumps(d1)
 
-object2=json.loads(object1)
+# object2=json.loads(object1)
 
 # ta_class.dict_to_object(object2)
 
