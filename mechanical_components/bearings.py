@@ -2664,7 +2664,7 @@ class BearingCombination(DessiaObject):
                 pos_m += bg_ref.B
 
        
-        return [plot_data.PrimitiveGroup(export_data)]
+        return plot_data.PrimitiveGroup(export_data)
 
     def plot_contour2D(self, pos=0, a=None, box=True, typ='Graph'):
         be_sup = self.external_bearing(sign = 1)
@@ -3236,13 +3236,13 @@ class BearingAssembly(DessiaObject):
     def plot_data(self, box=True, typ=None, constructor=False):
 
         shaft = self.shaft()
-        contour_shaft = vm.wires.Contour2D(shaft.primitives)
-        export_data = [contour_shaft.plot_data()]
+        # contour_shaft = vm.wires.Contour2D(shaft.primitives)
+        export_data = [shaft.plot_data()]
 
 
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
             export_data.extend(assembly_bg.plot_data(pos, box, quote = False, constructor = constructor).primitives)
-        return [plot_data.PrimitiveGroup(export_data)]
+        return plot_data.PrimitiveGroup(primitives = export_data)
 
     def plot(self, box=True, typ=None, ind_load_case=0):
 
