@@ -133,7 +133,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                                 center_distance = list_cd)
     """
 
-    def __init__(self,center_distances: List[CenterDistanceOpti],cycles : List[float],rigid_links: List =None,safety_factor: int =1, verbose : int =False):
+    def __init__(self,center_distances: List[CenterDistanceOpti],cycles : List[float],rigid_links: List[Tuple[MeshOpti,MeshOpti]] =None,safety_factor: int =1, verbose : int =False):
         list_gear=[]
         connections=[]
         cd = []

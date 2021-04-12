@@ -675,10 +675,10 @@ class Mesh(DessiaObject):
     ### Trace method
     
     def update_reference_point(self,discret=3):
-        L = [self._outside_trace(0)]
         
-        self.reference_point_outside=copy.copy(L[0].points[int(len(L[0].points)/2)])
         
+        self.reference_point_outside=copy.copy(self._outside_trace(0).points[int(len(self._outside_trace(0).points)/2)])
+        self._involute_trace(discret, 0, 'T')
         if self.z > 0:
             
             last_point=self._trochoide_trace(4*discret, 0, 'T').points[-1]
@@ -686,7 +686,7 @@ class Mesh(DessiaObject):
             self.reference_point_trochoide=vm.Point2D((first_point[0]-last_point[0])/2+last_point[0],(first_point[1]-last_point[1])/2+last_point[1])
         
 
-    def contour(self, discret=1, list_number=[None]):
+    def contour(self, discret=1, list_number=None):
         """ Definition of the gear contour for volmdlr
 
         :param discret: number of discretization points on the gear mesh involute
@@ -699,20 +699,20 @@ class Mesh(DessiaObject):
         >>> G1.MPLPlot() # generate a plot with matplotlib
         """
         # Analytical tooth profil
-        if list_number == [None]:
+        if not list_number :
             list_number = npy.arange(int(abs(self.z)))
-        L = [self._outside_trace(0)]
+        L = [self._outside_trace(list_number[0])]
         
         self.reference_point_outside=copy.copy(L[0].points[int(len(L[0].points)/2)])
-        L.append(self._involute_trace(discret, 0, 'T'))
+        L.append(self._involute_trace(discret, list_number[0], 'T'))
         if self.z > 0:
-            L.append(self._trochoide_trace(4*discret, 0, 'T'))
+            L.append(self._trochoide_trace(4*discret, list_number[0], 'T'))
             last_point=L[-1].points[-1]
-            L.append(self._root_circle_trace(0))
-            L.append(self._trochoide_trace(4*discret, 0, 'R'))
+            L.append(self._root_circle_trace(list_number[0]))
+            L.append(self._trochoide_trace(4*discret, list_number[0], 'R'))
             first_point=L[-1].points[0]
             self.reference_point_trochoide=vm.Point2D((first_point[0]-last_point[0])/2+last_point[0],(first_point[1]-last_point[1])/2+last_point[1])
-        L.append(self._involute_trace(discret, 1, 'R'))
+        L.append(self._involute_trace(discret, list_number[0]+1, 'R'))
         for i in list_number[1::]:
             L.append(self._outside_trace(i))
             L.append(self._involute_trace(discret, i, 'T'))
@@ -1043,16 +1043,30 @@ class Mesh(DessiaObject):
                             C1_plot_data,circle_root_diameter_plot_data,text_db,text_dff,
                             text_root_diameter,text_root_diameter_active,text_outside_diameter])
         return [vmp.PrimitiveGroup(primitives= plot_datas)]
+    
+    def z_number_position_gears(self,vector,position,first_gear=True):
+        
+        vector_trochoide_gear_1=vm.Vector2D(self.reference_point_trochoide[0]-position[1],
+                                            self.reference_point_trochoide[1]-position[2])
+        
+        angle_1=math.acos(vector.dot(vector_trochoide_gear_1)/(vector.norm()*vector_trochoide_gear_1.norm()))
+       
+        sign_angle_1=npy.sign(vector_trochoide_gear_1.x*vector.y-vector.x*vector_trochoide_gear_1.y)
+        
+        if sign_angle_1 < 0:
+            if first_gear:
+                estimate_z=round(angle_1*self.z/(2*math.pi))
+            else:
+                estimate_z=round(angle_1*self.z/(2*math.pi))+int(self.z/2)
+        else:
+            if first_gear:
+                estimate_z=self.z-round(angle_1*self.z/(2*math.pi))
+            else:
+                estimate_z=self.z-round(angle_1*self.z/(2*math.pi))-int(self.z/2)
+      
+       
+        return estimate_z
 
-# class CenterDistance(DessiaObject):
-
-#     def __init__(self,cd:Tuple[float,float],meshs:Tuple[Mesh,Mesh], axes:Tuple[Axe,Axe], name:str='' ):
-
-#         self.meshes=meshes
-#         self.name=name
-#         self.axes=axes
-#         DessiaObject.__init__(self, name=name)
-#         self.cd=cd
 
 
 
@@ -1971,7 +1985,7 @@ class MeshCombination(DessiaObject):
             export.append(model_export)
         return export
 
-    def gear_rotate_2(self,gear_index, list_center, list_rot):
+    def gear_rotate_part_gear(self,gear_index, list_center, list_rot):
         """ Displacement of the volmdlr gear profile (rotation and translation)
 
         :param list_gear: list of volmdlr contour [meshes.Contour, meshes.Contour ...], each contour is centered on the origin
@@ -2216,14 +2230,7 @@ class MeshCombination(DessiaObject):
                 
         return [vmp.PrimitiveGroup(primitives= plot_datas)]
     
-    def z_number_position_gears(self,vector,mesh,position):
-        
-        vector_trochoide_gear_1=vm.Vector2D(mesh.reference_point_trochoide_gear[0]-position[1],
-                                            mesh.reference_point_trochoide_gear[1]-position[2])
-        
-        angle_1=math.acos(vector.dot(vector_trochoide_gear_1)/(vector.norm()*vector_trochoide_gear_1.norm()))
-       
-        sign_angle_1=npy.sign(vector_trochoide_gear_1.x*vector.y-vector.x*vector_trochoide_gear_1.y)
+   
         
             
         
@@ -2401,7 +2408,7 @@ class MeshCombination(DessiaObject):
     
     
     
-    def volmdlr_primitives_2(self, centers, axis=(1, 0, 0), name=''):
+    def volmdlr_primitives_part_gear(self, centers, axis=(1, 0, 0), name=''):
         """ Generation of the 3D volume for all the gear mesh
 
         :param center: list of tuple define the final position of the gear mesh center (a translation is perform, then a rotation around this axis)
@@ -2444,10 +2451,7 @@ class MeshCombination(DessiaObject):
 
             position1 = centers[eng1]
             position2 = centers[eng2]
-            # if set_pos_dfs == 0:
-            #     Gears3D[eng1] = self.meshes_dico[eng1].contour(3)
             
-            # Gears3D[eng2] = self.meshes_dico[eng2].contour(3)
             self.meshes_dico[eng1].update_reference_point()
             self.meshes_dico[eng2].update_reference_point()
             if (eng1, eng2) in self.connections:
@@ -2474,12 +2478,43 @@ class MeshCombination(DessiaObject):
             
             vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
             vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
-            Gears3D_Rotate = self.gear_rotate_2([eng1, eng2],
-                                                [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
-                                                list_rot=[rot_gear_2[0],rot_gear_2[1]])
-
             
+            vect_center_1 = vm.Point2D(position1[1],position1[2])
+            vect_center_2 = vm.Point2D(position2[1],position2[2])
+            
+            Gears3D_Rotate = self.gear_rotate_part_gear([eng1, eng2],
+                                                        [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
+                                                        list_rot=[rot_gear_2[0],rot_gear_2[1]])
 
+            center_distance=vm.Vector2D((position2[1]-position1[1]),(position2[2]-position1[2]))
+            
+            estimate_z_1=self.meshes_dico[eng1].z_number_position_gears(vector=center_distance,position=position1)
+            estimate_z_2=self.meshes_dico[eng2].z_number_position_gears(vector=center_distance,position=position2,first_gear=False)
+            
+            
+            if set_pos_dfs == 0:
+                range_1=int(self.meshes_dico[eng1].z*0.05)
+                list_number_1=list(npy.arange(estimate_z_1-range_1,estimate_z_1+range_1+1))
+                model_trans_rot_1=[]
+                Gears3D[eng1] = self.meshes_dico[eng1].contour(3,list_number=list_number_1)
+                
+                for element in Gears3D[eng1]:
+                    model_trans_1 = element.translation(vect_center_1)
+                    model_trans_rot_1.append(model_trans_1.rotation(vect_center_1, rot_gear_2[0]))
+            
+            range_2=int(self.meshes_dico[eng2].z*0.05)
+            list_number_2=list(npy.arange(estimate_z_2-range_2,estimate_z_2+range_2+1))
+        
+            
+            
+            Gears3D[eng2] = self.meshes_dico[eng2].contour(3,list_number=list_number_2)
+            model_trans_rot_2=[]
+            for element in Gears3D[eng2]:
+                model_trans_2 = element.translation(vect_center_2)
+                model_trans_rot_2.append(model_trans_2.rotation(vect_center_2, rot_gear_2[1]))
+                
+            Gears3D_Rotate=[model_trans_rot_1,model_trans_rot_2]
+            
             # for Gears in Gears3D_Rotate:
             #     for element in Gears:
             #         for point in element.points:
@@ -2505,6 +2540,8 @@ class MeshCombination(DessiaObject):
                        #     # print(point.vector)
                        # print(point)
             # L.append(L[0])
+            
+            L.append(vm.Point2D(position1[1],position1[2]))
             bezier_curve=vm.edges.BezierCurve2D(3, L)
             C1 = vm.wires.ClosedPolygon2D(L,{})
             # C1 = vm.wires.Contour2D([bezier_curve])
@@ -2525,6 +2562,7 @@ class MeshCombination(DessiaObject):
             # L2.append(L2[0])
 
             # L2=set(L2)
+            L2.append(vm.Point2D(position2[1],position2[2]))
             C2 = vm.wires.ClosedPolygon2D(L2, {})
 
         #     C1=vm.Contour2D(Gears3D_Rotate[0])
