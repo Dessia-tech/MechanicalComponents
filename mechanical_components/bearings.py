@@ -3242,7 +3242,7 @@ class BearingAssembly(DessiaObject):
 
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
             export_data.extend(assembly_bg.plot_data(pos, box, quote = False, constructor = constructor).primitives)
-        return plot_data.PrimitiveGroup(primitives = export_data)
+        return [plot_data.PrimitiveGroup(primitives = export_data)]
 
     def plot(self, box=True, typ=None, ind_load_case=0):
 
