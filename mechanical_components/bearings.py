@@ -788,7 +788,7 @@ class RadialBallBearing(RadialBearing):
         ball_inf1 = ball_sup1.rotation(vm.Point2D(pos, 0), math.pi, True)
         plot_datas.append(ball_inf1.plot_data())
 
-        return plot_data.PrimitiveGroup(plot_datas)
+        return [plot_data.PrimitiveGroup(plot_datas)]
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1034,7 +1034,7 @@ class AngularBallBearing(RadialBearing):
         ball_inf1 = ball_inf.translation((pos, 0), True)
         plot_datas.append(ball_inf1.plot_data())
 
-        return plot_data.PrimitiveGroup(plot_datas)
+        return [plot_data.PrimitiveGroup(plot_datas)]
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1391,7 +1391,7 @@ class RadialRollerBearing(RadialBearing):
         roller_inf1 = roller_inf.translation((pos, 0), True)
         plot_datas.append(roller_inf1.plot_data())
 
-        return plot_data.PrimitiveGroup(plot_datas)
+        return [plot_data.PrimitiveGroup(plot_datas)]
 
     def plot_contour(self, direction=1):
 
@@ -1915,7 +1915,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         roller_inf1 = roller_inf.translation((pos, 0), True)
         plot_datas.append(roller_inf1.plot_data())
 
-        return plot_data.PrimitiveGroup(plot_datas)
+        return [plot_data.PrimitiveGroup(plot_datas)]
 
     def plot_contour(self, direction=1):
 
@@ -2664,7 +2664,7 @@ class BearingCombination(DessiaObject):
                 pos_m += bg_ref.B
 
        
-        return plot_data.PrimitiveGroup(export_data)
+        return [plot_data.PrimitiveGroup(export_data)]
 
     def plot_contour2D(self, pos=0, a=None, box=True, typ='Graph'):
         be_sup = self.external_bearing(sign = 1)
