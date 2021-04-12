@@ -3229,7 +3229,7 @@ class BearingAssembly(DessiaObject):
         l1 = vm.edges.LineSegment2D(p1,p6)
         shaft_cont = vm.wires.Contour2D(shaft.primitives + [l1])
         
-        irc = primitives3d.RevolvedProfile(center, z, axis, shaft_cont, center, axis, angle=2*math.pi, color=[204/255, 12/255, 12/255], name='Shaft')
+        irc = primitives3d.RevolvedProfile(center, axis, z, shaft_cont, center, axis, angle=2*math.pi, color=[204/255, 12/255, 12/255], name='Shaft')
         
         return [irc]
 
@@ -3464,28 +3464,19 @@ class BearingAssembly(DessiaObject):
             print('Convergence Error')
             
             pass
-    # def volume_model(self):
-    #     groups = []
-    #     cad_shaft = self.cad_shaft()
-    #     groups.extend(cad_shaft.volmdlr_primitives)
+    def volmdlr_primitives(self):
+        groups = []
+        cad_shaft = self.cad_shaft()
+        groups.extend(cad_shaft)
         
-    #     # d1 = self.bearing_combinations[0].d
-    #     # d2 = self.bearing_combinations[1].d
-    #     # B1 = self.bearing_combinations[0].B
-    #     # B2 = self.bearing_combinations[1].B
-    #     # pos_mid = (self.axial_positions[0] + self.axial_positions[1])/2.
+        y_pos = 0
+        z_pos = 0
         
-    #     # bearings_volume_models
-    #     for assembly_bg in self.bearing_combinations:
-    #         groups.extend(assembly_bg.volume_model.volmdlr_primitives)
-            
-        
-    #     # for bearing in self.bearing_combinations:
-    #     #     center_pos_bearing1 = 
-        
-    #     # for assembly_bg in self.bearing_combinations:
-    #     #     groups.extend(assembly_bg.volume_model)
-    #     return groups
+        for assembly_bg, x_pos in zip(self.bearing_combinations, self.axial_positions):
+            center = vm.Point3D(x_pos, y_pos, z_pos)
+            groups.extend(assembly_bg.volume_model(center = center).primitives)
+
+        return groups
         
         
     
