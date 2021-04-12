@@ -1563,7 +1563,7 @@ class N(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
-        return vm.wires.Contour2D(irc.primitives)
+        return None,irc
 
 
 
@@ -1581,7 +1581,7 @@ class N(RadialRollerBearing):
 
 
         # erc = vm.Contour2D([be1])
-        return vm.wires.Contour2D(be1.primitives)
+        return None,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1636,7 +1636,7 @@ class NF(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
 
-        return vm.wires.Contour2D(irc.primitives)
+        return None,irc
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
@@ -1657,7 +1657,7 @@ class NF(RadialRollerBearing):
 
         # erc = vm.Contour2D([be1])
 
-        return vm.wires.Contour2D(be1.primitives)
+        return None,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1714,7 +1714,7 @@ class NU(RadialRollerBearing):
                            2: self.radius, 3: self.radius, 4: self.radius},
                            adapt_radius = True)
 
-        return vm.wires.Contour2D(irc.primitives)
+        return None,irc
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
@@ -1732,7 +1732,7 @@ class NU(RadialRollerBearing):
                             5: self.radius, 6: self.radius}, adapt_radius=True)
         # erc = vm.Contour2D([be1])
 
-        return vm.wires.Contour2D(be1.primitives)
+        return None,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
