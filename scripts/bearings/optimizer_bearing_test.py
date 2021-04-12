@@ -64,7 +64,8 @@ pdg = plot_data.plot_canvas(plots)
 # vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].volmdlr_volume_model()
 #vol1.babylonjs()   
 
-vol1 = ba_simulation.bearing_assembly
+vol1 = ba_simulation.bearing_assembly.volume_model()
+vol1.babylonjs()
 
 #c = Client()
 #c.api_url = 'http://localhost:5000'

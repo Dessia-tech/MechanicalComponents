@@ -3465,21 +3465,25 @@ class BearingAssembly(DessiaObject):
             
             pass
     def volmdlr_primitives(self):
-        groups = []
+        primitives = []
         cad_shaft = self.cad_shaft()
-        groups.extend(cad_shaft)
+        primitives.extend(cad_shaft)
         
         y_pos = 0
         z_pos = 0
         
         for assembly_bg, x_pos in zip(self.bearing_combinations, self.axial_positions):
             center = vm.Point3D(x_pos, y_pos, z_pos)
-            groups.extend(assembly_bg.volume_model(center = center).primitives)
+            primitives.extend(assembly_bg.volume_model(center = center).primitives)
 
-        return groups
+        return primitives
         
+    def volume_model(self):
+        groups = self.volmdlr_primitives()
         
-    
+        model=vm.core.VolumeModel(groups)
+        
+        return model
 
 
 class BearingSimulationResult(DessiaObject):
