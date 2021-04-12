@@ -2958,7 +2958,7 @@ class BearingCombination(DessiaObject):
         :param typ: define the aditionnal draw (default is None), 'Graph' draw the graph connection between bearing, 'Load' define the load
         """
         
-        plot_data.plot_canvas(self.plot_data())
+        plot_data.plot_canvas(self.plot_data()[0])
         # linkage_area, assembly_bg = self.plot_contour2D(pos, a, box, typ)
         # edge_style=plot_data.EdgeStyle(color_stroke=plot_data.colors.GREEN)
         # list_plot_data=[]

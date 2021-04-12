@@ -48,7 +48,7 @@ for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
     obj = bearings.BearingAssemblySimulation.dict_to_object(d)
     ba_simulation == obj
     
-# ba_simulation.bearing_assembly.bearing_combinations[0].plot()
+ba_simulation.bearing_assembly.bearing_combinations[0].plot()
 plots = ba_simulation.bearing_assembly.plot_data()
 pdg = plot_data.plot_canvas(plots[0])
 
