@@ -64,7 +64,7 @@ pdg = plot_data.plot_canvas(plots[0])
 # vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].volmdlr_volume_model()
 #vol1.babylonjs()   
 
-vol1 = ba_simulation.volmdlr_volume_model()
+vol1 = ba_simulation.volmdlr_volume_model().babylonjs()
 plot_data.plot_canvas(ba_simulation.plot_data()[0])
 
 #c = Client()
