@@ -19,7 +19,7 @@ block_optimizer = wf.InstanciateModel(meshes_opt.MeshAssemblyOptimizer, name = '
 
 block_optimize= wf.ModelMethod(meshes_opt.MeshAssemblyOptimizer, 'Optimize', name = 'Optimizer')
 
-# block_attributs = wf.ModelAttribute(attribute_name= 'solutions', name= 'Solutions')
+block_attributs = wf.ModelAttribute(attribute_name= 'solutions', name= 'Solutions')
 
 
 # attributes = []
@@ -30,16 +30,16 @@ block_optimize= wf.ModelMethod(meshes_opt.MeshAssemblyOptimizer, 'Optimize', nam
 #                  wf.Pipe(block_optimize.outputs[0], display.inputs[0])]
 
 block_workflow = [block_optimizer, block_optimize, 
-                  # block_attributs
+                   block_attributs
                   ]
 
 pipe_workflow = [wf.Pipe(block_optimizer.outputs[0], block_optimize.inputs[0]),
-                 # wf.Pipe(block_optimize.outputs[1], block_attributs.inputs[0])
+                  wf.Pipe(block_optimize.outputs[1], block_attributs.inputs[0])
                  ]
 
 
 workflow = wf.Workflow(block_workflow, pipe_workflow, 
-                        block_optimize.outputs[0]
+                        block_attributs.outputs[0]
                         
                        )
 workflow.plot_jointjs()
@@ -82,11 +82,11 @@ d1 = workflow_run.to_dict()
 obj = wf.WorkflowRun.dict_to_object(d1)
 
 
-# import json
+import json
 
-# object1=json.dumps(d1)
+object1=json.dumps(d1)
 
-# object2=json.loads(object1)
+object2=json.loads(object1)
 
 # ta_class.dict_to_object(object2)
 
