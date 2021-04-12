@@ -48,9 +48,9 @@ for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
     obj = bearings.BearingAssemblySimulation.dict_to_object(d)
     ba_simulation == obj
     
-ba_simulation.bearing_assembly.bearing_combinations[0].plot()
+# ba_simulation.bearing_assembly.bearing_combinations[0].plot()
 plots = ba_simulation.bearing_assembly.plot_data()
-pdg = plot_data.plot_canvas(plots)
+pdg = plot_data.plot_canvas(plots[0])
 
 # d = bis2.to_dict()
 # obj = bearings_opt.BearingAssemblyOptimizer.dict_to_object(d)
@@ -64,8 +64,8 @@ pdg = plot_data.plot_canvas(plots)
 # vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].volmdlr_volume_model()
 #vol1.babylonjs()   
 
-vol1 = ba_simulation.bearing_assembly.volume_model()
-vol1.babylonjs()
+vol1 = ba_simulation.volmdlr_volume_model()
+plot_data.plot_canvas(ba_simulation.plot_data()[0])
 
 #c = Client()
 #c.api_url = 'http://localhost:5000'

@@ -2654,7 +2654,7 @@ class BearingCombination(DessiaObject):
         for bg, di in zip(self.bearings, self.directions):
             cont = bg.plot_data(pos = pos_m + bg.B/2. + pos)
             pos_m += bg.B
-            export_data.extend(cont.primitives)
+            export_data.extend(cont[0].primitives)
 
         if typ == 'Load':
             pos_m = -self.B/2.
@@ -3241,7 +3241,7 @@ class BearingAssembly(DessiaObject):
 
 
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
-            export_data.extend(assembly_bg.plot_data(pos, box, quote = False, constructor = constructor).primitives)
+            export_data.extend(assembly_bg.plot_data(pos, box, quote = False, constructor = constructor)[0].primitives)
         return [plot_data.PrimitiveGroup(primitives = export_data)]
 
     def plot(self, box=True, typ=None, ind_load_case=0):
