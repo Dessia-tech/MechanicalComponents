@@ -3600,6 +3600,9 @@ class BearingAssemblySimulation(DessiaObject):
     def volmdlr_volume_model(self):
         model = self.bearing_assembly.volume_model()
         return model
+    def volmdlr_primitives(self):
+        volmdlr_primitives = self.bearing_assembly.volmdlr_primitives()
+        return volmdlr_primitives
     
     def plot_data(self, box=True, typ=None, constructor=False):
         plot_data = self.bearing_assembly.plot_data()
@@ -3628,7 +3631,7 @@ class BearingCombinationSimulation(DessiaObject):
     
     def plot_data(self, box=True, typ=None, constructor=False):
         plot_data = self.bearing_combination.plot_data(box=box)
-        return plot_data
+        return [plot_data]
 
 
 
