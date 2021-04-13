@@ -700,11 +700,13 @@ class RadialBallBearing(RadialBearing):
     def internal_ring_contour(self):
 
         pbi2 = vm.Point2D(-self.B/2., self.d1/2.)
-        pbi1 = pbi2.translation(vm.Vector2D(self.h, 0))
+        pbi2v = pbi2.to_vector()
+        pbi1v = pbi2v.translation(vm.Vector2D(self.h, 0))
+        pbi1 = pbi1v.to_point()
         pbi3 = vm.Point2D(-self.B/2., self.d/2.)
         pbi4 = vm.Point2D(self.B/2., self.d/2.)
         pbi5 = vm.Point2D(self.B/2., self.d1/2.)
-        pbi6 = pbi5.translation(vm.Vector2D(-self.h, 0))
+        pbi6 = pbi5.to_vector().translation(vm.Vector2D(-self.h, 0)).to_point()
         bi1 = primitives2d.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1],
                                                  {1: self.radius,
                                                   2: self.radius,
@@ -718,11 +720,11 @@ class RadialBallBearing(RadialBearing):
     def external_ring_contour(self):
 
         pbe2 = vm.Point2D(-self.B/2., self.D1/2.)
-        pbe1 = pbe2.translation(vm.Vector2D(self.h, 0))
+        pbe1 = pbe2.to_vector().translation(vm.Vector2D(self.h, 0)).to_point()
         pbe3 = vm.Point2D(-self.B/2., self.D/2.)
         pbe4 = vm.Point2D(self.B/2., self.D/2.)
         pbe5 = vm.Point2D(self.B/2., self.D1/2.)
-        pbe6 = pbe5.translation(vm.Vector2D(-self.h, 0))
+        pbe6 = pbe5.to_vector().translation(vm.Vector2D(-self.h, 0)).to_point()
 
 
         be1 = primitives2d.OpenedRoundedLineSegments2D([pbe6, pbe5, pbe4, pbe3, pbe2, pbe1],
@@ -958,7 +960,7 @@ class AngularBallBearing(RadialBearing):
         pbi3 = vm.Point2D(direction*self.B/2., sign_V*self.d/2.)
         pbi4 = vm.Point2D(-direction*self.B/2., sign_V*self.d/2.)
         pbi5 = vm.Point2D(-direction*self.B/2., sign_V*self.d1/2.)
-        pbi6 = pbi5.translation(vm.Vector2D(direction*self.h1, 0))
+        pbi6 = pbi5.to_vector().translation(vm.Vector2D(direction*self.h1, 0)).to_point()
         bi1 = primitives2d.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1], {1: self.radius,
                                              2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
 
@@ -969,7 +971,7 @@ class AngularBallBearing(RadialBearing):
     def external_ring_contour(self, direction=1, sign_V=1):
 
         pbe2 = vm.Point2D(direction*self.B/2., sign_V*self.D1/2.)
-        pbe1 = pbe2.translation(vm.Vector2D(-direction*self.h1, 0))
+        pbe1 = pbe2.to_vector().translation(vm.Vector2D(-direction*self.h1, 0)).to_point()
         pbe3 = vm.Point2D(direction*self.B/2., sign_V*self.D/2.)
         pbe4 = vm.Point2D(-direction*self.B/2., sign_V*self.D/2.)
         pbe5 = vm.Point2D(-direction*self.B/2., sign_V*self.D2/2.)
@@ -1788,15 +1790,21 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 #        shift_be = 1e-3
 
         p0 = vm.Point2D(0, sign_V*self.Dpw/2.)
-        p1 = p0.translation((math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha)), True)
+        p0v = p0.to_vector()
+        p1v = p0v.translation((math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha)), True)
+        p1 = p1v.to_point()
         l1 = vm.edges.Line2D(p0, p1)
         l1.rotation(p0, direction*sign_V*self.beta)
         l1.translation((-0.8*direction*self.Dw/2.*math.sin(self.alpha), -sign_V*0.8*self.Dw/2.*math.cos(self.alpha)))
         l2 = l1.translation((-0.2*direction*self.Dw/2.*math.sin(self.alpha), -sign_V*0.2*self.Dw/2.*math.cos(self.alpha)), True)
         pbi3 = vm.Point2D(direction*(self.B/2. - shift_bi), sign_V*self.d/2.)
-        pbi3T = pbi3.translation((0, 1))
+        pbi3v = pbi3.to_vector()
+        pbi3Tv = pbi3v.translation((0, 1))
+        pbi3T = pbi3Tv.to_point()
         pbi4 = vm.Point2D(-direction*(self.B/2.), sign_V*self.d/2.)
-        pbi4T = pbi4.translation((0, 1))
+        pbi4v = pbi4.to_vector()
+        pbi4Tv = pbi4v.translation((0, 1))
+        pbi4T = pbi4Tv.to_point()
         l3 = vm.edges.Line2D(pbi3, pbi3T)
         l4 = vm.edges.Line2D(pbi4, pbi4T)
         pbi2 = vm.Point2D.line_intersection(l1, l3)
@@ -1825,14 +1833,14 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         shift_be = 1e-3
 
         p0 = vm.Point2D(0, sign_V*self.Dpw/2.)
-        p1 = p0.translation(vm.Vector2D(math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha)), True)
+        p1 = p0.to_vector().translation(vm.Vector2D(math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha)), True).to_point()
         l0 = vm.edges.Line2D(p0, p1)
         l0.rotation(p0, -direction*sign_V*self.beta)
         l0.translation(vm.Vector2D(direction*self.Dw/2.*math.sin(self.alpha), sign_V*self.Dw/2.*math.cos(self.alpha)))
         pbe3 = vm.Point2D(direction*self.B/2., sign_V*self.D/2.)
-        pbe3T = pbe3.translation(vm.Vector2D(0, 1))
+        pbe3T = pbe3.to_vector().translation(vm.Vector2D(0, 1)).to_point()
         pbe4 = vm.Point2D(-direction*(self.B/2. - shift_be), sign_V*self.D/2.)
-        pbe4T = pbe4.translation(vm.Vector2D(0, 1))
+        pbe4T = pbe4.to_vector().translation(vm.Vector2D(0, 1)).to_point()
         l3 = vm.edges.Line2D(pbe3, pbe3T)
         l4 = vm.edges.Line2D(pbe4, pbe4T)
         pbe2 = vm.Point2D.line_intersection(l0, l3)
