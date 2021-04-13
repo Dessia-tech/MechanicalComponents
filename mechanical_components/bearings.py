@@ -596,19 +596,19 @@ class RadialBearing(DessiaObject):
         plot_data.append(pt_data)
         return plot_data
 
-    def plot(self, direction=1, a=None, typ=None):
-        bg = self.plot_contour(direction)
-        if a is None:
-            f, a = bg.MPLPlot(color = 'k')
-        else:
-            bg.MPLPlot(a,color = '-k')
+    # def plot(self, direction=1, a=None, typ=None):
+    #     bg = self.plot_contour(direction)
+    #     if a is None:
+    #         f, a = bg.MPLPlot(color = 'k')
+    #     else:
+    #         bg.MPLPlot(a,color = '-k')
 
-        if typ == 'Graph':
-            graph = self.PlotGraph()
-            graph.MPLPlot(a, 'b', True)
+    #     if typ == 'Graph':
+    #         graph = self.PlotGraph()
+    #         graph.MPLPlot(a, 'b', True)
 
-        elif typ == 'Load':
-            self.PlotLoad(a)
+    #     elif typ == 'Load':
+    #         self.PlotLoad(a)
 
     def to_shaft(self):
         return shafts_assembly.Shaft(self.plot_contour(), name=self.name)
@@ -1368,19 +1368,19 @@ class RadialRollerBearing(RadialBearing):
     def plot_data(self, pos=0, quote=True, constructor=True, direction=1, stroke_width=1):
 
         plot_datas = []
-        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
+        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)[0]
         be_sup1 = be_sup.translation((pos, 0), True)
         plot_datas.append(be_sup1.plot_data())
 
-        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
+        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)[0]
         be_inf1 = be_inf.translation((pos, 0), True)
         plot_datas.append(be_inf1.plot_data())
 
-        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
+        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)[0]
         bi_sup1 = bi_sup.translation((pos, 0), True)
         plot_datas.append(bi_sup1.plot_data())
 
-        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
+        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)[0]
         bi_inf1 = bi_inf.translation((pos, 0), True)
         plot_datas.append(bi_inf1.plot_data())
 
@@ -2570,19 +2570,19 @@ class BearingCombination(DessiaObject):
 #        h += sum(self.directions)
 #        return h
 
-    def plot_graph(self):
+    # def plot_graph(self):
 
-        for gp in self.graph:
-            list_graph = []
-            pos_m = -self.B/2.
-            for bg in gp:
-                graph = bg.PlotGraph()
-                graph = graph.translation((pos_m + bg.B/2., 0), True)
-                pos_m += bg.B
-                list_graph.append(graph)
-            list_graph = vm.wires.Contour2D(list_graph)
-    #        list_graph = list_graph.Translation((pos, 0), True)
-            f,a = list_graph.MPLPlot(color='b',arrow= True)
+    #     for gp in self.graph:
+    #         list_graph = []
+    #         pos_m = -self.B/2.
+    #         for bg in gp:
+    #             graph = bg.PlotGraph()
+    #             graph = graph.translation((pos_m + bg.B/2., 0), True)
+    #             pos_m += bg.B
+    #             list_graph.append(graph)
+    #         list_graph = vm.wires.Contour2D(list_graph)
+    # #        list_graph = list_graph.Translation((pos, 0), True)
+    #         f,a = list_graph.MPLPlot(color='b',arrow= True)
 
     def update(self, axial_positions, internal_diameters, external_diameters, length):
         # TODO Why axial position is not in init?
@@ -3252,14 +3252,14 @@ class BearingAssembly(DessiaObject):
             export_data.extend(assembly_bg.plot_data(pos, box, quote = False, constructor = constructor)[0].primitives)
         return [plot_data.PrimitiveGroup(primitives = export_data)]
 
-    def plot(self, box=True, typ=None, ind_load_case=0):
+    # def plot(self, box=True, typ=None, ind_load_case=0):
 
-        shaft = self.shaft()
-        # contour_shaft = vm.Contour2D([shaft])
-        f, a = shaft.MPLPlot()
+    #     shaft = self.shaft()
+    #     # contour_shaft = vm.Contour2D([shaft])
+    #     f, a = shaft.MPLPlot()
 
-        for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
-            assembly_bg.plot(pos, a, box, typ, ind_load_case)
+    #     for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
+    #         assembly_bg.plot(pos, a, box, typ, ind_load_case)
 
     def graph(self):
         for li_bg in self.bearing_combinations:
