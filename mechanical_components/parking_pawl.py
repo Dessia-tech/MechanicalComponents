@@ -5,6 +5,7 @@
 """
 
 import math
+import random
 import numpy as npy
 from typing import List
 import volmdlr as vm
@@ -623,7 +624,7 @@ class ParkingPawl(dc.DessiaObject):
         x, y = self.pawl.arc_side2.end-self.pawl.axis_position
         alpha = math.atan2(y, x)
 
-        self.up_pawl_angle = -(math.asin(math.sin(alpha)
+        self.minimal_up_pawl_angle = -(math.asin(math.sin(alpha)
                                -(0.5*(wheel_outer_diameter
                                       -wheel_lower_tooth_diameter)
                                  +open_clearance)/R)
@@ -632,7 +633,7 @@ class ParkingPawl(dc.DessiaObject):
         # Finding locking mech center distance
         roller_rest_contact_point = self.pawl.roller_rest.point_at_abscissa(self.pawl.roller_rest.length()-0.7*self.locking_mechanism.roller_diameter)
         y, z = self.pawl.roller_rest.start.rotation(self.pawl.axis_position,
-                                              self.up_pawl_angle)
+                                              self.minimal_up_pawl_angle)
         self.locking_mechanism_center_distance = self.pawl.slope.end.y + 0.5*self.locking_mechanism.roller_diameter
         self.locking_mechanism_start_position = self.locking_contact_results[1][-1]
         self.locking_mechanism_end_position = self.pawl.slope.end.x - 0.002
@@ -665,13 +666,13 @@ class ParkingPawl(dc.DessiaObject):
         return center_distance - 0.5*self.wheel_outer_diameter - 0.5*self.pawl.axis_outer_diameter
 
     def rest_margin(self):
-        return (self.pawl.slope_length*math.sin(self.pawl.slope_angle-self.up_pawl_angle)
-                - self.pawl.junction4.length()*math.sin(self.up_pawl_angle))
+        return (self.pawl.slope_length*math.sin(self.pawl.slope_angle-self.minimal_up_pawl_angle)
+                - self.pawl.junction4.length()*math.sin(self.minimal_up_pawl_angle))
 
     def check(self, clearance:float=0.003):
         if self.engaged_slack() < 0:
             return False
-        if self.pawl.slope_angle < self.up_pawl_angle:
+        if self.pawl.slope_angle < self.minimal_up_pawl_angle:
             return False
 
         if self.axis_wheel_clearance() < clearance:
@@ -698,7 +699,7 @@ class ParkingPawl(dc.DessiaObject):
             primitives_p3 = self.locking_mechanism.plot_data(position=self.locking_mechanism_start_position,
                                                              center_distance=self.locking_mechanism_center_distance)
             primitives_p3 += self.wheel.plot_data(angle=0.)[0].primitives
-            primitives_p3 += self.pawl.plot_data(angle=self.up_pawl_angle)[0].primitives
+            primitives_p3 += self.pawl.plot_data(angle=self.minimal_up_pawl_angle)[0].primitives
 
             # An example of Graph2D instantiation. It draws one or several datasets on
             # one canvas and is useful for displaying numerical functions
@@ -741,7 +742,7 @@ class ParkingPawl(dc.DessiaObject):
             return [plot_data.PrimitiveGroup(primitives_p1)]
 
     def _solve_locking_contact(self, angular_resolution:float = 0.01):
-        max_angle = 3*self.up_pawl_angle
+        max_angle = 3*self.minimal_up_pawl_angle
         number_steps = math.ceil((max_angle/angular_resolution))
 
         contacts = [(0, self.pawl.profile().primitives[-1].start.x,
@@ -850,12 +851,13 @@ class ParkingPawl(dc.DessiaObject):
         # print('wheel_angle', wheel_angle)
 
         wheel_angles = [wheel_angle]
-        pawl_angles = [self.up_pawl_angle]
+        initial_angle = self.pawl_angle_from_locking_position(locking_position)
+        pawl_angles = [initial_angle]
         locking_positions = [locking_position]
         locking_forces = [0.]
         time = [0.]
 
-        pawl_angle = self.up_pawl_angle
+        pawl_angle = initial_angle
 
         # distance_step = travel/distance_step
         # print(travel)
@@ -865,7 +867,7 @@ class ParkingPawl(dc.DessiaObject):
         angular_speed = 0.
         
         time_step = initial_time_step
-        max_delta_angle = self.up_pawl_angle / min_step_number
+        max_delta_angle = self.minimal_up_pawl_angle / min_step_number
         
         n_step = 1
         last_step_step_change = 0
@@ -903,6 +905,7 @@ class ParkingPawl(dc.DessiaObject):
                 # Roller will slide
                 # print('pushing roller')
                 locking_position -= 0.0005
+                t += 0.0005
                 if locking_position < self.locking_mechanism_end_position:
                     locking_position = self.locking_mechanism_end_position
                     break
@@ -1185,7 +1188,8 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         bounds = self.cma_bounds()
         xra, fx = cma.fmin(self.objective_from_dimensionless_vector,
                            x0, 0.6, options={'bounds': bounds,
-                                             'tolfun': 1e-3,
+                                             'tolfun': 1e-2,
+                                             'maxiter': 100,
                                              'verbose': 0,
                                              'ftarget': 0.2})[0:2]
         # print('x', result.x)
