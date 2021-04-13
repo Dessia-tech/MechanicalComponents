@@ -1482,10 +1482,12 @@ class NUP(RadialRollerBearing):
         irc = primitives2d.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
+        
+        cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
 
 
         
-        return None,irc
+        return cbi1,irc
 
 
 
@@ -1506,7 +1508,8 @@ class NUP(RadialRollerBearing):
 
 
         # erc = vm.Contour2D([be1])
-        return None,be1
+        cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe7)
+        return cbe1,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1564,8 +1567,10 @@ class N(RadialRollerBearing):
         irc = primitives2d.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
+        
+        cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
 
-        return None,irc
+        return cbi1,irc
 
 
 
@@ -1580,10 +1585,12 @@ class N(RadialRollerBearing):
         pbe6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.E/2.))
         be1 = primitives2d.ClosedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius,
                            2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
+        
+        cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe6)
 
 
         # erc = vm.Contour2D([be1])
-        return None,be1
+        return cbe1,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1637,8 +1644,10 @@ class NF(RadialRollerBearing):
         irc = primitives2d.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
+        
+        cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
 
-        return None,irc
+        return cbi1,irc
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
@@ -1655,11 +1664,13 @@ class NF(RadialRollerBearing):
         be1 = primitives2d.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius}, adapt_radius = True)
+        
+        cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe6)
 
 
         # erc = vm.Contour2D([be1])
 
-        return None,be1
+        return cbe1,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1715,8 +1726,10 @@ class NU(RadialRollerBearing):
         irc = primitives2d.ClosedRoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius,
                            2: self.radius, 3: self.radius, 4: self.radius},
                            adapt_radius = True)
+        
+        cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi6)
 
-        return None,irc
+        return cbi1,irc
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
@@ -1733,8 +1746,9 @@ class NU(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius=True)
         # erc = vm.Contour2D([be1])
+        cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe7)
 
-        return None,be1
+        return cbe1,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
