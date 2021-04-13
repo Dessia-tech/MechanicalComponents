@@ -11,6 +11,7 @@ Created on Tue Apr  6 16:27:41 2021
 
 import mechanical_components.optimization.meshes as meshes_opt
 import dessia_common.workflow as wf
+import mechanical_components.meshes as me
 
 from dessia_api_client import Client
 import numpy as npy
@@ -19,7 +20,9 @@ block_optimizer = wf.InstanciateModel(meshes_opt.MeshAssemblyOptimizer, name = '
 
 block_optimize= wf.ModelMethod(meshes_opt.MeshAssemblyOptimizer, 'Optimize', name = 'Optimizer')
 
-block_attributs = wf.ModelAttribute(attribute_name= 'solutions', name= 'Solutions')
+block_attributs = wf.ModelAttribute(attribute_name= 'solutions', name= 'Solutions Mesh Assembly')
+
+block_attributs_MesComb = wf.ModelAttribute(attribute_name= 'mesh_combinations', name= 'Mesh Combinations')
 
 
 # attributes = []
@@ -30,16 +33,18 @@ block_attributs = wf.ModelAttribute(attribute_name= 'solutions', name= 'Solution
 #                  wf.Pipe(block_optimize.outputs[0], display.inputs[0])]
 
 block_workflow = [block_optimizer, block_optimize, 
-                   block_attributs
+                   block_attributs,
+                   block_attributs_MesComb
                   ]
 
 pipe_workflow = [wf.Pipe(block_optimizer.outputs[0], block_optimize.inputs[0]),
-                  wf.Pipe(block_optimize.outputs[1], block_attributs.inputs[0])
+                  wf.Pipe(block_optimize.outputs[1], block_attributs.inputs[0]), 
+                  wf.Pipe(block_attributs.outputs[0], block_attributs_MesComb.inputs[0])
                  ]
 
 
 workflow = wf.Workflow(block_workflow, pipe_workflow, 
-                        block_attributs.outputs[0]
+                        block_attributs_MesComb.outputs[0]
                         
                        )
 workflow.plot_jointjs()
