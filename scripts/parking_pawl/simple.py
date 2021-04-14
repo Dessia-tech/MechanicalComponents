@@ -16,7 +16,7 @@ import mechanical_components.parking_pawl as mcpp
 
 # parking_pawl.mpl_plot()
 w = -3/3.6/(0.73/2)*12
-C = 0.5*1950*9.81/0.73
+C = 0.5*1950*9.81/0.73*math.sin(math.atan(0.3))
 
 # parking_pawl = ParkingPawl(wheel, pawl)
 locking_mechanism = mcpp.RollerLockingMechanism(roller_diameter=0.010,
@@ -57,7 +57,7 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
 parking_pawl.pawl.size_torsion_spring(3*9.81)
 parking_pawl.size_width(wheel_torque=C)
 print('rest margin',parking_pawl.rest_margin()*1000, 'mm')
-
+print('engaged_slack', math.degrees(parking_pawl.engaged_slack()), '°')
 
 simulation = parking_pawl.locking_simulation(wheel_speed=w)
 print(parking_pawl.check())
