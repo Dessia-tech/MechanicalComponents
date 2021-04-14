@@ -2540,10 +2540,49 @@ class MeshCombination(DessiaObject):
                        #     # print(point.vector)
                        # print(point)
             # L.append(L[0])
+           
+            radius_1=self.meshes_dico[eng1].outside_diameter/2
+            vector_center=vm.Vector2D(radius_1*math.cos(0),radius_1*math.sin(0))
+            extremity_vector_1=vm.Vector2D(L[0][0]-position1[1],L[0][1]-position1[2])
+            extremity_vector_2=vm.Vector2D(L[-1][0]-position1[1],L[-1][1]-position1[2])
             
-            L.append(vm.Point2D(position1[1],position1[2]))
-            bezier_curve=vm.edges.BezierCurve2D(3, L)
-            C1 = vm.wires.ClosedPolygon2D(L,{})
+            angle_1=math.acos(vector_center.dot(extremity_vector_1)/(vector_center.norm()*extremity_vector_1.norm()))
+            angle_2=math.acos(vector_center.dot(extremity_vector_2)/(vector_center.norm()*extremity_vector_2.norm()))
+            
+            sign_angle_1=npy.sign(extremity_vector_1.x*vector_center.y-vector_center.x*extremity_vector_1.y)
+            sign_angle_2=npy.sign(extremity_vector_2.x*vector_center.y-vector_center.x*extremity_vector_2.y)
+       
+            if sign_angle_1>0:
+                angle_1=-angle_1+math.pi*2
+            
+            if sign_angle_2>0:
+                angle_2=-angle_2+math.pi*2
+                
+            if abs(angle_1-angle_2)>1.2*(list_number_1[-1]-list_number_1[0]+1)*2*math.pi/self.meshes_dico[eng1].z:
+                inverse_angle=True
+            else:
+                inverse_angle=False
+           
+            
+            angle_max=max(angle_1,angle_2)
+            angle_min=min(angle_1,angle_2)
+            L_circle=[]
+            if inverse_angle:
+                for angle in npy.arange(angle_min,angle_max,math.pi*2/20):
+                    
+                    
+                    L_circle.append(vm.Point2D(position1[1]+radius_1*math.cos(angle),position1[2]+radius_1*math.sin(angle)))
+            else:
+                for angle in npy.arange(angle_min,angle_max-math.pi*2,-math.pi*2/20):
+                    
+                    
+                    L_circle.append(vm.Point2D(position1[1]+radius_1*math.cos(angle),position1[2]+radius_1*math.sin(angle)))
+            # L.append(vm.Point2D(position1[1],position1[2]))
+            if angle_min==angle_1:
+                L_total=L+L_circle
+            else:
+                L_total=L_circle+L
+            C1 = vm.wires.ClosedPolygon2D(L_total,{})
             # C1 = vm.wires.Contour2D([bezier_curve])
             # vmp.plot([C1.plot_data('contour')])
             L2 = []
@@ -2562,8 +2601,50 @@ class MeshCombination(DessiaObject):
             # L2.append(L2[0])
 
             # L2=set(L2)
-            L2.append(vm.Point2D(position2[1],position2[2]))
-            C2 = vm.wires.ClosedPolygon2D(L2, {})
+            radius_2=self.meshes_dico[eng2].outside_diameter/2
+            vector_center=vm.Vector2D(radius_2+10,0)
+            extremity_vector_1=vm.Vector2D(L2[0][0]-position2[1],L2[0][1]-position2[2])
+            extremity_vector_2=vm.Vector2D(L2[-1][0]-position2[1],L2[-1][1]-position2[2])
+            
+            angle_1=math.acos(vector_center.dot(extremity_vector_1)/(vector_center.norm()*extremity_vector_1.norm()))
+            angle_2=math.acos(vector_center.dot(extremity_vector_2)/(vector_center.norm()*extremity_vector_2.norm()))
+            
+            sign_angle_1=npy.sign(extremity_vector_1.x*vector_center.y-vector_center.x*extremity_vector_1.y)
+            sign_angle_2=npy.sign(extremity_vector_2.x*vector_center.y-vector_center.x*extremity_vector_2.y)
+       
+            if sign_angle_1>0:
+                angle_1=-angle_1+math.pi*2
+            
+            if sign_angle_2>0:
+                angle_2=-angle_2+math.pi*2
+                
+            if abs(angle_1-angle_2)>1.2*(list_number_2[-1]-list_number_2[0]+1)*2*math.pi/self.meshes_dico[eng2].z:
+                inverse_angle=True
+            else:
+                inverse_angle=False
+           
+            
+            angle_max=max(angle_1,angle_2)
+            angle_min=min(angle_1,angle_2)
+            print(angle_min,angle_max)
+            print(inverse_angle)
+            L2_circle=[]
+            if inverse_angle:
+                for angle in npy.arange(angle_min,angle_max,math.pi*2/20):
+                    
+                    
+                    L2_circle.append(vm.Point2D(position2[1]+radius_2*math.cos(angle),position2[2]+radius_2*math.sin(angle)))
+            else:
+                for angle in npy.arange(angle_min,angle_max-math.pi*2,-math.pi*2/20):
+                    
+                    
+                    L2_circle.append(vm.Point2D(position2[1]+radius_2*math.cos(angle),position2[2]+radius_2*math.sin(angle)))
+            
+            if angle_1==angle_min:
+                L2_total=L2+L2_circle
+            else:
+                L2_total=L2_circle+L2
+            C2 = vm.wires.ClosedPolygon2D(L2_total, {})
 
         #     C1=vm.Contour2D(Gears3D_Rotate[0])
         #     # print(Gears3D_Rotate[0])
@@ -2572,7 +2653,7 @@ class MeshCombination(DessiaObject):
             extrusion_vector1 = (self.gear_width[eng1]*x)
             extrusion_vector2 = (self.gear_width[eng2]*x)
             
-
+            
             if set_pos_dfs == 0:
                 vect_x = -0.5*self.gear_width[eng1]*x + x.dot(vm.Vector3D(centers[eng1][0],centers[eng1][1],centers[eng1][2]))*x
 
@@ -2581,9 +2662,12 @@ class MeshCombination(DessiaObject):
                     vector=vm.Vector2D(vect_center.dot(y),vect_center.dot(z))
                     circle = vm.wires.Circle2D(vm.Point2D(vector[0],vector[1]),(self.DB[eng1]*1.3)/2)
                     t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z,circle , [C1], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
+                   
+                   
                 else:
                     try:                    
                         t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, C1, [], vm.Vector3D(extrusion_vector1[0],extrusion_vector1[1],extrusion_vector1[2]))
+                        
                     except ZeroDivisionError or ValueError:
                         vector=vm.Vector2D(vect_center.dot(y),vect_center.dot(z))
                         circle = vm.wires.Circle2D(vm.Point2D(vector[0],vector[1]),(self.DB[eng1])/2)
@@ -2602,7 +2686,7 @@ class MeshCombination(DessiaObject):
             else:
                 t2 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0],vect_x[1],vect_x[2]), y, z, C2, [], vm.Vector3D(extrusion_vector2[0],extrusion_vector2[1],extrusion_vector2[2]))
 
-
+            
             primitives.append(t2)
 
 
