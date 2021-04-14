@@ -2126,7 +2126,7 @@ class MeshCombination(DessiaObject):
             
             vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
             vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
-            Gears3D_Rotate = self.gear_rotate_2([eng1, eng2],
+            Gears3D_Rotate = self.gear_rotate([eng1, eng2],
                                                 [Gears3D[eng1],Gears3D[eng2]],
                                                 [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
                                                 list_rot=[rot_gear_2[0],rot_gear_2[1]])
