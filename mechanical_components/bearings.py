@@ -1371,7 +1371,7 @@ class RadialRollerBearing(RadialBearing):
         be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
         be_sup1 = be_sup.translation((pos, 0), True)
         plot_datas.append(be_sup1.plot_data())
-
+        
         be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
         be_inf1 = be_inf.translation((pos, 0), True)
         plot_datas.append(be_inf1.plot_data())
@@ -1483,11 +1483,11 @@ class NUP(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
         
-        cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
+        # cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
 
 
         
-        return cbi1,irc
+        return None,irc
 
 
 
@@ -1508,8 +1508,8 @@ class NUP(RadialRollerBearing):
 
 
         # erc = vm.Contour2D([be1])
-        cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe7)
-        return cbe1,be1
+        # cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe7)
+        return None,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1568,9 +1568,9 @@ class N(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
         
-        cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
+        # cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
 
-        return cbi1,irc
+        return None,irc
 
 
 
@@ -1586,11 +1586,11 @@ class N(RadialRollerBearing):
         be1 = primitives2d.ClosedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius,
                            2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
         
-        cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe6)
+        # cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe6)
 
 
         # erc = vm.Contour2D([be1])
-        return cbe1,be1
+        return None,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1645,9 +1645,9 @@ class NF(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius = True)
         
-        cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
+        # cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
 
-        return cbi1,irc
+        return None,irc
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
@@ -1665,12 +1665,12 @@ class NF(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius}, adapt_radius = True)
         
-        cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe6)
+        # cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe6)
 
 
         # erc = vm.Contour2D([be1])
 
-        return cbe1,be1
+        return None,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1727,9 +1727,9 @@ class NU(RadialRollerBearing):
                            2: self.radius, 3: self.radius, 4: self.radius},
                            adapt_radius = True)
         
-        cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi6)
+        # cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi6)
 
-        return cbi1,irc
+        return None,irc
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
@@ -1746,9 +1746,9 @@ class NU(RadialRollerBearing):
                            {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
                             5: self.radius, 6: self.radius}, adapt_radius=True)
         # erc = vm.Contour2D([be1])
-        cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe7)
+        # cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe7)
 
-        return cbe1,be1
+        return None,be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
