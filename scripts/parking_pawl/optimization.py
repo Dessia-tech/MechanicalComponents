@@ -2,10 +2,12 @@ import math
 import dessia_common.optimization as dc_opt
 import mechanical_components.parking_pawl as mcpp
 
-w1 = -3/3.6/(0.73/2)*12
-w2 = 4*w1
-w3 = 12*w1
+wheels_speed = -3/3.6/(0.73/2)*12
+
 travel = 0.011
+wheels_torque = 0.5*1950*9.81/0.73
+ratios = [1, 4, 12]
+
 
 optimization_bounds = [dc_opt.BoundedAttributeValue('wheel_lower_tooth_diameter',
                                                     0.035, 0.05),
@@ -34,16 +36,20 @@ parking_pawl_simulations = []
 for tn in range(7, 9):
     fixed_parameters = [dc_opt.FixedAttributeValue('teeth_number', tn)]
 
-    for w in [w1, w2, w3]:
-        optimizer = mcpp.ParkingPawlOptimizer(wheel_locking_speed=w,
+    for ratio in ratios:
+        wheel_speed = ratio*wheels_speed
+        wheel_torque = wheels_torque/ratio
+        optimizer = mcpp.ParkingPawlOptimizer(wheel_locking_speed=wheel_speed,
+                                              wheel_torque=wheel_torque,
                                               locking_mechanism_travel=travel,
                                               fixed_parameters=fixed_parameters,
                                               optimization_bounds=optimization_bounds)
         
         result, objective = optimizer.optimize_cma()
         if result.check():
+            result.babylonjs()
             result.pawl.size_torsion_spring(10 * 9.81)
-            result_simulation = result.locking_simulation(w)
+            result_simulation = result.locking_simulation(wheel_speed)
             # result_simulation.babylonjs()
             parking_pawl_simulations.append(result_simulation)
             

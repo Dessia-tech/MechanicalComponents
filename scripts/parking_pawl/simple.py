@@ -14,6 +14,10 @@ import mechanical_components.parking_pawl as mcpp
 #             slope_angle=math.radians(12), slope_offset=0.005, slope_length=0.035,
 #             width=0.030)
 
+# parking_pawl.mpl_plot()
+w = -3/3.6/(0.73/2)*12
+C = 0.5*1950*9.81/0.73
+
 # parking_pawl = ParkingPawl(wheel, pawl)
 locking_mechanism = mcpp.RollerLockingMechanism(roller_diameter=0.010,
                                                 roller_width = 0.025,
@@ -51,11 +55,10 @@ parking_pawl = mcpp.ParkingPawl(wheel_inner_diameter=0.030,
 # simulation = parking_pawl.static_locking_simulation()
 # simulation.babylonjs()
 parking_pawl.pawl.size_torsion_spring(3*9.81)
-
+parking_pawl.size_width(wheel_torque=C)
 print('rest margin',parking_pawl.rest_margin()*1000, 'mm')
 
-# parking_pawl.mpl_plot()
-w = -3/3.6/(0.73/2)*12
+
 simulation = parking_pawl.locking_simulation(wheel_speed=w)
 print(parking_pawl.check())
 simulation.babylonjs()
