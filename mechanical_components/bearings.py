@@ -3619,6 +3619,13 @@ class BearingAssemblySimulation(DessiaObject):
         
         DessiaObject.__init__(self, name=name)
         
+        self.overall_length = self.bearing_assembly.overall_length
+        self.mass = self.bearing_assembly.mass
+        self.cost = self.bearing_assembly.cost
+        self.number_bearing = self.bearing_assembly.number_bearing
+        self.number_bearing_first_bc = self.bearing_assembly.number_bearing_first_bc
+        self.number_bearing_second_bc = self.bearing_assembly.number_bearing_second_bc
+        
     def volmdlr_volume_model(self):
         model = self.bearing_assembly.volume_model()
         return model
