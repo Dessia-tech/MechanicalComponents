@@ -1365,35 +1365,35 @@ class RadialRollerBearing(RadialBearing):
         return rol
 
 
-    # def plot_data(self, pos=0, quote=True, constructor=True, direction=1, stroke_width=1):
+    def plot_data(self, pos=0, quote=True, constructor=True, direction=1, stroke_width=1):
 
-    #     plot_datas = []
-    #     be_sup = self.external_ring_contour(direction = direction, sign_V = 1)[0]
-    #     be_sup1 = be_sup.translation((pos, 0), True)
-    #     plot_datas.append(be_sup1.plot_data())
+        plot_datas = []
+        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
+        be_sup1 = be_sup.translation((pos, 0), True)
+        plot_datas.append(be_sup1.plot_data())
 
-    #     be_inf = self.external_ring_contour(direction = direction, sign_V = -1)[0]
-    #     be_inf1 = be_inf.translation((pos, 0), True)
-    #     plot_datas.append(be_inf1.plot_data())
+        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
+        be_inf1 = be_inf.translation((pos, 0), True)
+        plot_datas.append(be_inf1.plot_data())
 
-    #     bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)[0]
-    #     bi_sup1 = bi_sup.translation((pos, 0), True)
-    #     plot_datas.append(bi_sup1.plot_data())
+        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
+        bi_sup1 = bi_sup.translation((pos, 0), True)
+        plot_datas.append(bi_sup1.plot_data())
 
-    #     bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)[0]
-    #     bi_inf1 = bi_inf.translation((pos, 0), True)
-    #     plot_datas.append(bi_inf1.plot_data())
+        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
+        bi_inf1 = bi_inf.translation((pos, 0), True)
+        plot_datas.append(bi_inf1.plot_data())
 
-    #     roller = self.rolling_contour()
-    #     roller_sup = roller.translation((0, self.Dpw/2.), True)
-    #     roller_sup1 = roller_sup.translation((pos, 0), True)
-    #     plot_datas.append(roller_sup1.plot_data())
+        roller = self.rolling_contour()
+        roller_sup = roller.translation((0, self.Dpw/2.), True)
+        roller_sup1 = roller_sup.translation((pos, 0), True)
+        plot_datas.append(roller_sup1.plot_data())
 
-    #     roller_inf = roller.translation((0, -self.Dpw/2.), True)
-    #     roller_inf1 = roller_inf.translation((pos, 0), True)
-    #     plot_datas.append(roller_inf1.plot_data())
+        roller_inf = roller.translation((0, -self.Dpw/2.), True)
+        roller_inf1 = roller_inf.translation((pos, 0), True)
+        plot_datas.append(roller_inf1.plot_data())
 
-    #     return [plot_data.PrimitiveGroup(plot_datas)]
+        return [plot_data.PrimitiveGroup(plot_datas)]
 
     def plot_contour(self, direction=1):
 
