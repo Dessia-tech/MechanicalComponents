@@ -18,31 +18,33 @@ block_optimizer = wf.InstanciateModel(bearings_opt.BearingAssemblyOptimizer,  na
 block_optimize = wf.ModelMethod(bearings_opt.BearingAssemblyOptimizer, 'optimize', name='BearingAssemblyOptimizer-optimize')
 attribute_selection1 = wf.ModelAttribute('bearing_assembly_simulations') 
 
-filters = [
-          {'attribute' : 'bearing_assembly/overall_length', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly/mass', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly/cost', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly/number_bearing', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly/number_bearing_first_bc', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly/number_bearing_second_bc', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly_simulation_result/L10', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly_simulation_result/bearing_combination_first/max_axial_load', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly_simulation_result/bearing_combination_first/max_radial_load', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly_simulation_result/bearing_combination_second/max_axial_load', 'operator' : 'gt', 'bound' : -100},
-          {'attribute' : 'bearing_assembly_simulation_result/bearing_combination_second/max_radial_load', 'operator' : 'gt', 'bound' : -100},
-          ]
+# filters = [
+#           {'attribute' : 'bearing_assembly/overall_length', 'operator' : 'gt', 'bound' : -100},
+#           {'attribute' : 'bearing_assembly/mass', 'operator' : 'gt', 'bound' : -100},
+#           {'attribute' : 'bearing_assembly/cost', 'operator' : 'gt', 'bound' : -100},
+#           {'attribute' : 'bearing_assembly/number_bearing', 'operator' : 'gt', 'bound' : -100},
+#           {'attribute' : 'bearing_assembly/number_bearing_first_bc', 'operator' : 'gt', 'bound' : -100},
+#           {'attribute' : 'bearing_assembly/number_bearing_second_bc', 'operator' : 'gt', 'bound' : -100},
+#           {'attribute' : 'bearing_assembly_simulation_result/L10', 'operator' : 'gt', 'bound' : -100},
+#           {'attribute' : 'bearing_assembly_simulation_result/bearing_combination_first/max_axial_load', 'operator' : 'gt', 'bound' : -100},
+#           {'attribute' : 'bearing_assembly_simulation_result/bearing_combination_first/max_radial_load', 'operator' : 'gt', 'bound' : -100},
+#           {'attribute' : 'bearing_assembly_simulation_result/bearing_combination_second/max_axial_load', 'operator' : 'gt', 'bound' : -100},
+#           {'attribute' : 'bearing_assembly_simulation_result/bearing_combination_second/max_radial_load', 'operator' : 'gt', 'bound' : -100},
+#           ]
 
-list_attribute = ['overall_length', 'mass', 'cost', 'number_bearing','number_bearing_first_bc','number_bearing_second_bc']
-# list_attribute =[]
+list_attribute = ['overall_length', 'mass', 'cost', 'number_bearing','number_bearing_first_bc','number_bearing_second_bc', 'first_max_axial_load','first_max_radial_load', 'second_max_axial_load','second_max_radial_load' ]
+
 
 display = wf.MultiPlot(list_attribute,order = 1, name= 'Display')
 
-filter_analyze= wf.Filter(filters)
-workflow_block = [block_optimizer, block_optimize, attribute_selection1, filter_analyze, display] 
+# filter_analyze= wf.Filter(filters)
+workflow_block = [block_optimizer, block_optimize, attribute_selection1, 
+                  # filter_analyze,
+                  display] 
 
 workflow_pipe = [wf.Pipe(block_optimizer.outputs[0], block_optimize.inputs[0]),
                  wf.Pipe(block_optimize.outputs[1], attribute_selection1.inputs[0]),
-                 wf.Pipe(attribute_selection1.outputs[0], filter_analyze.inputs[0]), 
+                 # wf.Pipe(attribute_selection1.outputs[0], filter_analyze.inputs[0]), 
                  wf.Pipe(attribute_selection1.outputs[0], display.inputs[0])]
 
 workflow = wf.Workflow(workflow_block, workflow_pipe, attribute_selection1.outputs[0])

@@ -3625,6 +3625,10 @@ class BearingAssemblySimulation(DessiaObject):
         self.number_bearing = self.bearing_assembly.number_bearing
         self.number_bearing_first_bc = self.bearing_assembly.number_bearing_first_bc
         self.number_bearing_second_bc = self.bearing_assembly.number_bearing_second_bc
+        self.first_max_axial_load = self.bearing_assembly_simulation_result.bearing_combination_first.max_axial_load
+        self.first_max_radial_load = self.bearing_assembly_simulation_result.bearing_combination_first.max_radial_load
+        self.second_max_axial_load = self.bearing_assembly_simulation_result.bearing_combination_second.max_axial_load
+        self.second_max_radial_load = self.bearing_assembly_simulation_result.bearing_combination_second.max_raxial_load
         
     def volmdlr_volume_model(self):
         model = self.bearing_assembly.volume_model()
