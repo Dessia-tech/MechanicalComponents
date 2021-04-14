@@ -2568,15 +2568,15 @@ class MeshCombination(DessiaObject):
             angle_min=min(angle_1,angle_2)
             L_circle=[]
             if inverse_angle:
-                for angle in npy.arange(angle_min,angle_max,math.pi*2/20):
+                for i,angle in enumerate(npy.arange(angle_min,angle_max,(angle_max-angle_min)/20)):
+                    if i>0:
                     
-                    
-                    L_circle.append(vm.Point2D(position1[1]+radius_1*math.cos(angle),position1[2]+radius_1*math.sin(angle)))
+                        L_circle.append(vm.Point2D(position1[1]+radius_1*math.cos(angle),position1[2]+radius_1*math.sin(angle)))
             else:
-                for angle in npy.arange(angle_min,angle_max-math.pi*2,-math.pi*2/20):
+                for i,angle in enumerate(npy.arange(angle_min,angle_max-math.pi*2,-abs(angle_max-angle_min)/20)):
+                    if i>0:
                     
-                    
-                    L_circle.append(vm.Point2D(position1[1]+radius_1*math.cos(angle),position1[2]+radius_1*math.sin(angle)))
+                        L_circle.append(vm.Point2D(position1[1]+radius_1*math.cos(angle),position1[2]+radius_1*math.sin(angle)))
             # L.append(vm.Point2D(position1[1],position1[2]))
             if angle_min==angle_1:
                 L_total=L+L_circle
@@ -2630,15 +2630,15 @@ class MeshCombination(DessiaObject):
             print(inverse_angle)
             L2_circle=[]
             if inverse_angle:
-                for angle in npy.arange(angle_min,angle_max,math.pi*2/20):
+                for i,angle in enumerate(npy.arange(angle_min,angle_max,math.pi*2/20)):
+                    if i<0:
                     
-                    
-                    L2_circle.append(vm.Point2D(position2[1]+radius_2*math.cos(angle),position2[2]+radius_2*math.sin(angle)))
+                        L2_circle.append(vm.Point2D(position2[1]+radius_2*math.cos(angle),position2[2]+radius_2*math.sin(angle)))
             else:
-                for angle in npy.arange(angle_min,angle_max-math.pi*2,-math.pi*2/20):
+                for i,angle in enumerate(npy.arange(angle_min,angle_max-math.pi*2,-math.pi*2/20)):
+                    if i<0:
                     
-                    
-                    L2_circle.append(vm.Point2D(position2[1]+radius_2*math.cos(angle),position2[2]+radius_2*math.sin(angle)))
+                        L2_circle.append(vm.Point2D(position2[1]+radius_2*math.cos(angle),position2[2]+radius_2*math.sin(angle)))
             
             if angle_1==angle_min:
                 L2_total=L2+L2_circle
