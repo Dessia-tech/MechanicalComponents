@@ -68,16 +68,8 @@ input_values = {workflow.index(block_optimizer.inputs[0]): [[[[0.1595, 0, 0], [0
 ##
 workflow_run = workflow.run(input_values)
 
-d1 = workflow_run.to_dict()
-obj = wf.WorkflowRun.dict_to_object(d1)
 
 
-import json
-
-object1=json.dumps(d1)
-
-object2=json.loads(object1)
-obj = wf.WorkflowRun.dict_to_object(d1)
 # c = Client(api_url = 'https://api.demo.dessia.tech')
 # r = c.create_object_from_python_object(workflow_run)
 
