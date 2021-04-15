@@ -73,6 +73,6 @@ workflow_run = workflow.run(input_values)
 # c = Client(api_url = 'https://api.demo.dessia.tech')
 # r = c.create_object_from_python_object(workflow_run)
 
-c = Client(api_url = 'https://api.safran-es.dessia.tech')
-r = c.create_object_from_python_object(workflow_run)
+# c = Client(api_url = 'https://api.safran-es.dessia.tech')
+# r = c.create_object_from_python_object(workflow_run)
 

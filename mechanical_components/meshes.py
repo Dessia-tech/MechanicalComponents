@@ -2620,7 +2620,7 @@ class MeshAssembly(DessiaObject):
                     if valid:
                         break
 
-        list_gear = {}
+        dict_gear = {}
         num_gear=0
         for k,mesh_combination in enumerate(self.mesh_combinations):
             for i,mesh in enumerate(mesh_combination.meshes):
@@ -2628,28 +2628,29 @@ class MeshAssembly(DessiaObject):
                     if match[1]==i and match[2]==k:
                         num_gear=match[0]
                         break
-                list_gear[num_gear] = mesh
+                dict_gear[num_gear] = mesh
                 num_gear+=1
+        self.dict_gear = dict_gear
         coefficient_profile_shift = {}
-        for num_mesh, mesh in list_gear.items():
+        for num_mesh, mesh in dict_gear.items():
             coefficient_profile_shift[num_mesh] = mesh.coefficient_profile_shift
         Z = {}
-        for num_mesh, mesh in list_gear.items():
+        for num_mesh, mesh in dict_gear.items():
             Z[num_mesh] = mesh.z
         material = {}
-        for num_mesh, mesh in list_gear.items():
+        for num_mesh, mesh in dict_gear.items():
             material[num_mesh] = mesh.material
         transverse_pressure_angle_rack = {}
-        for num_mesh, mesh in list_gear.items():
+        for num_mesh, mesh in dict_gear.items():
             transverse_pressure_angle_rack[num_mesh] = mesh.rack.transverse_pressure_angle_0
         coeff_gear_addendum = {}
-        for num_mesh, mesh in list_gear.items():
+        for num_mesh, mesh in dict_gear.items():
             coeff_gear_addendum[num_mesh] = mesh.rack.coeff_gear_addendum
         coeff_gear_dedendum = {}
-        for num_mesh, mesh in list_gear.items():
+        for num_mesh, mesh in dict_gear.items():
             coeff_gear_dedendum[num_mesh] = mesh.rack.coeff_gear_dedendum
         coeff_root_radius = {}
-        for num_mesh, mesh in list_gear.items():
+        for num_mesh, mesh in dict_gear.items():
             coeff_root_radius[num_mesh] = mesh.rack.coeff_root_radius
         coeff_circular_tooth_thickness = {}
         for num_mesh, mesh in list_gear.items():
@@ -2901,6 +2902,23 @@ class MeshAssembly(DessiaObject):
 #            if self.save!=optimizer_data:
             self.mesh_combinations[num_graph].update_helix_angle(**xt)
         return output_x
+    def volmdlr_primitives(self):
+        primitives = []
+        
+       
+            
+        z_previous_position = 0
+        position = {}
+        for mesh_combination in self.mesh_combinations:
+            for mesh in mesh_combination.meshes:
+                
+            z_position = z_previous_positionprevious + 
+            offset = 1.2*max([gear_width for gear_width in mesh_combination.gear_width])
+            
+            center = {}
+            
+            
+        
     def pos_axis(self, position):
         # Definition of the initial center for all gear (when not given by the user)
 

@@ -53,7 +53,8 @@ class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer i
     
     _dessia_methods = ['optimize']
     
-    def __init__(self, radial_loads:List[float], axial_loads:List[float], 
+    def __init__(self, radial_loads:List[float], 
+                 axial_loads:List[float], 
                  speeds:List[float], operating_times:List[float],
                  inner_diameter:float, outer_diameter:float,
                  length:float,
@@ -98,6 +99,9 @@ class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer i
         
         DessiaObject.__init__(self, name=name)
         
+
+            
+        
 #    def __eq__(self, other_eb):
 #        equal = (self.radial_loads == other_eb.radial_loads
 #                 and self.axial_loads == other_eb.axial_loads
@@ -116,6 +120,9 @@ class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer i
 #    def __hash__(self):
 #        h = int(sum(self.operating_times) % 230080000)
 #        return h
+            
+        
+            
         
 
 

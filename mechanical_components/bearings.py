@@ -3658,6 +3658,14 @@ class BearingCombinationSimulation(DessiaObject):
         
         DessiaObject.__init__(self, name=name)
         
+        self.mass = self.bearing_combination.mass
+        self.cost = self.bearing_combination.cost
+        self.number_bearing = self.bearing_combination.number_bearing
+        self.max_axial_load = self.bearing_combination_simulation_result.max_axial_load
+        self.max_radial_load = self.bearing_combination_simulation_result.max_radial_load
+       
+        
+        
     def volmdlr_volume_model(self):
         model = self.bearing_combination.volume_model()
         return model
