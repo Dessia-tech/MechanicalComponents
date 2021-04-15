@@ -37,15 +37,19 @@ class Material(dc.DessiaObject):
         return force/width/breadth
 
     def width_from_shear_force(self, force:float, breadth:float)->float:
-        return force/self.shear_elasticity_limit/breadth
+        return abs(force)/self.shear_elasticity_limit/breadth
 
     def width_from_bending_force(self, force:float, breadth:float, force_lever:float)->float:
-        moment = force_lever*force
+        # print('force', force)
+        # print('breadth', breadth)
+        # print('force_lever', force_lever)
+        moment = abs(force_lever*force)
         return 6*moment/self.elastic_limit/(breadth**2)
 
 
 
 ASTM_A36_STEEL = Material(250e6, 400e6, 0.5*250e6, 'ASTM A36 steel')
+ASTM_A514_STEEL = Material(690e6, 760e6, 0.7*690e6, 'ASTM A514 steel')
 
 
 class Wheel(dc.DessiaObject):
@@ -237,16 +241,17 @@ class Wheel(dc.DessiaObject):
                                     frame.u*self.width,
                                     name='Wheel {}'.format(self.name))]
 
-    def minimum_width(self, wheel_torque:float, security_factor:float=10):
-        material = ASTM_A36_STEEL
-        force = wheel_torque*0.5*self.contact_diameter
-        l = self.upper_tooth_angle * 0.5 * self.lower_tooth_diameter
+    def minimum_width(self, wheel_torque:float, safety_factor:float=2):
+        material = ASTM_A514_STEEL
+
+        force = wheel_torque/0.5/self.contact_diameter
+        l = (self.upper_tooth_angle+self.junction_angle) * 0.5 * self.lower_tooth_diameter
         h = 0.5*(self.contact_diameter - self.lower_tooth_diameter)
         return max(material.width_from_bending_force(force, l, h),
-                   material.width_from_shear_force(force, l))*security_factor
+                   material.width_from_shear_force(force, l))*safety_factor
 
     def max_stress(self, wheel_torque:float):
-        material = ASTM_A36_STEEL
+        material = ASTM_A514_STEEL
         force = wheel_torque*0.5*self.contact_diameter
         l = self.upper_tooth_angle * 0.5 * self.lower_tooth_diameter
         h = 0.5*(self.contact_diameter - self.lower_tooth_diameter)
@@ -482,17 +487,16 @@ class Pawl(dc.DessiaObject):
 
         self.torsion_spring = TorsionSpring(torque_up)
 
-    def minimum_width(self, wheel_torque:float, security_factor:float=10.):
-        material = ASTM_A36_STEEL
-        force = wheel_torque*0.5*self.contact_diameter
+    def minimum_width(self, wheel_torque:float, safety_factor:float=2.):
+        material = ASTM_A514_STEEL
+        force = wheel_torque/0.5/self.contact_diameter
         l = self.finger_contact_width
         h = 0.5*(self.wheel_lower_tooth_diameter+self.finger_height-self.contact_diameter)
-
         return max(material.width_from_bending_force(force, l, h),
-                   material.width_from_shear_force(force, l)) * security_factor
+                   material.width_from_shear_force(force, l)) * safety_factor
 
     def max_stress(self, wheel_torque:float):
-        material = ASTM_A36_STEEL
+        material = ASTM_A514_STEEL
         force = wheel_torque*0.5*self.contact_diameter
         l = self.finger_contact_width
         h = 0.5*(self.wheel_lower_tooth_diameter+self.finger_height-self.contact_diameter)
@@ -706,16 +710,18 @@ class ParkingPawl(dc.DessiaObject):
     def mass(self):
         return self.wheel.mass() + self.pawl.mass()
 
-    def minimum_width(self, wheel_torque:float):
+    def minimum_width(self, wheel_torque:float, safety_factor:float=2):
         wheel_min_width = self.wheel.minimum_width(wheel_torque)
         pawl_min_width = self.pawl.minimum_width(wheel_torque)
-        # print('widths: ', wheel_min_width, pawl_min_width)
         return max(wheel_min_width,
                    pawl_min_width)
 
     def ejection_levers(self):
-        action_line1 = self.wheel.action_line1.rotation(vm.O2D, self.contact1_wheel_angle)
-        action_line2 = self.wheel.action_line2.rotation(vm.O2D, self.contact2_wheel_angle)
+        # action_line1 = self.wheel.action_line1.rotation(vm.O2D, self.contact1_wheel_angle)
+        # action_line2 = self.wheel.action_line2.rotation(vm.O2D, self.contact2_wheel_angle)
+        u1 = self.pawl.action_line1.unit_direction_vector()
+        u2 = self.pawl.action_line1.unit_direction_vector()
+        
         
         # ax = self.pawl.outer_contour().plot()
         # self.wheel.outer_contour().plot(ax=ax)
@@ -723,8 +729,8 @@ class ParkingPawl(dc.DessiaObject):
         # action_line2.plot(ax=ax, color='r')
         # self.pawl.axis_position.plot(color='b', ax=ax)
         
-        lever1 = (self.pawl.axis_position - self.pawl.contact_point1).cross(action_line1.unit_direction_vector())
-        lever2 = (self.pawl.axis_position - self.pawl.contact_point2).cross(action_line2.unit_direction_vector())
+        lever1 = (self.pawl.axis_position - self.pawl.contact_point1).cross(u1)
+        lever2 = (self.pawl.axis_position - self.pawl.contact_point2).cross(u2)
         return lever1, lever2
 
 
@@ -769,6 +775,9 @@ class ParkingPawl(dc.DessiaObject):
             return False
 
         if self.rest_margin() < 0:
+            return False
+
+        if min(self.ejection_levers()) < 0:
             return False
 
         return True
@@ -1080,8 +1089,8 @@ class ParkingPawl(dc.DessiaObject):
         return max(self.pawl.max_stress(wheel_torque),
                    self.wheel.max_stress(wheel_torque))
 
-    def size_width(self, wheel_torque:float):
-        min_width = self.minimum_width(wheel_torque)
+    def size_width(self, wheel_torque:float, safety_factor:float=2):
+        min_width = self.minimum_width(wheel_torque, safety_factor=safety_factor)
         self.width = min_width
         self.locking_mechanism.roller_width = min_width
         self.pawl.width = min_width
@@ -1297,7 +1306,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         xra, fx = cma.fmin(self.objective_from_dimensionless_vector,
                            x0, 0.6, options={'bounds': bounds,
                                              'tolfun': 1e-3,
-                                             'maxiter': 150,
+                                             'maxiter': 250,
                                              'verbose': 0,
                                              'ftarget': 0.2})[0:2]
         # print('x', result.x)
@@ -1333,7 +1342,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
                                    wheel_lower_tooth_diameter=wheel_lower_tooth_diameter,
                                    wheel_outer_diameter=wheel_outer_diameter,
                                    teeth_number=attributes_values['teeth_number'],
-                                   lower_tooth_ratio=0.60,
+                                   lower_tooth_ratio=attributes_values['lower_tooth_ratio'],
                                    pressure_angle=attributes_values['pressure_angle'],
                                    contact_diameter=contact_diameter,
                                    width=0.025,
@@ -1393,9 +1402,8 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         lever_limit = 0.01*model.wheel.outer_diameter
         for lever in model.ejection_levers():
             if lever < lever_limit:
-                print('lever', lever, lever_limit)
+                # print('lever', lever, lever_limit)
                 objective += (lever_limit - lever)*1000000
-                print('jj', (lever_limit - lever)*1000000)
 
         model.pawl.size_torsion_spring(10 * 9.81)
         try:

@@ -5,8 +5,8 @@ import mechanical_components.parking_pawl as mcpp
 wheels_speed = -3/3.6/(0.73/2)*12
 
 travel = 0.011
-wheels_torque = 5113
-max_wheels_slack = 0.38
+wheels_torque = 3764
+max_wheels_slack = 0.25
 ratios = [1, 4, 12]
 
 
@@ -29,8 +29,9 @@ optimization_bounds = [dc_opt.BoundedAttributeValue('wheel_lower_tooth_diameter'
                        dc_opt.BoundedAttributeValue('axis_outer_diameter',
                                                     0.015, 0.035),
                        dc_opt.BoundedAttributeValue('slope_start_finger_overheight',
-                                                    0.005, 0.025),
-                       
+                                                    0.004, 0.020),
+                       dc_opt.BoundedAttributeValue('lower_tooth_ratio',
+                                                    0.4, 0.7),
                        ]
 
 parking_pawl_simulations = []
