@@ -1219,7 +1219,7 @@ class RadialRollerBearing(RadialBearing):
     _non_hash_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
     
-    symmetric = True
+    # symmetric = True
     linkage = 'cylindric'
     coeff_baselife = 10/3.
     cost_coefficient = 0.5
@@ -2249,9 +2249,7 @@ strength_bearing_classes = {str(RadialBallBearing): 1,
 
 class ConceptualBearingCombination(DessiaObject):
     _standalone_in_db = True
-    _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_serializable_attributes = ['bearing_classes']
     _generic_eq = True
     
     def __init__(self, bearing_classes:List[RadialBearing], directions:List[int], mounting:Mounting,

@@ -38,10 +38,12 @@ bis2 = bearings_opt.BearingCombinationOptimizer(
                     linkage_types = [bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)],
                     mounting_types = [bearings.Mounting(left=True), bearings.Mounting(right=True), bearings.Mounting(left=True, right=True), bearings.Mounting()],
                     number_bearings =[1, 2, 3],
-                    bearing_classes = [bearings.RadialBallBearing, 
-                                      bearings.AngularBallBearing,
-                                      bearings.TaperedRollerBearing,
-                                      bearings.NUP, bearings.N, bearings.NU,
+                    bearing_classes = ['mechanical_components.bearings.RadialBallBearing', 
+                                      'mechanical_components.bearings.AngularBallBearing',
+                                      'mechanical_components.bearings.TaperedRollerBearing',
+                                      'mechanical_components.bearings.NUP', 
+                                      'mechanical_components.bearings.N', 
+                                      'mechanical_components.bearings.NU',
                                       # bearings_opt.NF
                                       ]
                     )
@@ -57,15 +59,19 @@ bis2.optimize(max_solutions = 10)
     
 # plot_data.plot_canvas(ba_simulation.plot_data()[0][0])
 
-d = bis2.to_dict()
-obj = bearings_opt.BearingCombinationOptimizer.dict_to_object(d)
 
+d = bis2.to_dict()
+
+obj = bearings_opt.BearingCombinationOptimizer.dict_to_object(d)
+print(obj.bearing_classes)
+
+print(bis2.bearing_classes)
 
 # d = bis2.to_dict()
 # obj = dc.dict_to_object(d)
 
 if not obj == bis2:
-    raise KeyError('Non esqual object BearingAssemblyOptimizer with dict_to_object')
+    raise KeyError('Non esqual object BearingCombinationOptimizer with dict_to_object')
 
 
     # def to_dict(self, subobjects_id = {}, stringify_keys=True):

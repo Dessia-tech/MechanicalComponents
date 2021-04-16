@@ -49,14 +49,14 @@ for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
     ba_simulation == obj
     
 # ba_simulation.bearing_assembly.bearing_combinations[0].plot()
-plots = ba_simulation.bearing_assembly.plot_data()
-pdg = plot_data.plot_canvas(plots)
+# plots = ba_simulation.bearing_assembly.plot_data()
+# pdg = plot_data.plot_canvas(plots)
 
-# d = bis2.to_dict()
-# obj = bearings_opt.BearingAssemblyOptimizer.dict_to_object(d)
+d = bis2.to_dict()
+obj = bearings_opt.BearingAssemblyOptimizer.dict_to_object(d)
 
-# if not obj == bis2:
-#     raise KeyError('Non esqual object BearingAssemblyOptimizer with dict_to_object')
+if not obj == bis2:
+    raise KeyError('Non esqual object BearingAssemblyOptimizer with dict_to_object')
     
 # vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].bearings[0].volmdlr_volume_model()
 # vol1.babylonjs()    
