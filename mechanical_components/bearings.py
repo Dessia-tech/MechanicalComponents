@@ -3670,7 +3670,7 @@ class BearingCombinationSimulation(DessiaObject):
     
     def plot_data(self, box=True, typ=None, constructor=False):
         plot_data = self.bearing_combination.plot_data(box=box)
-        return [plot_data]
+        return plot_data
 
 
 

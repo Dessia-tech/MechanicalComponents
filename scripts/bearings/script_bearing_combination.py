@@ -50,28 +50,28 @@ bis2 = bearings_opt.BearingCombinationOptimizer(
 
 bis2.optimize(max_solutions = 10)
 
-# for num_sol, ba_simulation in enumerate(bis2.bearing_combination_simulations):
-#     hash_ = hash(ba_simulation)
-#     equak = ba_simulation.bearing_combination == ba_simulation.bearing_combination
-#     d = ba_simulation.to_dict()
-#     obj = bearings.BearingCombinationSimulation.dict_to_object(d)
-#     ba_simulation == obj
+for num_sol, ba_simulation in enumerate(bis2.bearing_combination_simulations):
+    hash_ = hash(ba_simulation)
+    equak = ba_simulation.bearing_combination == ba_simulation.bearing_combination
+    d = ba_simulation.to_dict()
+    obj = bearings.BearingCombinationSimulation.dict_to_object(d)
+    ba_simulation == obj
     
-# plot_data.plot_canvas(ba_simulation.plot_data()[0][0])
+plot_data.plot_canvas(ba_simulation.plot_data()[0])
 
 
-d = bis2.to_dict()
+# d = bis2.to_dict()
 
-obj = bearings_opt.BearingCombinationOptimizer.dict_to_object(d)
-print(obj.bearing_classes)
+# obj = bearings_opt.BearingCombinationOptimizer.dict_to_object(d)
+# print(obj.bearing_classes)
 
-print(bis2.bearing_classes)
+# print(bis2.bearing_classes)
 
 # d = bis2.to_dict()
 # obj = dc.dict_to_object(d)
 
-if not obj == bis2:
-    raise KeyError('Non esqual object BearingCombinationOptimizer with dict_to_object')
+# if not obj == bis2:
+#     raise KeyError('Non esqual object BearingCombinationOptimizer with dict_to_object')
 
 
     # def to_dict(self, subobjects_id = {}, stringify_keys=True):

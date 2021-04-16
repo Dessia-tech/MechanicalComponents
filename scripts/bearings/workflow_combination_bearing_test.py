@@ -8,7 +8,7 @@ Created on Fri Oct  5 09:53:05 2018
 from dessia_common import DessiaObject, dict_merge
 from dessia_common import Evolution, CombinationEvolution
 import dectree
-# from dessia_api_client import Client
+from dessia_api_client import Client
 from dessia_common import workflow as wf
 import dessia_common as dc
 import plot_data
@@ -123,5 +123,6 @@ obj = wf.WorkflowRun.dict_to_object(a)
     
 # c = Client()
 # c.api_url = 'http://localhost:5000'
-# # c.api_url = 'https://api.platform.dessia.tech'
-# r = c.CreateObject(workflow_run)
+c = Client(api_url = 'https://api.safran-es.dessia.tech')
+r = c.create_object_from_python_object(workflow_run)
+
