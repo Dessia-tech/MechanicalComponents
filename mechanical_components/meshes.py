@@ -2000,9 +2000,12 @@ class MeshCombination(DessiaObject):
         reference_point_outside_gear_2_translate=(reference_point_outside_gear_2[0]+positions[1][1],reference_point_outside_gear_2[1]+positions[1][2])
         
         center_distance=vm.Vector2D((positions[1][1]-positions[0][1]),(positions[1][2]-positions[0][2]))
+        print(center_distance)
+        print(center_distance.norm())
         vector_trochoide_gear_1=vm.Vector2D(reference_point_trochoide_gear_1_translate[0]-positions[0][1],
                                             reference_point_trochoide_gear_1_translate[1]-positions[0][2])
-        
+        print(vector_trochoide_gear_1)
+        print(vector_trochoide_gear_1.norm())
         vector_outside_gear_2=vm.Vector2D(reference_point_outside_gear_2_translate[0]-positions[1][1],
                                             reference_point_outside_gear_2_translate[1]-positions[1][2])
         
@@ -2637,7 +2640,7 @@ class MeshAssembly(DessiaObject):
                 num_gear+=1
         self.dict_gear = dict_gear
         
-        self.list_gear = [gear for gear in self.dict_gear.values()]
+        self.gear_list = [gear for gear in self.dict_gear.values()]
         self.list_gear_index = [gear for gear in self.dict_gear.keys()]
         
         coefficient_profile_shift = {}
@@ -2916,39 +2919,57 @@ class MeshAssembly(DessiaObject):
         
         offset = 0.05
         x_position = 0
+        count = 0
 
         previous_center = {}
-        centers_yz = self.pos_axis({self.list_gear[0]:[0,0]})
+        centers_yz = self.pos_axis({self.list_gear_index[0]:[0,0]})
+        # print(centers_yz)
         
-        for k, gear in enumerate(self.list_gear):
-            for i, mesh_combination in enumerate(self.mesh_combinations):
-                centers = {}
-                for j, mesh in enumerate(mesh_combination.meshes):
-                    if gear == mesh:
-                        for match in self.num_gear_match:
-                            if i == match[2] and j == match[1]:
-                                num_gear=match[0]
-                                break
-                        
-                        for engr_num in centers_yz.keys():
-                            if engr_num == num_gear:
-                                break
-                        center_yz = centers_yz[engr_num]
-                        if i == 0:
-                            centers[j] = (x_position, center_yz[0], center_yz[1])
-                        
-                        else:
-                            
-                            if mesh == mesh_combination.meshes[0]:
-                                x_position += max(mesh_combination.gear_width)/2
-                                centers[j] = (x_position, previous_center[0], previous_center[1])
-                            else:
-                                centers[j] = (x_position, center_yz[0], center_yz[1])
-                                previous_center = center_yz
-                                x_position += max(mesh_combination.gear_width)/2 + offset
-                        
+        # for k, gear in enumerate(self.gear_list):
+        for i, mesh_combination in enumerate(self.mesh_combinations):
+            centers = {}
+            for j, mesh in enumerate(mesh_combination.meshes):
+                # if gear == mesh:
+                # for match in self.num_gear_match:
+                #     if i == match[2] and j == match[1]:
+                #         num_gear = match[0]
+                #         break
                 
-                primitives.extend(mesh_combination.volmdlr_primitives(centers = centers))
+                # for engr_num in centers_yz.keys():
+                #     if engr_num == num_gear:
+                #         break
+                
+                
+                if j == 0:
+                    center_yz = centers_yz[count]
+                    centers[j] = (x_position, center_yz[0], center_yz[1])
+                if j%2 == 0 and j != 0:
+                    x_position += mesh.db/2
+                    centers[j] = (x_position, previous_center[0], previous_center[1])
+                    
+                if j%2 != 0:
+                    count+=1
+                    center_yz = centers_yz[count]
+                    centers[j] = (x_position, center_yz[0], center_yz[1])
+                    # print(centers)
+                    
+                    
+                    previous_center = center_yz
+                    x_position += mesh.db/2 + offset
+                
+                    
+                # else:
+                    
+                #     if mesh == mesh_combination.meshes[0]:
+                #         x_position += max(mesh_combination.gear_width)/2
+                #         centers[j] = (x_position, previous_center[0], previous_center[1])
+                #     else:
+                #         centers[j] = (x_position, center_yz[0], center_yz[1])
+                #         previous_center = center_yz
+                #         x_position += max(mesh_combination.gear_width)/2 + offset
+                
+            print(centers)
+            primitives.extend(mesh_combination.volmdlr_primitives(centers = centers))
         return primitives
                             
                
@@ -2959,7 +2980,7 @@ class MeshAssembly(DessiaObject):
 
         gear_graph = nx.Graph()
         
-        gear_graph.add_nodes_from(self.list_gear_index)
+        gear_graph.add_nodes_from(self.list_gear)
 
         for num_cd, list_connections in enumerate(self.connections):
             (eng1_m, eng2_m) = list_connections[0]

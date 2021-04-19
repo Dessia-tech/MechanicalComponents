@@ -5,6 +5,7 @@ import numpy as npy
 # 7 gears Test case with fixed modulus to 2
 # definition of input data
 connections = [[(0, 1)], [(1, 2)], [(2, 3)], [(3, 4)], [(0, 5)], [(5, 6)]]
+connections = [[(0, 1)], [(2, 3)], [(0, 5)], [(5, 6)]]
 
 rigid_links = []
 
