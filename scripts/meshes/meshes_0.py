@@ -48,7 +48,7 @@ rack_choices = {0:[0], 1:[0]}
 GA = meshes_opt.MeshAssemblyOptimizer(center_distances,cycles)
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.Optimize(nb_sol =5, verbose=True)
+GA.Optimize(nb_sol = 50, verbose=True)
 print('Number of solutions:',len(GA.solutions))
 
 solutions = GA.solutions

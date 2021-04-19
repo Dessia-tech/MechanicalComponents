@@ -56,38 +56,17 @@ input_values = {}
 blocks = []
 
 blocks.extend([blockA, optimizeA, attribute_selection1, 
-                # filter_analyze
+
                 display
                 ])
 
 pipes = [wf.Pipe(blockA.outputs[0], optimizeA.inputs[0]),
          wf.Pipe(optimizeA.outputs[1], attribute_selection1.inputs[0]),
-          # wf.Pipe(attribute_selection1.outputs[0], filter_analyze.inputs[0]),
           wf.Pipe(attribute_selection1.outputs[0], display.inputs[0])
          ]
 
 workflow = wf.Workflow(blocks, pipes, attribute_selection1.outputs[0])
 
-#bis2 = bearings_opt.BearingAssemblyOptimizer(
-#                    loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]], 
-#                    speeds = [157.07],
-#                    operating_times = [3600000],
-#                    inner_diameters = [0.035, 0.035],
-#                    axial_positions = [0, 0.3], 
-#                    outer_diameters = [0.072, 0.072], 
-#                    lengths = [0.03, 0.03],
-#                    linkage_types = [bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)]),
-#                                     bearings.SelectionLinkage([bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)])],
-#                    mounting_types = [bearings.CombinationMounting([bearings.Mounting(), bearings.Mounting(left=True)])],
-#                    number_bearings = [[1], [1]],
-#                    catalog = schaeffler_catalog,
-##                    bearing_classes = [bearings.RadialBallBearing, 
-##                                       bearings.AngularBallBearing,
-##                                       bearings.TaperedRollerBearing,
-##                                       bearings.NUP, bearings.N, bearings.NU,
-###                                       bearings_opt.NF
-##                                       ]
-#                    )
 
 input_values = {workflow.index(blockA.inputs[0]): [500],
                 workflow.index(blockA.inputs[1]): [0],
@@ -99,10 +78,6 @@ input_values = {workflow.index(blockA.inputs[0]): [500],
                 workflow.index(blockA.inputs[7]): [bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)],
                 workflow.index(blockA.inputs[8]): [bearings.Mounting(left=True), bearings.Mounting(right=True), bearings.Mounting(left=True, right=True), bearings.Mounting()],
                 workflow.index(blockA.inputs[9]): [1, 2, 3],
-                # workflow.index(blockA.inputs[10]): ['bearings.RadialBallBearing',
-                #                                     'bearings.AngularBallBearing',
-                #                                     'bearings.TaperedRollerBearing',
-                #                                     'bearings.NUP'],
                 workflow.index(blockA.inputs[10]):  ['mechanical_components.bearings.RadialBallBearing', 
                                       'mechanical_components.bearings.AngularBallBearing',
                                       'mechanical_components.bearings.TaperedRollerBearing',
