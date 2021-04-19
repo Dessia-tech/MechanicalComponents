@@ -609,7 +609,6 @@ class ParkingPawl(dc.DessiaObject):
                  wheel_outer_diameter:float,
                  teeth_number:int,
                  lower_tooth_ratio:float,
-                 # basis_diameter:float,
                  contact_diameter:float,
                  pressure_angle:float,
                  width:float,
@@ -702,7 +701,7 @@ class ParkingPawl(dc.DessiaObject):
         # Finding locking mech center distance
         roller_rest_contact_point = self.pawl.roller_rest.point_at_abscissa(self.pawl.roller_rest.length()-0.7*self.locking_mechanism.roller_diameter)
         y, z = self.pawl.roller_rest.start.rotation(self.pawl.axis_position,
-                                              self.minimal_up_pawl_angle)
+                                                    self.minimal_up_pawl_angle)
         self.locking_mechanism_center_distance = self.pawl.slope.end.y + 0.5*self.locking_mechanism.roller_diameter
         self.locking_mechanism_start_position = self.locking_contact_results[1][-1]
         self.locking_mechanism_end_position = self.pawl.slope.end.x - 0.002
@@ -840,9 +839,9 @@ class ParkingPawl(dc.DessiaObject):
                 0].primitives
             return [plot_data.PrimitiveGroup(primitives_p1)]
 
-    def _solve_locking_contact(self, angular_resolution:float = 0.01):
-        max_angle = 3*self.minimal_up_pawl_angle
-        number_steps = math.ceil((max_angle/angular_resolution))
+    def _solve_locking_contact(self, angular_resolution:float = 0.01, max_steps=40):
+        max_angle = min(3*self.minimal_up_pawl_angle, math.radians(80.))
+        number_steps = min(math.ceil((max_angle/angular_resolution)), max_steps)
 
         contacts = [(0, self.pawl.profile().primitives[-1].start.x,
                      self.pawl.profile().primitives[-1].start,
