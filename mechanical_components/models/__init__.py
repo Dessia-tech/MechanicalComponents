@@ -6,3 +6,5 @@
 
 # from .optimizer_bearing import bearing_assembly_optimizer
 from .catalogs import schaeffler_catalog
+from .fasteners import iso_screw_catalog
+from .chains import iso_chain1
