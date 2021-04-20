@@ -10,6 +10,7 @@ import math
 import numpy as npy
 from scipy import interpolate
 
+from typing import List
 import json
 import pkg_resources
 
@@ -157,10 +158,29 @@ cast_aluminium = GrooveMaterial(221.*10**6, 165.*10**6, 120., 'Cast Aluminium')
 groove_materials = [cast_aluminium, LM_carbon_steel, H_carbon_steel, cast_steel, grey_iron, ductile_iron]
 
 
-
+class Groove(DessiaObject):
+    
+    def load_capacity(self, d):
+        # d the nominal diameter of the circlip ie. the shaft diameter
+        Fn = self.material.Re * math.pi/4*npy.abs(d**2-self.D**2) / self.StressingCoeff(d)
+        return Fn
+    
+    def StressingCoeff(self, d):
+        h = abs(d - self.D)/2
+        X = []
+        Y = []
+        for i in range(len(q_fct_wh['data'])):
+            X.append(q_fct_wh['data'][i][0])
+            Y.append(q_fct_wh['data'][i][1])
+        f_q_fct_wh = interpolate.interp1d(X, Y, kind='linear', fill_value='extrapolate')
+        q = f_q_fct_wh(self.w/h)
+        print('q', q)
+        return q
 
 
 class Circlips(DessiaObject):
+    _standalone_in_db = True
+    
     p1 = vm.Point2D(0, 0)
     
     def RadialThickness(self, theta):
@@ -365,17 +385,11 @@ class Circlips(DessiaObject):
             c1.MPLPlot(ax=a)
             c2.MPLPlot(ax=a)
     
-    def CADVolumes(self, center = vm.O3D, x = vm.X3D, y = vm.Y3D):        
+    def volmdlr_primitives(self, center = vm.O3D, x = vm.X3D, y = vm.Y3D):        
         z = x.Cross(y)
         z.Normalize()
         profile = vm3d.ExtrudedProfile(center, x, y, self.ExternalContour(), self.InternalContour(), self.e*z)    
         return [profile]
-       
-    def CADExport(self, fcstd_filepath, python_path='python', 
-                      freecad_lib_path='/usr/lib/freecad/lib', export_types=['fcstd']):
-        model = vm.VolumeModel([('circlips', self.CADVolumes())])
-        model.FreeCADExport(fcstd_filepath, python_path=python_path,
-                            freecad_lib_path=freecad_lib_path, export_types=export_types)
         
         
     def PermissibleDishingAngle(self, d1):
@@ -418,13 +432,13 @@ class Circlips(DessiaObject):
                         
         if direction > 0:
             groove = ExternalGroove(D, x, w, groove_material)
-            print('load capa ext : ', groove.LoadCapacity(self.d))
-            if groove.LoadCapacity(self.d) < F:
+            print('load capa ext : ', groove.load_capacity(self.d))
+            if groove.load_capacity(self.d) < F:
                 return None # The circlip and the groove won't hold
         elif direction < 0:
             groove = InternalGroove(D, x, w, groove_material)
-            print('load capa int : ', groove.LoadCapacity(self.d))
-            if groove.LoadCapacity(self.d) < F:
+            print('load capa int : ', groove.load_capacity(self.d))
+            if groove.load_capacity(self.d) < F:
                 return None # The circlip and the groove won't hold
             return groove
         else:
@@ -432,142 +446,12 @@ class Circlips(DessiaObject):
 
         return groove
     
-    
-    
-    
-class Groove(DessiaObject):
-    
-    def LoadCapacity(self, d):
-        # d the nominal diameter of the circlip ie. the shaft diameter
-        Fn = self.material.Re * math.pi/4*npy.abs(d**2-self.D**2) / self.StressingCoeff(d)
-        return Fn
-    
-    def StressingCoeff(self, d):
-        h = abs(d - self.D)/2
-        X = []
-        Y = []
-        for i in range(len(q_fct_wh['data'])):
-            X.append(q_fct_wh['data'][i][0])
-            Y.append(q_fct_wh['data'][i][1])
-        f_q_fct_wh = interpolate.interp1d(X, Y, kind='linear', fill_value='extrapolate')
-        q = f_q_fct_wh(self.w/h)
-        print('q', q)
-        return q
-    
-#    @classmethod
-#    def InvStressingCoeff(cls, q):
-#        
-#        
-#        
-#        X = []
-#        Y = []
-#        for i in range(len(q_fct_wh['data'])):
-#            X.append(q_fct_wh['data'][i][0])
-#            Y.append(q_fct_wh['data'][i][1])
-#        f_wh_fct_q = interpolate.interp1d(Y, X, kind='linear', fill_value='extrapolate')
-#        print('q', q)
-#        wh = f_wh_fct_q(q)
-#        return wh
-
-
-
-class ExternalCirclipsCatalog(DessiaObject):
-    def __init__(self, circlips, name=''):
-         self.circlips = circlips    # List of circlips
-         
-    def ExternalShaftToCirclipGroove(self, Dshaft, F, w_max):
-        # Dshaft the shaft outter diameter
-        # F the axial force in the bearings
-        # w_max the maximum width available of the shoulder
-        circlip_groove = [] # a list of tuple (circlip, groove) possible        
-        matching_circlips = [circlip for circlip in self.circlips if circlip.d == Dshaft]
-        for circlip in matching_circlips:
-            groove = circlip.Groove(F, w_max)
-            new_pair = (circlip, groove)
-            circlip_groove.append(new_pair)
-        return circlip_groove
-        
-    def Dict(self):
-        d = {'name': self.name}
-        circlips_dicts = []
-        for circlip in self.circlips:
-            circlips_dicts.append(circlip.Dict())
-        d['circlips'] = circlips_dicts
-        return d
-    
-    @classmethod
-    def DictToObject(cls, dict_):
-        circlips = [ExternalCirclips.DictToObject(b) for b in dict_['circlips']]
-        return cls(circlips, dict_['name'])
-        
-    def SaveToFile(self, filepath, indent = 0):
-        with open(filepath+'.json', 'w') as file:
-            json.dump(self.Dict(), file, indent = indent)
-            
-    @classmethod
-    def LoadFromFile(cls, filepath):
-        if type(filepath) is str:            
-            with open(filepath, 'r') as file:
-                d = json.load(file)
-        else:
-            d = json.load(filepath)
-        return cls.DictToObject(d)
-
-
-
-
-
-class InternalCirclipsCatalog(DessiaObject):
-    def __init__(self, circlips, name=''):
-         self.circlips = circlips    # List of circlips
-         
-    def InternalShaftToCirclipGroove(self, Dshaft, F, w_max):
-        # Dshaft the shaft inner diameter
-        # F the axial force in the bearings
-        # w_max the maximum width available of the shoulder
-        circlip_groove = [] # a list of tuple (circlip, groove) possible        
-        matching_circlips = [circlip for circlip in self.circlips if circlip.d == Dshaft]
-        for circlip in matching_circlips:
-            groove = circlip.Groove(F, w_max)
-            new_pair = (circlip, groove)
-            circlip_groove.append(new_pair)
-        return circlip_groove
-        
-    def Dict(self):
-        d = {'name': self.name}
-        circlips_dicts = []
-        for circlip in self.circlips:
-            circlips_dicts.append(circlip.Dict())
-        d['circlips'] = circlips_dicts
-        return d
-    
-    @classmethod
-    def DictToObject(cls, dict_):
-        circlips = [InternalCirclips.DictToObject(b) for b in dict_['circlips']]
-        return cls(circlips, dict_['name'])
-        
-    def SaveToFile(self, filepath, indent = 0):
-        with open(filepath+'.json', 'w') as file:
-            json.dump(self.Dict(), file, indent = indent)
-            
-    @classmethod
-    def LoadFromFile(cls, filepath):
-        if type(filepath) is str:            
-            with open(filepath, 'r') as file:
-                d = json.load(file)
-        else:
-            d = json.load(filepath)
-        return cls.DictToObject(d)
- 
-    
-    
-    
-
 class ExternalCirclips(Circlips):
     """
     :param material: a material object
     """
-    def __init__(self, d, b, a, e, d0, material=circlips_materials[0], name=''):
+    def __init__(self, d:float, b:float, a:float, e:float, d0:float,
+                 material:CirclipsMaterial=circlips_materials[0], name:str=''):
         self.d = d                  # Inner diameter
         self.b = b                  # Radial width
         self.a = a                  # Cutoff length
@@ -576,42 +460,14 @@ class ExternalCirclips(Circlips):
         self.material = material 
         self.name = name
         
-    def Groove(self, F, w_max):
-        return Circlips.Groove(self, F, w_max, 1)    
+    def groove(self, F:float, w_max:float):
+        return Circlips.Groove(self, F, w_max, 1)
     
     def ExternalContour(self):
         return Circlips.ExternalContour(self, direction=1)
               
     def InternalContour(self):        
         return Circlips.InternalContour(self, direction=1)  
-
-    def Plot(self):
-        return Circlips.Plot(self)
-    
-    @classmethod
-    def DictToObject(cls, dict_):
-        d = dict_['d']
-        b = dict_['b']
-        a = dict_['a']
-        e = dict_['e']
-        d0 = dict_['d0']
-        material = dict_['material']
-        name = dict_['name']
-        circlip = cls(d, b, a, e, d0, material, name)
-        return circlip
-         
-    
-    def Dict(self):
-        d = {'d': self.d,
-             'b': self.b,
-             'a': self.a,
-             'e': self.e,
-             'd0': self.d0,
-             'material': self.material,
-             'name': self.name}
-        return d
-        
-    
     
     
     
@@ -619,7 +475,8 @@ class InternalCirclips(Circlips):
     """
     :param material: a material object
     """
-    def __init__(self, d, b, a, e, d0, material=circlips_materials[0], name=''):
+    def __init__(self, d:float, b:float, a:float, e:float, d0:float,
+                 material:CirclipsMaterial=circlips_materials[0], name:str=''):
         self.d = d                  # Outter diameter
         self.b = b                  # Radial width
         self.a = a                  # Cutoff length
@@ -636,47 +493,63 @@ class InternalCirclips(Circlips):
     def InternalContour(self):        
         return Circlips.InternalContour(self, direction=-1)
     
-    def Plot(self):
-        return Circlips.Plot(self)
+
+
+
+class ExternalCirclipsCatalog(DessiaObject):
+    _standalone_in_db = True
+    def __init__(self, circlips:List[ExternalCirclips], name=''):
+         self.circlips = circlips    # List of circlips
+         
+    def ExternalShaftToCirclipGroove(self, Dshaft, F, w_max):
+        # Dshaft the shaft outter diameter
+        # F the axial force in the bearings
+        # w_max the maximum width available of the shoulder
+        circlip_groove = [] # a list of tuple (circlip, groove) possible        
+        matching_circlips = [circlip for circlip in self.circlips if circlip.d == Dshaft]
+        for circlip in matching_circlips:
+            groove = circlip.Groove(F, w_max)
+            new_pair = (circlip, groove)
+            circlip_groove.append(new_pair)
+        return circlip_groove
+        
+
+
+
+class InternalCirclipsCatalog(DessiaObject):
+    _standalone_in_db = True
     
-    @classmethod
-    def DictToObject(cls, dict_):
-        d = dict_['d']
-        b = dict_['b']
-        a = dict_['a']
-        e = dict_['e']
-        d0 = dict_['d0']
-        material = dict_['material']
-        name = dict_['name']
-        circlip = cls(d, b, a, e, d0, material, name)
-        return circlip
-    
-    def Dict(self):
-        d = {'d': self.d,
-             'b': self.b,
-             'a': self.a,
-             'e': self.e,
-             'd0': self.d0,
-             'material': self.material,
-             'name': self.name}
-        return d
-    
-    
-    
+    def __init__(self, circlips:List[InternalCirclips], name=''):
+         self.circlips = circlips    # List of circlips
+         
+    def InternalShaftToCirclipGroove(self, Dshaft, F, w_max):
+        # Dshaft the shaft inner diameter
+        # F the axial force in the bearings
+        # w_max the maximum width available of the shoulder
+        circlip_groove = [] # a list of tuple (circlip, groove) possible        
+        matching_circlips = [circlip for circlip in self.circlips if circlip.d == Dshaft]
+        for circlip in matching_circlips:
+            groove = circlip.Groove(F, w_max)
+            new_pair = (circlip, groove)
+            circlip_groove.append(new_pair)
+        return circlip_groove
+        
     
 
 class ExternalGroove(Groove):
     """
     :param material: a material object
     """
-    def __init__(self, D, x, w, material=groove_materials[0]):
+    def __init__(self, D:float, x:float, w:float,
+                 material:CirclipsMaterial=groove_materials[0], name:str=''):
         self.D = D                  # Groove diameter 
         self.x = x                  # Groove width
         self.w = w                  # Shoulder width
         self.material = material    # Groove material
+        self.name = name
     
-    def LoadCapacity(self, d):
-        return Groove.LoadCapacity(self, d)
+    def load_capacity(self, d):
+        return Groove.load_capacity(self, d)
         
     def DetachingSpeed(self):
         n_abl = 37200000*self.b/(self.d2+self.b)**2 * (self.d2-self.d3/(self.d3+self.b))**0.5
@@ -693,26 +566,24 @@ class InternalGroove(Groove):
         self.w = w
         self.material = material
         
-    def LoadCapacity(self, d):
-        return Groove.LoadCapacity(self, d)
+    def load_capacity(self, d):
+        return Groove.load_capacity(self, d)
     
     
-    
-    
-        
+with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                                   'mechanical_components/catalogs/roymech_external_circlips.json') as roymech_external_circlips_json:
+    EXTERNAL_CIRCLIPS_CATALOG = ExternalCirclipsCatalog.load_from_file(
+        roymech_external_circlips_json)
 
 with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                           'mechanical_components/catalogs/roymech_external_circlips.json') as roymech_external_circlips_json:
-    external_circlips_catalog = ExternalCirclipsCatalog.LoadFromFile(roymech_external_circlips_json)
-        
-with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-                           'mechanical_components/catalogs/roymech_internal_circlips.json') as roymech_internal_circlips_json:
-    internal_circlips_catalog = InternalCirclipsCatalog.LoadFromFile(roymech_internal_circlips_json)
+                                   'mechanical_components/catalogs/roymech_internal_circlips.json') as roymech_internal_circlips_json:
+    INTERNAL_CIRCLIPS_CATALOG = InternalCirclipsCatalog.load_from_file(
+        roymech_internal_circlips_json)
 
 
-        
-        
-        
+
+
+
 
         
         
