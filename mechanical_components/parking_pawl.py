@@ -22,6 +22,35 @@ import scipy.optimize
 import cma
 # import dessia_common.typings as dct
 
+class Material(dc.DessiaObject):
+    def __init__(self, elastic_limit:float, ultimate_limit:float, shear_elasticity_limit:float, name:str=''):
+        self.elastic_limit = elastic_limit
+        self.ultimate_limit = ultimate_limit
+        self.shear_elasticity_limit = shear_elasticity_limit
+        self.name = name
+
+    def bending_stress(self, force:float, width:float, breadth:float, force_lever:float):
+        moment = force_lever*force 
+        return 6*moment/width/breadth**2
+
+    def shear_stress(self, force:float, width:float, breadth:float):
+        return force/width/breadth
+
+    def width_from_shear_force(self, force:float, breadth:float)->float:
+        return abs(force)/self.shear_elasticity_limit/breadth
+
+    def width_from_bending_force(self, force:float, breadth:float, force_lever:float)->float:
+        # print('force', force)
+        # print('breadth', breadth)
+        # print('force_lever', force_lever)
+        moment = abs(force_lever*force)
+        return 6*moment/self.elastic_limit/(breadth**2)
+
+
+
+ASTM_A36_STEEL = Material(250e6, 400e6, 0.5*250e6, 'ASTM A36 steel')
+ASTM_A514_STEEL = Material(690e6, 760e6, 0.7*690e6, 'ASTM A514 steel')
+
 
 class Wheel(dc.DessiaObject):
     def __init__(self, inner_diameter:float,
@@ -89,22 +118,7 @@ class Wheel(dc.DessiaObject):
         end_lower = interior_lower.rotation(vm.O2D, self.tooth_angle)
         arc_lower = vme.Arc2D(start_lower, interior_lower, end_lower)
 
-        # a = side1_circle.plot()
-        # side2_circle.plot(ax=a, color='grey')
-        # self.action_line1.plot(ax=a, color='k')
-        # action_point12.plot(ax=a, color='grey')
-        # self.action_line2.plot(ax=a, color='grey')
-        # arc_upper.plot(ax=a, color='r')
-        # arc_lower.plot(ax=a, color='b')
-        # self.contact_point1.plot(ax=a)
-        # self.contact_point2.plot(ax=a)
-        # corrected_next_tooth_start.plot(ax=a, color='grey')
-        # corrected_upper_start.plot(ax=a, color='g')
-        # corrected_upper_end.plot(ax=a, color='r')
-        # corrected_lower_start.plot(ax=a, color='r')
-        # corrected_lower_end.plot(ax=a, color='g')
-        # self.basis_circle.plot(ax=a, color='grey')
-        # a.set_aspect('equal')
+
 
         corrected_upper_end = side1_circle.arc_intersections(arc_upper)[0]
         corrected_lower_start = side1_circle.arc_intersections(arc_lower)[0]
@@ -134,10 +148,12 @@ class Wheel(dc.DessiaObject):
         self.arc_side1 = vme.Arc2D(corrected_upper_end, self.contact_point1,
                               corrected_lower_start)
 
+        self.contact_angle = (2 * self.lower_junction_angle
+                                      + self.lower_tooth_angle)
+
         self.contact_point2 = vm.Point2D(0, 0.5 * self.contact_diameter)
         self.contact_point2.rotation(vm.O2D,
-                                     (2 * self.lower_junction_angle
-                                      + self.lower_tooth_angle),
+                                     self.contact_angle,
                                      copy=False)
 
         action_point22 = vm.O2D.rotation(self.contact_point2,
@@ -169,6 +185,24 @@ class Wheel(dc.DessiaObject):
 
         self.arc_side2 = vme.Arc2D(corrected_lower_end, self.contact_point2,
                                    corrected_next_tooth_start)
+
+
+        # a = side1_circle.plot()
+        # side2_circle.plot(ax=a, color='grey')
+        # self.action_line1.plot(ax=a, color='k')
+        # action_point12.plot(ax=a, color='grey')
+        # self.action_line2.plot(ax=a, color='grey')
+        # arc_upper.plot(ax=a, color='r')
+        # arc_lower.plot(ax=a, color='b')
+        # self.contact_point1.plot(ax=a)
+        # self.contact_point2.plot(ax=a)
+        # corrected_next_tooth_start.plot(ax=a, color='grey')
+        # corrected_upper_start.plot(ax=a, color='g')
+        # corrected_upper_end.plot(ax=a, color='r')
+        # corrected_lower_start.plot(ax=a, color='r')
+        # corrected_lower_end.plot(ax=a, color='g')
+        # self.basis_circle.plot(ax=a, color='grey')
+        # a.set_aspect('equal')
 
     def outer_contour(self):
         # Starting from contact point
@@ -206,6 +240,23 @@ class Wheel(dc.DessiaObject):
                                     self.outer_contour(), [self.inner_contour()],
                                     frame.u*self.width,
                                     name='Wheel {}'.format(self.name))]
+
+    def minimum_width(self, wheel_torque:float, safety_factor:float=2):
+        material = ASTM_A514_STEEL
+
+        force = wheel_torque/0.5/self.contact_diameter
+        l = (self.upper_tooth_angle+self.junction_angle) * 0.5 * self.lower_tooth_diameter
+        h = 0.5*(self.contact_diameter - self.lower_tooth_diameter)
+        return max(material.width_from_bending_force(force, l, h),
+                   material.width_from_shear_force(force, l))*safety_factor
+
+    def max_stress(self, wheel_torque:float):
+        material = ASTM_A514_STEEL
+        force = wheel_torque*0.5*self.contact_diameter
+        l = self.upper_tooth_angle * 0.5 * self.lower_tooth_diameter
+        h = 0.5*(self.contact_diameter - self.lower_tooth_diameter)
+        return max(material.bending_stress(force, self.width, l, h),
+                   material.shear_stress(force, self.width, l))
 
 class TorsionSpring(dc.DessiaObject):
     def __init__(self, torque:float, name:str=''):
@@ -271,9 +322,10 @@ class Pawl(dc.DessiaObject):
         # print('finger_lower_angle', math.degrees(self.finger_lower_angle))
         self.finger_side_angle = math.asin((self.contact_diameter-self.wheel_lower_tooth_diameter)/self.wheel_lower_tooth_diameter*math.tan(self.pressure_angle))
         # print('finger_side_angle', math.degrees(self.finger_side_angle))
-        # self.finger_contact_width = self.finger_width + self.min_finger_width
         # self.contact_angle = math.atan(self.finger_contact_width/self.contact_diameter)
         self.contact_angle = (self.finger_lower_angle + self.finger_side_angle)
+        self.finger_contact_width = self.contact_diameter * math.sin(self.contact_angle)
+        self.finger_upper_width = 2*(0.5*self.wheel_lower_tooth_diameter+self.finger_height) * math.sin(self.contact_angle)
         # print('contact angle', math.degrees(self.contact_angle))
         self.contact_point1 = contact_middle_point.rotation(vm.O2D, -self.contact_angle)
         self.contact_point2 = contact_middle_point.rotation(vm.O2D, self.contact_angle)
@@ -435,6 +487,23 @@ class Pawl(dc.DessiaObject):
 
         self.torsion_spring = TorsionSpring(torque_up)
 
+    def minimum_width(self, wheel_torque:float, safety_factor:float=2.):
+        material = ASTM_A514_STEEL
+        force = wheel_torque/0.5/self.contact_diameter
+        l = self.finger_contact_width
+        h = 0.5*(self.wheel_lower_tooth_diameter+self.finger_height-self.contact_diameter)
+        return max(material.width_from_bending_force(force, l, h),
+                   material.width_from_shear_force(force, l)) * safety_factor
+
+    def max_stress(self, wheel_torque:float):
+        material = ASTM_A514_STEEL
+        force = wheel_torque*0.5*self.contact_diameter
+        l = self.finger_contact_width
+        h = 0.5*(self.wheel_lower_tooth_diameter+self.finger_height-self.contact_diameter)
+
+        return max(material.bending_stress(force, self.width, l, h),
+                   material.shear_stress(force, self.width, l))
+
 class RollerLockingMechanism(dc.DessiaObject):
     _standalone_in_db = True
 
@@ -540,7 +609,6 @@ class ParkingPawl(dc.DessiaObject):
                  wheel_outer_diameter:float,
                  teeth_number:int,
                  lower_tooth_ratio:float,
-                 # basis_diameter:float,
                  contact_diameter:float,
                  pressure_angle:float,
                  width:float,
@@ -624,7 +692,7 @@ class ParkingPawl(dc.DessiaObject):
         x, y = self.pawl.arc_side2.end-self.pawl.axis_position
         alpha = math.atan2(y, x)
 
-        self.up_pawl_angle = -(math.asin(math.sin(alpha)
+        self.minimal_up_pawl_angle = -(math.asin(math.sin(alpha)
                                -(0.5*(wheel_outer_diameter
                                       -wheel_lower_tooth_diameter)
                                  +open_clearance)/R)
@@ -633,14 +701,38 @@ class ParkingPawl(dc.DessiaObject):
         # Finding locking mech center distance
         roller_rest_contact_point = self.pawl.roller_rest.point_at_abscissa(self.pawl.roller_rest.length()-0.7*self.locking_mechanism.roller_diameter)
         y, z = self.pawl.roller_rest.start.rotation(self.pawl.axis_position,
-                                              self.up_pawl_angle)
+                                                    self.minimal_up_pawl_angle)
         self.locking_mechanism_center_distance = self.pawl.slope.end.y + 0.5*self.locking_mechanism.roller_diameter
         self.locking_mechanism_start_position = self.locking_contact_results[1][-1]
         self.locking_mechanism_end_position = self.pawl.slope.end.x - 0.002
 
     def mass(self):
         return self.wheel.mass() + self.pawl.mass()
-    
+
+    def minimum_width(self, wheel_torque:float, safety_factor:float=2):
+        wheel_min_width = self.wheel.minimum_width(wheel_torque)
+        pawl_min_width = self.pawl.minimum_width(wheel_torque)
+        return max(wheel_min_width,
+                   pawl_min_width)
+
+    def ejection_levers(self):
+        # action_line1 = self.wheel.action_line1.rotation(vm.O2D, self.contact1_wheel_angle)
+        # action_line2 = self.wheel.action_line2.rotation(vm.O2D, self.contact2_wheel_angle)
+        u1 = self.pawl.action_line1.unit_direction_vector()
+        u2 = self.pawl.action_line1.unit_direction_vector()
+        
+        
+        # ax = self.pawl.outer_contour().plot()
+        # self.wheel.outer_contour().plot(ax=ax)
+        # action_line1.plot(ax=ax, color='r')
+        # action_line2.plot(ax=ax, color='r')
+        # self.pawl.axis_position.plot(color='b', ax=ax)
+        
+        lever1 = (self.pawl.axis_position - self.pawl.contact_point1).cross(u1)
+        lever2 = (self.pawl.axis_position - self.pawl.contact_point2).cross(u2)
+        return lever1, lever2
+
+
     def functional_footprint(self):
         xmin = self.pawl.axis_position.x - 0.5* self.pawl.axis_outer_diameter
         ymax = self.locking_mechanism_center_distance + 1.5*self.locking_mechanism.roller_diameter
@@ -659,26 +751,32 @@ class ParkingPawl(dc.DessiaObject):
                 + self.locking_mechanism.volmdlr_primitives(frame=locking_mech_frame))
 
     def engaged_slack(self):
-        return self.wheel.lower_tooth_angle * 0.5 * self.wheel.lower_tooth_diameter - self.pawl.finger_width
+        """
+        in radians
+        """
+        return self.wheel.contact_angle - 2*self.pawl.contact_angle
 
     def axis_wheel_clearance(self):
         center_distance = self.pawl.axis_position.point_distance(vm.O2D)
         return center_distance - 0.5*self.wheel_outer_diameter - 0.5*self.pawl.axis_outer_diameter
 
     def rest_margin(self):
-        return (self.pawl.slope_length*math.sin(self.pawl.slope_angle-self.up_pawl_angle)
-                - self.pawl.junction4.length()*math.sin(self.up_pawl_angle))
+        return (self.pawl.slope_length*math.sin(self.pawl.slope_angle-self.minimal_up_pawl_angle)
+                - self.pawl.junction4.length()*math.sin(self.minimal_up_pawl_angle))
 
     def check(self, clearance:float=0.003):
         if self.engaged_slack() < 0:
             return False
-        if self.pawl.slope_angle < self.up_pawl_angle:
+        if self.pawl.slope_angle < self.minimal_up_pawl_angle:
             return False
 
         if self.axis_wheel_clearance() < clearance:
             return False
 
         if self.rest_margin() < 0:
+            return False
+
+        if min(self.ejection_levers()) < 0:
             return False
 
         return True
@@ -699,7 +797,7 @@ class ParkingPawl(dc.DessiaObject):
             primitives_p3 = self.locking_mechanism.plot_data(position=self.locking_mechanism_start_position,
                                                              center_distance=self.locking_mechanism_center_distance)
             primitives_p3 += self.wheel.plot_data(angle=0.)[0].primitives
-            primitives_p3 += self.pawl.plot_data(angle=self.up_pawl_angle)[0].primitives
+            primitives_p3 += self.pawl.plot_data(angle=self.minimal_up_pawl_angle)[0].primitives
 
             # An example of Graph2D instantiation. It draws one or several datasets on
             # one canvas and is useful for displaying numerical functions
@@ -741,9 +839,9 @@ class ParkingPawl(dc.DessiaObject):
                 0].primitives
             return [plot_data.PrimitiveGroup(primitives_p1)]
 
-    def _solve_locking_contact(self, angular_resolution:float = 0.01):
-        max_angle = 3*self.up_pawl_angle
-        number_steps = math.ceil((max_angle/angular_resolution))
+    def _solve_locking_contact(self, angular_resolution:float = 0.01, max_steps=40):
+        max_angle = min(3*self.minimal_up_pawl_angle, math.radians(80.))
+        number_steps = min(math.ceil((max_angle/angular_resolution)), max_steps)
 
         contacts = [(0, self.pawl.profile().primitives[-1].start.x,
                      self.pawl.profile().primitives[-1].start,
@@ -790,7 +888,7 @@ class ParkingPawl(dc.DessiaObject):
 
     def locking_position_from_pawl_angle(self, pawl_angle:float):
         pawl_angles, locking_positions, _, _ = self.locking_contact_results
-        istep = dc_utils.istep_from_value_on_list(pawl_angles, pawl_angle)
+        istep = dc_utils.istep_from_value_on_list(pawl_angles, pawl_angle, extrapolate=True)
         return dc_utils.interpolate_from_istep(locking_positions, istep)
 
 
@@ -851,12 +949,13 @@ class ParkingPawl(dc.DessiaObject):
         # print('wheel_angle', wheel_angle)
 
         wheel_angles = [wheel_angle]
-        pawl_angles = [self.up_pawl_angle]
+        initial_angle = self.pawl_angle_from_locking_position(locking_position)
+        pawl_angles = [initial_angle]
         locking_positions = [locking_position]
         locking_forces = [0.]
         time = [0.]
 
-        pawl_angle = self.up_pawl_angle
+        pawl_angle = initial_angle
 
         # distance_step = travel/distance_step
         # print(travel)
@@ -866,7 +965,7 @@ class ParkingPawl(dc.DessiaObject):
         angular_speed = 0.
         
         time_step = initial_time_step
-        max_delta_angle = self.up_pawl_angle / min_step_number
+        max_delta_angle = self.minimal_up_pawl_angle / min_step_number
         
         n_step = 1
         last_step_step_change = 0
@@ -904,6 +1003,7 @@ class ParkingPawl(dc.DessiaObject):
                 # Roller will slide
                 # print('pushing roller')
                 locking_position -= 0.0005
+                t += 0.0005
                 if locking_position < self.locking_mechanism_end_position:
                     locking_position = self.locking_mechanism_end_position
                     break
@@ -983,6 +1083,18 @@ class ParkingPawl(dc.DessiaObject):
         return ParkingPawlSimulation(self, time, wheel_angles, pawl_angles,
                                      locking_positions, locking_forces,
                                      name='Locking simulation')
+
+    def max_stress(self, wheel_torque:float):
+        return max(self.pawl.max_stress(wheel_torque),
+                   self.wheel.max_stress(wheel_torque))
+
+    def size_width(self, wheel_torque:float, safety_factor:float=2):
+        min_width = self.minimum_width(wheel_torque, safety_factor=safety_factor)
+        self.width = min_width
+        self.locking_mechanism.roller_width = min_width
+        self.pawl.width = min_width
+        self.wheel.width = min_width
+        # print('Sizing width: ', min_width)
 
 
 class ParkingPawlSimulation(dc.DessiaObject):
@@ -1087,7 +1199,7 @@ class ParkingPawSimulationlList(dc.DessiaObject):
     def plot_data(self):
         
         dataset = []
-        for ipls, parking_pawl_simulation in enumerate(self.parking_pawl_simulations):
+        for ipls,  parking_pawl_simulation in enumerate(self.parking_pawl_simulations):
             xmin, xmax, ymin, ymax = parking_pawl_simulation.parking_pawl.functional_footprint()
             width = xmax - xmin
             height = ymax - ymin
@@ -1096,15 +1208,17 @@ class ParkingPawSimulationlList(dc.DessiaObject):
                             'axis_wheel_clearance': parking_pawl_simulation.parking_pawl.mass(),
                             'rest_margin': parking_pawl_simulation.parking_pawl.rest_margin(),
                             # 'wheel_speed': parking_pawl_simulation.wheel_angles[1]/parking_pawl_simulation.time[1],
-                            'width': width,
-                            'height': height
+                            'width': parking_pawl_simulation.parking_pawl.width,
+                            'footprint_width': width,
+                            'footprint_height': height
                             })
         
         objects = []
         
         to_disp_attribute_names = ['mass',
                                    'engaged_slack',
-                                   'axis_wheel_clearance', 'rest_margin', 'width', 'height']
+                                   'axis_wheel_clearance', 'rest_margin',
+                                   'width', 'footprint_width', 'footprint_height']
         
         
         parallel_plot = plot_data.ParallelPlot(disposition='horizontal',
@@ -1114,13 +1228,13 @@ class ParkingPawSimulationlList(dc.DessiaObject):
         # Scatter        
         scatter1 = plot_data.Scatter(elements=dataset,
                                      tooltip = plot_data.Tooltip(to_disp_attribute_names=to_disp_attribute_names),
-                                     to_disp_attribute_names=['width', 'mass'])
+                                     to_disp_attribute_names=['footprint_width', 'mass'])
         objects.append(scatter1)
         
         
         scatter2 = plot_data.Scatter(elements=dataset,
                                      tooltip = plot_data.Tooltip(to_disp_attribute_names=to_disp_attribute_names),
-                                     to_disp_attribute_names=['width', 'height'])
+                                     to_disp_attribute_names=['footprint_width', 'footprint_height'])
         objects.append(scatter2)
         
         coords = [(0, 0), (400, 0), (600, 600)]
@@ -1141,12 +1255,16 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
     _allowed_methods = ['optimize_gradient', 'optimize_cma', 'objective_from_model']
     
     def __init__(self, wheel_locking_speed:float,
+                 wheel_torque:float,
                  locking_mechanism_travel:float,
+                 max_engaged_slack:float,
                  fixed_parameters:List[dc_opt.FixedAttributeValue],
                  optimization_bounds:List[dc_opt.BoundedAttributeValue],
                  name:str=''):
         self.wheel_locking_speed = wheel_locking_speed
+        self.wheel_torque = wheel_torque
         self.locking_mechanism_travel = locking_mechanism_travel
+        self.max_engaged_slack = max_engaged_slack
         self.fixed_parameters = fixed_parameters
         self.optimization_bounds = optimization_bounds
         self.name = name
@@ -1187,6 +1305,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         xra, fx = cma.fmin(self.objective_from_dimensionless_vector,
                            x0, 0.6, options={'bounds': bounds,
                                              'tolfun': 1e-3,
+                                             'maxiter': 250,
                                              'verbose': 0,
                                              'ftarget': 0.2})[0:2]
         # print('x', result.x)
@@ -1222,7 +1341,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
                                    wheel_lower_tooth_diameter=wheel_lower_tooth_diameter,
                                    wheel_outer_diameter=wheel_outer_diameter,
                                    teeth_number=attributes_values['teeth_number'],
-                                   lower_tooth_ratio=0.60,
+                                   lower_tooth_ratio=attributes_values['lower_tooth_ratio'],
                                    pressure_angle=attributes_values['pressure_angle'],
                                    contact_diameter=contact_diameter,
                                    width=0.025,
@@ -1239,6 +1358,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
                                         attributes_values['slope_angle']),
                                    pawl_spring_stiffness=20,
                                    locking_mechanism=locking_mechanism)
+        parking_pawl.size_width(self.wheel_torque)
         return parking_pawl
 
     def dimensionless_vector_to_vector(self, dl_vector):
@@ -1268,11 +1388,21 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
         if model.axis_wheel_clearance() < clearance:
             objective += (clearance - model.axis_wheel_clearance())*10000
 
-        if model.engaged_slack() < 0.:
-            objective -= (model.engaged_slack())*100000
+        model_slack = model.engaged_slack()
+        if  model_slack < 0.:
+            objective -= (model_slack)*100000
+        elif model_slack > self.max_engaged_slack:
+            objective += (model_slack - self.max_engaged_slack)*100000
+
 
         if model.rest_margin() < 0:
             objective -= 100000*model.rest_margin()
+            
+        lever_limit = 0.01*model.wheel.outer_diameter
+        for lever in model.ejection_levers():
+            if lever < lever_limit:
+                # print('lever', lever, lever_limit)
+                objective += (lever_limit - lever)*1000000
 
         model.pawl.size_torsion_spring(10 * 9.81)
         try:
