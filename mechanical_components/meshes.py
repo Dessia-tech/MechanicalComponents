@@ -1119,13 +1119,14 @@ class MeshCombination(DessiaObject):
                self.connections[i]=(connection[0],connection[1]) 
         self.meshes = meshes
         self.meshes_dico = []
+        
         for i,meshe in enumerate(meshes):
             self.meshes_dico.append(meshe)
 
-
+        
 
         self.safety_factor = safety_factor
-
+        
         self.minimum_gear_width = 10e-3
         self.helix_angle = []
         self.external_torque = {}
@@ -1154,6 +1155,7 @@ class MeshCombination(DessiaObject):
         self.list_gear = list_gear
 
         transverse_pressure_angle = []
+        
         for num_gear, (num1, num2) in enumerate(self.connections):
             mesh_first = self.meshes_dico[num1]
             mesh_second = self.meshes_dico[num2]
@@ -1314,7 +1316,7 @@ class MeshCombination(DessiaObject):
             if num_gear in cycle.keys():
                 meshes_dico[num_gear].cycle=cycle[num_gear]
 
-        mesh_combination = cls(center_distance, connections, meshes,transverse_pressure_angle_ini)
+        mesh_combination = cls(center_distance, connections, meshes, safety_factor, transverse_pressure_angle_ini)
         return mesh_combination
 
     def update(self, Z, center_distance, connections, transverse_pressure_angle_ini,
@@ -1418,7 +1420,7 @@ class MeshCombination(DessiaObject):
             check = True
         return check, list_ineq,obj
 
-    def check_total_contact_ratio(self, total_contact_ratio_min=1,transverse_contact_ratio_min =1):
+    def check_total_contact_ratio(self, total_contact_ratio_min,transverse_contact_ratio_min):
         """ Define constraint and functional for the optimizer on radial contact ratio
 
         :param transverse_contact_ratio_min: minimum radial contact ratio available
@@ -1431,23 +1433,23 @@ class MeshCombination(DessiaObject):
         obj = 0
         for num_mesh, (eng1, eng2) in enumerate(self.connections):
             rca = self.total_contact_ratio[num_mesh]
-            list_ineq.append(rca-total_contact_ratio_min)
+            list_ineq.append(rca-total_contact_ratio_min[(eng1, eng2)])
             transverse_contact_ratio = self.transverse_contact_ratio[num_mesh]
-            list_ineq.append(transverse_contact_ratio-transverse_contact_ratio_min)
-            if rca > total_contact_ratio_min:
-                obj += 0.001*(rca-total_contact_ratio_min)
+            list_ineq.append(transverse_contact_ratio-transverse_contact_ratio_min[(eng1, eng2)])
+            if rca > total_contact_ratio_min[(eng1, eng2)]:
+                obj += 0.001*(rca-total_contact_ratio_min[(eng1, eng2)])
             else:
-                obj += 1000*(total_contact_ratio_min-rca)
-            if transverse_contact_ratio > transverse_contact_ratio_min:
-                obj += 0.001*(transverse_contact_ratio-transverse_contact_ratio_min)
+                obj += 1000*(total_contact_ratio_min[(eng1, eng2)]-rca)
+            if transverse_contact_ratio > transverse_contact_ratio_min[(eng1, eng2)]:
+                obj += 0.001*(transverse_contact_ratio-transverse_contact_ratio_min[(eng1, eng2)])
             else:
-                obj += 1000*(transverse_contact_ratio_min-transverse_contact_ratio)
+                obj += 1000*(transverse_contact_ratio_min[(eng1, eng2)]-transverse_contact_ratio)
         check = False
         if min(list_ineq) > 0:
             check = True
         return check, list_ineq, obj
 
-    def liste_ineq(self,total_contact_ratio_min=1,transverse_contact_ratio_min =1):
+    def liste_ineq(self,total_contact_ratio_min,transverse_contact_ratio_min ):
         """ Compilation method for inequality list used by the optimizer
 
         :results: vector of data that should be positive
@@ -1512,10 +1514,7 @@ class MeshCombination(DessiaObject):
             transverse_pressure_angle1 = transverse_pressure_angle[num_mesh]
             center_distance1 = abs(center_distance[num_mesh])
             axial_contact_ratio.append(abs(math.sin(helix_angle[engr1])*gear_width[engr1]/(math.pi*meshes[engr1].rack.module)))
-            # print(254444444)
-            # print(meshes[engr1].rack.module)
-            # print(gear_width[engr1])
-            # print(helix_angle[engr1])
+            
             
            
             transverse_contact_ratio.append((1/2.*(math.sqrt(meshes[engr1].outside_diameter**2
@@ -1541,6 +1540,7 @@ class MeshCombination(DessiaObject):
         dict_transverse_pressure_angle = {0: transverse_pressure_angle_ini}
         connections_dfs = list(nx.edge_dfs(gear_graph,
                             [connections[0][0], connections[0][1]]))
+       
         for num_dfs, ((engr1, engr2), cd) in enumerate(zip(connections_dfs, center_distance)):
           
             if (engr1, engr2) in connections:
@@ -1548,6 +1548,7 @@ class MeshCombination(DessiaObject):
                 engr1_position=0
                 engr2_position=1
             else:
+                
                 num_mesh = connections.index((engr2,engr1))
                 engr1_position=1
                 engr2_position=0
@@ -1641,7 +1642,7 @@ class MeshCombination(DessiaObject):
 
 
             order_torque_calculation=[(eng2, eng1) for (eng1, eng2) in torque_graph_dfs[::-1]]
-            
+           
             # calculation torque distribution
             temp_torque = {}
             for eng1 in list_gear:
@@ -1685,6 +1686,7 @@ class MeshCombination(DessiaObject):
             # if 'output' not in external_torque.values():
             #     dic_torque=external_torque
             try:
+                
                 tq = dic_torque[(eng1, eng2)]
                 eng1_position=0
                 eng2_position=1
@@ -1702,6 +1704,7 @@ class MeshCombination(DessiaObject):
                 tangential_load[num_mesh] = abs(tq)*2/(DF[num_mesh][eng2_position])
                 
                 axial_load[num_mesh]=tangential_load[num_mesh]*math.tan(helix_angle[eng2])
+                
                 radial_load[num_mesh] = math.tan(transverse_pressure_angle[num_mesh])*tangential_load[num_mesh]/math.cos(helix_angle[eng2])
         return dic_torque, normal_load, tangential_load, radial_load,axial_load
 
@@ -1763,15 +1766,7 @@ class MeshCombination(DessiaObject):
                             *coeff_yf_iso[num_mesh][eng2]
                             *coeff_ye_iso[num_mesh]
                             *coeff_yb_iso[num_mesh][eng2])
-            # print(1569)
-            # print(tangential_load[num_mesh])
-            # print(sigma_lim[num_mesh][eng1])
-            # print(meshes[eng1].rack.module)
-            # print(coeff_yf_iso[num_mesh][eng1])
-            # print(coeff_ye_iso[num_mesh])
-            # print(coeff_yb_iso[num_mesh][eng1])
-            # print(gear_width1)
-            # print(gear_width2)
+           
             gear_width_set = max(gear_width1,gear_width2)
             gear_width[eng1] = max(gear_width[eng1],gear_width_set)
             gear_width[eng2] = max(gear_width[eng2],gear_width_set)
@@ -1834,11 +1829,7 @@ class MeshCombination(DessiaObject):
                               *coeff_yf_iso[0][1]
                               *1/contact_ratio[1][0]
                                *coeff_yb_iso[0][1])
-            # print(877777)
-            # print(total_contact_ratio_min)
-            # print(contact_ratio)
-            # print(contact_ratio[1][0])
-            # print(x)
+          
             if contact_ratio[1][0]<total_contact_ratio_min:
                 f_contact_ratio_min=abs(total_contact_ratio_min-transverse_contact_ratio_min-contact_ratio[3][0])
             else:
@@ -1860,21 +1851,13 @@ class MeshCombination(DessiaObject):
                                     [center_distance[num_mesh]],
                                     [(0,1)],
                                     [helix_angle[eng1],helix_angle[eng2]],
-                                    total_contact_ratio_min[num_mesh],
-                                    transverse_contact_ratio_min[num_mesh]),full_output=0)
+                                    total_contact_ratio_min[(eng1, eng2)],
+                                    transverse_contact_ratio_min[(eng1, eng2)]),full_output=0)
            
             gear_width1 = abs(xs[0])
             gear_width2 = abs(xs[1])
             
-            # print(1569)
-            # print(tangential_load[num_mesh])
-            # print(sigma_lim[num_mesh][eng1])
-            # print(meshes[eng1].rack.module)
-            # print(coeff_yf_iso[num_mesh][eng1])
-            # print(coeff_ye_iso[num_mesh])
-            # print(coeff_yb_iso[num_mesh][eng1])
-            # print(gear_width1)
-            # print(gear_width2)
+           
             gear_width_set = max(gear_width1,gear_width2)
             gear_width[eng1] = max(gear_width[eng1],gear_width_set)
             gear_width[eng2] = max(gear_width[eng2],gear_width_set)
@@ -1907,6 +1890,7 @@ class MeshCombination(DessiaObject):
             # sgl1 = material[eng1].FunCoeff(sgla,npy.array(matrice_material.data), matrice_material.x, matrice_material.y)
             s_thickness_iso_1,h_height_iso_1 = meshes[eng1].gear_iso_section(angle)
             coeff_ys_iso = meshes[eng1]._iso_YS(s_thickness_iso_1)
+            
             sigma_lim[num_mesh][eng1] = float((sgla/(safety_factor*coeff_ys_iso))*10**6)
 
             matrice_wohler = material[eng2].data_wohler_curve
@@ -2858,7 +2842,7 @@ class MeshAssembly(DessiaObject):
 
     _standalone_in_db = True
     _eq_is_data_eq = True
-    _non_serializable_attributes = ['cycle','internal_torque','general_data']
+    _non_serializable_attributes = ['cycle','internal_torque','general_data','dico_gear_match','dico_gear_match_inverse']
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
 
@@ -2871,23 +2855,37 @@ class MeshAssembly(DessiaObject):
         self.num_gear_match=num_gear_match
         self.internal_torque = {}
         self.cycle={}
-        for mesh_combination in mesh_combinations:
+        
+        self.dico_gear_match={}
+        self.dico_gear_match_inverse={}
+        for gear in num_gear_match:
+            self.dico_gear_match[gear[0]]=(gear[1],gear[2])
+            self.dico_gear_match_inverse[(gear[1],gear[2])]=gear[0]
+        for num_mesh_combination,mesh_combination in enumerate(mesh_combinations):
             for element in mesh_combination.internal_torque.keys():
-                self.internal_torque[element] = mesh_combination.internal_torque[element]
+                element_mesh_assembly=(self.dico_gear_match_inverse[(element[0],num_mesh_combination)],
+                                       self.dico_gear_match_inverse[(element[1],num_mesh_combination)])
+                self.internal_torque[element_mesh_assembly] = mesh_combination.internal_torque[element]
             for element in mesh_combination.cycle.keys():
-                self.cycle[element] = mesh_combination.cycle[element]
+                num_gear_mesh_assembly=self.dico_gear_match_inverse[(element,num_mesh_combination)]
+                self.cycle[num_gear_mesh_assembly] = mesh_combination.cycle[element]
 
         self.strong_links = strong_links
         self.safety_factor = safety_factor
-
+        
         self.center_distance = []
-
+        
+        
+        
         for num_cd, list_connection in enumerate(self.connections):
             for num_mesh_iter, gs in enumerate(list_connection):
                 valid = False
+                gs_assignate_gear=(self.dico_gear_match[gs[0]][0],self.dico_gear_match[gs[1]][0])
                 for mesh_combination in mesh_combinations:
                     for num_mesh_local, gs_local in enumerate(mesh_combination.connections):
-                        if set(gs) == set(gs_local):
+                        
+                    
+                        if set(gs_assignate_gear) == set(gs_local):
                             self.center_distance.append(mesh_combination.center_distance[num_mesh_local])
                             valid = True
                         if valid:
@@ -2960,29 +2958,33 @@ class MeshAssembly(DessiaObject):
             for num_cd, list_connection in enumerate(connections):
                 for num_mesh_iter, gs in enumerate(list_connection):
                     if (gs in list_sub_graph) or (gs[::-1] in list_sub_graph):
-                        li_connection.append(gs)
+                        li_connection.append((self.dico_gear_match[gs[0]][0],self.dico_gear_match[gs[1]][0]))
                         for num_gear in gs:
+                            num_gear_assignation = self.dico_gear_match[num_gear][0]
                             if num_gear in coefficient_profile_shift.keys():
-                                input_data['coefficient_profile_shift'][num_gear] = coefficient_profile_shift[num_gear]
+                                input_data['coefficient_profile_shift'][num_gear_assignation] = coefficient_profile_shift[num_gear]
                             if num_gear in transverse_pressure_angle_rack.keys():
-                                input_data['transverse_pressure_angle_rack'][num_gear] = transverse_pressure_angle_rack[num_gear]
+                                input_data['transverse_pressure_angle_rack'][num_gear_assignation] = transverse_pressure_angle_rack[num_gear]
                             if num_gear in coeff_gear_addendum.keys():
-                                input_data['coeff_gear_addendum'][num_gear] = coeff_gear_addendum[num_gear]
+                                input_data['coeff_gear_addendum'][num_gear_assignation] = coeff_gear_addendum[num_gear]
                             if num_gear in coeff_gear_dedendum.keys():
-                                input_data['coeff_gear_dedendum'][num_gear] = coeff_gear_dedendum[num_gear]
+                                input_data['coeff_gear_dedendum'][num_gear_assignation] = coeff_gear_dedendum[num_gear]
                             if num_gear in coeff_root_radius.keys():
-                                input_data['coeff_root_radius'][num_gear] = coeff_root_radius[num_gear]
+                                input_data['coeff_root_radius'][num_gear_assignation] = coeff_root_radius[num_gear]
                             if num_gear in coeff_circular_tooth_thickness.keys():
-                                input_data['coeff_circular_tooth_thickness'][num_gear] = coeff_circular_tooth_thickness[num_gear]
+                                input_data['coeff_circular_tooth_thickness'][num_gear_assignation] = coeff_circular_tooth_thickness[num_gear]
                             if num_gear in Z.keys():
-                                general_data['Z'][num_gear] = Z[num_gear]
+                                general_data['Z'][num_gear_assignation] = Z[num_gear]
                             if num_gear in material.keys():
-                                general_data['material'][num_gear] = material[num_gear]
+                                general_data['material'][num_gear_assignation] = material[num_gear]
                         if num_mesh == 0:
                             input_data['transverse_pressure_angle_ini'] = transverse_pressure_angle[num_mesh]
                     num_mesh += 1
+                
                 input_data['center_distance'].append(self.center_distance[num_cd])
+            
             general_data['connections'] = li_connection
+           
             for (eng1, eng2) in list_sub_graph:
                 if (eng1, eng2) in self.internal_torque.keys():
                     general_data['internal_torque'][(eng1, eng2)] = self.internal_torque[(eng1,eng2)]
@@ -3010,12 +3012,13 @@ class MeshAssembly(DessiaObject):
                  transverse_contact_ratio_min, strong_links=None, material=None,
                  internal_torque=None,external_torque=None, cycle=None,
                  safety_factor=1):
-
+        
         mesh_combinations = []
         output_data = []
 
         graph_dfs,_ = gear_graph_simple(connections)
         num_mesh = 0
+        num_gear_match=[]
         for num_graph,list_sub_graph in enumerate(graph_dfs):
            
             
@@ -3028,9 +3031,10 @@ class MeshAssembly(DessiaObject):
                  'coeff_root_radius': {},'coeff_circular_tooth_thickness': {},
                  'helix_angle':{},'total_contact_ratio_min':{},'transverse_contact_ratio_min':{}}
             li_connection = []
+            num_mesh_assignation=0
             num_gear_mesh=0
             num_gear_assignation={}
-            num_gear_match=[]
+            num_gear_assignation_inverse={}
             for num_cd, list_connection in enumerate(connections):
                 for num_mesh_iter, gs in enumerate(list_connection):
                     if (gs in list_sub_graph) or (gs[::-1] in list_sub_graph):
@@ -3041,7 +3045,8 @@ class MeshAssembly(DessiaObject):
 
                             if not num_gear in num_gear_assignation.keys():
                                 num_gear_assignation[num_gear]=num_gear_mesh
-                                num_gear_match.append((num_gear_mesh,num_gear,num_mesh))
+                                
+                                num_gear_match.append((num_gear,num_gear_mesh,num_graph))
                                 num_gear_mesh+=1
                             gs_mesh[i]=num_gear_assignation[num_gear]
                             if num_gear in coefficient_profile_shift.keys():
@@ -3063,11 +3068,13 @@ class MeshAssembly(DessiaObject):
                             if num_gear in material.keys():
                                 general_data['material'][num_gear_assignation[num_gear]] = material[num_gear]
                         li_connection.append((gs_mesh[0],gs_mesh[1]))
-                        if num_mesh == 0:
+                        if num_mesh_assignation == 0:
+                            
                             input_data['transverse_pressure_angle_ini'] = transverse_pressure_angle[num_mesh]
-                        input_data['total_contact_ratio_min'][num_mesh] = total_contact_ratio_min[num_mesh]
-                        input_data['transverse_contact_ratio_min'][num_mesh] = transverse_contact_ratio_min[num_mesh]
-                    num_mesh += 1
+                        input_data['total_contact_ratio_min'][li_connection[-1]] = total_contact_ratio_min[gs]
+                        input_data['transverse_contact_ratio_min'][li_connection[-1]] = transverse_contact_ratio_min[gs]
+                        num_mesh += 1
+                        num_mesh_assignation+=1
                 input_data['center_distance'].append(center_distance[num_cd])
             general_data['connections'] = li_connection
             for (eng1, eng2) in list_sub_graph:
@@ -3083,14 +3090,17 @@ class MeshAssembly(DessiaObject):
                     if eng2 in external_torque.keys():
                         general_data['external_torque'][num_gear_assignation[eng2]] = external_torque[eng2]
                 if eng1 not in general_data['cycle'].keys():
+                    
                     general_data['cycle'][num_gear_assignation[eng1]]=cycle[eng1]
                 if eng2 not in general_data['cycle'].keys():
                     general_data['cycle'][num_gear_assignation[eng2]]=cycle[eng2]
 
-
+            
             output_data.append(general_data)
             xt = dict(list(input_data.items()) + list(general_data.items()))
+            
             mesh_combinations.append(MeshCombination.create(**xt))
+        
         mesh_assembly = cls(connections, mesh_combinations, num_gear_match,
                             strong_links, safety_factor)
         return mesh_assembly
@@ -3145,19 +3155,23 @@ class MeshAssembly(DessiaObject):
                 for num_mesh_iter, (eng1, eng2) in enumerate(list_connection):
                     if ((eng1, eng2) in list_sub_graph) or ((eng2, eng1) in list_sub_graph):
                         li_connection.append((eng1, eng2))
+                        num_gear_assignation_1 = self.dico_gear_match[eng1][0]
+                        num_gear_assignation_2 = self.dico_gear_match[eng2][0]
                         for key, list_value in optimizer_data.items():
+                            
                             if key in ['coefficient_profile_shift',
                                        'transverse_pressure_angle_rack',
                                        'coeff_gear_addendum','coeff_gear_dedendum',
                                        'coeff_root_radius','coeff_circular_tooth_thickness']:
-                                input_data[key][eng1] = optimizer_data[key][eng1]
-                                input_data[key][eng2] = optimizer_data[key][eng2]
+                                
+                                input_data[key][num_gear_assignation_1] = optimizer_data[key][eng1]
+                                input_data[key][num_gear_assignation_2] = optimizer_data[key][eng2]
                             elif key in ['center_distance']:
                                 input_data[key].append(optimizer_data[key][num_cd])
                             elif key in ['transverse_pressure_angle']:
                                 input_data['transverse_pressure_angle_ini'].append(optimizer_data[key][num_mesh])
-                            input_data['total_contact_ratio_min'][num_mesh]=optimizer_data['total_contact_ratio_min'][num_mesh]
-                            input_data['transverse_contact_ratio_min'][num_mesh]=optimizer_data['transverse_contact_ratio_min'][num_mesh]
+                            input_data['total_contact_ratio_min'][(num_gear_assignation_1,num_gear_assignation_2)]=optimizer_data['total_contact_ratio_min'][(eng1, eng2)]
+                            input_data['transverse_contact_ratio_min'][(num_gear_assignation_1,num_gear_assignation_2)]=optimizer_data['transverse_contact_ratio_min'][(eng1, eng2)]
                     num_mesh += 1
             input_data['transverse_pressure_angle_ini'] = input_data['transverse_pressure_angle_ini'][0]
             xt = dict(list(input_data.items())+list(self.general_data[num_graph].items()))
@@ -3177,13 +3191,15 @@ class MeshAssembly(DessiaObject):
                 for num_mesh_iter, (eng1, eng2) in enumerate(list_connection):
                     if ((eng1, eng2) in list_sub_graph) or ((eng2, eng1) in list_sub_graph):
                         li_connection.append((eng1, eng2))
+                        num_gear_assignation_1 = self.dico_gear_match[eng1][0]
+                        num_gear_assignation_2 = self.dico_gear_match[eng2][0]
                         for key, list_value in optimizer_data.items():
                             if key in ['helix_angle']:
                                 if optimizer_data[key]:
-                                    input_data[key][eng1] = optimizer_data[key][eng1]
-                                    input_data[key][eng2] = optimizer_data[key][eng2]
-                            input_data['total_contact_ratio_min'][num_mesh]=optimizer_data['total_contact_ratio_min'][num_mesh]
-                            input_data['transverse_contact_ratio_min'][num_mesh]=optimizer_data['transverse_contact_ratio_min'][num_mesh]
+                                    input_data[key][num_gear_assignation_1] = optimizer_data[key][eng1]
+                                    input_data[key][num_gear_assignation_2] = optimizer_data[key][eng2]
+                            input_data['total_contact_ratio_min'][(num_gear_assignation_1,num_gear_assignation_2)]=optimizer_data['total_contact_ratio_min'][(eng1, eng2)]
+                            input_data['transverse_contact_ratio_min'][(num_gear_assignation_1,num_gear_assignation_2)]=optimizer_data['transverse_contact_ratio_min'][(eng1, eng2)]
                     num_mesh += 1
             
             xt = dict(list(input_data.items()))

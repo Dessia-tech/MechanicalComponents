@@ -29,8 +29,7 @@ class RackOpti(DessiaObject):
                  coeff_gear_addendum : Tuple[float,float]=None, coeff_gear_dedendum: Tuple[float,float]=None,
                  coeff_root_radius: Tuple[float,float]=None, coeff_circular_tooth_thickness: Tuple[float,float]=None,
                  helix_angle: Tuple[float,float]=None ,
-                 total_contact_ratio_min: float=1,axial_contact_ratio: float=0.7,
-                 transverse_contact_ratio_min: float=1,name : str=''):
+                 name : str=''):
 
          self.transverse_pressure_angle_0=transverse_pressure_angle_0
          self.module=module
@@ -43,10 +42,9 @@ class RackOpti(DessiaObject):
          self.coeff_root_radius=coeff_root_radius
          self.coeff_circular_tooth_thickness=coeff_circular_tooth_thickness
          self.list_gear=[]
-         self.total_contact_ratio_min=total_contact_ratio_min
-         self.axial_contact_ratio=axial_contact_ratio
+        
          self.name=name
-         self.transverse_contact_ratio_min=transverse_contact_ratio_min
+         
          DessiaObject.__init__(self, name=name)
 
 class MeshOpti(DessiaObject):
@@ -74,7 +72,9 @@ class CenterDistanceOpti(DessiaObject):
     def __init__(self,center_distance:Tuple[float,float],meshes:List[MeshOpti], name:str='', 
                  constraint_root_diameter:List[bool]=None, CA_min:List[float]=None, 
                  constraint_SAP_diameter:List[bool]=None, 
-                 distance_SAP_root_diameter_active_min:List[float]=None ):
+                 distance_SAP_root_diameter_active_min:List[float]=None,
+                 total_contact_ratio_min: List[float]=None,axial_contact_ratio: List[float]=None,
+                 transverse_contact_ratio_min: List[float]=None,):
 
         self.meshes = meshes
         self.center_distance = center_distance
@@ -101,10 +101,33 @@ class CenterDistanceOpti(DessiaObject):
         else:
             self.distance_SAP_root_diameter_active_min = distance_SAP_root_diameter_active_min
             
+        
+        if total_contact_ratio_min == None:
+            self.total_contact_ratio_min = [0]*(int(len(meshes)/2))   
+        
+        else:
+            self.total_contact_ratio_min = total_contact_ratio_min
+            
+        if axial_contact_ratio == None:
+            self.axial_contact_ratio = [0]*(int(len(meshes)/2))   
+        
+        else:
+            self.axial_contact_ratio = axial_contact_ratio
+        
+        if transverse_contact_ratio_min == None:
+            self.transverse_contact_ratio_min = [0]*(int(len(meshes)/2))   
+        
+        else:
+            self.transverse_contact_ratio_min = transverse_contact_ratio_min
+            
+            
+            
+        
+            
         DessiaObject.__init__(self, name=name)
 
 
-class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_source==True else object):
+class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_source==True else DessiaObject):
     _standalone_in_db = True
     """
     Gear mesh assembly optimizer supervisor
@@ -133,57 +156,64 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                                 center_distance = list_cd)
     """
 
-    def __init__(self,center_distances: List[CenterDistanceOpti],cycles : List[float],rigid_links: List[Tuple[MeshOpti,MeshOpti]] =None,safety_factor: int =1, verbose : int =False):
+    def __init__(self,center_distances: List[CenterDistanceOpti],cycles : List[float],
+                 rigid_links: List[Tuple[MeshOpti,MeshOpti]] =None,
+                 safety_factor: int =1, verbose : int =False,name: str=''):
         list_gear=[]
         connections=[]
         cd = []
-        self.constraints_root_diameter=[]
-        self.list_CA_min=[]
-        self.constraints_SAP_diameter=[]
-        self.distances_SAP_root_diameter_active_min=[]
-        
+        DessiaObject.__init__(self, name=name)
+        self.constraints_root_diameter={}
+        self.list_CA_min={}
+        self.constraints_SAP_diameter={}
+        self.distances_SAP_root_diameter_active_min={}
+        self.axial_contact_ratio={}
+        self.total_contact_ratio_min={}
+        self.transverse_contact_ratio_min={}
         for center_distance in center_distances:
             connections_plan=[]
             for gear in center_distance.meshes:
                 if gear not in list_gear:
                     list_gear.append(gear)
-
-            self.constraints_root_diameter.extend(center_distance.constraint_root_diameter)
-            self.list_CA_min.extend(center_distance.CA_min)
-            self.distances_SAP_root_diameter_active_min.extend(center_distance.distance_SAP_root_diameter_active_min)
-            self.constraints_SAP_diameter.extend(center_distance.constraint_SAP_diameter)
-            for gear_1,gear_2 in zip(center_distance.meshes[:-1],center_distance.meshes[1:]):
+            
+            for i in range(int(len(center_distance.meshes)/2)):
+                gear_1=center_distance.meshes[2*i]
+                gear_2=center_distance.meshes[2*i+1]
+                
                 connections_plan.append((list_gear.index(gear_1),list_gear.index(gear_2)))
-
+                self.constraints_root_diameter[connections_plan[-1]]=center_distance.constraint_root_diameter[i]
+                self.list_CA_min[connections_plan[-1]]=center_distance.CA_min[i]
+                self.distances_SAP_root_diameter_active_min[connections_plan[-1]]=center_distance.distance_SAP_root_diameter_active_min[i]
+                self.constraints_SAP_diameter[connections_plan[-1]]=center_distance.constraint_SAP_diameter[i]
+                
+                self.axial_contact_ratio[connections_plan[-1]]=center_distance.axial_contact_ratio[i]
+                self.total_contact_ratio_min[connections_plan[-1]]=center_distance.total_contact_ratio_min[i]
+                self.transverse_contact_ratio_min[connections_plan[-1]]=center_distance.transverse_contact_ratio_min[i]
             cd.append(center_distance.center_distance)
             connections.append(connections_plan)
 
-
+       
         rack_dict={}
         rack_list=[]
-       
+        if not rigid_links:
+            rigid_links=[]
         gear_speeds={}
         external_torques={}
         Z={}
         rack_choice={}
         transverse_pressure_angle={}
         coefficient_profile_shift={}
-        axial_contact_ratio={}
-        total_contact_ratio_min={}
-        transverse_contact_ratio_min={}
+        
         number_rack=0
         self.list_gearing_interior=[]
         material={}
         list_rack_gear={}
-       
+        rigid_links_init=[]
+        for list_link in rigid_links:
+           rigid_links_init.append((list_gear.index(list_link[0]),list_gear.index(list_link[1])))
         for i,gear in enumerate(list_gear):
             gear_speeds[i]=gear.speed_input
-            if gear.rack:
-                
-                
-                axial_contact_ratio[i]=gear.rack.axial_contact_ratio
-                total_contact_ratio_min[i]=gear.rack.total_contact_ratio_min
-                transverse_contact_ratio_min[i]=gear.rack.transverse_contact_ratio_min
+          
             external_torques[i]=gear.torque_input
             
             coefficient_profile_shift[i]=gear.coefficient_profile_shift
@@ -228,11 +258,9 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                 cycles2[i]=element
             cycles=cycles2
             
-        self.total_contact_ratio_min = total_contact_ratio_min
-        self.axial_contact_ratio = axial_contact_ratio
-        self.transverse_contact_ratio_min=transverse_contact_ratio_min
+       
         self.initialisation(connections=connections,gear_speeds=gear_speeds,center_distances=cd,
-                            external_torques=external_torques,cycles=cycles, rigid_links=rigid_links,Z=Z,
+                            external_torques=external_torques,cycles=cycles, rigid_links=rigid_links_init,Z=Z,
                             rack_list=rack_dict,rack_choice=rack_choice,safety_factor=safety_factor,
                             material=material,
                             coefficient_profile_shift=coefficient_profile_shift,
