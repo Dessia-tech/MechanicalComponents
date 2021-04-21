@@ -1072,6 +1072,13 @@ class Mesh(DessiaObject):
 
 
 class MeshCombination(DessiaObject):
+    """
+    Gear Mesh Combination definition
+    :param center_distance: 
+    :param connections: List of tuples defining gear mesh connections [[(node1,node2)], [(node2,node3)]...]
+    :param meshes: List of class Mesh objects define each mesh
+    :param safety_factor: Safety factor used for the ISO design
+    """
 
     _standalone_in_db = True
     _eq_is_data_eq = True
@@ -1392,7 +1399,7 @@ class MeshCombination(DessiaObject):
         check=False
         if min(list_ineq) > 0:
             check = True
-        return check, list_ineq,obj
+        return check, list_ineq, obj
 
     def check_total_contact_ratio(self, total_contact_ratio_min=1,transverse_contact_ratio_min =1):
         """ Define constraint and functional for the optimizer on radial contact ratio
@@ -2040,12 +2047,10 @@ class MeshCombination(DessiaObject):
         reference_point_outside_gear_2_translate=(reference_point_outside_gear_2[0]+positions[1][1],reference_point_outside_gear_2[1]+positions[1][2])
         
         center_distance=vm.Vector2D((positions[1][1]-positions[0][1]),(positions[1][2]-positions[0][2]))
-        print(center_distance)
-        print(center_distance.norm())
+
         vector_trochoide_gear_1=vm.Vector2D(reference_point_trochoide_gear_1_translate[0]-positions[0][1],
                                             reference_point_trochoide_gear_1_translate[1]-positions[0][2])
-        print(vector_trochoide_gear_1)
-        print(vector_trochoide_gear_1.norm())
+  
         vector_outside_gear_2=vm.Vector2D(reference_point_outside_gear_2_translate[0]-positions[1][1],
                                             reference_point_outside_gear_2_translate[1]-positions[1][2])
         
@@ -2062,7 +2067,14 @@ class MeshCombination(DessiaObject):
 
     # TODO: use volmdlr Vector and points
     def plot_data(self,centers={}, axis=(1, 0, 0), name=''):
+        """
+        2D mesh combination visualization 
         
+        :param centers: list of tuple define the final position of the gear mesh center (a translation is perform, then a rotation around this axis)
+        :param axis: direction of gear mesh rotation
+        :returns: List of Primitives groups for the data_plot
+
+        """
         x = vm.Vector3D(axis[0],axis[1],axis[2])
         # y = x.RandomUnitNormalVector()
         # y= vm.Vector3D((0,1,0))
@@ -2117,15 +2129,6 @@ class MeshCombination(DessiaObject):
             Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1_position]/2.))
             Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2_position]/2.))
 
-           
-
-            
-       
-            
-            
-            
-            
-       
             
             vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
             vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
@@ -2134,17 +2137,6 @@ class MeshCombination(DessiaObject):
                                                 [([vect_position_1.dot(y),vect_position_1.dot(z)]),([vect_position_2.dot(y),vect_position_2.dot(z)])],
                                                 list_rot=[rot_gear_2[0],rot_gear_2[1]])
 
-
-
-           
-
-
-
-           
-            
-            
-            
-            
             L = []
             L_vector = []
             i=0
@@ -2190,14 +2182,7 @@ class MeshCombination(DessiaObject):
                 circle_DF=vm.wires.Circle2D(center=vect_position_1,radius=self.DF[0][eng1_position]/2)
                 
                 circle_SAP_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.SAP_diameter[0][eng1_position]/2)
-                
-                
-                
-                
-                
-                
-               
-                
+
                 
                 
                 edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.GREEN)
@@ -2211,9 +2196,7 @@ class MeshCombination(DessiaObject):
                 
                 edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ROSE)
                 circle_SAP_diameter_plot_data=circle_SAP_diameter.plot_data(edge_style=edge_style)
-                
-               
-                
+
                 text_style=vmp.TextStyle(text_color= vmp.colors.ROSE,text_align_x='center',font_size=0.7)
                 text_SAP_diameter=vmp.Text(comment='SAP_diameter',position_x=0,
                                             position_y=self.SAP_diameter[0][eng1_position]/2,text_style=text_style,text_scaling=True)
@@ -2240,7 +2223,7 @@ class MeshCombination(DessiaObject):
     def volmdlr_primitives(self, centers={}, axis=(1, 0, 0), name=''):
         """ Generation of the 3D volume for all the gear mesh
 
-        :param center: list of tuple define the final position of the gear mesh center (a translation is perform, then a rotation around this axis)
+        :param centers: list of tuple define the final position of the gear mesh center (a translation is perform, then a rotation around this axis)
         :param axis: direction of gear mesh rotation
 
         :results: list of 3D volmdlr component
@@ -2287,7 +2270,7 @@ class MeshCombination(DessiaObject):
             
             if (eng1, eng2) in self.connections:
                 set_pos = self.connections.index((eng1, eng2))
-                rot_gear_2= self.initial_position([position1,position2], (eng1, eng2))
+                rot_gear_2 = self.initial_position([position1,position2], (eng1, eng2))
                 eng1_position=0
                 eng2_position=1
 
@@ -2826,8 +2809,12 @@ class MeshCombination(DessiaObject):
         return L1
 
     def pos_axis(self, position):
-        # Definition of the initial center for all gear (when not given by the user)
+        """
+        Definition of the initial center for all gear (when not given by the user)
 
+        :param position: dictionary define some center position {node2 : [0,0], node4 : [0.12,0] ..}
+        :returns: A dictionary where each value coresponds to the center of one gear
+        """
         connections = []
         for connection in self.connections:
             connections.append([connection])
@@ -2844,10 +2831,6 @@ class MeshCombination(DessiaObject):
 #        list_line=list(nx.connected_component_subgraphs(gear_graph))
         list_line = [gear_graph.subgraph(c).copy() for c in nx.connected_components(gear_graph)]
         dict_line = {}
-
-
-
-
         for num_line, list_num_eng in enumerate(list_line):
 
             for num_eng in list_num_eng:
@@ -2897,6 +2880,17 @@ class MeshCombination(DessiaObject):
 
 
 class MeshAssembly(DessiaObject):
+    
+    """
+    Gear Mesh Assembly definition
+    
+    :param connections: List of list of tuples defining gear mesh connections [[[(node1,node2)], [(node2,node3)]],[[(node1,node2)], [(node2,node3)]]...]
+    :param mesh_combinaitons: List of class MechCombination objetcs defining each mesh combination 
+    :num_gear_match: List of tuple containing three integer values, each corresponding to one index value. The first corresponds to the gear index in the mesh assembly,
+        the second to the gear index in the mesh combination and finally the third to the index of mesh combination. 
+    :param safety_factor: Safety factor used for the ISO design
+    :param dict_index_gear_match: Dictionnary of indexes, following the following format {gear_index_mesh_assembly: (gear_index_mesh_combination, index_mesh_combination)}
+    """
 
     _standalone_in_db = True
     _eq_is_data_eq = True
@@ -2921,10 +2915,10 @@ class MeshAssembly(DessiaObject):
 
         self.strong_links = strong_links
         self.safety_factor = safety_factor
-        dict_num_gear_match = {}
+        dict_index_gear_match = {}
         for (n_g_m_a, n_g_m_c, n_m_c) in self.num_gear_match:
-            dict_num_gear_match[n_g_m_a] = (n_g_m_c, n_m_c)
-        self.dict_num_gear_match = dict_num_gear_match
+            dict_index_gear_match[n_g_m_a] = (n_g_m_c, n_m_c)
+        self.dict_index_gear_match = dict_index_gear_match
 
         self.center_distance = []
 
@@ -2970,8 +2964,8 @@ class MeshAssembly(DessiaObject):
                 num_gear+=1
         self.dict_gear = dict_gear
         
-        self.gear_list = [gear for gear in self.dict_gear.values()]
-        self.list_gear_index = [gear for gear in self.dict_gear.keys()]
+        # self.gear_list = [gear for gear in self.dict_gear.values()] 
+        
         
         coefficient_profile_shift = {}
         for num_mesh, mesh in dict_gear.items():
@@ -3068,6 +3062,7 @@ class MeshAssembly(DessiaObject):
 
         graph_dfs,_ = gear_graph_simple(connections)
         num_mesh = 0
+        mesh_combination_index = 0
         for num_graph,list_sub_graph in enumerate(graph_dfs):
            
             
@@ -3093,7 +3088,7 @@ class MeshAssembly(DessiaObject):
 
                             if not num_gear in num_gear_assignation.keys():
                                 num_gear_assignation[num_gear]=num_gear_mesh
-                                num_gear_match.append((num_gear_mesh,num_gear,num_mesh))
+                                num_gear_match.append((num_gear_mesh,num_gear,mesh_combination_index))
                                 num_gear_mesh+=1
                             gs_mesh[i]=num_gear_assignation[num_gear]
                             if num_gear in coefficient_profile_shift.keys():
@@ -3143,21 +3138,43 @@ class MeshAssembly(DessiaObject):
             output_data.append(general_data)
             xt = dict(list(input_data.items()) + list(general_data.items()))
             mesh_combinations.append(MeshCombination.create(**xt))
+            mesh_combination_index += 1
         mesh_assembly = cls(connections, mesh_combinations, num_gear_match,
                             strong_links, safety_factor)
         return mesh_assembly
 
     def _get_graph_dfs(self):
+        """
+        :returns: 
+        """
         _graph_dfs,_ = gear_graph_simple(self.connections)
         return _graph_dfs
     sub_graph_dfs = property(_get_graph_dfs)
 
     def _get_list_gear(self):
+        """
+        :returns: List with the gear indexes of the mesh assembly
+        """
         _,_list_gear = gear_graph_simple(self.connections)
         return _list_gear
     list_gear = property(_get_list_gear)
 
     def SVGExport(self, name, position):
+        """ Export SVG graph of all gear mesh combinations
+
+        :param name: name of the svg file
+        :param position: dictionary define some center position {node2 : [0,0], node4 : [0.12,0] ..}
+
+        :results: SVG graph
+
+        in the position dictionary, you have to be coherent with the center position
+
+            * for exemple, if the center-distance of the mesh1 (node1, node2) is 0.117 m you can define position such as:
+
+                * {node1 : [0,0], node2 : [0.117,0]}
+                * {node1 : [0,0]}
+        """
+
         centers = self.pos_axis(position)
         L = []
         for mesh_assembly_iter in self.mesh_combinations:
@@ -3245,69 +3262,47 @@ class MeshAssembly(DessiaObject):
             self.mesh_combinations[num_graph].update_helix_angle(**xt)
         return output_x
     def volmdlr_primitives(self):
+        """
+        Generation of the 3D volume for all the gear mesh 
+        
+        :results: list of 3D volmdlr component
+        """
+        
         primitives = []
         
         offset = 0.05
         x_position = 0
-        count = 0
-
-        previous_center = {}
-        centers_yz = self.pos_axis({self.list_gear_index[0]:[0,0]})
-        # print(centers_yz)
+        centers_yz = self.pos_axis({self.list_gear[0]:[0,0]})
+        previous_center_yz = centers_yz[0]
         
-        # for k, gear in enumerate(self.gear_list):
+
         for i, mesh_combination in enumerate(self.mesh_combinations):
             centers = {}
             for j, mesh in enumerate(mesh_combination.meshes):
-                # if gear == mesh:
-                # for match in self.num_gear_match:
-                #     if i == match[2] and j == match[1]:
-                #         num_gear = match[0]
-                #         break
-                
-                # for engr_num in centers_yz.keys():
-                #     if engr_num == num_gear:
-                #         break
-                
-                
-                if j == 0:
-                    center_yz = centers_yz[count]
-                    centers[j] = (x_position, center_yz[0], center_yz[1])
-                if j%2 == 0 and j != 0:
-                    x_position += mesh.db/2
-                    centers[j] = (x_position, previous_center[0], previous_center[1])
-                    
-                if j%2 != 0:
-                    count+=1
-                    center_yz = centers_yz[count]
-                    centers[j] = (x_position, center_yz[0], center_yz[1])
-                    # print(centers)
-                    
-                    
-                    previous_center = center_yz
-                    x_position += mesh.db/2 + offset
-                
-                    
-                # else:
-                    
-                #     if mesh == mesh_combination.meshes[0]:
-                #         x_position += max(mesh_combination.gear_width)/2
-                #         centers[j] = (x_position, previous_center[0], previous_center[1])
-                #     else:
-                #         centers[j] = (x_position, center_yz[0], center_yz[1])
-                #         previous_center = center_yz
-                #         x_position += max(mesh_combination.gear_width)/2 + offset
-                
-            print(centers)
+                for gear_index_mesh_assembly, (gear_index_mesh_comb, index_mesh_comb) in enumerate(self.dict_index_gear_match.values()):
+                    if i == index_mesh_comb and j == gear_index_mesh_comb:
+                        gear_index = gear_index_mesh_assembly
+                        
+                        center_yz = centers_yz[gear_index]
+                        
+                        if j == 0:
+                            x_position += max(mesh_combination.gear_width)/2
+                            centers[j] = (x_position, previous_center_yz[0], previous_center_yz[0])
+                        else:
+                            centers[j] = (x_position, center_yz[0], center_yz[1])
             primitives.extend(mesh_combination.volmdlr_primitives(centers = centers))
+            previous_center_yz = center_yz  
+            x_position += max(mesh_combination.gear_width)/2 + offset
         return primitives
-                            
-               
             
         
     def pos_axis(self, position):
-        # Definition of the initial center for all gear (when not given by the user)
+        """
+        Definition of the initial center for all gear (when not given by the user)
 
+        :param position: dictionary define some center position {node2 : [0,0], node4 : [0.12,0] ..}
+        :returns: A dictionary where each value coresponds to the center of one gear
+        """
         gear_graph = nx.Graph()
         
         gear_graph.add_nodes_from(self.list_gear)
@@ -3361,12 +3356,21 @@ class MeshAssembly(DessiaObject):
                 drap = 0
         x_opt = res.x
         centers = {}
-        for num_pos, num_eng in enumerate(self.list_gear_index):
+        for num_pos, num_eng in enumerate(self.list_gear):
             opt_pos = dict_line[num_eng]
             centers[num_eng] = [x_opt[2*opt_pos], x_opt[2*opt_pos+1]]
         return centers
 
 def gear_graph_simple(connections):
+    """
+    NetworkX graph construction
+    
+    :param connections : List of tuples defining gear mesh connection [[(node1,node2)], [(node2,node3)]...]
+    
+    :returns:
+        * 
+        *List with the gear indexes of the mesh assembly
+    """
     # NetworkX graph construction
     list_gear = [] # list of all gears
     compt_mesh = 0 # number of gear mesh
@@ -3377,13 +3381,14 @@ def gear_graph_simple(connections):
                 list_gear.append(eng1)
             if eng2 not in list_gear:
                 list_gear.append(eng2)
-    # Construction of one graph include all different connection type (gear_mesh, same_speed, same_shaft)
+    # Construction of one graph including all different connection types (gear_mesh, same_speed, same_shaft)
     gear_graph = nx.Graph()
     gear_graph.add_nodes_from(list_gear)
     for list_edge in connections:
         gear_graph.add_edges_from(list_edge)
 #    sub_graph=list(nx.connected_component_subgraphs(gear_graph))
     sub_graph = [gear_graph.subgraph(c).copy() for c in nx.connected_components(gear_graph)]
+
     sub_graph_dfs = []
     for s_graph in sub_graph:
         node_init = list(s_graph.nodes())[0]
