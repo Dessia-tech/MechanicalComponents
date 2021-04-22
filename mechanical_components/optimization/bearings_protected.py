@@ -17,8 +17,10 @@ npy.seterr(divide='raise', over='ignore', under='ignore', invalid='ignore')
 
 from scipy.optimize import minimize, fsolve
 
-from dessia_common import DessiaObject, dict_merge, Evolution
+from dessia_common import DessiaObject, dict_merge, Evolution, get_python_class_from_class_name
 from typing import TypeVar, List
+
+
 
 from mechanical_components.bearings import RadialBallBearing, AngularBallBearing, \
         SphericalBallBearing, \
@@ -453,7 +455,7 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
             directions = []
             for depth, node in enumerate(dt.current_node):
                 if depth % 2 == 0:
-                    bearing = self.bearing_classes[node]
+                    bearing = get_python_class_from_class_name(self.bearing_classes[node])
                     bearings.append(bearing)
                 else:
                     

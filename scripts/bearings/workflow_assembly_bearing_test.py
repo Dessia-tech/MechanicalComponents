@@ -11,7 +11,7 @@ import dectree
 # from dessia_api_client import Client
 from dessia_common import workflow as wf
 import dessia_common as dc
-from volmdlr import plot_data
+import plot_data
 
 import mechanical_components.bearings as bearings
 import mechanical_components.optimization.bearings as bearings_opt
@@ -32,7 +32,7 @@ import pkg_resources
 
 blockA = wf.InstanciateModel(bearings_opt.BearingAssemblyOptimizer,  name='BearingAssemblyOptimizer')
 optimizeA = wf.ModelMethod(bearings_opt.BearingAssemblyOptimizer, 'optimize', name='BearingAssemblyOptimizer-optimize')
-attribute_selection1 = wf.ModelAttribute('bearing_assembly_simulations')
+attribute_selection1 = wf.ModelAttribute('bearing_assembly_simulations',)
 
 filters = [
           {'attribute' : 'bearing_assembly.overall_length', 'operator' : 'gt', 'bound' : -100},

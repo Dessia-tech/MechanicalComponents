@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Oct  5 09:53:05 2018
+Created on Fri Apr  9 10:47:13 2021
 
-@author: Pierrem
+@author: dasilva
 """
 #import sys
 import mechanical_components.bearings as bearings
@@ -50,29 +50,19 @@ for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
     
 # ba_simulation.bearing_assembly.bearing_combinations[0].plot()
 # plots = ba_simulation.bearing_assembly.plot_data()
-# pdg = plot_data.plot_canvas(plots[0])
+# pdg = plot_data.plot_canvas(plots)
 
-# d = bis2.to_dict()
-# obj = bearings_opt.BearingAssemblyOptimizer.dict_to_object(d)
+d = bis2.to_dict()
+obj = bearings_opt.BearingAssemblyOptimizer.dict_to_object(d)
 
-# if not obj == bis2:
-#     raise KeyError('Non esqual object BearingAssemblyOptimizer with dict_to_object')
+if not obj == bis2:
+    raise KeyError('Non esqual object BearingAssemblyOptimizer with dict_to_object')
     
 # vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].bearings[0].volmdlr_volume_model()
 # vol1.babylonjs()    
 
-<<<<<<< HEAD
-vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].volmdlr_volume_model()
-vol1.babylonjs()
-=======
 # vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].volmdlr_volume_model()
 #vol1.babylonjs()   
->>>>>>> new-dev
 
-# vol1 = ba_simulation.volmdlr_volume_model().babylonjs()
-# plot_data.plot_canvas(ba_simulation.plot_data()[0])
+vol1 = ba_simulation.bearing_assembly
 
-#c = Client()
-#c.api_url = 'http://localhost:5000'
-## c.api_url = 'https://api.platform.dessia.tech'
-#r = c.CreateObject(bis2)

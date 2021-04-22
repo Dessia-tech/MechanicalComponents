@@ -6,3 +6,4 @@
 
 from .workflow_assembly_bearing import workflow_assembly_bearing
 from .workflow_combination_bearing import workflow_combination_bearing
+from mechanical_components.models.workflows import workflow_bearing_assembly2

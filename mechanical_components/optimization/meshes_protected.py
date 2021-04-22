@@ -1396,6 +1396,7 @@ class MeshAssemblyOptimizer(DessiaObject):
 
 
     def Optimize(self,nb_sol: int = 1, list_sol: List[int] = None, verbose:bool = False):
+
         """ Gear mesh assembly optimization for given plex configuration
 
         :param nb_sol: number of solution desired, if list_sol = None we take nb_sol = len(plex) the optimize function analyse all the plex possibility
