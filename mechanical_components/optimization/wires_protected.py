@@ -14,6 +14,9 @@ import volmdlr.primitives3d as vmp3d
 class WiringOptimizer(RoutingOptimizer):
 
     def NumberHarnesses(self, paths):
+        if self.line_graph is None:
+            self.get_line_graph()
+        
         G = nx.Graph()
         G.add_nodes_from(self.line_graph)
         for path in paths:
@@ -47,6 +50,7 @@ class WiringOptimizer(RoutingOptimizer):
                                                  wire_spec.source,
                                                  wire_spec.destination,
                                                  weight='distance')
+                                                 # method='bellman-ford')
                 self._shortest_paths_cache[
                     (wire_spec.source, wire_spec.destination)] = shortest_path
                 self._shortest_paths_cache[

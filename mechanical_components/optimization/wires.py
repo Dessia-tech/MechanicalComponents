@@ -24,11 +24,4 @@ from mechanical_components.optimization.common import RoutingOptimizer
 class WiringOptimizer(protected_module.WiringOptimizer if not _open_source
                       else RoutingOptimizer):
     def __init__(self, routes):
-        waypoints = set()
-        for route in routes:
-            if route[0] == route[1]:
-                raise ValueError('A route must not link two similar points')
-            waypoints.add(route[0])
-            waypoints.add(route[1])
-        waypoints = list(waypoints)
-        super().__init__(waypoints, routes)
+        super().__init__(routes)
