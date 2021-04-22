@@ -1,5 +1,0 @@
-recursive-include genmechanics/ *.py
-recursive-exclude __pycache__/ *
-recursive-include genmechanics/templates *.html *.js *ts
-prune .git
-
