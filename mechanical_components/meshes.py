@@ -26,6 +26,7 @@ import copy
 from typing import  List, Tuple
 from scipy.optimize import fsolve
 
+
 class Data(DessiaObject):
     _standalone_in_db = False
     
@@ -2219,7 +2220,7 @@ class MeshCombination(DessiaObject):
             else:
                 
                 C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
-                C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
+                C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style, )
                 plot_datas.extend([C1_plot_data,C2_plot_data])
                 
         return [vmp.PrimitiveGroup(primitives= plot_datas)]
@@ -3025,11 +3026,9 @@ class MeshAssembly(DessiaObject):
 
         graph_dfs,_ = gear_graph_simple(connections)
         num_mesh = 0
-<<<<<<< HEAD
-        mesh_combination_index = 0
-=======
+
         num_gear_match=[]
->>>>>>> dev_meshes
+
         for num_graph,list_sub_graph in enumerate(graph_dfs):
            
             
@@ -3056,12 +3055,9 @@ class MeshAssembly(DessiaObject):
 
                             if not num_gear in num_gear_assignation.keys():
                                 num_gear_assignation[num_gear]=num_gear_mesh
-<<<<<<< HEAD
-                                num_gear_match.append((num_gear_mesh,num_gear,mesh_combination_index))
-=======
-                                
+                       
                                 num_gear_match.append((num_gear,num_gear_mesh,num_graph))
->>>>>>> dev_meshes
+
                                 num_gear_mesh+=1
                             gs_mesh[i]=num_gear_assignation[num_gear]
                             if num_gear in coefficient_profile_shift.keys():
@@ -3115,11 +3111,7 @@ class MeshAssembly(DessiaObject):
             xt = dict(list(input_data.items()) + list(general_data.items()))
             
             mesh_combinations.append(MeshCombination.create(**xt))
-<<<<<<< HEAD
-            mesh_combination_index += 1
-=======
-        
->>>>>>> dev_meshes
+
         mesh_assembly = cls(connections, mesh_combinations, num_gear_match,
                             strong_links, safety_factor)
         return mesh_assembly
@@ -3248,6 +3240,45 @@ class MeshAssembly(DessiaObject):
 #            if self.save!=optimizer_data:
             self.mesh_combinations[num_graph].update_helix_angle(**xt)
         return output_x
+    def plot_data(self):
+        """
+        2D mesh combination visualization 
+        
+        
+        :returns: List of Primitives groups for the data_plot
+
+        """
+        list_colors = [vmp.colors.BLACK, vmp.colors.RED, vmp.colors.BLUE]
+        export_data = []
+        offset = 0.01
+        x_position = 0
+        centers_yz = self.pos_axis({self.list_gear[0]:[0,0]})
+        for i, mesh_combination in enumerate(self.mesh_combinations):
+            centers = {}
+            for j, mesh in enumerate(mesh_combination.meshes):
+                for gear_index_mesh_assembly, (gear_index_mesh_comb, index_mesh_comb) in zip(self.dico_gear_match.keys(), self.dico_gear_match.values()):
+                    if i == index_mesh_comb and j == gear_index_mesh_comb:
+                        gear_index = gear_index_mesh_assembly
+                        center_yz = centers_yz[gear_index]
+                        
+                        if j == 0:
+                            if i == 0:
+                                centers[j] = (x_position, center_yz[0], center_yz[1])
+                            else:
+                                x_position += max(mesh_combination.gear_width)/2
+                                centers[j] = (x_position, center_yz[0], center_yz[1])
+                                # centers[j] = (x_position, previous_center_yz[0], previous_center_yz[0])
+                        else:
+                            centers[j] = (x_position, center_yz[0], center_yz[1])
+            primitives = mesh_combination.plot_data(centers)[0].primitives
+            for primitive in primitives:
+                if type(primitive) is not vmp.Text and type(primitive) is not vmp.Circle2D:
+                    primitive.edge_style.color_stroke = list_colors[i]
+                
+            export_data.extend(primitives)
+            x_position += max(mesh_combination.gear_width)/2 + offset
+        return [vmp.PrimitiveGroup(primitives = export_data)]
+        
     def volmdlr_primitives(self):
         """
         Generation of the 3D volume for all the gear mesh 
@@ -3257,28 +3288,31 @@ class MeshAssembly(DessiaObject):
         
         primitives = []
         
-        offset = 0.05
+        offset = 0.01
         x_position = 0
         centers_yz = self.pos_axis({self.list_gear[0]:[0,0]})
-        previous_center_yz = centers_yz[0]
+        # count = 0
         
 
         for i, mesh_combination in enumerate(self.mesh_combinations):
             centers = {}
             for j, mesh in enumerate(mesh_combination.meshes):
-                for gear_index_mesh_assembly, (gear_index_mesh_comb, index_mesh_comb) in enumerate(self.dict_index_gear_match.values()):
+                for gear_index_mesh_assembly, (gear_index_mesh_comb, index_mesh_comb) in zip(self.dico_gear_match.keys(), self.dico_gear_match.values()):
                     if i == index_mesh_comb and j == gear_index_mesh_comb:
                         gear_index = gear_index_mesh_assembly
-                        
                         center_yz = centers_yz[gear_index]
-                        
+               
                         if j == 0:
-                            x_position += max(mesh_combination.gear_width)/2
-                            centers[j] = (x_position, previous_center_yz[0], previous_center_yz[0])
+                            if i == 0:
+                                centers[j] = (x_position, center_yz[0], center_yz[1])
+                            else:
+                                x_position += max(mesh_combination.gear_width)/2
+                                centers[j] = (x_position, center_yz[0], center_yz[1])
+                                # centers[j] = (x_position, previous_center_yz[0], previous_center_yz[0])
                         else:
                             centers[j] = (x_position, center_yz[0], center_yz[1])
             primitives.extend(mesh_combination.volmdlr_primitives(centers = centers))
-            previous_center_yz = center_yz  
+            # previous_center_yz = center_yz
             x_position += max(mesh_combination.gear_width)/2 + offset
         return primitives
             
