@@ -1204,7 +1204,7 @@ class PlanetaryGear(DessiaObject):
         for meshing_chain in meshing_chains:
             module = meshing_chain[0].module
 
-            rack = meshes_opt.RackOpti(module=[module, module], transverse_pressure_angle=[20/180.*npy.pi, 20/180.*npy.pi],
+            rack = meshes_opt.RackOpti(module=[module, module], transverse_pressure_angle_0=[20/180.*npy.pi, 20/180.*npy.pi],
                                        coeff_gear_addendum=[1, 1], coeff_gear_dedendum=[1.25, 1.25], coeff_root_radius=[0.38, 0.38],
                                        coeff_circular_tooth_thickness=[0.5, 0.5])
             list_rack = {0:rack}

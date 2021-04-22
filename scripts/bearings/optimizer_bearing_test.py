@@ -61,7 +61,7 @@ vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].bearings[0].volmdl
 #vol1.babylonjs()    
 
 vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].volmdlr_volume_model()
-#vol1.babylonjs()   
+vol1.babylonjs()
 
 # vol1 = ba_simulation.bearing_assembly.volmdlr_volume_model()
 # vol1.babylonjs()   
