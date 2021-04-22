@@ -2188,22 +2188,15 @@ class MeshCombination(DessiaObject):
             
             if set_pos_dfs==0:
                 center = vm.Point2D(x=vect_position_1[1], y=vect_position_1[2])
-           
                 circle_DF=vm.wires.Circle2D(center=center,radius=self.DF[0][eng1_position]/2)
-                
                 circle_SAP_diameter=vm.wires.Circle2D(center=center,radius=self.SAP_diameter[0][eng1_position]/2)
 
-                
-                
                 edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.GREEN)
                 circle_DF_plot_data = circle_DF.plot_data(edge_style=edge_style)
                 
                 text_style=vmp.TextStyle(text_color= vmp.colors.GREEN,text_align_x='center',font_size=0.7)
                 text_DF=vmp.Text(comment='DF',position_x=0,position_y=self.DF[0][eng1_position]/2,text_style=text_style)
-                
-                
-                
-                
+
                 edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ROSE)
                 circle_SAP_diameter_plot_data=circle_SAP_diameter.plot_data(edge_style=edge_style)
 
@@ -2222,17 +2215,10 @@ class MeshCombination(DessiaObject):
                 
             else:
                 
-                # C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
                 C2_plot_data=C2.plot_data(edge_style=edge_style,surface_style = surface_style)
                 plot_datas.extend([C2_plot_data])
-                
-
-                
-        return [vmp.PrimitiveGroup(primitives = plot_datas)]
-    
-   
-        
-            
+       
+        return [vmp.PrimitiveGroup(primitives = plot_datas)]     
         
     # def volmdlr_primitives_2(self, centers={}, axis=(1, 0, 0), name='', z_number=10):
     #     """ Generation of the 3D volume for all the gear mesh
