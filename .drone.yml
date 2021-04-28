@@ -6,12 +6,8 @@ steps:
   image: python:3
   commands:
   - git fetch --tags
+  - pip install Cython
   - python setup.py install
-
-- name: develop
-  image: python:3
-  commands:
-  - python setup.py develop
 
 - name: generate sdist
   image: python:3
