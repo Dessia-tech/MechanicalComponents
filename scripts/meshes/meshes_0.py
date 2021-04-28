@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """
 Created on Tue Apr  6 12:14:22 2021
+
 @author: dasilva
 """
 
@@ -33,7 +32,9 @@ for i, speed_input in enumerate(gear_speeds.values()):
 
 center_distances = []
 for i , center_distance in enumerate(center_dists):
+
     center_distances.append(meshes_opt.CenterDistanceOpti(center_distance = center_distance, meshes = [meshoptis[connections[i][0]], meshoptis[connections[i][1]]]))
+
 
 cycles = {0: 1272321481513.054}
 
@@ -47,9 +48,11 @@ rack_choices = {0:[0], 1:[0]}
 GA = meshes_opt.MeshAssemblyOptimizer(center_distances,cycles)
 
 #Optimization for gear set with center-distance closed to the minimum boundary
-GA.Optimize(nb_sol =5, verbose=True)
+GA.Optimize(nb_sol = 50, verbose=True)
 print('Number of solutions:',len(GA.solutions))
+
 solutions = GA.solutions
+
 # solution.pos_axis({0:(0,0,0)})
 
 
