@@ -255,7 +255,7 @@ class Planet(Gears):
 
 
 class PlanetCarrier(DessiaObject):
-    _eq_is_data_eq  =False
+    _eq_is_data_eq = False
 
     '''
     Define a planet carrier
@@ -787,7 +787,7 @@ class PlanetaryGear(DessiaObject):
                 point1 = vm.Point2D(x[i], y[i])
                 point2 = vm.Point2D(x[i+1], y[i+1])
                 line = vm.edges.LineSegment2D(point1, point2)
-                edge_style = pld.EdgeStyle(line_width=2, color_stroke= list_color[color])
+                edge_style = pld.EdgeStyle(line_width=2, color_stroke=list_color[color])
                 plot_data.append(line.plot_data(edge_style=edge_style))
 
         x = [coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0],
@@ -802,7 +802,7 @@ class PlanetaryGear(DessiaObject):
                 point1 = vm.Point2D(x[i], y[i])
                 point2 = vm.Point2D(x[i+1], y[i+1])
                 line = vm.edges.LineSegment2D(point1, point2)
-                edge_style= pld.EdgeStyle(line_width=2,color_stroke= list_color[color])
+                edge_style = pld.EdgeStyle(line_width=2, color_stroke=list_color[color])
                 plot_data.append(line.plot_data(edge_style=edge_style))
 
     def plot_kinematic_graph_double(self, coordinate, diameter, lenght, color, plot_data):
@@ -819,7 +819,7 @@ class PlanetaryGear(DessiaObject):
                 point1 = vm.Point2D(x[i], y[i])
                 point2 = vm.Point2D(x[i+1], y[i+1])
                 line = vm.edges.LineSegment2D(point1, point2)
-                edge_style= pld.EdgeStyle(line_width=2,color_stroke= list_color[color])
+                edge_style=pld.EdgeStyle(line_width=2, color_stroke=list_color[color])
                 plot_data.append(line.plot_data(edge_style=edge_style))
 
         x = [coordinate[0], coordinate[0]+lenght]
@@ -829,7 +829,7 @@ class PlanetaryGear(DessiaObject):
                 point1 = vm.Point2D(x[i], y[i])
                 point2 = vm.Point2D(x[i+1], y[i+1])
                 line = vm.edges.LineSegment2D(point1, point2)
-                edge_style= pld.EdgeStyle(line_width=2,color_stroke= list_color[color])
+                edge_style = pld.EdgeStyle(line_width=2, color_stroke=list_color[color])
                 plot_data.append(line.plot_data(edge_style=edge_style))
 
         # plt.plot(x, y, list_color[color])

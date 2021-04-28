@@ -610,7 +610,7 @@ class Mesh(DessiaObject):
 
         self.root_diameter_active, self.phi_trochoide = self._root_diameter_active()
 
-
+      
         self.alpha_root_diameter_active = math.acos(self.db/self.root_diameter_active)
 
         self.alpha_pitch_diameter = math.acos(self.db/self.dff)
@@ -657,9 +657,9 @@ class Mesh(DessiaObject):
         # if self.z<0:
         #     r=-r
         phi = -(a+b*math.tan(math.pi/2-self.rack.transverse_pressure_angle_0))/r
-
+        
         root_diameter_active = 2*norm(self._trochoide(phi))
-
+        
         return root_diameter_active, phi
 
     ### Optimization Method
@@ -1394,7 +1394,7 @@ class MeshCombination(DessiaObject):
         if helix_angle:
             self.helix_angle = helix_angle
 
-        self.internal_torque, self.normal_load, self.tangential_load,
+        self.internal_torque, self.normal_load, self.tangential_load,\
         self.radial_load, self.axial_load = MeshCombination.gear_torque(self.Z, self.external_torque, self.DB,
                                                                         self.gear_graph, self.list_gear,
                                                                         self.connections, self.DF,
