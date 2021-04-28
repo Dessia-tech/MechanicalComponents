@@ -123,7 +123,7 @@ class Gears(DessiaObject):
     #      return cylinder
 
 class Planetary(Gears):
-    _eq_is_data_eq=False
+    _eq_is_data_eq = False
 
     '''
 
@@ -203,7 +203,7 @@ class Planetary(Gears):
 
 
 class Planet(Gears):
-    _eq_is_data_eq=False
+    _eq_is_data_eq = False
 
     '''
     Define a planet
@@ -255,7 +255,7 @@ class Planet(Gears):
 
 
 class PlanetCarrier(DessiaObject):
-    _eq_is_data_eq=False
+    _eq_is_data_eq  =False
 
     '''
     Define a planet carrier
@@ -281,7 +281,7 @@ class PlanetCarrier(DessiaObject):
 
 
 class Meshing(DessiaObject):
-    _eq_is_data_eq=False
+    _eq_is_data_eq = False
 
 
 
@@ -292,7 +292,7 @@ class Meshing(DessiaObject):
 
 
 class MeshingPlanetary(Meshing):
-    _eq_is_data_eq=False
+    _eq_is_data_eq = False
     def __init__(self, nodes: List[Gears], name: str = ''):
 
         self.type = 'GI'
@@ -326,7 +326,7 @@ class MeshingPlanetary(Meshing):
 
 
 class MeshingPlanet(Meshing):
-        _eq_is_data_eq=False
+        _eq_is_data_eq = False
         def __init__(self, nodes: List[Gears], name: str = ''):
 
             self.type = 'GI'
@@ -371,7 +371,7 @@ class Fixed(DessiaObject):
         return matrix, rhs
 
 class Double(DessiaObject):
-    _eq_is_data_eq=False
+    _eq_is_data_eq = False
 
     def __init__(self, nodes: List[Planet], name: str = ''):
 
@@ -392,7 +392,7 @@ class Double(DessiaObject):
          position_planet_2 = self.nodes[1].positions
 
          model = []
-         axis = vm.Vector3D(axis[0],axis[1],axis[2])
+         axis = vm.Vector3D(axis[0], axis[1], axis[2])
          for i in range(len(position_planet_1)):
 
              if position_planet_2[i][0] > position_planet_1[i][0]:
@@ -411,11 +411,11 @@ class Double(DessiaObject):
 
                  position = (position[0]+center[0], position[1]+center[1],
                              position[2]+center[2])
-                 pos = vm.Point3D(position[0],position[1],position[2])
+                 pos = vm.Point3D(position[0], position[1], position[2])
              if not axis == (1, 0, 0):
-                 vector=npy.cross((axis[0],axis[1],axis[2]), (1, 0, 0))
-                 axis_rotation = vm.Vector3D(vector[0],vector[1],vector[2])
-                 axis_vector = vm.Vector3D(axis[0],axis[1],axis[2])
+                 vector = npy.cross((axis[0], axis[1], axis[2]), (1, 0, 0))
+                 axis_rotation = vm.Vector3D(vector[0], vector[1], vector[2])
+                 axis_vector = vm.Vector3D(axis[0], axis[1], axis[2])
                  axis_origin = vm.Vector3D(1, 0, 0)
 
                  axis_vector_norme = copy.copy(axis_vector)
@@ -428,15 +428,15 @@ class Double(DessiaObject):
                         angle = m.pi/2
                  else:
                         angle = m.acos(axis_vector.dot(axis_origin)/axis_vector_norme.dot(axis_origin_norme))
-                 position2 = vm.Vector3D(position[0],position[1],position[2])
+                 position2 = vm.Vector3D(position[0], position[1], position[2])
 
-                 position2.rotation(center=vm.Vector3D(center[0],center[1],center[2]), axis=axis_rotation, angle=angle, copy=False)
+                 position2.rotation(center=vm.Vector3D(center[0], center[1], center[2]), axis=axis_rotation, angle=angle, copy=False)
 
-                 pos = vm.Point3D(position2[0],position2[1],position2[2])
+                 pos = vm.Point3D(position2[0], position2[1], position2[2])
 
 
              else:
-                 pos = vm.Point3D(position[0],position[1],position[2])
+                 pos = vm.Point3D(position[0], position[1], position[2])
 
 
              cylinder = p3d.Cylinder(pos, axis, (self.nodes[0].Z*self.nodes[0].module)/10, abs(position_planet_1[i][0]-position_planet_2[i][0]))
@@ -460,7 +460,7 @@ class ImposeSpeed(DessiaObject):
 
 
 class Connection(DessiaObject):
-    _eq_is_data_eq=False
+    _eq_is_data_eq = False
 
 
 
@@ -524,8 +524,8 @@ class Connection(DessiaObject):
 
 class PlanetaryGear(DessiaObject):
     _standalone_in_db = True
-    _non_serializable_attributes = ['mech', 'mech_dict','max_length_meshing_chain', 'center', 'axis']
-    _eq_is_data_eq=False
+    _non_serializable_attributes = ['mech', 'mech_dict', 'max_length_meshing_chain', 'center', 'axis']
+    _eq_is_data_eq = False
 
 
 
@@ -787,7 +787,7 @@ class PlanetaryGear(DessiaObject):
                 point1 = vm.Point2D(x[i], y[i])
                 point2 = vm.Point2D(x[i+1], y[i+1])
                 line = vm.edges.LineSegment2D(point1, point2)
-                edge_style= pld.EdgeStyle(line_width=2,color_stroke= list_color[color])
+                edge_style = pld.EdgeStyle(line_width=2, color_stroke= list_color[color])
                 plot_data.append(line.plot_data(edge_style=edge_style))
 
         x = [coordinate[0]+lenght_pivot/2, coordinate[0]-lenght_pivot/2, coordinate[0],

@@ -58,27 +58,27 @@ class ContinuousMeshesAssemblyOptimizer:
     """
     def __init__(self, Z, center_distances, connections, rigid_links, transverse_pressure_angle,
                  coefficient_profile_shift, rack_list, rack_choice,
-                 material,external_torques, cycles, safety_factor, db, verbose=False,
-                 axial_contact_ratio=None,total_contact_ratio_min=None,
+                 material, external_torques, cycles, safety_factor, db, verbose=False,
+                 axial_contact_ratio=None, total_contact_ratio_min=None,
                  transverse_contact_ratio_min=None):
         self.center_distances = center_distances
         self.transverse_pressure_angle = transverse_pressure_angle
         self.coefficient_profile_shift = coefficient_profile_shift
-        
-        self.rack_list=rack_list
-        self.rack_choice=rack_choice
-        self.Z=Z
-        
-        self.connections=connections
+
+        self.rack_list = rack_list
+        self.rack_choice = rack_choice
+        self.Z = Z
+
+        self.connections = connections
         self.rigid_links = rigid_links
         self.external_torques = external_torques
 
         self.cycles = cycles
         # Initailization
-        self.solutions=[]
-        
-        
-        
+        self.solutions = []
+
+
+
 #        # NetworkX graph construction
 #        list_gear=[] # list of all gears
 #        compt_mesh=0 # number of gear mesh
@@ -104,619 +104,619 @@ class ContinuousMeshesAssemblyOptimizer:
 #            self.sub_graph_dfs.append(list(nx.dfs_edges(s_graph,node_init)))
 
         # Search of unknown parameters (borne_min different of borne_max)
-        dict_unknown = {'db':[],'transverse_pressure_angle':[],
-                        'coefficient_profile_shift':[],'transverse_pressure_angle_rack':[],
-                        'coeff_gear_addendum':[],'coeff_gear_dedendum':[],
-                        'coeff_root_radius':[],'coeff_circular_tooth_thickness':[],'helix_angle':[]}
+        dict_unknown = {'db':[], 'transverse_pressure_angle':[],
+                        'coefficient_profile_shift':[], 'transverse_pressure_angle_rack':[],
+                        'coeff_gear_addendum':[], 'coeff_gear_dedendum':[],
+                        'coeff_root_radius':[], 'coeff_circular_tooth_thickness':[], 'helix_angle':[]}
         dict_global = copy.deepcopy(dict_unknown)
         for i in list(set(list(self.rack_choice.values()))):
-            rack_dict={'transverse_pressure_angle_rack':self.rack_list[i].transverse_pressure_angle_0,
-                       'coeff_gear_addendum':self.rack_list[i].coeff_gear_addendum,
-                       'coeff_gear_dedendum':self.rack_list[i].coeff_gear_dedendum,
-                       'coeff_root_radius':self.rack_list[i].coeff_root_radius,
-                       'coeff_circular_tooth_thickness':self.rack_list[i].coeff_circular_tooth_thickness,
-                       'helix_angle':self.rack_list[i].helix_angle}
+            rack_dict = {'transverse_pressure_angle_rack':self.rack_list[i].transverse_pressure_angle_0,
+                         'coeff_gear_addendum':self.rack_list[i].coeff_gear_addendum,
+                         'coeff_gear_dedendum':self.rack_list[i].coeff_gear_dedendum,
+                         'coeff_root_radius':self.rack_list[i].coeff_root_radius,
+                         'coeff_circular_tooth_thickness':self.rack_list[i].coeff_circular_tooth_thickness,
+                         'helix_angle':self.rack_list[i].helix_angle}
             for k in rack_dict:
                     dict_global[k].append(i)
-                    v=rack_dict[k]
-                    
-                    if not v[0]==v[1]:
+                    v = rack_dict[k]
+
+                    if not v[0] == v[1]:
                         dict_unknown[k].append(i)
-                        
+
         # search the unknown list db and transverse_pressure_angle to define in the optimizer
-        list_analyze_cd={}
-        list_analyze_line_gear=[]
-        num_mesh=0
-        list_unknown=[]
-        self.axial_contact_ratio={}
-        self.total_contact_ratio_min={}
-        self.transverse_contact_ratio_min={}
-        for num_cd,list_connections in enumerate(connections):
-            for (eng1,eng2) in list_connections:
-                for num_line_iter,list_dfs in enumerate(self.sub_graph_dfs): # search the number of the line gear analyze
-                    if ((eng1,eng2) in list_dfs) or ((eng2,eng1) in list_dfs):
-                        num_line=num_line_iter
+        list_analyze_cd = {}
+        list_analyze_line_gear = []
+        num_mesh = 0
+        list_unknown = []
+        self.axial_contact_ratio = {}
+        self.total_contact_ratio_min = {}
+        self.transverse_contact_ratio_min = {}
+        for num_cd, list_connections in enumerate(connections):
+            for (eng1, eng2) in list_connections:
+                for num_line_iter, list_dfs in enumerate(self.sub_graph_dfs): # search the number of the line gear analyze
+                    if ((eng1, eng2) in list_dfs) or ((eng2, eng1) in list_dfs):
+                        num_line = num_line_iter
                 if num_cd not in list_analyze_cd.keys():
-                    list_analyze_cd[num_cd]=num_mesh
+                    list_analyze_cd[num_cd] = num_mesh
                     if num_line not in list_analyze_line_gear:
                         list_analyze_line_gear.append(num_line)
-                        
-                        interval_db=db[eng1]
-                       
-                        if interval_db[0]!=interval_db[1]:
+
+                        interval_db = db[eng1]
+
+                        if interval_db[0] != interval_db[1]:
                             dict_unknown['db'].append(eng1)
-                        interval_tpa=self.transverse_pressure_angle[num_mesh]
-                        if interval_tpa[0]!=interval_tpa[1]:
+                        interval_tpa = self.transverse_pressure_angle[num_mesh]
+                        if interval_tpa[0] != interval_tpa[1]:
                             dict_unknown['transverse_pressure_angle'].append(num_mesh)
                     else:
-                        interval_tpa=self.transverse_pressure_angle[num_mesh]
-                        if interval_tpa[0]!=interval_tpa[1]:
+                        interval_tpa = self.transverse_pressure_angle[num_mesh]
+                        if interval_tpa[0] != interval_tpa[1]:
                             dict_unknown['transverse_pressure_angle'].append(num_mesh)
                 else:
                     if num_line not in list_analyze_line_gear:
                         list_analyze_line_gear.append(num_line)
-                        interval_tpa=self.transverse_pressure_angle[num_mesh]
-                        if interval_tpa[0]!=interval_tpa[1]:
+                        interval_tpa = self.transverse_pressure_angle[num_mesh]
+                        if interval_tpa[0] != interval_tpa[1]:
                             dict_unknown['transverse_pressure_angle'].append(num_mesh)
-                if (eng1,eng2) in list(axial_contact_ratio.keys()):
-                    self.axial_contact_ratio[(eng1,eng2)]=axial_contact_ratio[(eng1,eng2)]
+                if (eng1, eng2) in list(axial_contact_ratio.keys()):
+                    self.axial_contact_ratio[(eng1, eng2)] = axial_contact_ratio[(eng1, eng2)]
                 else:
-                    self.axial_contact_ratio[(eng1,eng2)]=0
-                    
-                if (eng1,eng2) in list(total_contact_ratio_min.keys()):
-                    self.total_contact_ratio_min[(eng1,eng2)]=total_contact_ratio_min[(eng1,eng2)]
+                    self.axial_contact_ratio[(eng1, eng2)] = 0
+
+                if (eng1, eng2) in list(total_contact_ratio_min.keys()):
+                    self.total_contact_ratio_min[(eng1, eng2)] = total_contact_ratio_min[(eng1, eng2)]
                 else:
-                    self.total_contact_ratio_min[(eng1,eng2)]=0
-                    
-                if (eng1,eng2) in list(transverse_contact_ratio_min.keys()):
-                    self.transverse_contact_ratio_min[(eng1,eng2)]=transverse_contact_ratio_min[(eng1,eng2)]
+                    self.total_contact_ratio_min[(eng1, eng2)] = 0
+
+                if (eng1, eng2) in list(transverse_contact_ratio_min.keys()):
+                    self.transverse_contact_ratio_min[(eng1, eng2)] = transverse_contact_ratio_min[(eng1, eng2)]
                 else:
-                    self.transverse_contact_ratio_min[(eng1,eng2)]=0
-                
-                
-                num_mesh+=1
+                    self.transverse_contact_ratio_min[(eng1, eng2)] = 0
+
+
+                num_mesh += 1
         for num_gear in self.list_gear:
             dict_global['db'].append(num_gear)
             dict_global['transverse_pressure_angle'].append(num_gear)
-            
-            cps=coefficient_profile_shift[num_gear]
-            
+
+            cps = coefficient_profile_shift[num_gear]
+
             dict_global['coefficient_profile_shift'].append(num_gear)
-            if not cps[0]==cps[1]:
+            if not cps[0] == cps[1]:
                 dict_unknown['coefficient_profile_shift'].append(num_gear)
-            
+
             # dict_global['helix_angle'].append(num_gear)
             # b=helix_angles[num_gear]
             # if not b[0]==b[1]:
             #     dict_unknown['helix_angle'].append(num_gear)
-                
-        
-        self.dict_unknown=dict_unknown
-        self.dict_global=dict_global
-       
-        number_unknown=0
-        for key,list_unknown in dict_unknown.items():
-            number_unknown+=len(list_unknown)
+
+
+        self.dict_unknown = dict_unknown
+        self.dict_global = dict_global
+
+        number_unknown = 0
+        for key, list_unknown in dict_unknown.items():
+            number_unknown += len(list_unknown)
 #        if verbose:
 #            print('The total number of unknown for the gear mesh assembly optimization is {}'.format(number_unknown))
 
         # Definition of the Bound matrix for the optimizer
         Bounds = []
-        Bounds_helix_angle=[]
+        Bounds_helix_angle = []
         list_order_unknown = []
-        
-        self.list_gear_rack=[]
-        for key,list_unknown in dict_unknown.items():
-            if len(list_unknown)>0:
-                if key=='db':
+
+        self.list_gear_rack = []
+        for key, list_unknown in dict_unknown.items():
+            if len(list_unknown) > 0:
+                if key == 'db':
                     list_order_unknown.append(key)
                     for num_gear in list_unknown:
                         Bounds.append(db[num_gear])
-                elif key=='transverse_pressure_angle':
+                elif key == 'transverse_pressure_angle':
                     list_order_unknown.append(key)
                     for num_mesh in list_unknown:
                         Bounds.append(self.transverse_pressure_angle[num_mesh])
-                elif key=='coefficient_profile_shift':
+                elif key == 'coefficient_profile_shift':
                     list_order_unknown.append(key)
                     for num_gear in list_unknown:
                         Bounds.append(self.coefficient_profile_shift[num_gear])
-                elif key in ['transverse_pressure_angle_rack','coeff_gear_addendum',
-                             'coeff_gear_dedendum','coeff_root_radius',
-                             'coeff_circular_tooth_thickness','helix_angle']:
+                elif key in ['transverse_pressure_angle_rack', 'coeff_gear_addendum',
+                             'coeff_gear_dedendum', 'coeff_root_radius',
+                             'coeff_circular_tooth_thickness', 'helix_angle']:
                     list_order_unknown.append(key)
                     for num_rack in list_unknown:
-                        rack_dict={'transverse_pressure_angle_rack':self.rack_list[num_rack].transverse_pressure_angle_0,
-                                   'coeff_gear_addendum':self.rack_list[num_rack].coeff_gear_addendum,
-                                   'coeff_gear_dedendum':self.rack_list[num_rack].coeff_gear_dedendum,
-                                   'coeff_root_radius':self.rack_list[num_rack].coeff_root_radius,
-                                   'coeff_circular_tooth_thickness':self.rack_list[num_rack].coeff_circular_tooth_thickness,
-                                   'helix_angle':self.rack_list[num_rack].helix_angle}
-                        if key=='helix_angle':
+                        rack_dict = {'transverse_pressure_angle_rack':self.rack_list[num_rack].transverse_pressure_angle_0,
+                                     'coeff_gear_addendum':self.rack_list[num_rack].coeff_gear_addendum,
+                                     'coeff_gear_dedendum':self.rack_list[num_rack].coeff_gear_dedendum,
+                                     'coeff_root_radius':self.rack_list[num_rack].coeff_root_radius,
+                                     'coeff_circular_tooth_thickness':self.rack_list[num_rack].coeff_circular_tooth_thickness,
+                                     'helix_angle':self.rack_list[num_rack].helix_angle}
+                        if key == 'helix_angle':
                             Bounds_helix_angle.append(rack_dict[key])
                             self.list_gear_rack.append(self.rack_list[num_rack].list_gear)
                         Bounds.append(rack_dict[key])
 #        self.Bounds = npy.array(Bounds)
         self.Bounds = Bounds
-        self.Bounds_helix_angle=Bounds_helix_angle
+        self.Bounds_helix_angle = Bounds_helix_angle
         self.list_order_unknown = list_order_unknown
 
         # Definition initial condition
 
 
         self.db = db
-        optimization=1
-        while optimization==1:
+        optimization = 1
+        while optimization == 1:
             self.X0 = self.CondInit()
             optimizer_data = self._convert_X2x(self.X0)
-            dic_torque,dic_cycle = self.TorqueCycleMeshAssembly()
+            dic_torque, dic_cycle = self.TorqueCycleMeshAssembly()
 
             self.general_data = {'Z': Z, 'connections': connections,
-                     'material':material,'internal_torque':dic_torque,'external_torque':self.external_torques,'cycle':dic_cycle,
-                     'safety_factor':safety_factor ,'total_contact_ratio_min':self.total_contact_ratio_min,
-                     'transverse_contact_ratio_min':self.transverse_contact_ratio_min}
+                                 'material':material, 'internal_torque':dic_torque, 'external_torque':self.external_torques, 'cycle':dic_cycle,
+                                 'safety_factor':safety_factor, 'total_contact_ratio_min':self.total_contact_ratio_min,
+                                 'transverse_contact_ratio_min':self.transverse_contact_ratio_min}
             input_dat = dict(list(optimizer_data.items())+list(self.general_data.items()))
-            
+
             try:
                 self.mesh_assembly = MeshAssembly.create(**input_dat)
-                optimization=0
+                optimization = 0
             except ValueError:
-                optimization=1
-        self.save=copy.deepcopy(optimizer_data)
+                optimization = 1
+        self.save = copy.deepcopy(optimizer_data)
 
     def _get_graph_dfs(self):
-        _graph_dfs,_=gear_graph_simple(self.connections)
+        _graph_dfs, _ = gear_graph_simple(self.connections)
         return _graph_dfs
-    sub_graph_dfs=property(_get_graph_dfs)
+    sub_graph_dfs = property(_get_graph_dfs)
 
     def _get_list_gear(self):
-        _,_list_gear=gear_graph_simple(self.connections)
+        _, _list_gear = gear_graph_simple(self.connections)
         return _list_gear
 
-    list_gear=property(_get_list_gear)
+    list_gear = property(_get_list_gear)
 
     def TorqueCycleMeshAssembly(self):
         # construction of a graph with gea_mesh and same_speed for analyze with dfs the order of torque calculation
-        torque_graph=nx.Graph()
+        torque_graph = nx.Graph()
         torque_graph.add_nodes_from(self.list_gear)
         for list_edge in self.connections:
-            torque_graph.add_edges_from(list_edge,typ='gear_mesh')
-            li_shaft1=[]
-            li_shaft2=[]
-            for eng1,eng2 in list_edge:
+            torque_graph.add_edges_from(list_edge, typ='gear_mesh')
+            li_shaft1 = []
+            li_shaft2 = []
+            for eng1, eng2 in list_edge:
                 li_shaft1.append(eng1)
                 li_shaft2.append(eng2)
-            if len(li_shaft1)>1:
-                for pos_gear,num_gear in enumerate(li_shaft1[1:]):
-                    valid_strong_ling=False
+            if len(li_shaft1) > 1:
+                for pos_gear, num_gear in enumerate(li_shaft1[1:]):
+                    valid_strong_ling = False
                     for list_strong_link in self.rigid_links:
                         if (num_gear in list_strong_link) and (li_shaft1[pos_gear] in list_strong_link):
-                            valid_strong_ling=True
+                            valid_strong_ling = True
                     if valid_strong_ling:
-                        torque_graph.add_edges_from([(num_gear,li_shaft1[pos_gear])],typ='same_speed')
-            if len(li_shaft2)>1:
-                for pos_gear,num_gear in enumerate(li_shaft2[1:]):
-                    valid_strong_ling=False
+                        torque_graph.add_edges_from([(num_gear, li_shaft1[pos_gear])], typ='same_speed')
+            if len(li_shaft2) > 1:
+                for pos_gear, num_gear in enumerate(li_shaft2[1:]):
+                    valid_strong_ling = False
                     for list_strong_link in self.rigid_links:
                         if (num_gear in list_strong_link) and (li_shaft2[pos_gear] in list_strong_link):
-                            valid_strong_ling=True
+                            valid_strong_ling = True
                     if valid_strong_ling:
-                        torque_graph.add_edges_from([(num_gear,li_shaft2[pos_gear])],typ='same_speed')
-        for num_gear,tq in self.external_torques.items():
-            if tq=='output':
-                node_output=num_gear
-        torque_graph_dfs=list(nx.dfs_edges(torque_graph,node_output))
-        order_torque_calculation=[(eng2,eng1) for (eng1,eng2) in torque_graph_dfs[::-1]]
+                        torque_graph.add_edges_from([(num_gear, li_shaft2[pos_gear])], typ='same_speed')
+        for num_gear, tq in self.external_torques.items():
+            if tq == 'output':
+                node_output = num_gear
+        torque_graph_dfs = list(nx.dfs_edges(torque_graph, node_output))
+        order_torque_calculation = [(eng2, eng1) for (eng1, eng2) in torque_graph_dfs[::-1]]
         # calculation torque distribution
-        temp_torque={}
+        temp_torque = {}
         for eng1 in self.list_gear:
-            temp_torque[eng1]=0
-        for num_mesh_tq,(eng1,eng2) in enumerate(order_torque_calculation):
+            temp_torque[eng1] = 0
+        for num_mesh_tq, (eng1, eng2) in enumerate(order_torque_calculation):
             if eng1 in self.external_torques.keys():
 
-                temp_torque[eng1]+=self.external_torques[eng1]
-            if torque_graph[eng1][eng2]['typ']=='gear_mesh':
-                temp_torque[eng2]+=-temp_torque[eng1]*self.Z[eng2]/float(self.Z[eng1])
+                temp_torque[eng1] += self.external_torques[eng1]
+            if torque_graph[eng1][eng2]['typ'] == 'gear_mesh':
+                temp_torque[eng2] += -temp_torque[eng1]*self.Z[eng2]/float(self.Z[eng1])
             else:
-                temp_torque[eng2]+=temp_torque[eng1]
-        dic_torque={}
-        for num_mesh_tq,(eng1,eng2) in enumerate(order_torque_calculation):
-            dic_torque[(eng1,eng2)]=temp_torque[eng1]
+                temp_torque[eng2] += temp_torque[eng1]
+        dic_torque = {}
+        for num_mesh_tq, (eng1, eng2) in enumerate(order_torque_calculation):
+            dic_torque[(eng1, eng2)] = temp_torque[eng1]
         # calculation cycle distribution
-        dic_cycle=dict(self.cycles)
-        cycle_graph_dfs_list=[]
+        dic_cycle = dict(self.cycles)
+        cycle_graph_dfs_list = []
         for node_init in list(self.cycles.keys()):
-        
-        
-            cycle_graph_dfs=list(nx.dfs_edges(torque_graph,node_init))
+
+
+            cycle_graph_dfs = list(nx.dfs_edges(torque_graph, node_init))
             cycle_graph_dfs_list.append(cycle_graph_dfs)
         for cycle_graph_dfs in cycle_graph_dfs_list:
-            for num_mesh_cy,(eng1,eng2) in enumerate(cycle_graph_dfs):
+            for num_mesh_cy, (eng1, eng2) in enumerate(cycle_graph_dfs):
                 if not eng2 in list(dic_cycle.keys()):
-                    if torque_graph[eng1][eng2]['typ']=='gear_mesh':
-                        dic_cycle[eng2]=dic_cycle[eng1]*self.Z[eng1]/float(self.Z[eng2])
+                    if torque_graph[eng1][eng2]['typ'] == 'gear_mesh':
+                        dic_cycle[eng2] = dic_cycle[eng1]*self.Z[eng1]/float(self.Z[eng2])
                     else:
-                        dic_cycle[eng2]=dic_cycle[eng1]
-        return dic_torque,dic_cycle
+                        dic_cycle[eng2] = dic_cycle[eng1]
+        return dic_torque, dic_cycle
 
     def CondInit(self):
-        X0=[]
+        X0 = []
         for interval in self.Bounds:
             X0.append((interval[1]-interval[0])*float(npy.random.random(1))+interval[0])
         return X0
-    
+
     def CondInit_helix_angle(self):
-        X0=[]
-        
+        X0 = []
+
         for interval in self.Bounds_helix_angle:
             X0.append((interval[1]-interval[0])*float(npy.random.random(1))+interval[0])
         return X0
 
     def _convert_X2x(self, X):
-        optimizer_data={'center_distance':[],'transverse_pressure_angle':[],
-                 'coefficient_profile_shift':{},'transverse_pressure_angle_rack':{},
-                 'coeff_gear_addendum':{},'coeff_gear_dedendum':{},
-                 'coeff_root_radius':{},'coeff_circular_tooth_thickness':{},
-                 'helix_angle': {}} # dictionary of possibily/currently optimization data
+        optimizer_data = {'center_distance':[], 'transverse_pressure_angle':[],
+                          'coefficient_profile_shift':{}, 'transverse_pressure_angle_rack':{},
+                          'coeff_gear_addendum':{}, 'coeff_gear_dedendum':{},
+                          'coeff_root_radius':{}, 'coeff_circular_tooth_thickness':{},
+                          'helix_angle': {}} # dictionary of possibily/currently optimization data
         # copy and transfert data to the dictionary optimizer_data
 #        liste_transverse_pressure_angle=[]
-        for key,list_ind in self.dict_global.items():
+        for key, list_ind in self.dict_global.items():
             for num_elem in list_ind:
                 if key in ['coefficient_profile_shift']:
                     if num_elem in self.dict_unknown[key]:
-                        value = float(X[self._position_X(key,num_elem)])
+                        value = float(X[self._position_X(key, num_elem)])
                     else:
-                        value=self.coefficient_profile_shift[num_elem][0]
-                    optimizer_data[key][num_elem]=value
+                        value = self.coefficient_profile_shift[num_elem][0]
+                    optimizer_data[key][num_elem] = value
                 elif key in ['transverse_pressure_angle_rack',
-                             'coeff_gear_addendum','coeff_gear_dedendum',
-                             'coeff_root_radius','coeff_circular_tooth_thickness','helix_angle']:
+                             'coeff_gear_addendum', 'coeff_gear_dedendum',
+                             'coeff_root_radius', 'coeff_circular_tooth_thickness', 'helix_angle']:
                     if num_elem in self.dict_unknown[key]:
-                        value = float(X[self._position_X(key,num_elem)])
+                        value = float(X[self._position_X(key, num_elem)])
                     else:
-                        rack_dict={'transverse_pressure_angle_rack':self.rack_list[num_elem].transverse_pressure_angle_0,
-                                   'coeff_gear_addendum':self.rack_list[num_elem].coeff_gear_addendum,
-                                   'coeff_gear_dedendum':self.rack_list[num_elem].coeff_gear_dedendum,
-                                   'coeff_root_radius':self.rack_list[num_elem].coeff_root_radius,
-                                   'coeff_circular_tooth_thickness':self.rack_list[num_elem].coeff_circular_tooth_thickness,
-                                   'helix_angle':self.rack_list[num_elem].helix_angle}
+                        rack_dict = {'transverse_pressure_angle_rack':self.rack_list[num_elem].transverse_pressure_angle_0,
+                                     'coeff_gear_addendum':self.rack_list[num_elem].coeff_gear_addendum,
+                                     'coeff_gear_dedendum':self.rack_list[num_elem].coeff_gear_dedendum,
+                                     'coeff_root_radius':self.rack_list[num_elem].coeff_root_radius,
+                                     'coeff_circular_tooth_thickness':self.rack_list[num_elem].coeff_circular_tooth_thickness,
+                                     'helix_angle':self.rack_list[num_elem].helix_angle}
 
 
-                        value=rack_dict[key][0]
+                        value = rack_dict[key][0]
                     for num_engr in self.list_gear:
-                        if self.rack_choice[num_engr]==num_elem:
-                            optimizer_data[key][num_engr]=value
+                        if self.rack_choice[num_engr] == num_elem:
+                            optimizer_data[key][num_engr] = value
 
-        dict_db={} # temp storage of db dict
-        dict_df={} # temp storage of pitch diam
-        dict_cd={} # temp storage of center_distance
-        dict_tpa={} # temp storage of transversale_pressure_angle
+        dict_db = {} # temp storage of db dict
+        dict_df = {} # temp storage of pitch diam
+        dict_cd = {} # temp storage of center_distance
+        dict_tpa = {} # temp storage of transversale_pressure_angle
         for num_gear in self.dict_unknown['db']:
-            dict_db[num_gear] = float(X[self._position_X('db',num_gear)])
-            
-        for num_mesh in self.dict_unknown['transverse_pressure_angle']:
-            
-            dict_tpa[num_mesh] = float(X[self._position_X('transverse_pressure_angle',num_mesh)])
-        num_mesh=0
+            dict_db[num_gear] = float(X[self._position_X('db', num_gear)])
 
-        for num_cd,list_connection in enumerate(self.connections):
-            for num_mesh_iter,(eng1,eng2) in enumerate(list_connection):
-                if num_mesh_iter==0: # in this case we must define center_distance
+        for num_mesh in self.dict_unknown['transverse_pressure_angle']:
+
+            dict_tpa[num_mesh] = float(X[self._position_X('transverse_pressure_angle', num_mesh)])
+        num_mesh = 0
+
+        for num_cd, list_connection in enumerate(self.connections):
+            for num_mesh_iter, (eng1, eng2) in enumerate(list_connection):
+                if num_mesh_iter == 0: # in this case we must define center_distance
                     if eng1 in dict_db.keys():
                         if num_mesh in dict_tpa.keys():
-                            db2=abs((self.Z[eng2]/float(self.Z[eng1]))*dict_db[eng1])
+                            db2 = abs((self.Z[eng2]/float(self.Z[eng1]))*dict_db[eng1])
 
-                            dict_db[eng2]=db2
-                            dict_df[eng1]=dict_db[eng1]/math.cos(dict_tpa[num_mesh])
-                            dict_df[eng2]=db2/math.cos(dict_tpa[num_mesh])
+                            dict_db[eng2] = db2
+                            dict_df[eng1] = dict_db[eng1]/math.cos(dict_tpa[num_mesh])
+                            dict_df[eng2] = db2/math.cos(dict_tpa[num_mesh])
 
-                            if self.Z[eng1]<0:
-                                dict_cd[num_cd]=(dict_df[eng1]-dict_df[eng2])/2.
-                            elif self.Z[eng2]<0:
-                                dict_cd[num_cd]=(-dict_df[eng1]+dict_df[eng2])/2.
+                            if self.Z[eng1] < 0:
+                                dict_cd[num_cd] = (dict_df[eng1]-dict_df[eng2])/2.
+                            elif self.Z[eng2] < 0:
+                                dict_cd[num_cd] = (-dict_df[eng1]+dict_df[eng2])/2.
                             else:
-                                dict_cd[num_cd]=(dict_df[eng1]+dict_df[eng2])/2.
+                                dict_cd[num_cd] = (dict_df[eng1]+dict_df[eng2])/2.
 
 
                     elif eng2 in dict_db.keys():
                         if num_mesh in dict_tpa.keys():
-                            db1=abs(self.Z[eng1]/self.Z[eng2]*db2)
-                            dict_db[eng1]=db1
-                            dict_df[eng1]=db1/math.cos(dict_tpa[num_mesh])
-                            dict_df[eng2]=dict_db[eng2]/math.cos(dict_tpa[num_mesh])
-                            if self.Z[eng1]<0:
-                                dict_cd[num_cd]=(dict_df[eng1]-dict_df[eng2])/2.
-                            elif self.Z[eng2]<0:
-                                dict_cd[num_cd]=(-dict_df[eng1]+dict_df[eng2])/2.
+                            db1 = abs(self.Z[eng1]/self.Z[eng2]*db2)
+                            dict_db[eng1] = db1
+                            dict_df[eng1] = db1/math.cos(dict_tpa[num_mesh])
+                            dict_df[eng2] = dict_db[eng2]/math.cos(dict_tpa[num_mesh])
+                            if self.Z[eng1] < 0:
+                                dict_cd[num_cd] = (dict_df[eng1]-dict_df[eng2])/2.
+                            elif self.Z[eng2] < 0:
+                                dict_cd[num_cd] = (-dict_df[eng1]+dict_df[eng2])/2.
                             else:
-                                dict_cd[num_cd]=(dict_df[eng1]+dict_df[eng2])/2.
+                                dict_cd[num_cd] = (dict_df[eng1]+dict_df[eng2])/2.
 
                 else: # the center_distance is define
                     if eng1 in dict_db.keys():
-                        cd=dict_cd[num_cd]
-                        dict_db[eng2]=abs(self.Z[eng2]/float(self.Z[eng1])*dict_db[eng1])
-                        if self.Z[eng1]<0:
-                            dict_df[eng2]=2*cd*self.Z[eng2]/float(self.Z[eng1]-self.Z[eng2])
-                            dict_df[eng1]=2*cd+dict_df[eng2]
-                        elif self.Z[eng2]<0:
-                            dict_df[eng2]=2*cd*self.Z[eng2]/float(-self.Z[eng1]+self.Z[eng2])
-                            dict_df[eng1]=-2*cd+dict_df[eng2]
+                        cd = dict_cd[num_cd]
+                        dict_db[eng2] = abs(self.Z[eng2]/float(self.Z[eng1])*dict_db[eng1])
+                        if self.Z[eng1] < 0:
+                            dict_df[eng2] = 2*cd*self.Z[eng2]/float(self.Z[eng1]-self.Z[eng2])
+                            dict_df[eng1] = 2*cd+dict_df[eng2]
+                        elif self.Z[eng2] < 0:
+                            dict_df[eng2] = 2*cd*self.Z[eng2]/float(-self.Z[eng1]+self.Z[eng2])
+                            dict_df[eng1] = -2*cd+dict_df[eng2]
                         else:
-                            dict_df[eng2]=2*cd*self.Z[eng2]/float(self.Z[eng1]+self.Z[eng2])
-                            dict_df[eng1]=2*cd-dict_df[eng2]
-                        dict_tpa[num_mesh]=math.acos(dict_db[eng2]/float(dict_df[eng2]))
+                            dict_df[eng2] = 2*cd*self.Z[eng2]/float(self.Z[eng1]+self.Z[eng2])
+                            dict_df[eng1] = 2*cd-dict_df[eng2]
+                        dict_tpa[num_mesh] = math.acos(dict_db[eng2]/float(dict_df[eng2]))
                     elif eng2 in dict_db.keys():
-                        cd=dict_cd[num_cd]
-                        dict_db[eng1]=abs(self.Z[eng1]/float(self.Z[eng2])*dict_db[eng2])
-                        if self.Z[eng1]<0:
-                            dict_df[eng1]=2*cd*self.Z[eng1]/float(self.Z[eng1]-self.Z[eng2])
-                            dict_df[eng2]=-2*cd+dict_df[eng1]
-                        elif self.Z[eng2]<0:
-                            dict_df[eng1]=2*cd*self.Z[eng1]/float(-self.Z[eng1]+self.Z[eng2])
-                            dict_df[eng2]=2*cd+dict_df[eng1]
+                        cd = dict_cd[num_cd]
+                        dict_db[eng1] = abs(self.Z[eng1]/float(self.Z[eng2])*dict_db[eng2])
+                        if self.Z[eng1] < 0:
+                            dict_df[eng1] = 2*cd*self.Z[eng1]/float(self.Z[eng1]-self.Z[eng2])
+                            dict_df[eng2] = -2*cd+dict_df[eng1]
+                        elif self.Z[eng2] < 0:
+                            dict_df[eng1] = 2*cd*self.Z[eng1]/float(-self.Z[eng1]+self.Z[eng2])
+                            dict_df[eng2] = 2*cd+dict_df[eng1]
                         else:
-                            dict_df[eng1]=2*cd*self.Z[eng1]/float(self.Z[eng1]+self.Z[eng2])
-                            dict_df[eng2]=2*cd-dict_df[eng1]
-                        dict_tpa[num_mesh]=math.arccos(dict_db[eng1]/dict_df[eng1])
+                            dict_df[eng1] = 2*cd*self.Z[eng1]/float(self.Z[eng1]+self.Z[eng2])
+                            dict_df[eng2] = 2*cd-dict_df[eng1]
+                        dict_tpa[num_mesh] = math.arccos(dict_db[eng1]/dict_df[eng1])
                     elif num_mesh in dict_tpa.keys():
-                        cd=dict_cd[num_cd]
-                        dict_df[eng2]=2*cd*self.Z[eng2]/float(self.Z[eng1]+self.Z[eng2])
-                        dict_df[eng1]=2*cd-dict_df[eng2]
-                        dict_db[eng1]=dict_df[eng1]*math.cos(dict_tpa[num_mesh])
-                        dict_db[eng2]=dict_df[eng2]*math.cos(dict_tpa[num_mesh])
+                        cd = dict_cd[num_cd]
+                        dict_df[eng2] = 2*cd*self.Z[eng2]/float(self.Z[eng1]+self.Z[eng2])
+                        dict_df[eng1] = 2*cd-dict_df[eng2]
+                        dict_db[eng1] = dict_df[eng1]*math.cos(dict_tpa[num_mesh])
+                        dict_db[eng2] = dict_df[eng2]*math.cos(dict_tpa[num_mesh])
                     else:
-                        cd=dict_cd[num_cd]
+                        cd = dict_cd[num_cd]
                         try:
-                            dict_db[eng2]=self.Z[eng2]/float(self.Z[eng1])*dict_db[eng1]
+                            dict_db[eng2] = self.Z[eng2]/float(self.Z[eng1])*dict_db[eng1]
                         except:# TODO!!!!!!
-                            dict_db[eng1]=self.Z[eng1]/float(self.Z[eng2])*dict_db[eng2]
-                        dict_df[eng2]=2*cd*self.Z[eng2]/float(self.Z[eng1]+self.Z[eng2])
-                        dict_df[eng1]=2*cd-dict_df[eng2]
-                        dict_tpa[num_mesh]=math.arccos(dict_db[eng1]/dict_df[eng1])
-                num_mesh+=1
-        num_mesh=0
+                            dict_db[eng1] = self.Z[eng1]/float(self.Z[eng2])*dict_db[eng2]
+                        dict_df[eng2] = 2*cd*self.Z[eng2]/float(self.Z[eng1]+self.Z[eng2])
+                        dict_df[eng1] = 2*cd-dict_df[eng2]
+                        dict_tpa[num_mesh] = math.arccos(dict_db[eng1]/dict_df[eng1])
+                num_mesh += 1
+        num_mesh = 0
 
-        for num_cd,list_connection in enumerate(self.connections):
+        for num_cd, list_connection in enumerate(self.connections):
 #            print('optimizer_data {} dict_cd {} num_cd {}'.format(optimizer_data, dict_cd, num_cd))
-           
+
             optimizer_data['center_distance'].append(dict_cd[num_cd])
 
-            for num_mesh_iter,(eng1,eng2) in enumerate(list_connection):
+            for num_mesh_iter, (eng1, eng2) in enumerate(list_connection):
                 optimizer_data['transverse_pressure_angle'].append(dict_tpa[num_mesh])
-                num_mesh+=1
+                num_mesh += 1
 
         return optimizer_data
 
-    def _position_X(self,key,indice):
+    def _position_X(self, key, indice):
         # search of the position in the vector X of the data define by (key,indice) in dict_global
-        position=0
+        position = 0
         for evol_key in self.list_order_unknown:
-            val=self.dict_unknown[evol_key]
-            if evol_key!=key:
-                position+=len(val)
+            val = self.dict_unknown[evol_key]
+            if evol_key != key:
+                position += len(val)
             else:
                 break
         for ind in val:
-            if ind!=indice:
-                position+=1
+            if ind != indice:
+                position += 1
             else:
                 break
         return position
 
-    def update(self,X):
+    def update(self, X):
 
         optimizer_data = self._convert_X2x(X)
-        optimizer_data['total_contact_ratio_min']=self.total_contact_ratio_min
-        optimizer_data['transverse_contact_ratio_min']=self.transverse_contact_ratio_min
+        optimizer_data['total_contact_ratio_min'] = self.total_contact_ratio_min
+        optimizer_data['transverse_contact_ratio_min'] = self.transverse_contact_ratio_min
         _ = self.mesh_assembly.update(optimizer_data)
         return optimizer_data
-    
-    def update_helix_angle(self,X):
 
-        optimizer_data = {'helix_angle':{} }
-        
-        for i,helix_angle in enumerate(X):
+    def update_helix_angle(self, X):
+
+        optimizer_data = {'helix_angle':{}}
+
+        for i, helix_angle in enumerate(X):
             for num_eng in self.list_gear_rack[i]:
-                optimizer_data['helix_angle'][num_eng]=helix_angle
-        optimizer_data['total_contact_ratio_min']=self.total_contact_ratio_min
-        optimizer_data['transverse_contact_ratio_min']=self.transverse_contact_ratio_min
+                optimizer_data['helix_angle'][num_eng] = helix_angle
+        optimizer_data['total_contact_ratio_min'] = self.total_contact_ratio_min
+        optimizer_data['transverse_contact_ratio_min'] = self.transverse_contact_ratio_min
         _ = self.mesh_assembly.update_helix_angle(optimizer_data)
         return optimizer_data
 
-    def Fineq(self,X,constraints_root_diameter,list_CA_min,constraints_SAP_diameter,distances_SAP_root_diameter_active_min):
+    def Fineq(self, X, constraints_root_diameter, list_CA_min, constraints_SAP_diameter, distances_SAP_root_diameter_active_min):
 
         _ = self.update(X)
-        ineq=[]
-        
-        for num_mesh_combination,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
-            
-            total_contact_ratio_min={}
-            transverse_contact_ratio_min={}
-            
-            for (eng1,eng2) in mesh_assembly_iter.connections:
-                mesh_assignation=(self.mesh_assembly.dico_gear_match_inverse[(eng1,num_mesh_combination)],
-                                  self.mesh_assembly.dico_gear_match_inverse[(eng2,num_mesh_combination)])
-                if mesh_assignation in self.total_contact_ratio_min:   
-                    total_contact_ratio_min[(eng1,eng2)]=self.total_contact_ratio_min[mesh_assignation]
+        ineq = []
+
+        for num_mesh_combination, mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
+
+            total_contact_ratio_min = {}
+            transverse_contact_ratio_min = {}
+
+            for (eng1, eng2) in mesh_assembly_iter.connections:
+                mesh_assignation = (self.mesh_assembly.dico_gear_match_inverse[(eng1, num_mesh_combination)],
+                                    self.mesh_assembly.dico_gear_match_inverse[(eng2, num_mesh_combination)])
+                if mesh_assignation in self.total_contact_ratio_min:
+                    total_contact_ratio_min[(eng1, eng2)] = self.total_contact_ratio_min[mesh_assignation]
                 else:
-                    total_contact_ratio_min[(eng1,eng2)]=0
-            
+                    total_contact_ratio_min[(eng1, eng2)] = 0
+
                 if mesh_assignation in self.transverse_contact_ratio_min:
-                    transverse_contact_ratio_min[(eng1,eng2)]=self.transverse_contact_ratio_min[mesh_assignation]
+                    transverse_contact_ratio_min[(eng1, eng2)] = self.transverse_contact_ratio_min[mesh_assignation]
                 else:
-                    transverse_contact_ratio_min[(eng1,eng2)]=0
-            ineq.extend(mesh_assembly_iter.liste_ineq(total_contact_ratio_min,transverse_contact_ratio_min))
+                    transverse_contact_ratio_min[(eng1, eng2)] = 0
+            ineq.extend(mesh_assembly_iter.liste_ineq(total_contact_ratio_min, transverse_contact_ratio_min))
             # print(25)
             # print(ineq[-1])
             # print(ineq[-2])
-                
-            
+
+
             #geometric constraint
-            for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
-                mesh_assignation=(self.mesh_assembly.dico_gear_match_inverse[(eng1,num_mesh_combination)],
-                                  self.mesh_assembly.dico_gear_match_inverse[(eng2,num_mesh_combination)])
-                dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
-                dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
-                dia1_root=mesh_assembly_iter.meshes_dico[engr1].root_diameter
-                dia2_root=mesh_assembly_iter.meshes_dico[engr2].root_diameter
-                
-                Z1=self.Z[engr1]
-                Z2=self.Z[engr2]
-            
-                
-                d_sap_root=0
+            for num_mesh, (engr1, engr2) in enumerate(mesh_assembly_iter.connections):
+                mesh_assignation = (self.mesh_assembly.dico_gear_match_inverse[(eng1, num_mesh_combination)],
+                                    self.mesh_assembly.dico_gear_match_inverse[(eng2, num_mesh_combination)])
+                dia1 = mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
+                dia2 = mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
+                dia1_root = mesh_assembly_iter.meshes_dico[engr1].root_diameter
+                dia2_root = mesh_assembly_iter.meshes_dico[engr2].root_diameter
+
+                Z1 = self.Z[engr1]
+                Z2 = self.Z[engr2]
+
+
+                d_sap_root = 0
                 if distances_SAP_root_diameter_active_min:
                     if distances_SAP_root_diameter_active_min[mesh_assignation]:
-                        d_sap_root=distances_SAP_root_diameter_active_min[mesh_assignation]
-              
+                        d_sap_root = distances_SAP_root_diameter_active_min[mesh_assignation]
+
                 if constraints_SAP_diameter:
                     if constraints_SAP_diameter[mesh_assignation]:
-                        
-     
-                        SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][0]
-                        SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][1]
-                        
-                        if Z1<0:
+
+
+                        SAP1 = mesh_assembly_iter.SAP_diameter[num_mesh][0]
+                        SAP2 = mesh_assembly_iter.SAP_diameter[num_mesh][1]
+
+                        if Z1 < 0:
                             ineq.append((-SAP1+dia1-d_sap_root)*100)
                         else:
                             ineq.append((SAP1-dia1-d_sap_root)*100)
-                        if Z2<0:
+                        if Z2 < 0:
                             ineq.append((-SAP2+dia2-d_sap_root)*100)
                         else:
                             ineq.append((SAP2-dia2-d_sap_root)*100)
-                        
-                Ca_min=0
-                
+
+                Ca_min = 0
+
                 if list_CA_min:
                     if list_CA_min[mesh_assignation]:
-                        Ca_min=list_CA_min[mesh_assignation]*mesh_assembly_iter.meshes_dico[engr1].rack.module
-             
-                
-                de1=mesh_assembly_iter.meshes_dico[engr1].outside_diameter
-                de2=mesh_assembly_iter.meshes_dico[engr2].outside_diameter
-                cd=mesh_assembly_iter.center_distance[num_mesh]
-                
-                if Z2<0:
+                        Ca_min = list_CA_min[mesh_assignation]*mesh_assembly_iter.meshes_dico[engr1].rack.module
+
+
+                de1 = mesh_assembly_iter.meshes_dico[engr1].outside_diameter
+                de2 = mesh_assembly_iter.meshes_dico[engr2].outside_diameter
+                cd = mesh_assembly_iter.center_distance[num_mesh]
+
+                if Z2 < 0:
                     ineq.append(cd- 0.5*(de1-dia2))
                     ineq.append(cd- 0.5*(-de2+dia1))
-                    
+
                     if constraints_root_diameter:
-                    
+
                         if constraints_root_diameter[num_mesh]:
-                            
-                            
-                            
+
+
+
                             ineq.append((cd- 0.5*(de1-dia2_root)-Ca_min))
                             ineq.append((cd- 0.5*(-de2+dia1_root)-Ca_min))
-                    
-                    
-                elif Z1<0:
+
+
+                elif Z1 < 0:
                     ineq.append(cd- 0.5*(-de1+dia2))
                     ineq.append(cd- 0.5*(de2-dia1))
-                        
+
                     if constraints_root_diameter:
-                    
+
                         if constraints_root_diameter[mesh_assignation]:
-                            
-                            
-                            
+
+
+
                             ineq.append((cd- 0.5*(-de1+dia2_root)-Ca_min))
                             ineq.append((cd- 0.5*(de2-dia1_root)-Ca_min))
                 else:
                     ineq.append((cd- 0.5*(de1+dia2))+0.001)
                     ineq.append((cd- 0.5*(de2+dia1))+0.001)
-                    
+
                     if constraints_root_diameter:
-                    
+
                         if constraints_root_diameter[mesh_assignation]:
-                            
-                            
-                            
+
+
+
                             ineq.append((cd- 0.5*(de1+dia2_root)-Ca_min))
                             ineq.append((cd- 0.5*(de2+dia1_root)-Ca_min))
-                           
-                        
-                
-                  
-                   
-                
-                oaa1=mesh_assembly_iter.meshes_dico[engr1].outside_active_angle
-                oaa2=mesh_assembly_iter.meshes_dico[engr2].outside_active_angle
+
+
+
+
+
+
+                oaa1 = mesh_assembly_iter.meshes_dico[engr1].outside_active_angle
+                oaa2 = mesh_assembly_iter.meshes_dico[engr2].outside_active_angle
                 ineq.append(oaa1)
                 ineq.append(oaa2)
-                
-                df1=abs(mesh_assembly_iter.DF[num_mesh][0])
-                df2=abs(mesh_assembly_iter.DF[num_mesh][1])
-                db1=abs(mesh_assembly_iter.meshes_dico[engr1].db)
-                db2=abs(mesh_assembly_iter.meshes_dico[engr2].db)
-                
+
+                df1 = abs(mesh_assembly_iter.DF[num_mesh][0])
+                df2 = abs(mesh_assembly_iter.DF[num_mesh][1])
+                db1 = abs(mesh_assembly_iter.meshes_dico[engr1].db)
+                db2 = abs(mesh_assembly_iter.meshes_dico[engr2].db)
+
                 ineq.append(df1-db1)
                 ineq.append(df2-db2)
-       
-               
+
+
         return ineq
-    def Fineq_constraint(self,X):
+    def Fineq_constraint(self, X):
 
         _ = self.update(X)
-        ineq=[]
-        for num_mesh,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
-            
-            
+        ineq = []
+        for num_mesh, mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
 
-                
-            
+
+
+
+
             #geometric constraint
-            for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
-                
-                
-                
-                
-                
-                oaa1=mesh_assembly_iter.meshes_dico[engr1].outside_active_angle
-                oaa2=mesh_assembly_iter.meshes_dico[engr2].outside_active_angle
+            for num_mesh, (engr1, engr2) in enumerate(mesh_assembly_iter.connections):
+
+
+
+
+
+                oaa1 = mesh_assembly_iter.meshes_dico[engr1].outside_active_angle
+                oaa2 = mesh_assembly_iter.meshes_dico[engr2].outside_active_angle
                 ineq.append(oaa1)
                 ineq.append(oaa2)
-                
-                df1=abs(mesh_assembly_iter.DF[num_mesh][0])
-                df2=abs(mesh_assembly_iter.DF[num_mesh][1])
-                db1=abs(mesh_assembly_iter.meshes_dico[engr1].db)
-                db2=abs(mesh_assembly_iter.meshes_dico[engr2].db)
-                
+
+                df1 = abs(mesh_assembly_iter.DF[num_mesh][0])
+                df2 = abs(mesh_assembly_iter.DF[num_mesh][1])
+                db1 = abs(mesh_assembly_iter.meshes_dico[engr1].db)
+                db2 = abs(mesh_assembly_iter.meshes_dico[engr2].db)
+
                 ineq.append(df1-db1)
                 ineq.append(df2-db2)
-                
-                
+
+
 
             # modulus constraint (not in the open-source part because this parameter is not a ddl)
-            for ne,gs in enumerate(mesh_assembly_iter.connections):
+            for ne, gs in enumerate(mesh_assembly_iter.connections):
                 for g in gs:
-                    
-                    mo=mesh_assembly_iter.meshes_dico[g].rack.module
-                    list_module=self.rack_list[self.rack_choice[g]].module
+
+                    mo = mesh_assembly_iter.meshes_dico[g].rack.module
+                    list_module = self.rack_list[self.rack_choice[g]].module
                     ineq.append(abs(mo)-list_module[0])
                     ineq.append(list_module[1]-abs(mo))
-                    
+
 
             # center-distance constraint (not in the open-source part because this parameter is not a ddl)
-            for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
-                cd=mesh_assembly_iter.center_distance[num_mesh]
-                limit_cd=self.center_distances[num_mesh]
+            for num_mesh, (engr1, engr2) in enumerate(mesh_assembly_iter.connections):
+                cd = mesh_assembly_iter.center_distance[num_mesh]
+                limit_cd = self.center_distances[num_mesh]
 
                 ineq.append(abs(cd)-limit_cd[0])
                 ineq.append(limit_cd[1]-abs(cd))
 
 
-     
+
         return ineq
 
-    def Objective(self,X,constraints_root_diameter,list_CA_min,
+    def Objective(self, X, constraints_root_diameter, list_CA_min,
                   constraints_SAP_diameter,
                   distances_SAP_root_diameter_active_min):
         _ = self.update(X)
-        fineq=self.Fineq(X,constraints_root_diameter,list_CA_min,
-                         constraints_SAP_diameter,
-                         distances_SAP_root_diameter_active_min)
-        obj=0
-        
+        fineq = self.Fineq(X, constraints_root_diameter, list_CA_min,
+                           constraints_SAP_diameter,
+                           distances_SAP_root_diameter_active_min)
+        obj = 0
+
         # for num_mesh,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
         #     total_contact_ratio_min=1
         #     for match in self.mesh_assembly.num_gear_match:
@@ -725,63 +725,64 @@ class ContinuousMeshesAssemblyOptimizer:
         #             break
         #     if self.total_contact_ratio_min[num_gear]:
         #         total_contact_ratio_min=self.total_contact_ratio_min[num_gear]
-           
+
             # obj+=mesh_assembly_iter.functional(total_contact_ratio_min)
-            
+
         # maximization of the gear modulus
-        for ne,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
+        for ne, mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
             for gs in mesh_assembly_iter.connections:
                 for g in gs:
-                    mo=mesh_assembly_iter.meshes_dico[g].rack.module
-                    list_module=self.rack_list[self.rack_choice[g]].module
-                    if list_module[0]<list_module[1]:
-                        obj+=100*(list_module[1]-mo)**2
-                        
+                    mo = mesh_assembly_iter.meshes_dico[g].rack.module
+                    list_module = self.rack_list[self.rack_choice[g]].module
+                    if list_module[0] < list_module[1]:
+                        obj += 100*(list_module[1]-mo)**2
+
         # Minimisation of center-distance on the minimum bound specified
-        
-        for num_engr,list_cd in enumerate(self.center_distances):
-            obj+=100*(abs(list_cd[0]-self.mesh_assembly.center_distance[num_engr]))
-            
-        
+
+        for num_engr, list_cd in enumerate(self.center_distances):
+            obj += 100*(abs(list_cd[0]-self.mesh_assembly.center_distance[num_engr]))
+
+
         for i in fineq:
             if i < 0:
-                
-                obj+=10000*abs(i)
-                
-                
+
+                obj += 10000*abs(i)
+
+
             else:
-                obj+=0.000001*i
-        
-       
+                obj += 0.000001*i
+
+
         return obj
-    
-    
-        
-    def Objective_helix_angle(self,helix_angle):
-        
+
+
+
+    def Objective_helix_angle(self, helix_angle):
+
         self.update_helix_angle(helix_angle)
-        obj=0
-        
-        for num_mesh,mesh_combination in enumerate(self.mesh_assembly.mesh_combinations):
-            for i,value in enumerate(mesh_combination.axial_contact_ratio):
+        obj = 0
+
+        for num_mesh, mesh_combination in enumerate(self.mesh_assembly.mesh_combinations):
+            for i, value in enumerate(mesh_combination.axial_contact_ratio):
                 connection = mesh_combination.connections[i]
-                mesh_assignation=(self.mesh_assembly.dico_gear_match_inverse[(connection[0],num_mesh)],
-                                  self.mesh_assembly.dico_gear_match_inverse[(connection[1],num_mesh)]) 
-                obj+=((self.axial_contact_ratio[mesh_assignation]-value)*1e2)**2
-                
-            for i,value in enumerate(mesh_combination.total_contact_ratio):
+                mesh_assignation = (self.mesh_assembly.dico_gear_match_inverse[(connection[0], num_mesh)],
+                                    self.mesh_assembly.dico_gear_match_inverse[(connection[1], num_mesh)])
+                obj += ((self.axial_contact_ratio[mesh_assignation]-value)*1e2)**2
+
+            for i, value in enumerate(mesh_combination.total_contact_ratio):
                 connection = mesh_combination.connections[i]
-                mesh_assignation=(self.mesh_assembly.dico_gear_match_inverse[(connection[0],num_mesh)],
-                                  self.mesh_assembly.dico_gear_match_inverse[(connection[1],num_mesh)]) 
-                
-                if value<self.total_contact_ratio_min[mesh_assignation]:
-                    obj+=((self.total_contact_ratio_min[mesh_assignation]-value)*1e2)**2
-                
+                mesh_assignation = (self.mesh_assembly.dico_gear_match_inverse[(connection[0], num_mesh)],
+                                    self.mesh_assembly.dico_gear_match_inverse[(connection[1], num_mesh)])
+
+                if value < self.total_contact_ratio_min[mesh_assignation]:
+                    obj += ((self.total_contact_ratio_min[mesh_assignation]-value)*1e2)**2
+
             for key in mesh_combination.axial_load.keys():
-                obj+=abs(mesh_combination.axial_load[key]*5e-5)
-       
+                obj += abs(mesh_combination.axial_load[key]*5e-5)
+
         return obj
-    def Optimize(self, verbose = False, constraints_root_diameter=None,list_CA_min=None,constraints_SAP_diameter=None,distances_SAP_root_diameter_active_min=None):
+    def Optimize(self, verbose=False, constraints_root_diameter=None, list_CA_min=None,
+                 constraints_SAP_diameter=None, distances_SAP_root_diameter_active_min=None):
         """ Optimizer function
 
         >>> cmao1.Optimize(verbose = True)
@@ -794,137 +795,137 @@ class ContinuousMeshesAssemblyOptimizer:
 
         i = 0
         arret = 0
-       
+
         while i < max_iter and arret == 0:
             X0 = self.CondInit()
             _ = self.update(X0)
-          
-            cons = {'type': 'ineq','fun' : self.Fineq_constraint}
-            
-            
-           
+
+            cons = {'type': 'ineq', 'fun' : self.Fineq_constraint}
+
+
+
             min_x = []
             max_x = []
             for i in range(len(self.Bounds)):
                 min_x.append(self.Bounds[i][0])
                 max_x.append(self.Bounds[i][1])
-           
-            
+
+
             # x=cma.fmin(self.Objective, X0, 1*10e-4,args=(constraint_root_diameter,CA_min), options={'bounds':[min_x, max_x],'tolfun':1e-15,'maxiter': 200})[0:2]
-            
-           
-            
-           
-            
+
+
+
+
+
             try:
-            
-            
-                                                                                                                                           
-                cx = minimize(self.Objective, X0, bounds=self.Bounds,constraints=cons,
-                              args=(constraints_root_diameter,list_CA_min,constraints_SAP_diameter,
+
+
+
+                cx = minimize(self.Objective, X0, bounds=self.Bounds, constraints=cons,
+                              args=(constraints_root_diameter, list_CA_min, constraints_SAP_diameter,
                                     distances_SAP_root_diameter_active_min))
-                
+
                 _ = self.update(cx.x)
-                
-                       
-                
-                valid=True
-                for num_mesh_combination,mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
-                    
-                    
-                    for num_mesh,(engr1,engr2) in enumerate(mesh_assembly_iter.connections):
-                        mesh_assignation=(self.mesh_assembly.dico_gear_match_inverse[(engr1,num_mesh_combination)],
-                                          self.mesh_assembly.dico_gear_match_inverse[(engr2,num_mesh_combination)]) 
-                        dia1=mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
-                        dia2=mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
-                        dia1_root=mesh_assembly_iter.meshes_dico[engr1].root_diameter
-                        dia2_root=mesh_assembly_iter.meshes_dico[engr2].root_diameter
-                        
-                        Z1=self.Z[engr1]
-                        Z2=self.Z[engr2]
-                    
-                        
-                        d_sap_root=0
+
+
+
+                valid = True
+                for num_mesh_combination, mesh_assembly_iter in enumerate(self.mesh_assembly.mesh_combinations):
+
+
+                    for num_mesh, (engr1, engr2) in enumerate(mesh_assembly_iter.connections):
+                        mesh_assignation = (self.mesh_assembly.dico_gear_match_inverse[(engr1, num_mesh_combination)],
+                                            self.mesh_assembly.dico_gear_match_inverse[(engr2, num_mesh_combination)])
+                        dia1 = mesh_assembly_iter.meshes_dico[engr1].root_diameter_active
+                        dia2 = mesh_assembly_iter.meshes_dico[engr2].root_diameter_active
+                        dia1_root = mesh_assembly_iter.meshes_dico[engr1].root_diameter
+                        dia2_root = mesh_assembly_iter.meshes_dico[engr2].root_diameter
+
+                        Z1 = self.Z[engr1]
+                        Z2 = self.Z[engr2]
+
+
+                        d_sap_root = 0
                         if distances_SAP_root_diameter_active_min:
                             if distances_SAP_root_diameter_active_min[mesh_assignation]:
-                                d_sap_root=distances_SAP_root_diameter_active_min[mesh_assignation]
-                      
+                                d_sap_root = distances_SAP_root_diameter_active_min[mesh_assignation]
+
                         if constraints_SAP_diameter:
                             if constraints_SAP_diameter[mesh_assignation]:
-                                
-             
-                                SAP1=mesh_assembly_iter.SAP_diameter[num_mesh][0]
-                                SAP2=mesh_assembly_iter.SAP_diameter[num_mesh][1]
-                                
-                                if Z1<0:
-                                    if (-SAP1+dia1-d_sap_root)<0:
-                                        valid=False
+
+
+                                SAP1 = mesh_assembly_iter.SAP_diameter[num_mesh][0]
+                                SAP2 = mesh_assembly_iter.SAP_diameter[num_mesh][1]
+
+                                if Z1 < 0:
+                                    if (-SAP1+dia1-d_sap_root) < 0:
+                                        valid = False
                                 else:
-                                    if (SAP1-dia1-d_sap_root)<0:
-                                        valid=False
-                                if Z2<0:
-                                    if (-SAP2+dia2-d_sap_root)<0:
-                                        valid=False
+                                    if (SAP1-dia1-d_sap_root) < 0:
+                                        valid = False
+                                if Z2 < 0:
+                                    if (-SAP2+dia2-d_sap_root) < 0:
+                                        valid = False
                                 else:
-                                    if (SAP2-dia2-d_sap_root)<0:
-                                        valid=False
-                                
-                        Ca_min=0
-                        
+                                    if (SAP2-dia2-d_sap_root) < 0:
+                                        valid = False
+
+                        Ca_min = 0
+
                         if list_CA_min:
                             if list_CA_min[mesh_assignation]:
-                                Ca_min=list_CA_min[mesh_assignation]*mesh_assembly_iter.meshes_dico[engr1].rack.module
-                     
-                        
-                        de1=mesh_assembly_iter.meshes_dico[engr1].outside_diameter
-                        de2=mesh_assembly_iter.meshes_dico[engr2].outside_diameter
-                        cd=mesh_assembly_iter.center_distance[num_mesh]
-                        
-                        if Z2<0:
-                    
-                            
+                                Ca_min = list_CA_min[mesh_assignation]*mesh_assembly_iter.meshes_dico[engr1].rack.module
+
+
+                        de1 = mesh_assembly_iter.meshes_dico[engr1].outside_diameter
+                        de2 = mesh_assembly_iter.meshes_dico[engr2].outside_diameter
+                        cd = mesh_assembly_iter.center_distance[num_mesh]
+
+                        if Z2 < 0:
+
+
                             if constraints_root_diameter:
-                            
+
                                 if constraints_root_diameter[mesh_assignation]:
-                                    
-                                    
-                                    
-                                    if (cd- 0.5*(de1-dia2_root)-Ca_min)<0 or (cd- 0.5*(-de2+dia1_root)-Ca_min)<0:
-                                        valid=False
-                            
-                            
-                        elif Z1<0:
-                            
-                                
+
+
+
+                                    if (cd- 0.5*(de1-dia2_root)-Ca_min) < 0 or (cd- 0.5*(-de2+dia1_root)-Ca_min) < 0:
+                                        valid = False
+
+
+                        elif Z1 < 0:
+
+
                             if constraints_root_diameter:
-                            
+
                                 if constraints_root_diameter[mesh_assignation]:
-                                    
-                                    
-                                    
-                                    if (cd- 0.5*(-de1+dia2_root)-Ca_min)<0 or (cd- 0.5*(de2-dia1_root)-Ca_min)<0:
-                                        valid=False
+
+
+
+                                    if (cd- 0.5*(-de1+dia2_root)-Ca_min) < 0 or (cd- 0.5*(de2-dia1_root)-Ca_min) < 0:
+                                        valid = False
                         else:
 
-                            
-                            if constraints_root_diameter:
-                            
-                                if constraints_root_diameter[mesh_assignation]:
-                                    
-                                    
-                                    
-                                    if (cd- 0.5*(de1+dia2_root)-Ca_min)<0 or (cd- 0.5*(de2+dia1_root)-Ca_min)<0:
-                                        valid=False
-                        
-                        
-                       
-                        
-                       
-                        
 
-                        
+                            if constraints_root_diameter:
+
+                                if constraints_root_diameter[mesh_assignation]:
+
+
+
+                                    if (cd- 0.5*(de1+dia2_root)-Ca_min) < 0 or (cd- 0.5*(de2+dia1_root)-Ca_min) < 0:
+                                        valid = False
+
+
+
+
+
+
+
+
             except ValidGearDiameterError:
-            
+
                 i += 1
                 continue
             Xsol = cx.x
@@ -934,98 +935,98 @@ class ContinuousMeshesAssemblyOptimizer:
             #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
             #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
 
-            
-            if min(self.Fineq(Xsol,constraints_root_diameter, list_CA_min,
+
+            if min(self.Fineq(Xsol, constraints_root_diameter, list_CA_min,
                               constraints_SAP_diameter, distances_SAP_root_diameter_active_min)) > -1e-3: #TODO
-               
+
                 if valid:
                     input_dat = dict(list(output_x.items())+list(self.general_data.items()))
-                    
-                    
+
+
                 # print('velid')
                 # for num_engr,list_cd in enumerate(self.center_distances):
                 #     print(self.mesh_assembly.center_distance[num_engr])
                 #     print(list_cd[0]-self.mesh_assembly.center_distance[num_engr])
-                
+
                     arret = 1
             i += 1
-            
-            
+
+
         if arret:
             if self.Bounds_helix_angle:
                 X0 = self.CondInit_helix_angle()
                 _ = self.update_helix_angle(X0)
-                
-                
+
+
                 cx = minimize(self.Objective_helix_angle, X0, bounds=self.Bounds_helix_angle)
-        
-               
+
+
                 Xsol = cx.x
-        
+
                 output_x = self.update_helix_angle(Xsol)
                 # if verbose:
                 #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
                 #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
-        
-        
-                       
-                       
+
+
+
+
                 input_dat['helix_angle'] = output_x['helix_angle']
-            
+
             self.solutions.append(MeshAssembly.create(**input_dat))
-            
-           
-            
-            
-      
+
+
+
+
+
 
 
 class MeshAssemblyOptimizer(DessiaObject):
 
     def _get_graph_dfs(self):
         if not self._drap_sub_graph_dfs:
-            _graph_dfs,_=gear_graph_simple(self.connections)
-            self._drap_sub_graph_dfs=True
-            self.__cache_drap_sub_graph_dfs=_graph_dfs
+            _graph_dfs, _ = gear_graph_simple(self.connections)
+            self._drap_sub_graph_dfs = True
+            self.__cache_drap_sub_graph_dfs = _graph_dfs
             return _graph_dfs
         else:
             return self.__cache_drap_sub_graph_dfs
-    sub_graph_dfs=property(_get_graph_dfs)
+    sub_graph_dfs = property(_get_graph_dfs)
 
     def _get_list_gear(self):
         if not self._drap_list_gear:
-            _,_list_gear=gear_graph_simple(self.connections)
-            self._drap_list_gear=True
-            self.__cache_drap_list_gear=_list_gear
+            _, _list_gear = gear_graph_simple(self.connections)
+            self._drap_list_gear = True
+            self.__cache_drap_list_gear = _list_gear
             return _list_gear
         else:
             return self.__cache_drap_list_gear
-    list_gear=property(_get_list_gear)
+    list_gear = property(_get_list_gear)
 
     def _get_gear_graph(self):
         if not self._drap_gear_graph:
-            _,_,_gear_graph=gear_graph_complex(self.connections,self.rigid_links)
-            self._drap_gear_graph=True
-            self.__cache_gear_graph=_gear_graph
+            _, _, _gear_graph = gear_graph_complex(self.connections, self.rigid_links)
+            self._drap_gear_graph = True
+            self.__cache_gear_graph = _gear_graph
             return _gear_graph
         else:
             return self.__cache_gear_graph
-    gear_graph=property(_get_gear_graph)
+    gear_graph = property(_get_gear_graph)
 
     def _get_connections_dfs(self):
-        _connections_dfs,_,_=gear_graph_complex(self.connections,self.rigid_links)
+        _connections_dfs, _, _ = gear_graph_complex(self.connections, self.rigid_links)
         return _connections_dfs
-    connections_dfs=property(_get_connections_dfs)
+    connections_dfs = property(_get_connections_dfs)
 
     def _get_connections_kinematic_dfs(self):
         if not self._drap_connections_kinematic_dfs:
-            _,_connections_kinematic_dfs,_=gear_graph_complex(self.connections,self.rigid_links)
-            self._drap_connections_kinematic_dfs=True
-            self.__cache_connections_kinematic_dfs=_connections_kinematic_dfs
+            _, _connections_kinematic_dfs, _ = gear_graph_complex(self.connections, self.rigid_links)
+            self._drap_connections_kinematic_dfs = True
+            self.__cache_connections_kinematic_dfs = _connections_kinematic_dfs
             return _connections_kinematic_dfs
         else:
             return self.__cache_connections_kinematic_dfs
-    connections_kinematic_dfs=property(_get_connections_kinematic_dfs)
+    connections_kinematic_dfs = property(_get_connections_kinematic_dfs)
 
     def AnalyseZ(self):
         """ Analyse of the minimum and maximum admissible teeth number for each gear mesh
@@ -1038,67 +1039,67 @@ class MeshAssemblyOptimizer(DessiaObject):
         """
 #        Z_max = 130
 
-        Z=self.Z
+        Z = self.Z
         for i, shaft_mesh in enumerate(self.connections):
 
 
-            cd_min=self.center_distances[i][0]
-            cd_max=self.center_distances[i][1]
-            for engr1,engr2 in shaft_mesh:
-                module1_min,module1_max=(math.inf, 0)
+            cd_min = self.center_distances[i][0]
+            cd_max = self.center_distances[i][1]
+            for engr1, engr2 in shaft_mesh:
+                module1_min, module1_max = (math.inf, 0)
                 for rack_num in self.rack_choice[engr1]:
-                    mod_min,mod_max=self.rack_list[rack_num].module
-                    module1_min,module1_max=(min(module1_min,mod_min),max(module1_max,mod_max))
-                module2_min,module2_max=(math.inf, 0)
+                    mod_min, mod_max = self.rack_list[rack_num].module
+                    module1_min, module1_max = (min(module1_min, mod_min), max(module1_max, mod_max))
+                module2_min, module2_max = (math.inf, 0)
                 for rack_num in self.rack_choice[engr2]:
-                    mod_min,mod_max=self.rack_list[rack_num].module
-                    module2_min,module2_max=(min(module2_min,mod_min),max(module2_max,mod_max))
-                
-                demul_min=self.gear_speeds[engr1][0]/self.gear_speeds[engr2][1]
+                    mod_min, mod_max = self.rack_list[rack_num].module
+                    module2_min, module2_max = (min(module2_min, mod_min), max(module2_max, mod_max))
 
-                demul_max=self.gear_speeds[engr1][1]/self.gear_speeds[engr2][0]
+                demul_min = self.gear_speeds[engr1][0]/self.gear_speeds[engr2][1]
+
+                demul_max = self.gear_speeds[engr1][1]/self.gear_speeds[engr2][0]
                 if shaft_mesh[0][0] in self.list_gearing_interior:
-                    DF1_max=2*cd_max/float(1-demul_min)
-                    Z1_max=int(DF1_max/module1_min)+1
+                    DF1_max = 2*cd_max/float(1-demul_min)
+                    Z1_max = int(DF1_max/module1_min)+1
 
-                    DF1_min=2*cd_min/(1-demul_max)
-                    Z1_min=int(DF1_min/module1_max)-1
+                    DF1_min = 2*cd_min/(1-demul_max)
+                    Z1_min = int(DF1_min/module1_max)-1
 
-                    DF2_max=2*cd_max*demul_max/(1-demul_max)
-                    Z2_max=int(DF2_max/module2_min)+1
+                    DF2_max = 2*cd_max*demul_max/(1-demul_max)
+                    Z2_max = int(DF2_max/module2_min)+1
 
-                    DF2_min=2*cd_min*demul_min/(1-demul_min)
-                    Z2_min=int(DF2_min/module2_max)-1
-                    Z1_min2=-Z1_max
-                    Z1_max=-Z1_min
-                    Z1_min=Z1_min2
+                    DF2_min = 2*cd_min*demul_min/(1-demul_min)
+                    Z2_min = int(DF2_min/module2_max)-1
+                    Z1_min2 = -Z1_max
+                    Z1_max = -Z1_min
+                    Z1_min = Z1_min2
                 elif shaft_mesh[0][1] in self.list_gearing_interior:
-                    DF1_max=2*cd_max/float(-1+demul_min)
-                    Z1_max=int(DF1_max/module1_min)+1
+                    DF1_max = 2*cd_max/float(-1+demul_min)
+                    Z1_max = int(DF1_max/module1_min)+1
 
-                    DF1_min=2*cd_min/(-1+demul_max)
-                    Z1_min=int(DF1_min/module1_max)-1
+                    DF1_min = 2*cd_min/(-1+demul_max)
+                    Z1_min = int(DF1_min/module1_max)-1
 
-                    DF2_max=2*cd_max*demul_max/(-1+demul_max)
-                    Z2_max=int(DF2_max/module2_min)+1
+                    DF2_max = 2*cd_max*demul_max/(-1+demul_max)
+                    Z2_max = int(DF2_max/module2_min)+1
 
-                    DF2_min=2*cd_min*demul_min/(-1+demul_min)
-                    Z2_min=int(DF2_min/module2_max)-1
+                    DF2_min = 2*cd_min*demul_min/(-1+demul_min)
+                    Z2_min = int(DF2_min/module2_max)-1
 
-                    Z2_min2=-Z2_max
-                    Z2_max=-Z2_min
-                    Z2_min=Z2_min2
+                    Z2_min2 = -Z2_max
+                    Z2_max = -Z2_min
+                    Z2_min = Z2_min2
                 else:
-                    DF1_max=2*cd_max/float(1+demul_min)
-                    Z1_max=int(DF1_max/module1_min)+1
+                    DF1_max = 2*cd_max/float(1+demul_min)
+                    Z1_max = int(DF1_max/module1_min)+1
     #                Z1_max = min(Z1_max, Z_max)
-                    DF2_max=2*cd_max*demul_max/(1+demul_max)
-                    Z2_max=int(DF2_max/module2_min)+1
+                    DF2_max = 2*cd_max*demul_max/(1+demul_max)
+                    Z2_max = int(DF2_max/module2_min)+1
     #                Z2_max = min(Z2_max, Z_max)
-                    DF1_min=2*cd_min/(1+demul_max)
-                    Z1_min=int(DF1_min/module1_max)-1
-                    DF2_min=2*cd_min*demul_min/(1+demul_min)
-                    Z2_min=int(DF2_min/module2_max)-1
+                    DF1_min = 2*cd_min/(1+demul_max)
+                    Z1_min = int(DF1_min/module1_max)-1
+                    DF2_min = 2*cd_min*demul_min/(1+demul_min)
+                    Z2_min = int(DF2_min/module2_max)-1
 
                 # if shaft_mesh[0][0] in self.list_gearing_interior:
                 #     Z1_min2=-Z1_max
@@ -1111,13 +1112,13 @@ class MeshAssemblyOptimizer(DessiaObject):
 
 
                 if engr1 not in Z.keys():
-                    Z[engr1]=[Z1_min,Z1_max]
+                    Z[engr1] = [Z1_min, Z1_max]
                 else:
-                    Z[engr1]=[max(Z1_min,Z[engr1][0]),min(Z1_max,Z[engr1][1])]
+                    Z[engr1] = [max(Z1_min, Z[engr1][0]), min(Z1_max, Z[engr1][1])]
                 if engr2 not in Z.keys():
-                    Z[engr2]=[Z2_min,Z2_max]
+                    Z[engr2] = [Z2_min, Z2_max]
                 else:
-                    Z[engr2]=[max(Z2_min,Z[engr2][0]),min(Z2_max,Z[engr2][1])]
+                    Z[engr2] = [max(Z2_min, Z[engr2][0]), min(Z2_max, Z[engr2][1])]
 
 
 
@@ -1149,68 +1150,68 @@ class MeshAssemblyOptimizer(DessiaObject):
          'torque': {0: 'output', 1: 100},
          'transverse_pressure_angle': [[0.2617993877991494, 0.5235987755982988]]}
         """
-        nb_gear=len(self.list_gear)
-        list_node=[]
-        for eng1,eng2 in self.connections_dfs:
+        nb_gear = len(self.list_gear)
+        list_node = []
+        for eng1, eng2 in self.connections_dfs:
             if eng1 not in list_node:
                 list_node.append(eng1)
             if eng2 not in list_node:
                 list_node.append(eng2)
 
-        np=[]
-        list_Z=[]
+        np = []
+        list_Z = []
         for engr_num in list_node:
             np.append(abs(self.Z[engr_num][1]-self.Z[engr_num][0])+1)
 #            list_Z.append(npy.arange(self.Z[engr_num][0],self.Z[engr_num][1]+1))
             list_Z.append([self.Z[engr_num][0] + i for i in range(self.Z[engr_num][1]- self.Z[engr_num][0]+ 1)])
         np.extend([self.nb_rack]*nb_gear)
 
-        list_rack=list(self.rack_list.keys())
+        list_rack = list(self.rack_list.keys())
 
-        demul_int_min=1/9.
-        demul_int_max=9
-        dt=dectree.RegularDecisionTree(np)
+        demul_int_min = 1/9.
+        demul_int_max = 9
+        dt = dectree.RegularDecisionTree(np)
 
-        incr=0
-        plex_calcul=[]
-        self.fonctionnel=[]
-        self.fonctionnel_module=[]
+        incr = 0
+        plex_calcul = []
+        self.fonctionnel = []
+        self.fonctionnel_module = []
 
-        def pgcd(a,b) :
-            while a%b != 0 :
+        def pgcd(a, b):
+            while a%b != 0:
                 a, b = b, a%b
             return b
         while not dt.finished:
-            valid=True
-            if (dt.current_depth<=(nb_gear-1)) and (dt.current_depth>0):
+            valid = True
+            if (dt.current_depth <= (nb_gear-1)) and (dt.current_depth > 0):
 
-                current_node=list_node[dt.current_depth]
-                list_neighbors=self.gear_graph.neighbors(current_node)
-                list_analyze_pos=[dt.current_depth]
-                list_analyze_Z=[list_Z[dt.current_depth][dt.current_node[dt.current_depth]]]
+                current_node = list_node[dt.current_depth]
+                list_neighbors = self.gear_graph.neighbors(current_node)
+                list_analyze_pos = [dt.current_depth]
+                list_analyze_Z = [list_Z[dt.current_depth][dt.current_node[dt.current_depth]]]
                 for neighbors in list_neighbors:
-                    pos_neighbors=list_node.index(neighbors)
-                    if pos_neighbors<dt.current_depth:
+                    pos_neighbors = list_node.index(neighbors)
+                    if pos_neighbors < dt.current_depth:
                         list_analyze_pos.append(pos_neighbors)
-                        z=list_Z[pos_neighbors][dt.current_node[pos_neighbors]]
+                        z = list_Z[pos_neighbors][dt.current_node[pos_neighbors]]
 
                         list_analyze_Z.append(z)
 
                 # NVH analysis of gear mesh
 
                 for z in list_analyze_Z[1:]:
-                    if z==0 or (pgcd(list_analyze_Z[0],z)!=1):
-                        valid=False
+                    if z == 0 or (pgcd(list_analyze_Z[0], z) != 1):
+                        valid = False
 
                 # gear ratio analysis
                 if valid:
-                    for i,(pos_z,z) in enumerate(zip(list_analyze_pos,list_analyze_Z)):
-                        if i>0:
-                            if self.gear_graph[list_node[list_analyze_pos[0]]][list_node[pos_z]]['typ']=='gear_mesh':
-                                demul=abs(list_analyze_Z[0]/float(z))
+                    for i, (pos_z, z) in enumerate(zip(list_analyze_pos, list_analyze_Z)):
+                        if i > 0:
+                            if self.gear_graph[list_node[list_analyze_pos[0]]][list_node[pos_z]]['typ'] == 'gear_mesh':
+                                demul = abs(list_analyze_Z[0]/float(z))
 
                                 if (demul > demul_int_max) or (demul < demul_int_min):
-                                    valid=False
+                                    valid = False
 
                 # NVH analysis of gear mesh each other
 #                if (valid) & (dt.current_depth<=(nb_gear-1)):
@@ -1225,32 +1226,32 @@ class MeshAssemblyOptimizer(DessiaObject):
 
                     v0_min, v0_max = self.gear_speeds[list_node[0]]
 #                    z0 = list_Z[0][dt.current_node[0]]
-                    demul={self.list_gear[0]:1}
-                    for (eng1,eng2) in self.connections_kinematic_dfs:
-                        pos_eng1=list_node.index(eng1)
-                        pos_eng2=list_node.index(eng2)
-                        if (pos_eng1>dt.current_depth) or (pos_eng2>dt.current_depth):
+                    demul = {self.list_gear[0]:1}
+                    for (eng1, eng2) in self.connections_kinematic_dfs:
+                        pos_eng1 = list_node.index(eng1)
+                        pos_eng2 = list_node.index(eng2)
+                        if (pos_eng1 > dt.current_depth) or (pos_eng2 > dt.current_depth):
                             break
-                        z1=list_Z[pos_eng1][dt.current_node[pos_eng1]]
-                        z2=list_Z[pos_eng2][dt.current_node[pos_eng2]]
+                        z1 = list_Z[pos_eng1][dt.current_node[pos_eng1]]
+                        z2 = list_Z[pos_eng2][dt.current_node[pos_eng2]]
 
-                        if self.gear_graph[eng1][eng2]['typ']=='gear_mesh':
-                            demul[eng2]=abs(demul[eng1]*z1/float(z2))
+                        if self.gear_graph[eng1][eng2]['typ'] == 'gear_mesh':
+                            demul[eng2] = abs(demul[eng1]*z1/float(z2))
                         else:
-                            demul[eng2]=demul[eng1]
-                        vsi_min=self.gear_speeds[eng2][0] # Specified speed
-                        vsi_max=self.gear_speeds[eng2][1]
+                            demul[eng2] = demul[eng1]
+                        vsi_min = self.gear_speeds[eng2][0] # Specified speed
+                        vsi_max = self.gear_speeds[eng2][1]
 
                         # print(demul[eng2])
-                        vai_min = max(v0_min*demul[eng2],vsi_min)
-                        vai_max = min(v0_max*demul[eng2],vsi_max)
-                        if vai_min>vai_max:
+                        vai_min = max(v0_min*demul[eng2], vsi_min)
+                        vai_max = min(v0_max*demul[eng2], vsi_max)
+                        if vai_min > vai_max:
 
                             valid = False
 
                             break
 
-                        v0_min, v0_max = vai_min/demul[eng2],vai_max/demul[eng2]
+                        v0_min, v0_max = vai_min/demul[eng2], vai_max/demul[eng2]
 
 
 
@@ -1267,111 +1268,111 @@ class MeshAssemblyOptimizer(DessiaObject):
 #                                break
 
 
-            elif (dt.current_depth>(nb_gear-1)) and (valid==True):
+            elif (dt.current_depth > (nb_gear-1)) and (valid == True):
 
                 # rack feasibility analysis
-                rack_num=list_rack[dt.current_node[-1]]
-                rack_pos=list_node[dt.current_depth-nb_gear]
+                rack_num = list_rack[dt.current_node[-1]]
+                rack_pos = list_node[dt.current_depth-nb_gear]
                 if rack_num not in self.rack_choice[rack_pos]:
-                    valid=False
+                    valid = False
 
-            if (dt.current_depth==(nb_gear+nb_gear-1)) and (valid==True):
+            if (dt.current_depth == (nb_gear+nb_gear-1)) and (valid == True):
 
                 # feasibility analysis of the modulus toward center-distance
 
-                liste_DF_min={}
-                module_minmax={}
-                module_inf,module_sup=(0, math.inf)
+                liste_DF_min = {}
+                module_minmax = {}
+                module_inf, module_sup = (0, math.inf)
                 # intersection between all module specified by each rack
-                for tree_pos,tree_val in enumerate(dt.current_node[0:nb_gear]):
-                    engr_num=list_node[tree_pos]
-                    rack_num=list_rack[dt.current_node[tree_pos+nb_gear]]
-                    module_minmax[engr_num]=self.rack_list[rack_num].module
-                    module_inf,module_sup=(max(module_inf,module_minmax[engr_num][0]),min(module_sup,module_minmax[engr_num][1]))
-                for tree_pos,tree_val in enumerate(dt.current_node[0:nb_gear]):
-                    z=list_Z[tree_pos][tree_val]
-                    engr_num=list_node[tree_pos]
-                    liste_DF_min[engr_num]=abs(z*module_inf)
-                liste_pente_cd_module=[]
-                for set_num,gs in enumerate(self.connections):
+                for tree_pos, tree_val in enumerate(dt.current_node[0:nb_gear]):
+                    engr_num = list_node[tree_pos]
+                    rack_num = list_rack[dt.current_node[tree_pos+nb_gear]]
+                    module_minmax[engr_num] = self.rack_list[rack_num].module
+                    module_inf, module_sup = (max(module_inf, module_minmax[engr_num][0]), min(module_sup, module_minmax[engr_num][1]))
+                for tree_pos, tree_val in enumerate(dt.current_node[0:nb_gear]):
+                    z = list_Z[tree_pos][tree_val]
+                    engr_num = list_node[tree_pos]
+                    liste_DF_min[engr_num] = abs(z*module_inf)
+                liste_pente_cd_module = []
+                for set_num, gs in enumerate(self.connections):
                     cd_min = -math.inf
-                    for eng1,eng2 in gs:
-                        if self.Z[eng1][1]<0:
-                            cd_min=max(cd_min,(liste_DF_min[eng1]-liste_DF_min[eng2])/2.)
-                        elif self.Z[eng2][1]<0:
+                    for eng1, eng2 in gs:
+                        if self.Z[eng1][1] < 0:
+                            cd_min = max(cd_min, (liste_DF_min[eng1]-liste_DF_min[eng2])/2.)
+                        elif self.Z[eng2][1] < 0:
 
-                            cd_min=max(cd_min,(-liste_DF_min[eng1]+liste_DF_min[eng2])/2.)
+                            cd_min = max(cd_min, (-liste_DF_min[eng1]+liste_DF_min[eng2])/2.)
                         else:
-                            cd_min=max(cd_min,(liste_DF_min[eng1]+liste_DF_min[eng2])/2.)
+                            cd_min = max(cd_min, (liste_DF_min[eng1]+liste_DF_min[eng2])/2.)
                     liste_pente_cd_module.append(cd_min/module_inf)
 
-                cd_minmax_nv=[]
-                module_optimal=0
-                for set_num,cd in enumerate(self.center_distances):
+                cd_minmax_nv = []
+                module_optimal = 0
+                for set_num, cd in enumerate(self.center_distances):
 
-                    module_optimal=max(module_optimal,cd[0]/liste_pente_cd_module[set_num])
-                if module_optimal>module_sup:
-                    valid=False
+                    module_optimal = max(module_optimal, cd[0]/liste_pente_cd_module[set_num])
+                if module_optimal > module_sup:
+                    valid = False
 
-                module_optimal=max(module_optimal,module_inf)
-                fonctionnel=0
-                for set_num,cd in enumerate(self.center_distances):
-                    cd_optimal=liste_pente_cd_module[set_num]*module_optimal
+                module_optimal = max(module_optimal, module_inf)
+                fonctionnel = 0
+                for set_num, cd in enumerate(self.center_distances):
+                    cd_optimal = liste_pente_cd_module[set_num]*module_optimal
 
-                    if (cd_optimal)>(cd[1]):
+                    if (cd_optimal) > (cd[1]):
 
-                        valid=False
+                        valid = False
                         break
 
                     else:
-                        fonctionnel+=(cd_optimal-cd[0])**2
-                        cd_minmax_nv.append([cd_optimal,min(cd[1],cd_optimal*1.2)])
+                        fonctionnel += (cd_optimal-cd[0])**2
+                        cd_minmax_nv.append([cd_optimal, min(cd[1], cd_optimal*1.2)])
 
                 # Analysis of the impact of the new center-distance on the initial base diamter interval
                 # Initialisation of the dfs graph with the gear mesh used for the unknown db
-                db={}
+                db = {}
                 for s_graph in self.sub_graph_dfs:
-                    for ind,(eng1,eng2) in enumerate(s_graph):
-                        num_mesh=0 #position of the gear mesh (need to define position in transverse_pressure_angle)
-                        for num_cd_temp,list_connections in enumerate(self.connections):
-                            if (eng1,eng2) in list_connections:
-                                num_cd=num_cd_temp #num_cd define number of center-distance to use in the connections list
-                                num_mesh+=list_connections.index((eng1,eng2))
-                            elif (eng2,eng1) in list_connections:
-                                num_cd=num_cd_temp
-                                num_mesh+=list_connections.index((eng2,eng1))
+                    for ind, (eng1, eng2) in enumerate(s_graph):
+                        num_mesh = 0 #position of the gear mesh (need to define position in transverse_pressure_angle)
+                        for num_cd_temp, list_connections in enumerate(self.connections):
+                            if (eng1, eng2) in list_connections:
+                                num_cd = num_cd_temp #num_cd define number of center-distance to use in the connections list
+                                num_mesh += list_connections.index((eng1, eng2))
+                            elif (eng2, eng1) in list_connections:
+                                num_cd = num_cd_temp
+                                num_mesh += list_connections.index((eng2, eng1))
                             else:
-                                num_mesh+=len(list_connections)
-                        if len(cd_minmax_nv)>num_cd:
-                            cd_min,cd_max=cd_minmax_nv[num_cd]
-                            z1_pos=list_node.index(eng1)
-                            z1=list_Z[z1_pos][dt.current_node[z1_pos]]
-                            z2_pos=list_node.index(eng2)
-                            z2=list_Z[z2_pos][dt.current_node[z2_pos]]
-                            tpa1_min,tpa1_max=self.transverse_pressure_angle[num_mesh]
-                            df2_min=abs(2*cd_min-2*cd_min*z1/float(z1+z2))
-                            db2_min=abs(df2_min*math.cos(tpa1_max))
-                            df2_max=abs(2*cd_max-2*cd_max*z1/float(z1+z2))
-                            db2_max=abs(df2_max*math.cos(tpa1_min))
+                                num_mesh += len(list_connections)
+                        if len(cd_minmax_nv) > num_cd:
+                            cd_min, cd_max = cd_minmax_nv[num_cd]
+                            z1_pos = list_node.index(eng1)
+                            z1 = list_Z[z1_pos][dt.current_node[z1_pos]]
+                            z2_pos = list_node.index(eng2)
+                            z2 = list_Z[z2_pos][dt.current_node[z2_pos]]
+                            tpa1_min, tpa1_max = self.transverse_pressure_angle[num_mesh]
+                            df2_min = abs(2*cd_min-2*cd_min*z1/float(z1+z2))
+                            db2_min = abs(df2_min*math.cos(tpa1_max))
+                            df2_max = abs(2*cd_max-2*cd_max*z1/float(z1+z2))
+                            db2_max = abs(df2_max*math.cos(tpa1_min))
                             try:
-                                db[eng2]=[max(db2_min,db[eng2][0]),min(db2_max,db[eng2][1])]
+                                db[eng2] = [max(db2_min, db[eng2][0]), min(db2_max, db[eng2][1])]
                             except KeyError:
-                                db[eng2]=[db2_min,db2_max]
-                            db[eng1]=[abs(db[eng2][0]*z1/float(z2)),abs(db[eng2][1]*z1/float(z2))]
+                                db[eng2] = [db2_min, db2_max]
+                            db[eng1] = [abs(db[eng2][0]*z1/float(z2)), abs(db[eng2][1]*z1/float(z2))]
                         else:
                             break
 
-            if (dt.current_depth==(nb_gear+nb_gear-1)) and (valid==True):
+            if (dt.current_depth == (nb_gear+nb_gear-1)) and (valid == True):
 
-                gear={}
-                rack={}
+                gear = {}
+                rack = {}
                 for n in list_node:
-                    i=list_node.index(n)
-                    gear[n]=list_Z[i][dt.current_node[i]]
-                    rack[n]=list_rack[dt.current_node[i+nb_gear]]
-                Export={}
-                Export['Z']=gear
-                Export['rack_choice']=rack
+                    i = list_node.index(n)
+                    gear[n] = list_Z[i][dt.current_node[i]]
+                    rack[n] = list_rack[dt.current_node[i+nb_gear]]
+                Export = {}
+                Export['Z'] = gear
+                Export['rack_choice'] = rack
                 Export['center_distances'] = cd_minmax_nv
                 Export['db'] = db
                 Export['dw'] = v0_max - v0_min
@@ -1379,13 +1380,13 @@ class MeshAssemblyOptimizer(DessiaObject):
                 self.fonctionnel.append(fonctionnel)
                 self.fonctionnel_module.append(module_optimal)
                 plex_calcul.append(Export)
-                incr+=1
+                incr += 1
             if nb_sol is not None:
                 if incr > nb_sol:
                     break
             dt.NextNode(valid)
 
-        if incr>1:
+        if incr > 1:
             if verbose:
                 print('Number of combination found: {}'.format(incr))
         else:
@@ -1395,7 +1396,7 @@ class MeshAssemblyOptimizer(DessiaObject):
         return plex_calcul
 
 
-    def Optimize(self,nb_sol: int = 1, list_sol: List[int] = None, verbose:bool = False):
+    def Optimize(self, nb_sol: int = 1, list_sol: List[int] = None, verbose: bool = False):
 
         """ Gear mesh assembly optimization for given plex configuration
 
@@ -1404,13 +1405,13 @@ class MeshAssemblyOptimizer(DessiaObject):
 
         >>> GA.Optimize(list_sol=[1,2,3,4], verbose=True)
         """
-        compt_nb_sol=0
+        compt_nb_sol = 0
 
         if self.check:
             liste_plex = self.AnalyzeCombination(5*nb_sol, verbose)
-            for i,plex in enumerate(liste_plex):
-                plex['rack_list']=self.rack_list
-                plex['material']=self.material
+            for i, plex in enumerate(liste_plex):
+                plex['rack_list'] = self.rack_list
+                plex['material'] = self.material
                 plex['external_torques'] = self.external_torques
                 plex['cycles'] = self.cycles
                 plex['connections'] = self.connections
@@ -1418,12 +1419,12 @@ class MeshAssemblyOptimizer(DessiaObject):
     #            plex['center_distance']=self.center_distance
                 plex['transverse_pressure_angle'] = self.transverse_pressure_angle
                 plex['coefficient_profile_shift'] = self.coefficient_profile_shift
-                
+
                 plex['safety_factor'] = self.safety_factor
-            
+
                 liste_plex[i] = plex
 
-            if list_sol==None:
+            if list_sol == None:
                 # Using all combinatoric
                 # Sorting data, delta w max first
                 dw = [s['dw'] for s in liste_plex]
@@ -1435,28 +1436,28 @@ class MeshAssemblyOptimizer(DessiaObject):
                 liste_plex = liste_plex2
 
             else:
-                liste_plex=[]
+                liste_plex = []
                 for ind_plex in list_sol:
                     del self.plex_calcul[ind_plex]['dw']
                     liste_plex.append(self.plex_calcul[ind_plex])
-                nb_sol=len(liste_plex)
-            
+                nb_sol = len(liste_plex)
+
             for plex in liste_plex:
                 try:
-                    plex['axial_contact_ratio']=self.axial_contact_ratio
-                    plex['total_contact_ratio_min']=self.total_contact_ratio_min
-                    plex['transverse_contact_ratio_min']=self.transverse_contact_ratio_min
+                    plex['axial_contact_ratio'] = self.axial_contact_ratio
+                    plex['total_contact_ratio_min'] = self.total_contact_ratio_min
+                    plex['transverse_contact_ratio_min'] = self.transverse_contact_ratio_min
                     ga = ContinuousMeshesAssemblyOptimizer(**plex)
                 except AttributeError:
-                    
+
                     if verbose:
-                        
+
                         print('Convergence problem')
                     continue
                 except ValueError:
-                
+
                     if verbose:
-                        
+
                         print('Convergence problem')
                     continue
                 try:
@@ -1464,28 +1465,28 @@ class MeshAssemblyOptimizer(DessiaObject):
                                 self.constraints_SAP_diameter,
                                 self.distances_SAP_root_diameter_active_min)
                 except ValueError:
-                   
+
                     if verbose:
-                        
+
                         print('Convergence problem')
-                if len(ga.solutions)>0:
-                    sol1=ga.solutions[-1]
+                if len(ga.solutions) > 0:
+                    sol1 = ga.solutions[-1]
                     self.solutions.append(sol1)
-                    
-                    compt_nb_sol+=1
-                    
+
+                    compt_nb_sol += 1
+
     #                if verbose:
     #                    print('Mesh sections: {}'.format(self.solutions[-1].gear_width))
     #                    print('Numbers of teeth: {}'.format(plex['Z']))
     #                    print('Center distances: {}'.format(self.solutions[-1].center_distance))
-                    if compt_nb_sol==nb_sol:
+                    if compt_nb_sol == nb_sol:
                         break
         else:
             if verbose:
                 print('The gear teeth area for Decision Tree is null')
 
-    def OptimizeCD(self, nb_sol = 1, verbose=False,
-                        progress_callback = lambda x:x):
+    def OptimizeCD(self, nb_sol=1, verbose=False,
+                   progress_callback=lambda x: x):
         """ Gear mesh assembly optimization of the nearest solution with the specifications
 
             * near the minimum (cd1_min, cd2_min ...) of center-distance list [[cd1_min, cd1_max], [cd2_min, cd2_max] ...]
@@ -1497,9 +1498,9 @@ class MeshAssemblyOptimizer(DessiaObject):
         """
         if self.check:
             liste_plex = self.AnalyzeCombination(5*nb_sol, verbose)
-            for i,plex in enumerate(liste_plex):
-                plex['rack_list']=self.rack_list
-                plex['material']=self.material
+            for i, plex in enumerate(liste_plex):
+                plex['rack_list'] = self.rack_list
+                plex['material'] = self.material
                 plex['external_torques'] = self.external_torques
                 plex['cycles'] = self.cycles
                 plex['connections'] = self.connections
@@ -1511,27 +1512,27 @@ class MeshAssemblyOptimizer(DessiaObject):
                 liste_plex[i] = plex
         self.plex_calcul = liste_plex
 
-        list_fonctionnel=npy.array(self.fonctionnel)
+        list_fonctionnel = npy.array(self.fonctionnel)
 
-        list_fonctionnel_module=npy.array(self.fonctionnel_module)
-        sort_fonct_module=npy.argsort(list_fonctionnel_module)
-        compt_fonct_mod=0
-        fonct_entraxe=[]
+        list_fonctionnel_module = npy.array(self.fonctionnel_module)
+        sort_fonct_module = npy.argsort(list_fonctionnel_module)
+        compt_fonct_mod = 0
+        fonct_entraxe = []
         for ind_plex in sort_fonct_module[::-1]:
             fonct_entraxe.append(list_fonctionnel[ind_plex])
 #            if compt_fonct_mod==5*nb_sol:
 #                break
-            compt_fonct_mod+=1
-        list_fonct_entraxe=npy.array(fonct_entraxe)
-        sort_list_fonct_entraxe=npy.argsort(list_fonct_entraxe)
-        plex_analyse=[]
+            compt_fonct_mod += 1
+        list_fonct_entraxe = npy.array(fonct_entraxe)
+        sort_list_fonct_entraxe = npy.argsort(list_fonct_entraxe)
+        plex_analyse = []
         for ind_plex in range(min(5*nb_sol, len(self.fonctionnel))):
             plex_analyse.append(sort_fonct_module[::-1][sort_list_fonct_entraxe[ind_plex]])
 
-        compt_nb_sol=0
-        liste_solutions=[]
+        compt_nb_sol = 0
+        liste_solutions = []
         for num_plex in plex_analyse:
-            plex=self.plex_calcul[num_plex]
+            plex = self.plex_calcul[num_plex]
             del plex['dw']
             ga = ContinuousMeshesAssemblyOptimizer(**plex)
             try:
@@ -1539,20 +1540,20 @@ class MeshAssemblyOptimizer(DessiaObject):
             except ValueError:
                 if verbose:
                     print('Convergence Problem')
-            if len(ga.solutions)>0:
-                solutions=ga.solutions[-1]
-                valid_cd=True
+            if len(ga.solutions) > 0:
+                solutions = ga.solutions[-1]
+                valid_cd = True
 
-                for num_graph,list_sub_graph in enumerate(ga.sub_graph_dfs):
-                    num_cd_sub_graph=0
-                    for num_cd,list_connection in enumerate(self.connections):
-                        for num_mesh_iter,(eng1,eng2) in enumerate(list_connection):
-                            if ((eng1,eng2) in list_sub_graph) or ((eng2,eng1) in list_sub_graph):
-                                if (solutions.center_distance[num_cd])<(self.center_distances[num_cd][0]*0.999):
-                                    valid_cd=False
-                                elif (solutions.center_distance[num_cd])>(self.center_distances[num_cd][1]*1.001):
-                                    valid_cd=False
-                                num_cd_sub_graph+=1
+                for num_graph, list_sub_graph in enumerate(ga.sub_graph_dfs):
+                    num_cd_sub_graph = 0
+                    for num_cd, list_connection in enumerate(self.connections):
+                        for num_mesh_iter, (eng1, eng2) in enumerate(list_connection):
+                            if ((eng1, eng2) in list_sub_graph) or ((eng2, eng1) in list_sub_graph):
+                                if (solutions.center_distance[num_cd]) < (self.center_distances[num_cd][0]*0.999):
+                                    valid_cd = False
+                                elif (solutions.center_distance[num_cd]) > (self.center_distances[num_cd][1]*1.001):
+                                    valid_cd = False
+                                num_cd_sub_graph += 1
 #                for engr_num,cd in enumerate(self.center_distance):
 #                    if (solutions.center_distance[engr_num])<(cd[0]*0.999):
 #                        valid_cd=False
@@ -1560,11 +1561,11 @@ class MeshAssemblyOptimizer(DessiaObject):
 #                        valid_cd=False
                 if valid_cd:
                     liste_solutions.append(solutions)
-                    compt_nb_sol+=1
+                    compt_nb_sol += 1
                     if verbose:
                         print('valid solution n°{}'.format(compt_nb_sol))
                         for num_graph in range(len(solutions.mesh_combinations)):
-                            print('Module gear set n°{}: {}'.format(num_graph,solutions.mesh_combinations[num_graph].meshes[list(solutions.mesh_combinations[num_graph].meshes.keys())[0]].rack.module))
+                            print('Module gear set n°{}: {}'.format(num_graph, solutions.mesh_combinations[num_graph].meshes[list(solutions.mesh_combinations[num_graph].meshes.keys())[0]].rack.module))
 
                 else:
                     if verbose:
@@ -1572,23 +1573,23 @@ class MeshAssemblyOptimizer(DessiaObject):
             else:
                 if verbose:
                     print('Convergence Problem')
-            if compt_nb_sol==nb_sol:
+            if compt_nb_sol == nb_sol:
                 break
         # admissible solution are sorted toward the updated functional
-        list_fonctionnel_nv=[]
+        list_fonctionnel_nv = []
         for solutions in liste_solutions:
-            fonctionnel=0
+            fonctionnel = 0
 
-            for num_cd,cd in enumerate(self.center_distances):
-                fonctionnel+=(solutions.center_distance[num_cd]-self.center_distances[num_cd][0])**2
+            for num_cd, cd in enumerate(self.center_distances):
+                fonctionnel += (solutions.center_distance[num_cd]-self.center_distances[num_cd][0])**2
 
             list_fonctionnel_nv.append(fonctionnel)
-        for indice_plex,num_plex in enumerate(npy.argsort(npy.array(list_fonctionnel_nv))):
+        for indice_plex, num_plex in enumerate(npy.argsort(npy.array(list_fonctionnel_nv))):
             self.solutions.append(liste_solutions[num_plex])
             if verbose:
                 print('solution sorted n°{}'.format(indice_plex))
                 for num_graph in range(len(liste_solutions[num_plex].mesh_combinations)):
                     print('Mesh sections gear set n°{}: {}'.format(num_graph, self.solutions[-1].mesh_combinations[num_graph].gear_width))
-                    print('Center distances gear set n°{}: {}'.format(num_graph,self.solutions[-1].mesh_combinations[num_graph].center_distance))
-                    print('Module gear set n°{}: {}'.format(num_graph,self.solutions[-1].mesh_combinations[num_graph].meshes[list(self.solutions[-1].mesh_combinations[num_graph].meshes.keys())[0]].rack.module))
+                    print('Center distances gear set n°{}: {}'.format(num_graph, self.solutions[-1].mesh_combinations[num_graph].center_distance))
+                    print('Module gear set n°{}: {}'.format(num_graph, self.solutions[-1].mesh_combinations[num_graph].meshes[list(self.solutions[-1].mesh_combinations[num_graph].meshes.keys())[0]].rack.module))
 

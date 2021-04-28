@@ -743,11 +743,12 @@ class ParkingPawl(dc.DessiaObject):
 
     def volmdlr_primitives(self, frame=vm.OXYZ):
         wheel_frame = frame.rotation(frame.origin, frame.u, self.contact1_wheel_angle)
-        locking_mech_frame = vm.OXYZ.copy()
-        locking_mech_frame.origin.z = self.locking_mechanism_center_distance
+        locking_mech_frame = frame.copy()
+        locking_mech_frame.origin.z = locking_mech_frame.origin.z+self.locking_mechanism_center_distance
+        
         return (
                 self.wheel.volmdlr_primitives(frame=wheel_frame)
-                + self.pawl.volmdlr_primitives()
+                + self.pawl.volmdlr_primitives(frame=frame)
                 + self.locking_mechanism.volmdlr_primitives(frame=locking_mech_frame))
 
     def engaged_slack(self):
@@ -1411,7 +1412,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
             # print('Something went wrong in simulation')
             objective += 1000000
             return objective
-
+       
         tooth_time = abs((model.wheel.junction_angle+model.wheel.lower_tooth_angle)/self.wheel_locking_speed)
         locking_time_ratio = (tooth_time-simulation.time[-1])/tooth_time
         if locking_time_ratio < 0:
