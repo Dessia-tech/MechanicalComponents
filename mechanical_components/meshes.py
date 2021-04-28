@@ -2187,22 +2187,16 @@ class MeshCombination(DessiaObject):
             
             
             if set_pos_dfs==0:
-           
-                circle_DF=vm.wires.Circle2D(center=vect_position_1,radius=self.DF[0][eng1_position]/2)
-                
-                circle_SAP_diameter=vm.wires.Circle2D(center=vect_position_1,radius=self.SAP_diameter[0][eng1_position]/2)
+                center = vm.Point2D(x=vect_position_1[1], y=vect_position_1[2])
+                circle_DF=vm.wires.Circle2D(center=center,radius=self.DF[0][eng1_position]/2)
+                circle_SAP_diameter=vm.wires.Circle2D(center=center,radius=self.SAP_diameter[0][eng1_position]/2)
 
-                
-                
                 edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.GREEN)
-                circle_DF_plot_data=circle_DF.plot_data( edge_style=edge_style)
+                circle_DF_plot_data = circle_DF.plot_data(edge_style=edge_style)
                 
                 text_style=vmp.TextStyle(text_color= vmp.colors.GREEN,text_align_x='center',font_size=0.7)
                 text_DF=vmp.Text(comment='DF',position_x=0,position_y=self.DF[0][eng1_position]/2,text_style=text_style)
-                
-                
-                
-                
+
                 edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.ROSE)
                 circle_SAP_diameter_plot_data=circle_SAP_diameter.plot_data(edge_style=edge_style)
 
@@ -2210,24 +2204,21 @@ class MeshCombination(DessiaObject):
                 text_SAP_diameter=vmp.Text(comment='SAP_diameter',position_x=0,
                                             position_y=self.SAP_diameter[0][eng1_position]/2,text_style=text_style,text_scaling=True)
             
-                surface_style=vmp.SurfaceStyle(color_fill=vmp.colors.WHITE)
+                surface_style=vmp.SurfaceStyle(color_fill = None, opacity=0)
                 edge_style= vmp.EdgeStyle(line_width=2,color_stroke= vmp.colors.BLACK)
-                C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
-                C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style)
-                plot_datas.extend([circle_DF_plot_data,circle_SAP_diameter_plot_data,C1_plot_data,C2_plot_data,text_SAP_diameter,text_DF])
+                C1_plot_data=C1.plot_data(edge_style=edge_style,surface_style = surface_style)
+                C2_plot_data=C2.plot_data( edge_style=edge_style, surface_style = surface_style)
+                plot_datas.extend([circle_DF_plot_data,circle_SAP_diameter_plot_data,
+                                    C1_plot_data,
+                                   C2_plot_data,text_SAP_diameter,text_DF])
                 
                 
             else:
                 
-                C1_plot_data=C1.plot_data(surface_style=surface_style, edge_style=edge_style)
-                C2_plot_data=C2.plot_data(surface_style=surface_style, edge_style=edge_style, )
-                plot_datas.extend([C1_plot_data,C2_plot_data])
-                
-        return [vmp.PrimitiveGroup(primitives= plot_datas)]
-    
-   
-        
-            
+                C2_plot_data=C2.plot_data(edge_style=edge_style,surface_style = surface_style)
+                plot_datas.extend([C2_plot_data])
+       
+        return [vmp.PrimitiveGroup(primitives = plot_datas)]     
         
     # def volmdlr_primitives_2(self, centers={}, axis=(1, 0, 0), name='', z_number=10):
     #     """ Generation of the 3D volume for all the gear mesh
@@ -3243,15 +3234,13 @@ class MeshAssembly(DessiaObject):
     def plot_data(self):
         """
         2D mesh combination visualization 
-        
-        
-        :returns: List of Primitives groups for the data_plot
 
+        :returns: List of Primitives groups for the data_plot
         """
         list_colors = [vmp.colors.BLACK, vmp.colors.RED, vmp.colors.BLUE]
         export_data = []
-        offset = 0.01
         x_position = 0
+        count_previous_mesh = 0
         centers_yz = self.pos_axis({self.list_gear[0]:[0,0]})
         for i, mesh_combination in enumerate(self.mesh_combinations):
             centers = {}
@@ -3265,18 +3254,24 @@ class MeshAssembly(DessiaObject):
                             if i == 0:
                                 centers[j] = (x_position, center_yz[0], center_yz[1])
                             else:
-                                x_position += max(mesh_combination.gear_width)/2
-                                centers[j] = (x_position, center_yz[0], center_yz[1])
+                                centers[j] = (x_position, center_yz[0] + 3*max([mesh.outside_diameter for mesh in mesh_combination.meshes])/2, center_yz[1])
                                 # centers[j] = (x_position, previous_center_yz[0], previous_center_yz[0])
+                        
                         else:
-                            centers[j] = (x_position, center_yz[0], center_yz[1])
+                            if i == count_previous_mesh:
+                                centers[j] = (x_position, center_yz[0], center_yz[1])
+                            else:
+                                centers[j] = (x_position, center_yz[0] + 3*max([mesh.outside_diameter for mesh in mesh_combination.meshes])/2, center_yz[1])
+                            
+                            
             primitives = mesh_combination.plot_data(centers)[0].primitives
             for primitive in primitives:
                 if type(primitive) is not vmp.Text and type(primitive) is not vmp.Circle2D:
                     primitive.edge_style.color_stroke = list_colors[i]
                 
             export_data.extend(primitives)
-            x_position += max(mesh_combination.gear_width)/2 + offset
+
+            count_previous_mesh += i
         return [vmp.PrimitiveGroup(primitives = export_data)]
         
     def volmdlr_primitives(self):
