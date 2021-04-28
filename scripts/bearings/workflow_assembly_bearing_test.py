@@ -63,6 +63,7 @@ pipes = [wf.Pipe(blockA.outputs[0], optimizeA.inputs[0]),
          ]
 
 workflow = wf.Workflow(blocks, pipes, filter_analyze.outputs[0])
+workflow.plot_jointjs()
 
 #bis2 = bearings_opt.BearingAssemblyOptimizer(
 #                    loads = [[[[0.1595, 0, 0], [0, -14000, 0], [0, 0, 0]]]],
@@ -107,6 +108,11 @@ workflow_run = workflow.run(input_values)
 
 a = workflow_run.to_dict()
 obj = wf.WorkflowRun.dict_to_object(a)
+
+sol1 = workflow_run.output_value[0]
+d = sol1.plot_data()
+sol = [plt.to_dict() for plt in d]
+plot_data.plot_d3(sol)
 
 # c = Client()
 # c.api_url = 'http://localhost:5000'

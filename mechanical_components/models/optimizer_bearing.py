@@ -9,7 +9,7 @@ Created on Fri Oct  5 09:53:05 2018
 import mechanical_components.bearings as bearings
 from mechanical_components.optimization.bearings import BearingAssemblyOptimizer
 from mechanical_components.models.catalogs import schaeffler_catalog
-from volmdlr import plot_data
+import plot_data
 
 import pkg_resources
 # from .catalogs import schaeffler_catalog

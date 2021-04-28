@@ -16,8 +16,8 @@ import pkg_resources
 from dessia_common.core import DessiaObject
 
 import volmdlr as vm
-import volmdlr.primitives2D
-import volmdlr.primitives3D as vm3d
+import volmdlr.primitives2d
+import volmdlr.primitives3d as vm3d
 
 
 phi_fct_d1 = {'data':[[ 4.915, 0.09403],
@@ -161,7 +161,7 @@ groove_materials = [cast_aluminium, LM_carbon_steel, H_carbon_steel, cast_steel,
 
 
 class Circlips(DessiaObject):
-    p1 = vm.Point2D((0, 0))
+    p1 = vm.Point2D(0, 0)
     
     def RadialThickness(self, theta):
         if theta >= 0 and theta <= 2*math.pi:
@@ -303,7 +303,7 @@ class Circlips(DessiaObject):
                 radius[n] = self.d/2
             
             
-            racc = vm.primitives2D.RoundedLineSegments2D(raccord, radius, adapt_radius=True)
+            racc = vm.primitives2d.RoundedLineSegments2D(raccord, radius, adapt_radius=True)
 
             contour = vm.Contour2D([arcinterieur, l1, l2, arc1, arc2, racc])
             
@@ -332,7 +332,7 @@ class Circlips(DessiaObject):
                 radius[n] = self.d/2
             
             
-            racc = vm.primitives2D.RoundedLineSegments2D(raccord, radius, adapt_radius=True)
+            racc = vm.primitives2d.RoundedLineSegments2D(raccord, radius, adapt_radius=True)
 
             contour = vm.Contour2D([arcinterieur,racc])  
 

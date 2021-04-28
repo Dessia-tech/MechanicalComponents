@@ -11,8 +11,8 @@ import numpy as npy
 from dessia_common.core import DessiaObject
 
 import volmdlr as vm
-import volmdlr.primitives3D as primitives3D
-import volmdlr.primitives2D as primitives2D
+import volmdlr.primitives3d as primitives3d
+import volmdlr.primitives2d as primitives2d
 
 from scipy.optimize import minimize
 
@@ -447,7 +447,7 @@ class Clutch(DessiaObject):
             else:
                 width = self.separator_plate_width
             
-            plate_volume = primitives3D.ExtrudedProfile(p0, xp, yp, self.separator_plate_contours, (0, 0, width), 'separator_plate_{0}'.format(i))
+            plate_volume = primitives3d.ExtrudedProfile(p0, xp, yp, self.separator_plate_contours, (0, 0, width), 'separator_plate_{0}'.format(i))
             
             primitives.append(plate_volume)                
         
@@ -475,9 +475,9 @@ class Clutch(DessiaObject):
             pp1 = p0.Translation(pp1_coord)
             pp2 = p0.Translation(pp2_coord)
             
-            plate_volume = primitives3D.ExtrudedProfile(p0, xp, yp, self.friction_plate_contours, (0, 0, self.friction_plate_width), 'friction_plate_{0}'.format(i))
-            friction_paper_1_volume = primitives3D.HollowCylinder(pp1_coord, zp_coord, self.plate_inner_radius, self.plate_outer_radius, self.friction_paper_width, 'friction_paper_{0}1'.format(i))
-            friction_paper_2_volume = primitives3D.HollowCylinder(pp2_coord, zp_coord, self.plate_inner_radius, self.plate_outer_radius, self.friction_paper_width, 'friction_paper_{0}2'.format(i))
+            plate_volume = primitives3d.ExtrudedProfile(p0, xp, yp, self.friction_plate_contours, (0, 0, self.friction_plate_width), 'friction_plate_{0}'.format(i))
+            friction_paper_1_volume = primitives3d.HollowCylinder(pp1_coord, zp_coord, self.plate_inner_radius, self.plate_outer_radius, self.friction_paper_width, 'friction_paper_{0}1'.format(i))
+            friction_paper_2_volume = primitives3d.HollowCylinder(pp2_coord, zp_coord, self.plate_inner_radius, self.plate_outer_radius, self.friction_paper_width, 'friction_paper_{0}2'.format(i))
         
             primitives.extend([plate_volume, friction_paper_1_volume, friction_paper_2_volume])
         
@@ -678,7 +678,7 @@ class HydraulicCylinder(DessiaObject):
         zp = vm.Vector3D((0, 0, 1))        
         
         primitives = []
-        chamber_volume = primitives3D.RevolvedProfile(p0, zp, yp, [self.chamber_contour], p0, zp, 2*math.pi, 'cylinder_chamber')
+        chamber_volume = primitives3d.RevolvedProfile(p0, zp, yp, [self.chamber_contour], p0, zp, 2*math.pi, 'cylinder_chamber')
         
         primitives.append(chamber_volume)
         return primitives
@@ -703,7 +703,7 @@ class HydraulicCylinder(DessiaObject):
         p9 = p8.Translation((-0.010, 0))
         p10 = p9.Translation((0, -0.050))
         
-        piston_rod_line = primitives2D.RoundedLineSegments2D([p1, p2, p3, p4, p5, p6, p7, p8, p9, p10],
+        piston_rod_line = primitives2d.RoundedLineSegments2D([p1, p2, p3, p4, p5, p6, p7, p8, p9, p10],
                                                       {2:0.002, 3:0.002, 4:0.002, 7:0.002, 8:0.002, 9:0.002}, True)
         piston_rod_contour = vm.Contour2D([piston_rod_line])
         return piston_rod_contour
@@ -715,11 +715,11 @@ class HydraulicCylinder(DessiaObject):
         
         primitives = []
         
-        piston_rod = primitives3D.RevolvedProfile(vm.Point3D((0, 0, 0.070 + 0.050)),
+        piston_rod = primitives3d.RevolvedProfile(vm.Point3D((0, 0, 0.070 + 0.050)),
                                                   vm.z3D, vm.y3D, [self.piston_rod_contour],
                                                   vm.o3D, vm.z3D, 2*math.pi, 'piston_rod')
         
-        piston_head = primitives3D.HollowCylinder((0, 0, 0.070), vm.z3D, self.inner_radius, self.outer_radius, 0.100, 'piston_head')
+        piston_head = primitives3d.HollowCylinder((0, 0, 0.070), vm.z3D, self.inner_radius, self.outer_radius, 0.100, 'piston_head')
         
         primitives.extend([piston_rod, piston_head])
 #        primitives.append(piston_head)
@@ -741,7 +741,7 @@ class HydraulicCylinder(DessiaObject):
 #        pc = vm.Point3D((self.spring_outer_diameter/2, 0, 0))
                 
         primitives = []
-        volume = primitives3D.HelicalExtrudedProfile(vm.o3D, vm.x3D, vm.z3D,
+        volume = primitives3d.HelicalExtrudedProfile(vm.o3D, vm.x3D, vm.z3D,
                                                      vm.o3D,
                                                      vm.Vector3D((0, self.spring_free_length, 0)),
                                                      self.spring_free_length/self.spring_n_windings,
