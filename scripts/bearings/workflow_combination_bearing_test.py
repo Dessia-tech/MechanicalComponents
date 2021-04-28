@@ -96,8 +96,4 @@ workflow_run = workflow.run(input_values)
 a = workflow_run.to_dict()
 obj = wf.WorkflowRun.dict_to_object(a)
     
-# c = Client()
-# c.api_url = 'http://localhost:5000'
-c = Client(api_url = 'https://api.safran-es.dessia.tech')
-r = c.create_object_from_python_object(workflow_run)
 

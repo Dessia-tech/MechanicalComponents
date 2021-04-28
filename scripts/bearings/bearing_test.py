@@ -34,4 +34,4 @@ if not b0_bis == b0:
     
 d = b0.plot_data(stroke_width=1)
 
-plot_data.plot_canvas(d,debug_mode=False)
+plot_data.plot_canvas(d[0],debug_mode=False)

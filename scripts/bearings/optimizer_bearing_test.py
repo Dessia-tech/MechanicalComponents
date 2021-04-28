@@ -61,13 +61,12 @@ for num_sol, ba_simulation in enumerate(bis2.bearing_assembly_simulations):
 # vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].bearings[0].volmdlr_volume_model()
 # vol1.babylonjs()    
 
-<<<<<<< HEAD
-vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].volmdlr_volume_model()
-vol1.babylonjs()
-=======
+
+# vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].volmdlr_volume_model()
+# vol1.babylonjs()
+
 # vol1 = ba_simulation.bearing_assembly.bearing_combinations[0].volmdlr_volume_model()
 #vol1.babylonjs()   
->>>>>>> new-dev
 
 # vol1 = ba_simulation.volmdlr_volume_model().babylonjs()
 # plot_data.plot_canvas(ba_simulation.plot_data()[0])

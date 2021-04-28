@@ -485,14 +485,14 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
             directions = []
             for depth, node in enumerate(dt.current_node):
                 if depth % 2 == 0:
-                    
+
                     if type(self.bearing_classes[node]) == str:
                         bearing = get_python_class_from_class_name(self.bearing_classes[node])
                         bearings.append(bearing)
                     else:
                         bearing = self.bearing_classes[node]
                         bearings.append(bearing)
-         
+
                 else:
                     
                     directions.append([-1, 1][node])

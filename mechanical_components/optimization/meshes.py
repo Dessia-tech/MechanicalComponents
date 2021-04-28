@@ -68,6 +68,12 @@ class MeshOpti(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
 class CenterDistanceOpti(DessiaObject):
+    """
+    :param center_distance: 
+    :param meshes:
+    :param constraint_root_diameter
+    """
+    
     _standalone_in_db = True
 
     def __init__(self, center_distance: Tuple[float, float], meshes: List[MeshOpti], name: str = '',
@@ -156,6 +162,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                                 gear_speed = list_speed,
                                 center_distance = list_cd)
     """
+
 
 
     def __init__(self, center_distances: List[CenterDistanceOpti], cycles: List[float],

@@ -2855,15 +2855,15 @@ class BearingCombination(DessiaObject):
 
         nb_bg_radial = sum([1 if (p is True) else 0 for p in self.radial_load_linkage])
         result_bgs = bearing_combination_simulation_result.bearing_simulation_results
-        print(5874444444444433)
+        
         for radial_load, axial_load in zip(bearing_combination_simulation_result.radial_loads,
                                bearing_combination_simulation_result.axial_loads):
             print(5874444444444488)
             if (not self.behavior_link.free) and (abs(axial_load) >= 1e-4):
                 
-                print(5874444444444477)
+                
                 check_axial_load = self.axial_load(axial_load, radial_load, bearing_combination_simulation_result)
-                print(5874444444444499)
+                
                 if check_axial_load == False:
                     return False
             else:
@@ -2914,11 +2914,11 @@ class BearingCombination(DessiaObject):
 
         bodies = [ground, shaft]
         nonlinear_linkages = []
-
+        print(21333665544)
         component, nonlinear_linkages_iter, loads_iter, axial_bearings, check_axial_load \
             = self.elementary_axial_load(ground, shaft, 0, radial_load, result_bgs, axial_load)
             
-        
+        print(213336655477474747477)
         
         loads = loads + loads_iter
        
