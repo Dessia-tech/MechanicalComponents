@@ -114,7 +114,4 @@ d = sol1.plot_data()
 sol = [plt.to_dict() for plt in d]
 plot_data.plot_d3(sol)
 
-# c = Client()
-# c.api_url = 'http://localhost:5000'
-# # c.api_url = 'https://api.platform.dessia.tech'
-# r = c.CreateObject(workflow_run)
+

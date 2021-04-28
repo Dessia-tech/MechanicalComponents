@@ -78,9 +78,5 @@ object1=json.dumps(d1)
 
 object2=json.loads(object1)
 obj = wf.WorkflowRun.dict_to_object(d1)
-# c = Client(api_url = 'https://api.demo.dessia.tech')
-# r = c.create_object_from_python_object(workflow_run)
 
-c = Client(api_url = 'https://api.safran-es.dessia.tech')
-r = c.create_object_from_python_object(workflow_run)
 
