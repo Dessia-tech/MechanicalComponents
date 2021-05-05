@@ -25,12 +25,26 @@ except (ModuleNotFoundError, ImportError) as _:
 
 class RackOpti(DessiaObject):
      _standalone_in_db = True
+     
+     """
+    Rack Optimisation definition
+
+    :param transverse_pressure_angle_0: Tuple of 2 float which define the limit of the transverse_pressure_angle of the rack (min,max)
+    :param module: Tuple of 2 float which define the limit of the module of the rack (min,max)
+    :param coeff_gear_addendum: Tuple of 2 float which define the limit of the gear addendum coefficient (min,max) (gear_addendum = coeff_gear_addendum*module)
+    :param coeff_gear_dedendum: Tuple of 2 float which define the limit of the gear dedendum coefficient (min,max) (gear_dedendum = coeff_gear_dedendum*module)
+    :param coeff_root_radius:  Tuple of 2 float which define the limit of the root radius coefficient(min,max) (root_radius = coeff_root_radius*module)
+    :param coeff_circular_tooth_thickness: Tuple of 2 float which define the limit of  the circular tooth thickness coefficient (min,max) (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
+    :param helix_angle: Tuple of 2 float which define the limit of  the helix_angle of the rack
+    
+    """
 
      def __init__(self, transverse_pressure_angle_0: Tuple[float, float] = None, module: Tuple[float, float] = None,
                   coeff_gear_addendum: Tuple[float, float] = None, coeff_gear_dedendum: Tuple[float, float] = None,
                   coeff_root_radius: Tuple[float, float] = None, coeff_circular_tooth_thickness: Tuple[float, float] = None,
                   helix_angle: Tuple[float, float] = None,
                   name: str = ''):
+         
 
          self.transverse_pressure_angle_0 = transverse_pressure_angle_0
          self.module = module
@@ -50,6 +64,18 @@ class RackOpti(DessiaObject):
 
 class MeshOpti(DessiaObject):
     _standalone_in_db = True
+    """
+    Mesh Optimisation definition
+
+    :param transverse_pressure_angle_0: Tuple of 2 float which define the limit of the transverse_pressure_angle of the rack (min,max)
+    :param module: Tuple of 2 float which define the limit of the module of the rack (min,max)
+    :param coeff_gear_addendum: Tuple of 2 float which define the limit of the gear addendum coefficient (min,max) (gear_addendum = coeff_gear_addendum*module)
+    :param coeff_gear_dedendum: Tuple of 2 float which define the limit of the gear dedendum coefficient (min,max) (gear_dedendum = coeff_gear_dedendum*module)
+    :param coeff_root_radius:  Tuple of 2 float which define the limit of the root radius coefficient(min,max) (root_radius = coeff_root_radius*module)
+    :param coeff_circular_tooth_thickness: Tuple of 2 float which define the limit of  the circular tooth thickness coefficient (min,max) (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
+    :param helix_angle: Tuple of 2 float which define the limit of  the helix_angle of the rack
+    
+    """
 
     def __init__(self, torque_input: float, speed_input: Tuple[float, float], Z: int = 0, rack: RackOpti = None, gearing_interior: str = 'False',
                  coefficient_profile_shift: Tuple[float, float] = None, material: Material = None, transverse_pressure_angle: Tuple[float, float] = None, name: str = ''):

@@ -316,9 +316,13 @@ class Rack(DessiaObject):
     """
     Gear rack definition
 
-    :param transverse_pressure_angle: definition of the transverse pressure angle of the rack
+    :param transverse_pressure_angle_0: definition of the transverse pressure angle of the rack
     :type transverse_pressure_angle: radian
-
+    :param coeff_gear_addendum: update of the gear addendum coefficient (gear_addendum = coeff_gear_addendum*module)
+    :param coeff_gear_dedendum: update of the gear dedendum coefficient (gear_dedendum = coeff_gear_dedendum*module)
+    :param coeff_root_radius: update of the root radius coefficient (root_radius = coeff_root_radius*module)
+    :param coeff_circular_tooth_thickness: update of the circular tooth thickness coefficient (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
+    :param helix_angle: float  define the helix_angle of the rack
     >>> Rack1=Rack(20/180.*math.pi) #definition of an ISO rack
     """
     _standalone_in_db = True
@@ -512,15 +516,14 @@ class Mesh(DessiaObject):
     :param z: number of tooth
     :param db: base diameter
     :type db: m
-    :param cp: coefficient profile shift of the rack
-    :param transverse_pressure_angle_rack: transverse pressure angle of the rack
-    :type transverse_pressure_angle_rack: radian
-    :param coeff_gear_addendum: update of the gear addendum coefficient (gear_addendum = coeff_gear_addendum*module)
-    :param coeff_gear_dedendum: update of the gear dedendum coefficient (gear_dedendum = coeff_gear_dedendum*module)
-    :param coeff_root_radius: update of the root radius coefficient (root_radius = coeff_root_radius*module)
-    :param coeff_circular_tooth_thickness: update of the circular tooth thickness coefficient (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
+    :param coefficient_profile_shift: coefficient profile shift of the rack
+    :param rack: class rack define the rack of the mesh
+    
     :param material: class material define the gear mesh material
     :param gear_width: gear mesh width
+    :param external_torque: the torque 
+    
+
 
     >>> input={'z':13, 'db':40*1e-3, 'coefficient_profile_shift':0.3, 'rack':Rack1
                  coeff_gear_addendum:1, coeff_gear_dedendum:1, coeff_root_radius:1,
@@ -1099,10 +1102,11 @@ class Mesh(DessiaObject):
 class MeshCombination(DessiaObject):
     """
     Gear Mesh Combination definition
-    :param center_distance: 
-    :param connections: List of tuples defining gear mesh connections [[(node1,node2)], [(node2,node3)]...]
+    :param center_distance: List of float defining the center_distance for each connection
+    :param connections: List of tuples of int  defining gear mesh connections [(1,2),(2,3)...] (the int corresponding to the index of the mesh in the List meshes)
     :param meshes: List of class Mesh objects define each mesh
     :param safety_factor: Safety factor used for the ISO design
+    :param transverse_pressure_angle_ini: float defining the first transverse angle of the connections
     """
 
     _standalone_in_db = True
@@ -2868,12 +2872,14 @@ class MeshAssembly(DessiaObject):
     """
     Gear Mesh Assembly definition
     
-    :param connections: List of list of tuples defining gear mesh connections [[[(node1,node2)], [(node2,node3)]],[[(node1,node2)], [(node2,node3)]]...]
+    :param connections: List of list of tuples defining gear mesh connections [[[(1,2),(5,6)], [(2,3)]],[[(3,4)]...]
     :param mesh_combinaitons: List of class MechCombination objetcs defining each mesh combination 
-    :num_gear_match: List of tuple containing three integer values, each corresponding to one index value. The first corresponds to the gear index in the mesh assembly,
+    :param num_gear_match: List of tuple containing three integer values, each corresponding to one index value. The first corresponds to the gear index in the mesh assembly,
         the second to the gear index in the mesh combination and finally the third to the index of mesh combination. 
     :param safety_factor: Safety factor used for the ISO design
     :param dict_index_gear_match: Dictionnary of indexes, following the following format {gear_index_mesh_assembly: (gear_index_mesh_combination, index_mesh_combination)}
+    }
+    
     """
 
     _standalone_in_db = True

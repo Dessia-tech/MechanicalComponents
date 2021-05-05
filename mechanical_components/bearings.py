@@ -2277,12 +2277,15 @@ class ConceptualBearingCombination(DessiaObject):
 #        return h
 
     def bearing_combination(self, bearings):
+        
         if self.mounting.left and self.mounting.right:
             connection_bi = Mounting(left=True, right=True)
-            connection_be = Mounting(left=False, right=False)
+            connection_be = Mounting(left=True, right=True)
+            
+            
         elif not self.mounting.left and not self.mounting.right:
             connection_bi = Mounting(left=True, right=True)
-            connection_be = Mounting(left=True, right=True)
+            connection_be = Mounting(left=False, right=False)
         elif self.mounting.left:
             connection_bi = Mounting(left=False, right=True)
             connection_be = Mounting(left=True, right=False)
@@ -2740,7 +2743,8 @@ class BearingCombination(DessiaObject):
         check_axial_load = True
 
         global_axial_load = 0
-
+        
+        
         for num_bg, (bg, bg_result) in enumerate(zip(self.bearings, bearing_result)):
             component_item = []
             component_item.append(unidimensional.Body(posx, bg.d/2., name='Inner ring{}'.format(num_bg)))
@@ -2821,21 +2825,26 @@ class BearingCombination(DessiaObject):
                 nonlinear_linkages.append(unidimensional.UnilateralContact(bg1[0], bg2[0], pos2 - pos1, name='Inner rings'))
                 nonlinear_linkages.append(unidimensional.UnilateralContact(bg1[1], bg2[1], pos2 - pos1, name='Outer rings'))
         if self.connection_be.left:
+            
             bor = component[0][1]
             
             nonlinear_linkages.append(unidimensional.UnilateralContact(ground, bor, 0.0001, name='Outer rings'))
         if self.connection_be.right:
+           
             bor = component[-1][1]
            
             nonlinear_linkages.append(unidimensional.UnilateralContact(bor, ground, 0.0001, name='Outer rings'))
         if self.connection_bi.left:
+            
             bir = component[0][0]
            
             nonlinear_linkages.append(unidimensional.UnilateralContact(shaft, bir, 0.0001, name='Inner rings'))
         if self.connection_bi.right:
+           
             bir = component[-1][0]
             
             nonlinear_linkages.append(unidimensional.UnilateralContact(bir, shaft, 0.0001, name='Inner rings'))
+        
         return component, nonlinear_linkages, loads, axial_bearings, check_axial_load
 
     @classmethod
@@ -2858,7 +2867,7 @@ class BearingCombination(DessiaObject):
         
         for radial_load, axial_load in zip(bearing_combination_simulation_result.radial_loads,
                                bearing_combination_simulation_result.axial_loads):
-            
+           
             if (not self.behavior_link.free) and (abs(axial_load) >= 1e-4):
                 
                 
@@ -2901,7 +2910,7 @@ class BearingCombination(DessiaObject):
             bearing_combination_simulation_result.L10 = False
 
     def axial_load(self, axial_load, radial_load, bearing_combination_simulation_result):
-
+       
         result_bgs = bearing_combination_simulation_result.bearing_simulation_results
 
         shaft = unidimensional.Body(0, 0, name='Shaft')
@@ -2949,7 +2958,7 @@ class BearingCombination(DessiaObject):
         
         if check_axial_load:
             try:
-                result_sm = sm.Solve(500)
+                result_sm = sm.Solve(10)
     #            bearing_combination_simulation_result.axial_load_model = result_sm
     
                 for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_bearings, component)):

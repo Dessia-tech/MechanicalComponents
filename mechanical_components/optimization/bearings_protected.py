@@ -424,11 +424,11 @@ class BearingCombinationOptimizer(DessiaObject):
                 bearing_combinations = self.AnalyzeBearingCombinations(bearing_combination_configurations, 
                                                                      L10_objective = L10_objective,
                                                                      max_bearing_combinations = max_solutions)
-                print(25888)
+                
                 
 
                 for i_bearing_combination, bearing_combination in enumerate(bearing_combinations):
-                    print(bearing_combination.bearings)
+                   
                     li_bg_results = []
                     for bearing in bearing_combination.bearings:
                         li_bg_results.append(BearingSimulationResult())
