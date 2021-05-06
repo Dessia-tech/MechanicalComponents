@@ -705,6 +705,8 @@ class ParkingPawl(dc.DessiaObject):
         self.locking_mechanism_center_distance = self.pawl.slope.end.y + 0.5*self.locking_mechanism.roller_diameter
         self.locking_mechanism_start_position = self.locking_contact_results[1][-1]
         self.locking_mechanism_end_position = self.pawl.slope.end.x - 0.002
+        
+        dc.DessiaObject.__init__(self, name=name)
 
     def mass(self):
         return self.wheel.mass() + self.pawl.mass()
