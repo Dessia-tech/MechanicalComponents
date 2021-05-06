@@ -1121,7 +1121,15 @@ class ParkingPawlSimulation(dc.DessiaObject):
                                  locking_mechanism_forces=locking_mechanism_forces,
                                  max_locking_speed=max_locking_speed,
                                  name=name)
-
+        
+        self.mass = parking_pawl.mass()
+        self.axis_wheel_clearance = parking_pawl.axis_wheel_clearance()
+        self.engaged_slack = parking_pawl.engaged_slack()
+        self.rest_margin = parking_pawl.rest_margin()
+        self.width = parking_pawl.width
+        
+        
+        
     def volmdlr_primitives(self):
         wheel = self.parking_pawl.wheel.volmdlr_primitives()[0]
         pawl = self.parking_pawl.pawl.volmdlr_primitives()[0]
