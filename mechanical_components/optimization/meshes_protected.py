@@ -711,6 +711,7 @@ class ContinuousMeshesAssemblyOptimizer:
     def Objective(self, X, constraints_root_diameter, list_CA_min,
                   constraints_SAP_diameter,
                   distances_SAP_root_diameter_active_min):
+        
         _ = self.update(X)
         fineq = self.Fineq(X, constraints_root_diameter, list_CA_min,
                            constraints_SAP_diameter,
@@ -752,7 +753,8 @@ class ContinuousMeshesAssemblyOptimizer:
             else:
                 obj += 0.000001*i
 
-
+        obj+=self.mesh_assembly.mesh_combinations[0].mass()/10
+        
         return obj
 
 

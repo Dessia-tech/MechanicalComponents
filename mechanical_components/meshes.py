@@ -1831,8 +1831,7 @@ class MeshCombination(DessiaObject):
         gear_width = {}
         for eng in list_gear:
             gear_width[eng] = minimum_gear_width
-
-
+        
         def f(x, tangential_load, sigma_lim, meshes, coeff_yf_iso,
               coeff_yb_iso, DF, connection, transverse_pressure_angle,
               center_distance, connections_dfs, helix_angle, total_contact_ratio_min, transverse_contact_ratio_min):
@@ -1855,12 +1854,15 @@ class MeshCombination(DessiaObject):
                                    *coeff_yf_iso[0][1]
                                    *1/contact_ratio[1][0]
                                    *coeff_yb_iso[0][1])
-
+            
+            
+            
+      
             if contact_ratio[1][0] < total_contact_ratio_min:
                 f_contact_ratio_min = abs(total_contact_ratio_min-transverse_contact_ratio_min-contact_ratio[3][0])
             else:
                 f_contact_ratio_min = 0
-
+            
             return [f_eng1+f_contact_ratio_min, f_eng2+f_contact_ratio_min]
 
         for num_mesh, (eng1, eng2) in enumerate(connections):
