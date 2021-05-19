@@ -67,14 +67,14 @@ class MeshOpti(DessiaObject):
     """
     Mesh Optimisation definition
 
-    :param transverse_pressure_angle_0: Tuple of 2 float which define the limit of the transverse_pressure_angle of the rack (min,max)
-    :param module: Tuple of 2 float which define the limit of the module of the rack (min,max)
-    :param coeff_gear_addendum: Tuple of 2 float which define the limit of the gear addendum coefficient (min,max) (gear_addendum = coeff_gear_addendum*module)
-    :param coeff_gear_dedendum: Tuple of 2 float which define the limit of the gear dedendum coefficient (min,max) (gear_dedendum = coeff_gear_dedendum*module)
-    :param coeff_root_radius:  Tuple of 2 float which define the limit of the root radius coefficient(min,max) (root_radius = coeff_root_radius*module)
-    :param coeff_circular_tooth_thickness: Tuple of 2 float which define the limit of  the circular tooth thickness coefficient (min,max) (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
-    :param helix_angle: Tuple of 2 float which define the limit of  the helix_angle of the rack
-    
+    :param torque_input: float , represent the torque imposed on the gear
+    :param speed_input: Tuple of 2 float which define the limit of the speed imposed on the gear (min,max)
+    :param rack: RackOpti objet which define the specification for the rack of the mesh
+    :param Z: int to impose the value of the number_tooth of the gear
+    :param gearing_interior: string, equal 'True' if it's an interior gear, 'False' if not
+    :param coefficient_profile_shift: Tuple of 2 float which define the limit of  the coefficient_profile_shift of the gear(min,max) 
+    :param material: Material Objet with define the material of the mesh
+    :param transverse_pressure_angle: Tuple of 2 float which define the limit of  the coefficient_profile_shift of the gear(min,max) 
     """
 
     def __init__(self, torque_input: float, speed_input: Tuple[float, float], Z: int = 0, rack: RackOpti = None, gearing_interior: str = 'False',
@@ -95,9 +95,34 @@ class MeshOpti(DessiaObject):
 
 class CenterDistanceOpti(DessiaObject):
     """
-    :param center_distance: 
-    :param meshes:
-    :param constraint_root_diameter
+    
+    Objet for define the specification of the connexion between minimum 2 gears for the optimisation.
+    
+    :param center_distance: Tuple of 2 float which define the limit of the center_distance (min,max)
+    :param meshes: List of MeshOpti which represent the meshes which have the same center_distances.
+    [MeshOpti1,MeshOpti2,MeshOpti3,MeshOpti4] -> MeshOpti1 are connected to the MeshOpti2 and MeshOpti3 are connected to the MeshOpti4 butthe two connections have the same center_distance
+    
+    :param constraint_root_diameter: List of bool which specify if the diameter take for the condition of No Collisions between gears is the Root Diameter (If it's False the diameter taken is the Root_diameter active)
+    The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
+    
+    :param CA_min: List of float which define the CA_min  for the connexions,  the CA is the space between the root_diameter of the first_gear and the tip_diameter of the other_gear
+    The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
+    
+    :param constraint_SAP_diameter: List of bool which activate a condition of distance betwen the SAP_diameter(Start of Active Profile) of the first gear and the root_diameter_active of the second. 
+     The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
+    
+    :param distance_SAP_root_diameter_active_min: List of float which define the distance minimum between the SAP_diameter of the first gear and the root_diameter_active of the second
+    The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
+    
+    :param total_contact_ratio_min: List of float which define the condition total_contact_ratio_min (axial_contact_ratio+transverse_contact_ratio) between the gears 
+    The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
+    
+    :param axial_contact_ratio: List of float which define the  axial_contact_ratio  imposed between the gears 
+    The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
+    
+    :param transverse_contact_ratio_min: List of float which define the condition of transverse_contact_ratio_min between the gears 
+    The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
+    
     """
     
     _standalone_in_db = True
@@ -165,28 +190,11 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
     """
     Gear mesh assembly optimizer supervisor
 
-    :param connections: List of tuples defining gear mesh connection [(node1,node2), (node2,node3)...]
-    :param gear_speeds: Dictionary defining minimum and maximum speed for each gear mesh {node1: [speed_min,speed_max], node2: [speed_min,speed_max]...}
-    :param center_distances: List of two elements define gear mesh connection [[mesh1_centerdistance_min, mesh1_centerdistance_max], [mesh2_centerdistance_min, mesh2_centerdistance_max] ...] with mesh1 the mesh between node1 and node2 ...
-    :param transverse_pressure_angle: List of two elements define the transversal pressure angle interval for each mesh [[mesh1_transversepressure_min, mesh1_transversepressure_max], [mesh2_transversepressure_min, mesh2_transversepressure_max] ...]
-    :param helix_angle: Dictionary to define for one mesh the minimum and maximum helix angle {node2: [mesh1_helixangle_min, mesh1_helixangle_max]}
-    :param gear_width: Dictionary to define for each gear mesh the minimum and maximum gear width {node1: [node1_gearwidth_min,node1_gearwidth_max] ,node2: [node2_gearwidth_min,node2_gearwidth_max] ...}
-    :param forbidden_frequencies: List of two elements defining unacceptable frequency interval [(freq1_min,freq1_max), (freq2_min,freq2_max)...]
-    :param coefficient_profile_shift: Dictionary defining the minimum and maximum coefficient profile shift for each node {node1: [node1_coeffshift_min,node1_coeffshift_max],node2: [node2_coeffshift_min,node2_coeffshift_max] ...}
-    :param rack_list: Dictionary define all admissible rack {rack1:mechanical_components.meshes.Rack, rack2:mechanical_components.meshes.Rack ...}
-    :param rack_choice: Dictionary assign for each gear mesh a list of acceptable rack {node1:[rack1,rack2], node2:[rack1],node3:[rack4,rack5] ...}
-    :param material: Dictionary defining material for each gear mesh {node1:mechanical_components.meshes.Material, node2:mechanical_components.meshes.Material ...}
-    :param torques: Dictionary defining all input torque, one node where the torque is not specified is define as the 'output' {node1:torque1, node2:torque2, node3:'output'}
-    :param cycles: Dictionary defining the number of cycles for one node {node3: number_cycles3}
-    :param safety_factor: Safety factor used for the ISO design
+    :param center_distances: List of CenterDistanceOpti which define all the connexion of the MeshAssembly
+    :param cycles: List of float which define the cycle of hte gears
+    :param rigid_links: List of Tuple of 2 MeshOpti which define if there have the rigid connexion between mesh
 
-    >>> list_cd=[[0.117,0.117],[0.12,0.13]]
-    >>> list_gear_set=[(1,0),(0,2)]
-    >>> list_speed={1:[1000*npy.pi/30.,1500*npy.pi/30.],0:[4100*npy.pi/30.,
-                   4300*npy.pi/30.],2:[200*npy.pi/30.,400*npy.pi/30.]}
-    >>> GA = meshes_opt.MeshAssemblyOptimizer(connections = list_gear_set,
-                                gear_speed = list_speed,
-                                center_distance = list_cd)
+   
     """
 
 

@@ -442,7 +442,7 @@ class BearingCombinationOptimizer(DessiaObject):
                         if L10 >= L10_objective:
                             bearing_combination_simulations.append(bearing_combination_simulation)
                             sort_bearing_combination_simulations.append(L10)
-#                            print('solution with L10 {}, nb solutions {}'.format(L10, len(bearing_combination_simulations)))
+                            
 #                            break   
                     if len(bearing_combination_simulations) > max_solutions:
                         break
@@ -452,7 +452,7 @@ class BearingCombinationOptimizer(DessiaObject):
                 break
             
         self.bearing_combination_simulations = [bearing_combination_simulations[i] for i in npy.argsort(sort_bearing_combination_simulations)]
-#        print('Number of solutions: {}'.format(len(self.bearing_combination_simulations)))
+
         
 
 class ConceptualBearingCombinationOptimizer(DessiaObject):
@@ -543,7 +543,7 @@ class BearingAssemblyOptimizer(DessiaObject):
             elif axial_load < 0:
                 list_load_cases.append('left')
         
-#        print(self.mounting_types)
+
         for mounting_type in self.mounting_types:
             mounting_type_left, mounting_type_right = mounting_type.mountings
             valid_load_case = True
@@ -606,7 +606,7 @@ class BearingAssemblyOptimizer(DessiaObject):
            
                 if (len(combination_left) > 0) and (len(combination_right) > 0):
                     bearing_combinations_possibilities[(left, right)] = (combination_left, combination_right)
-#        print(len(DBC_l.ConceptualBearingCombinations(max_bearings[0])))
+
         return bearing_combinations_possibilities
         
     def SelectBestBearingCombinations(self, first_bearing_possibilies, conceptual_bearing_combination, 
@@ -675,10 +675,10 @@ class BearingAssemblyOptimizer(DessiaObject):
     
                         if L10 > L10_objective:
                             best_L10 = max(best_L10, L10)
-    #                            print(best_L10)
+
                             if bearings[0] not in bearing_possibilies:
                                 bearing_possibilies.append(bearings[0])
-    #                                print(len(bearing_possibilies))
+
                     dt.SetCurrentNodeNumberPossibilities(0)
                 else:
                     dt.SetCurrentNodeNumberPossibilities(0)
@@ -746,7 +746,7 @@ class BearingAssemblyOptimizer(DessiaObject):
 
             if L10 < L10_objective:
                 compt_continue += 1
-#                print('number of test {} with L10 {}'.format(compt_continue, L10))
+
 #                if compt_continue > 30:
 #                    break
                 continue
@@ -780,7 +780,7 @@ class BearingAssemblyOptimizer(DessiaObject):
 #        d_right_pre = 0
         
         dt = DecisionTree()
-#        print('number of initial bearing', len(bearing_left_possibilies))
+
         while not dt.finished:
             # Constructing BearingCombination
             valid = True
@@ -907,7 +907,7 @@ class BearingAssemblyOptimizer(DessiaObject):
                     break
                 
                 if L10 < L10_objective:
-#                    print(L10, L10_objective, Cr_current_node, dt.current_node, compt_nb_eval_L10)
+
                     valid = False
                 
                     compt_nb_eval_L10 += 1
@@ -949,7 +949,7 @@ class BearingAssemblyOptimizer(DessiaObject):
                         if funct([sol]) < 1e-4:
                             coefficient_Cr = sol
                             valid_fsolve = True
-#                                print('analyse coeff ', coefficient_Cr, funct([coefficient_Cr]))
+
                             break
                     if not valid_fsolve:
                         break
@@ -1173,7 +1173,7 @@ class BearingAssemblyOptimizer(DessiaObject):
             list_mass.append(min(li_mass))
         bearing_assembly_simulations_sort = [bearing_assembly_generic[i] for i in npy.argsort(list_mass)]
             
-#        print('init', list_mass, npy.argsort(list_mass))
+
         bearing_assembly_simulations = []
         sort_bearing_assembly_simulations = []
         for bearing_assemblies in bearing_assembly_simulations_sort:

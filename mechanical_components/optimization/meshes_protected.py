@@ -1056,7 +1056,7 @@ class MeshAssemblyOptimizer(DessiaObject):
                 for rack_num in self.rack_choice[engr2]:
                     mod_min, mod_max = self.rack_list[rack_num].module
                     module2_min, module2_max = (min(module2_min, mod_min), max(module2_max, mod_max))
-
+                
                 demul_min = self.gear_speeds[engr1][0]/self.gear_speeds[engr2][1]
 
                 demul_max = self.gear_speeds[engr1][1]/self.gear_speeds[engr2][0]

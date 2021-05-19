@@ -2952,18 +2952,9 @@ class BearingCombination(DessiaObject):
       
         
         nonlinear_linkages.extend(nonlinear_linkages_iter)
-        # print(12569)
+      
         
         
-        # for bodie in bodies:
-        #     print(bodie.name)
-        # for nonlinear_linkage in nonlinear_linkages:
-            
-        #     print(nonlinear_linkage.name)
-        # for load in loads:
-        #     print(load.value)
-        # for imposed_displacement in imposed_displacements:  
-        #     print(imposed_displacement.value)
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
                          imposed_displacements)
         
