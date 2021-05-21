@@ -285,7 +285,7 @@ class RadialBearing(DessiaObject):
     def __init__(self, d:float, D:float, B:float, alpha:float, i:int, Z:int, Dw:float, Cr:float=None, 
                  C0r:float=None, material:Material=material_iso, 
                  contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 width: float=0.02,mass:float=None, name:str=''):
+                 width: float=0.02,mass:float=None, speed_limit: float = None,name:str=''):
 
         self.d = d
         self.D = D
@@ -307,7 +307,7 @@ class RadialBearing(DessiaObject):
         self.contact_type_point = contact_type_point
         self.contact_type_linear = contact_type_linear
         self.contact_type_mixed = contact_type_mixed
-        
+        self.speed_limit = speed_limit
         if Cr is not None:
             self.Cr = Cr
         if C0r is not None:
@@ -639,11 +639,11 @@ class RadialBallBearing(RadialBearing):
                  Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
                  contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02, name:str=''):
+                 mass:float=None, width: float=0.02,speed_limit: float = None, name:str=''):
         RadialBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                               mass=mass,width=width,
+                               mass=mass,width=width,speed_limit=speed_limit,
                                name=name)
 
         # estimation for the graph 2D description
@@ -863,11 +863,11 @@ class AngularBallBearing(RadialBearing):
                  Dw:float=None, Cr:float=None, C0r:float=None ,
                  material:Material=material_iso, 
                  contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02, name:str=''):
+                 mass:float=None, width: float=0.02,speed_limit: float = None, name:str=''):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                               mass=mass, width=width, name=name)
+                               mass=mass, width=width, speed_limit=speed_limit, name=name)
 
 
         # estimation for the graph 2D description
@@ -1113,11 +1113,11 @@ class SphericalBallBearing(RadialBearing):
                  Dw:float=None, Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
                  contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02, name:str=''):
+                 mass:float=None, width: float=0.02, speed_limit: float = None, name:str=''):
         RadialBearing.__init__(self, d, D, B, alpha, i, Z, Dw, Cr, C0r,
                                material, 
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                               mass=mass, width=width, name=name)
+                               mass=mass, width=width,speed_limit=speed_limit, name=name)
 
 
     def equivalent_static_load(self, fr, fa=None):
@@ -1236,12 +1236,12 @@ class RadialRollerBearing(RadialBearing):
                  Dw:float=None, Cr:float=None, C0r:float=None,
                  material:Material=material_iso,
                  contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02, name:str=''):
+                 mass:float=None, width: float=0.02, speed_limit:float =None,name:str=''):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw,
                                Cr=Cr, C0r=C0r,
                                material=material, contact_type_point=contact_type_point,
                                contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                               mass=mass, width=width, name=name)
+                               mass=mass, width=width, speed_limit=speed_limit, name=name)
 #        self.typ = typ
 
         # estimation for the graph 2D description
@@ -1469,12 +1469,12 @@ class NUP(RadialRollerBearing):
                  Cr:float=None, C0r:float=None ,
                  material:Material=material_iso, 
                  contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, name:str=''):
+                 mass:float=None,speed_limit: float = None, name:str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, name=name)
+                                     mass=mass, speed_limit=speed_limit,name=name)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
 
@@ -1554,12 +1554,12 @@ class N(RadialRollerBearing):
                  Cr:float=None, C0r:float=None ,
                  material:Material=material_iso, 
                  contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, name:str=''):
+                 mass:float=None,speed_limit: float=None, name:str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, name=name)
+                                     mass=mass, speed_limit=speed_limit, name=name)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
 
@@ -1631,12 +1631,12 @@ class NF(RadialRollerBearing):
                  Dw:float=None, Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
                  contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, name:str=''):
+                 mass:float=None, speed_limit: float = None,name:str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, name=name)
+                                     mass=mass, speed_limit=speed_limit,name=name)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
 
@@ -1716,12 +1716,12 @@ class NU(RadialRollerBearing):
                  Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
                  contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, name:str=''):
+                 mass:float=None, speed_limit: float = None, name:str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, name=name)
+                                     mass=mass, speed_limit=speed_limit, name=name)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
         d1 = self.F - 0.1*(self.F - self.d)
@@ -1790,7 +1790,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                  Dw:float=None, Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
                  contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, name:str=''):
+                 mass:float=None,speed_limit: float=None, name:str=''):
 
         if Dw is None:
             self.Dw = (D - d)/7.*math.cos(alpha)
@@ -1799,7 +1799,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                                      Dw = Dw, Cr=Cr, C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, name=name)
+                                     mass=mass,speed_limit=speed_limit, name=name)
 
         # estimation for the graph 2D description
         self.Dpw = (self.d + self.D)/2.
