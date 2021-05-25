@@ -806,7 +806,7 @@ class ParkingPawl(dc.DessiaObject):
                                                              x=x,y=y)
             primitives_p1 += self.wheel.plot_data(angle=self.contact1_wheel_angle,x=x,y=y)[0].primitives
             primitives_p1 += self.pawl.plot_data(angle=0.,x=x,y=y)[0].primitives
-
+            
             primitives_p2 = self.locking_mechanism.plot_data(position=self.locking_mechanism_end_position,
                                                              center_distance=self.locking_mechanism_center_distance,
                                                              x=x,y=y)
