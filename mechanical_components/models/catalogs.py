@@ -13,6 +13,6 @@ with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_compone
                            'mechanical_components/catalogs/schaeffler.json') as schaeffler_json:
     schaeffler_catalog = bearings.BearingCatalog.load_from_file(schaeffler_json)
 
-# with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
-#                            'mechanical_components/catalogs/ntn.json') as ntn_json:
-#     ntn_catalog = bearings.BearingCatalog.load_from_file(ntn_json)
+with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_components'),
+                            'mechanical_components/catalogs/ntn.json') as ntn_json:
+    ntn_catalog = bearings.BearingCatalog.load_from_file(ntn_json)

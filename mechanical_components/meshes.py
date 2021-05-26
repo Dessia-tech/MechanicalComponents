@@ -1121,7 +1121,7 @@ class MeshCombination(DessiaObject):
     def __init__(self, center_distance: List[float], connections: List[Tuple[int, int]],
                  meshes: List[Mesh],
                  safety_factor: float = 1.2, transverse_pressure_angle_ini: float = None,
-                 name: str = ''):
+                 name: str = '', infos : str =''):
 
         self.center_distance = center_distance
         self.transverse_pressure_angle_ini = transverse_pressure_angle_ini
@@ -1132,7 +1132,7 @@ class MeshCombination(DessiaObject):
                self.connections[i] = (connection[0], connection[1])
         self.meshes = meshes
         self.meshes_dico = []
-
+        self.infos=infos
         for i, meshe in enumerate(meshes):
             self.meshes_dico.append(meshe)
 
@@ -1308,7 +1308,7 @@ class MeshCombination(DessiaObject):
             meshes[i] = Mesh(z, db, cp, rack, mat)
             meshes_dico[num_engr] = meshes[i]
 
-        gear_width, sigma_iso, sigma_lim = cls.function_solve_width_definition(safety_factor,
+        gear_width, sigma_iso, sigma_lim,infos = cls.function_solve_width_definition(safety_factor,
                                                                                minimum_gear_width,
                                                                                list_gear, tangential_load, meshes_dico,
                                                                                connections,
@@ -1333,7 +1333,7 @@ class MeshCombination(DessiaObject):
             if num_gear in cycle.keys():
                 meshes_dico[num_gear].cycle = cycle[num_gear]
 
-        mesh_combination = cls(center_distance, connections, meshes, safety_factor, transverse_pressure_angle_ini)
+        mesh_combination = cls(center_distance, connections, meshes, safety_factor, transverse_pressure_angle_ini,infos)
         return mesh_combination
 
     def update(self, Z, center_distance, connections, transverse_pressure_angle_ini,
@@ -1368,7 +1368,7 @@ class MeshCombination(DessiaObject):
             self.meshes_dico[num_engr].update(z, db, cp, tpa, cga, cgd,
                                               crr, cct, mat)
 
-        self.gear_width, self.sigma_iso, self.sigma_lim = self.function_solve_width_definition(self.safety_factor,
+        self.gear_width, self.sigma_iso, self.sigma_lim,self.infos = self.function_solve_width_definition(self.safety_factor,
                                                                                                self.minimum_gear_width,
                                                                                                self.list_gear, self.tangential_load, self.meshes_dico,
                                                                                                self.connections,
@@ -1404,7 +1404,7 @@ class MeshCombination(DessiaObject):
                                                                         self.connections, self.DF,
                                                                         self.transverse_pressure_angle, self.helix_angle)
 
-        self.gear_width, sigma_iso, sigma_lim = self.function_solve_width_definition(self.safety_factor,
+        self.gear_width, sigma_iso, sigma_lim,self.infos = self.function_solve_width_definition(self.safety_factor,
                                                                                      self.minimum_gear_width,
                                                                                      self.list_gear, self.tangential_load, self.meshes_dico,
                                                                                      self.connections,
@@ -1820,7 +1820,7 @@ class MeshCombination(DessiaObject):
         """
 
 
-
+        infos=''
         coeff_yf_iso = cls._coeff_YF_iso(connections, meshes, transverse_pressure_angle)
 
         coeff_yb_iso = cls._coeff_YB_iso(connections, material, helix_angle)
@@ -1881,10 +1881,29 @@ class MeshCombination(DessiaObject):
                                                [helix_angle[eng1], helix_angle[eng2]],
                                                total_contact_ratio_min[(eng1, eng2)],
                                                transverse_contact_ratio_min[(eng1, eng2)]), full_output=0)
+            
+            
 
             gear_width1 = abs(xs[0])
             gear_width2 = abs(xs[1])
-
+            
+            contact_ratio = cls.gear_contact_ratio_parameter(Z=[meshes[eng1].z, meshes[eng2].z], DF=[[DF[num_mesh][0], DF[num_mesh][1]]], transverse_pressure_angle=[transverse_pressure_angle[num_mesh]],
+                                                             center_distance=[center_distance[num_mesh]], meshes=[meshes[eng1], meshes[eng2]], connections_dfs=[(0, 1)],
+                                                             connections=[(0, 1)], helix_angle=[helix_angle[eng1], helix_angle[eng2]], gear_width=[gear_width1, gear_width2])
+            
+            width_torque= abs((tangential_load[0]
+                                  / (sigma_lim[0][1]
+                                      * meshes[1].rack.module))
+                            *coeff_yf_iso[0][1]
+                            *1/contact_ratio[1][0]
+                            *coeff_yb_iso[0][1])
+            
+            axial_contact_ratio_min=total_contact_ratio_min[(eng1, eng2)]-transverse_contact_ratio_min[(eng1, eng2)]
+            width_contact_ratio=abs(axial_contact_ratio_min*math.pi*meshes[eng1].rack.module/(math.sin(helix_angle[eng1])))
+            infos+= 'width_torque:'+str(width_torque)+'\n'+\
+                    'width_contact_ratio:'+str(width_contact_ratio)+'\n'+\
+                    'axial_contact_ratio'+str(contact_ratio[3][0])+ '\n'
+            
 
             gear_width_set = max(gear_width1, gear_width2)
             gear_width[eng1] = max(gear_width[eng1], gear_width_set)
@@ -1893,7 +1912,7 @@ class MeshCombination(DessiaObject):
         sigma_iso = sigma_lim
 
 
-        return gear_width, sigma_iso, sigma_lim
+        return gear_width, sigma_iso, sigma_lim,infos
 
     @classmethod
     def sigma_material_iso(cls, safety_factor, connections, material, cycle,
@@ -2867,6 +2886,11 @@ class MeshCombination(DessiaObject):
             centers[num_eng] = [x_opt[2*opt_pos], x_opt[2*opt_pos+1]]
 
         return centers
+    
+    def to_markdown(self):
+        
+        if hasattr(self,'infos'):
+            return self.infos
 
 
 class MeshAssembly(DessiaObject):
