@@ -1451,13 +1451,13 @@ class MeshAssemblyOptimizer(DessiaObject):
                     plex['transverse_contact_ratio_min'] = self.transverse_contact_ratio_min
                     ga = ContinuousMeshesAssemblyOptimizer(**plex)
                 except AttributeError:
-                    dededed
+                   
                     if verbose:
 
                         print('Convergence problem')
                     continue
                 except ValueError:
-                    dededed
+                    
                     if verbose:
 
                         print('Convergence problem')
@@ -1474,7 +1474,7 @@ class MeshAssemblyOptimizer(DessiaObject):
                 if len(ga.solutions) > 0:
                     sol1 = ga.solutions[-1]
                     self.solutions.append(sol1)
-                    print(sol1)
+                    
                     compt_nb_sol += 1
 
     #                if verbose:
@@ -1541,7 +1541,7 @@ class MeshAssemblyOptimizer(DessiaObject):
                 ga.Optimize(verbose)
             except ValueError:
                 if verbose:
-                    dededed
+                    
                     print('Convergence Problem')
             if len(ga.solutions) > 0:
                 solutions = ga.solutions[-1]
@@ -1575,7 +1575,7 @@ class MeshAssemblyOptimizer(DessiaObject):
                         print('unvalid solution')
             else:
                 if verbose:
-                    dededed
+                    
                     print('Convergence Problem')
             if compt_nb_sol == nb_sol:
                 break

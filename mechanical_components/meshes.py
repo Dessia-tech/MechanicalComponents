@@ -1333,7 +1333,7 @@ class MeshCombination(DessiaObject):
             if num_gear in cycle.keys():
                 meshes_dico[num_gear].cycle = cycle[num_gear]
 
-        mesh_combination = cls(center_distance, connections, meshes, safety_factor, transverse_pressure_angle_ini,infos)
+        mesh_combination = cls(center_distance, connections, meshes, safety_factor, transverse_pressure_angle_ini,infos=infos)
         return mesh_combination
 
     def update(self, Z, center_distance, connections, transverse_pressure_angle_ini,
@@ -1900,9 +1900,10 @@ class MeshCombination(DessiaObject):
             
             axial_contact_ratio_min=total_contact_ratio_min[(eng1, eng2)]-transverse_contact_ratio_min[(eng1, eng2)]
             width_contact_ratio=abs(axial_contact_ratio_min*math.pi*meshes[eng1].rack.module/(math.sin(helix_angle[eng1])))
-            infos+= 'width_torque:'+str(width_torque)+'\n'+\
-                    'width_contact_ratio:'+str(width_contact_ratio)+'\n'+\
-                    'axial_contact_ratio'+str(contact_ratio[3][0])+ '\n'
+            infos+= 'width:'+str(gear_width1)+'\n\n'+\
+                    'width_torque:'+str(width_torque)+'\n\n'+\
+                    'width_contact_ratio:'+str(width_contact_ratio)+'\n\n'+\
+                    'axial_contact_ratio'+str(contact_ratio[3][0])+ '\n\n'
             
 
             gear_width_set = max(gear_width1, gear_width2)
