@@ -72,7 +72,7 @@ class BearingCombinationOptimizer(DessiaObject):
                     configurations.append((mounting_type, linkage))
         return configurations
     
-    def ConceptualBearingCombinations(self, max_bearings=2):
+    def ConceptualBearingCombinations(self, max_bearings=2,max_speed=None):
         bearing_combinations_possibilities = {}
         for mounting_type, linkage in self.Configurations():
             if not (mounting_type, linkage) in bearing_combinations_possibilities:
@@ -120,11 +120,11 @@ class BearingCombinationOptimizer(DessiaObject):
                     valid = False
                     break
                 if bearings[-1].speed_limit:
-                   
-                    if max_speed>bearings[-1].speed_limit:
-                        valid=False
-                        
-                        break
+                    if max_speed:
+                        if max_speed>bearings[-1].speed_limit:
+                            valid=False
+                            
+                            break
                
                 if (bearings[-1].Cr < 20) or (d > D) or (d == 0) or (D == 0):
                     valid = False
@@ -187,6 +187,8 @@ class BearingCombinationOptimizer(DessiaObject):
             first_bearing_possibilies = self.catalog\
                 .search_bearing_catalog(conceptual_bearing_combination.bearing_classes[0],
                                         self.inner_diameter, self.outer_diameter)
+           
+            
             
             if len(first_bearing_possibilies) == 0:
                 continue
@@ -419,7 +421,8 @@ class BearingCombinationOptimizer(DessiaObject):
         bearing_combination_simulations = []
         sort_bearing_combination_simulations = []
         for max_bearings in self.number_bearings:
-            self.ConceptualBearingCombinations(max_bearings = (max_bearings))
+            self.ConceptualBearingCombinations(max_bearings = (max_bearings),max_speed=max_speed)
+           
             for (mounting_type, linkage), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
                 bearing_combination_configurations = self.SelectBearingCombinations(bearing_combinations_possibility, 
                                                                                     L10_objective = L10_objective,max_speed=max_speed)
@@ -427,7 +430,7 @@ class BearingCombinationOptimizer(DessiaObject):
                     li_bearing_assembly_configurations.extend(bearing_combination_configurations)
                 except NameError:
                     li_bearing_assembly_configurations = bearing_combination_configurations
-                    
+               
             for bearing_combination_configurations in li_bearing_assembly_configurations:
                 bearing_combinations = self.AnalyzeBearingCombinations(bearing_combination_configurations, 
                                                                      L10_objective = L10_objective,
@@ -486,7 +489,7 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
         return check
             
         
-    def ConceptualBearingCombinations(self, max_bearings=3):
+    def ConceptualBearingCombinations(self, max_bearings=3,):
         configurations = []
         dt = DecisionTree()
         nclasses = len(self.bearing_classes)
@@ -516,9 +519,11 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
                 if valid:
                     cbc = ConceptualBearingCombination(bearings, directions, self.mounting)
                     valid = cbc.check_kinematic()  
+              
                    
             
             # Testing
+           
             if valid:
                 # Counting possibilities
                 if dt.current_depth % 2 != 0:
@@ -537,6 +542,7 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
                 dt.SetCurrentNodeNumberPossibilities(0) 
             
             dt.NextNode(valid)
+        
         return configurations
 
 class BearingAssemblyOptimizer(DessiaObject):

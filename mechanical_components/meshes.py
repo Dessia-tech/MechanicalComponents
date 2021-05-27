@@ -1891,19 +1891,37 @@ class MeshCombination(DessiaObject):
                                                              center_distance=[center_distance[num_mesh]], meshes=[meshes[eng1], meshes[eng2]], connections_dfs=[(0, 1)],
                                                              connections=[(0, 1)], helix_angle=[helix_angle[eng1], helix_angle[eng2]], gear_width=[gear_width1, gear_width2])
             
-            width_torque= abs((tangential_load[0]
-                                  / (sigma_lim[0][1]
-                                      * meshes[1].rack.module))
-                            *coeff_yf_iso[0][1]
+            width_torque_gear_1= abs((tangential_load[num_mesh]
+                                  / (sigma_lim[num_mesh][eng1]
+                                      * meshes[eng1].rack.module))
+                            *coeff_yf_iso[num_mesh][eng1]
                             *1/contact_ratio[1][0]
-                            *coeff_yb_iso[0][1])
+                            *coeff_yb_iso[num_mesh][eng1])
             
-            axial_contact_ratio_min=total_contact_ratio_min[(eng1, eng2)]-transverse_contact_ratio_min[(eng1, eng2)]
+            
+            width_torque_gear_2= abs((tangential_load[num_mesh]
+                                  / (sigma_lim[num_mesh][eng2]
+                                      * meshes[eng2].rack.module))
+                            *coeff_yf_iso[num_mesh][eng2]
+                            *1/contact_ratio[1][0]
+                            *coeff_yb_iso[num_mesh][eng2])
+            
+            axial_contact_ratio_min=total_contact_ratio_min[(eng1, eng2)]-contact_ratio[2][0]
             width_contact_ratio=abs(axial_contact_ratio_min*math.pi*meshes[eng1].rack.module/(math.sin(helix_angle[eng1])))
-            infos+= 'width:'+str(gear_width1)+'\n\n'+\
-                    'width_torque:'+str(width_torque)+'\n\n'+\
-                    'width_contact_ratio:'+str(width_contact_ratio)+'\n\n'+\
-                    'axial_contact_ratio'+str(contact_ratio[3][0])+ '\n\n'
+            infos+= 'width:'+str(gear_width1)+' m'+'\n\n'
+            infos+= 'module: '+str(meshes[eng1].rack.module)+' m'+'\n\n'
+            infos+= 'tangential_load: '+str(tangential_load[num_mesh])+' N'+'\n\n \n\n'              
+            infos+='sigma_lim_gear_1: '+str(sigma_lim[num_mesh][eng1])+' Pa'+'\n\n'  
+            infos+= 'width_tangential_load_min_gear_1: '+str(width_torque_gear_1)+' mm'+'\n\n \n\n'
+            infos+= 'sigma_lim_gear_2: '+str(sigma_lim[num_mesh][eng2])+' Pa'+'\n\n'   
+
+            infos+= 'width_tangential_load_min_gear_2: '+str(width_torque_gear_2)+' mm'+'\n\n \n\n'+\
+                    'axial_contact_ratio_min: '+str(axial_contact_ratio_min)+'\n\n'
+            infos+= 'helix_angle: '+str(helix_angle[eng1])+'\n\n'
+            infos+= 'width_contact_ratio_min: '+str(width_contact_ratio)+' mm'+'\n\n'+\
+                    'total_contact_ratio:'+str(contact_ratio[1][0])+'\n\n'+\
+                    'axial_contact_ratio'+str(contact_ratio[3][0])+ '\n\n \n\n'
+                    
             
 
             gear_width_set = max(gear_width1, gear_width2)

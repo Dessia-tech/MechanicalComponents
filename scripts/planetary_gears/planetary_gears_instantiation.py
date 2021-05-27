@@ -7,6 +7,7 @@ Created on Thu May 14 16:31:51 2020
 """
 import mechanical_components.planetary_gears as pg
 from dessia_api_client import Client
+import plot_data
 sun = pg.Planetary(36, 'Sun', 'sun')
 sun_2 = pg.Planetary(60, 'Sun', 'sun_2')
 ring = pg.Planetary(84, 'Ring', 'ring')
@@ -24,5 +25,4 @@ planetary_gears_1 = pg.PlanetaryGear([sun, ring, sun_2], [planet_1, planet_2, pl
                                       planet_carrier, connection, 'pl_1')
 
 
-
-# planetary_gears_1.plot_kinematic_graph()
+plot_data.plot_canvas(planetary_gears_1.plot_kinematic_graph()[0])
