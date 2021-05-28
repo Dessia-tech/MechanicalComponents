@@ -861,8 +861,8 @@ class PlanetaryGear(DessiaObject):
                 point1 = vm.Point2D(x[i], y[i])
                 point2 = vm.Point2D(x[i+1], y[i+1])
                 line = vm.edges.LineSegment2D(point1, point2)
-                edge_style = pld.EdgeStyle(line_width=2, color_stroke=plot_data.colors.BLACK)
-                plot_data.append(edge_style=edge_style)
+                edge_style = pld.EdgeStyle(line_width=2, color_stroke=pld.colors.BLACK)
+                plot_data.append(line.plot_data(edge_style=edge_style))
 
             # plt.plot(x, y, 'r')
 
@@ -873,7 +873,7 @@ class PlanetaryGear(DessiaObject):
             point1 = vm.Point2D(x[i], y[i])
             point2 = vm.Point2D(x[i+1], y[i+1])
             line = vm.edges.LineSegment2D(point1, point2)
-            edge_style = pld.EdgeStyle(line_width=2, color_stroke=plot_data.colors.BLACK)
+            edge_style = pld.EdgeStyle(line_width=2, color_stroke=pld.colors.BLACK)
             plot_data.append(line.plot_data(edge_style=edge_style))
         # plt.plot(x, y, 'r')
 
@@ -1116,7 +1116,7 @@ class PlanetaryGear(DessiaObject):
                     self.plot_kinematic_graph_ring(coordinate_ring, lenght_gear, coordinate_planet_carrier, diameter_ring, lenght_ring, color, plot_data)
 
 
-        return pld.PrimitiveGroup(primitives=plot_data)
+        return [pld.PrimitiveGroup(primitives=plot_data)]
 
 
 

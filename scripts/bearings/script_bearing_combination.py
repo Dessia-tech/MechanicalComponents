@@ -28,36 +28,37 @@ with pkg_resources.resource_stream(pkg_resources.Requirement('mechanical_compone
     
 
 bis2 = bearings_opt.BearingCombinationOptimizer(
-                    radial_loads = [500], 
-                    axial_loads = [0],
-                    speeds = [1000],
-                    operating_times = [3600000],
-                    inner_diameter = 0.15,
-                    outer_diameter = 0.4, 
-                    length = 0.2,
+                    radial_loads = [6817.5526036989395, 4746.947246540115, 3157.1905110758025, 1263.3588630217332, 758.0756501369663, 630.4727850323359, 352.5982680434697, 424.03310100685485, 706.7218350114246, 1766.0419380663182, 3813.2473112127177], 
+                    axial_loads = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    speeds = [467.75533333333334, 254.23533333333336, 335.5613333333333, 839.008, 1271.1766666666667, 1677.9113333333335, 1677.9113333333335, 1271.1766666666667, 839.008, 335.5613333333333, 467.75533333333334],
+                    operating_times = [1440000, 1242503.9999999998, 1882692.0, 188280.0, 198792.0, 376524.00000000006, 170208.0, 205956.0, 113436.00000000001, 425448.0, 508751.99999999994],
+                    inner_diameter = 0.01,
+                    outer_diameter = 0.150, 
+                    length = 0.08,
                     linkage_types = [bearings.Linkage(ball_joint=True), bearings.Linkage(cylindric_joint=True)],
-                    mounting_types = [bearings.Mounting(left=True), bearings.Mounting(right=True), bearings.Mounting(left=True, right=True), bearings.Mounting()],
-                    number_bearings =[1, 2, 3],
+                    mounting_types = [ bearings.Mounting()],
+                    number_bearings =[1, 2],
                     bearing_classes = ['mechanical_components.bearings.RadialBallBearing', 
-                                      'mechanical_components.bearings.AngularBallBearing',
-                                      'mechanical_components.bearings.TaperedRollerBearing',
-                                      'mechanical_components.bearings.NUP', 
-                                      'mechanical_components.bearings.N', 
-                                      'mechanical_components.bearings.NU',
+                                      # 'mechanical_components.bearings.AngularBallBearing',
+                                      # 'mechanical_components.bearings.TaperedRollerBearing',
+                                      # 'mechanical_components.bearings.NUP', 
+                                      # 'mechanical_components.bearings.N', 
+                                      # 'mechanical_components.bearings.NU',
                                       # bearings_opt.NF
                                       ]
                     )
 
-bis2.optimize(max_solutions = 10)
+bis2.optimize(max_solutions = 10,max_speed=1600)
 
 for num_sol, ba_simulation in enumerate(bis2.bearing_combination_simulations):
+    print(ba_simulation.bearing_combination.bearings)
     hash_ = hash(ba_simulation)
     equak = ba_simulation.bearing_combination == ba_simulation.bearing_combination
     d = ba_simulation.to_dict()
     obj = bearings.BearingCombinationSimulation.dict_to_object(d)
     ba_simulation == obj
     
-plot_data.plot_canvas(ba_simulation.plot_data()[0])
+    plot_data.plot_canvas(ba_simulation.plot_data()[0])
 
 
 # d = bis2.to_dict()
