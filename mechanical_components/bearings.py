@@ -2176,33 +2176,6 @@ class BearingCatalog(DessiaObject):
                                                    Cr, C0r, mass = mass))
         return cls(bearings, catalog_name)
 
-#    def Dict(self):
-#        d = {'name': self.name}
-#        bearings_dicts = []
-#        for bearing in self.bearings:
-#            bearings_dicts.append(bearing.Dict())
-#
-#        d['bearings'] = bearings_dicts
-#        return d
-
-#    @classmethod
-#    def dict_to_object(cls, dict_):
-#        bearings = [RadialBearing.dict_to_object(b) for b in dict_['bearings']]
-#        return cls(bearings, dict_['name'])
-
-    def save_to_file(self, filepath, indent = 0):
-        with open(filepath+'.json', 'w') as file:
-            json.dump(self.to_dict(), file, indent = indent)
-
-    @classmethod
-    def load_from_file(cls, filepath):
-        if type(filepath) is str:
-            with open(filepath, 'r') as file:
-                d = json.loads(file)
-        else:
-            d = json.loads(filepath.read().decode('utf-8'))
-        return DessiaObject.dict_to_object(d)
-
     def search_bearing_catalog(self, bearing_class, d, D):
         if bearing_class in self.bearings_by_types:
             bearings = self.bearings_by_types[bearing_class]
