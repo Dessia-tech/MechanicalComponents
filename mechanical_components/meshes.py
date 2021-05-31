@@ -2947,7 +2947,7 @@ class MeshAssembly(DessiaObject):
     :param num_gear_match: List of tuple containing three integer values, each corresponding to one index value. The first corresponds to the gear index in the mesh assembly,
         the second to the gear index in the mesh combination and finally the third to the index of mesh combination. 
     :param safety_factor: Safety factor used for the ISO design
-    :param dict_index_gear_match: Dictionnary of indexes, following the following format {gear_index_mesh_assembly: (gear_index_mesh_combination, index_mesh_combination)}
+    
     }
     
     """

@@ -206,7 +206,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
 
     :param center_distances: List of CenterDistanceOpti which define all the connexion of the MeshAssembly
     :param cycles: List of float which define the cycle of hte gears
-    :param rigid_links: List of Tuple of 2 MeshOpti which define if there have the rigid connexion between mesh
+    :param rigid_links: List of Tuple of 2 MeshOpti which define if there have a rigid connexion between mesh
 
    
     """
