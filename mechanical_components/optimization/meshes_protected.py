@@ -60,7 +60,8 @@ class ContinuousMeshesAssemblyOptimizer:
                  coefficient_profile_shift, rack_list, rack_choice,
                  material, external_torques, cycles, safety_factor, db, verbose=False,
                  axial_contact_ratio=None, total_contact_ratio_min=None,
-                 transverse_contact_ratio_min=None):
+                 transverse_contact_ratio_min=None, percentage_width_difference_pinion_gear=None,
+                 max_width_difference_pinion_gear=None,):
         self.center_distances = center_distances
         self.transverse_pressure_angle = transverse_pressure_angle
         self.coefficient_profile_shift = coefficient_profile_shift
@@ -131,6 +132,8 @@ class ContinuousMeshesAssemblyOptimizer:
         self.axial_contact_ratio = {}
         self.total_contact_ratio_min = {}
         self.transverse_contact_ratio_min = {}
+        self.percentage_width_difference_pinion_gear = {}
+        self.max_width_difference_pinion_gear = {}
         for num_cd, list_connections in enumerate(connections):
             for (eng1, eng2) in list_connections:
                 for num_line_iter, list_dfs in enumerate(self.sub_graph_dfs): # search the number of the line gear analyze
@@ -172,6 +175,16 @@ class ContinuousMeshesAssemblyOptimizer:
                     self.transverse_contact_ratio_min[(eng1, eng2)] = transverse_contact_ratio_min[(eng1, eng2)]
                 else:
                     self.transverse_contact_ratio_min[(eng1, eng2)] = 0
+                    
+                if (eng1, eng2) in list(percentage_width_difference_pinion_gear.keys()):
+                    self.percentage_width_difference_pinion_gear[(eng1, eng2)] = percentage_width_difference_pinion_gear[(eng1, eng2)]
+                else:
+                    self.percentage_width_difference_pinion_gear[(eng1, eng2)] = 0
+                    
+                if (eng1, eng2) in list(max_width_difference_pinion_gear.keys()):
+                    self.max_width_difference_pinion_gear[(eng1, eng2)] = max_width_difference_pinion_gear[(eng1, eng2)]
+                else:
+                    self.max_width_difference_pinion_gear[(eng1, eng2)] = 0
 
 
                 num_mesh += 1
@@ -253,7 +266,10 @@ class ContinuousMeshesAssemblyOptimizer:
             self.general_data = {'Z': Z, 'connections': connections,
                                  'material':material, 'internal_torque':dic_torque, 'external_torque':self.external_torques, 'cycle':dic_cycle,
                                  'safety_factor':safety_factor, 'total_contact_ratio_min':self.total_contact_ratio_min,
-                                 'transverse_contact_ratio_min':self.transverse_contact_ratio_min}
+                                 'transverse_contact_ratio_min':self.transverse_contact_ratio_min,
+                                 'percentage_width_difference_pinion_gear':self.percentage_width_difference_pinion_gear,
+                                 'max_width_difference_pinion_gear':self.max_width_difference_pinion_gear,
+                                 }
             input_dat = dict(list(optimizer_data.items())+list(self.general_data.items()))
 
             try:
@@ -507,6 +523,8 @@ class ContinuousMeshesAssemblyOptimizer:
         optimizer_data = self._convert_X2x(X)
         optimizer_data['total_contact_ratio_min'] = self.total_contact_ratio_min
         optimizer_data['transverse_contact_ratio_min'] = self.transverse_contact_ratio_min
+        optimizer_data['percentage_width_difference_pinion_gear'] = self.percentage_width_difference_pinion_gear
+        optimizer_data['max_width_difference_pinion_gear'] = self.max_width_difference_pinion_gear
         _ = self.mesh_assembly.update(optimizer_data)
         return optimizer_data
 
@@ -519,6 +537,8 @@ class ContinuousMeshesAssemblyOptimizer:
                 optimizer_data['helix_angle'][num_eng] = helix_angle
         optimizer_data['total_contact_ratio_min'] = self.total_contact_ratio_min
         optimizer_data['transverse_contact_ratio_min'] = self.transverse_contact_ratio_min
+        optimizer_data['percentage_width_difference_pinion_gear'] = self.percentage_width_difference_pinion_gear
+        optimizer_data['max_width_difference_pinion_gear'] = self.max_width_difference_pinion_gear
         _ = self.mesh_assembly.update_helix_angle(optimizer_data)
         return optimizer_data
 
@@ -1449,6 +1469,8 @@ class MeshAssemblyOptimizer(DessiaObject):
                     plex['axial_contact_ratio'] = self.axial_contact_ratio
                     plex['total_contact_ratio_min'] = self.total_contact_ratio_min
                     plex['transverse_contact_ratio_min'] = self.transverse_contact_ratio_min
+                    plex['percentage_width_difference_pinion_gear'] = self.percentage_width_difference_pinion_gear
+                    plex['max_width_difference_pinion_gear'] = self.max_width_difference_pinion_gear
                     ga = ContinuousMeshesAssemblyOptimizer(**plex)
                 except AttributeError:
                    

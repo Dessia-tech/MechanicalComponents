@@ -132,7 +132,9 @@ class CenterDistanceOpti(DessiaObject):
                  constraint_SAP_diameter: List[bool] = None,
                  distance_SAP_root_diameter_active_min: List[float] = None,
                  total_contact_ratio_min: List[float] = None, axial_contact_ratio: List[float] = None,
-                 transverse_contact_ratio_min: List[float] = None,):
+                 transverse_contact_ratio_min: List[float] = None,
+                 percentage_width_difference_pinion_gear: List[float] = None,
+                 max_width_difference_pinion_gear: List[float] = None):
 
         self.meshes = meshes
         self.center_distance = center_distance
@@ -177,6 +179,18 @@ class CenterDistanceOpti(DessiaObject):
 
         else:
             self.transverse_contact_ratio_min = transverse_contact_ratio_min
+            
+        if percentage_width_difference_pinion_gear == None:
+            self.percentage_width_difference_pinion_gear = [0]*(int(len(meshes)/2))
+
+        else:
+            self.percentage_width_difference_pinion_gear = percentage_width_difference_pinion_gear
+            
+        if max_width_difference_pinion_gear == None:
+            self.max_width_difference_pinion_gear = [0]*(int(len(meshes)/2))
+
+        else:
+            self.max_width_difference_pinion_gear = max_width_difference_pinion_gear
 
 
 
@@ -214,6 +228,8 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
         self.axial_contact_ratio = {}
         self.total_contact_ratio_min = {}
         self.transverse_contact_ratio_min = {}
+        self.percentage_width_difference_pinion_gear = {}
+        self.max_width_difference_pinion_gear = {}
         for center_distance in center_distances:
             connections_plan = []
             for gear in center_distance.meshes:
@@ -233,6 +249,8 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
                 self.axial_contact_ratio[connections_plan[-1]] = center_distance.axial_contact_ratio[i]
                 self.total_contact_ratio_min[connections_plan[-1]] = center_distance.total_contact_ratio_min[i]
                 self.transverse_contact_ratio_min[connections_plan[-1]] = center_distance.transverse_contact_ratio_min[i]
+                self.percentage_width_difference_pinion_gear[connections_plan[-1]] = center_distance.percentage_width_difference_pinion_gear[i]
+                self.max_width_difference_pinion_gear[connections_plan[-1]] = center_distance.max_width_difference_pinion_gear[i]
             cd.append(center_distance.center_distance)
             connections.append(connections_plan)
 

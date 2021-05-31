@@ -87,7 +87,7 @@ class BearingCombinationOptimizer(DessiaObject):
         self.bearing_combinations_possibilities = bearing_combinations_possibilities
         
     def SelectBestBearingCombinations(self, first_bearing_possibilies, conceptual_bearing_combination, 
-                                      L10_objective,max_speed =None):
+                                      L10_objective,max_speed =None,S=0.8):
         dt = DecisionTree()
         nb_bearings = len(conceptual_bearing_combination.bearing_classes)
         
@@ -117,18 +117,21 @@ class BearingCombinationOptimizer(DessiaObject):
                 current_Cr.append(bearings[-1].Cr)
                 
                 if B > self.length:
+                    
                     valid = False
                     break
                 if bearings[-1].speed_limit:
                     if max_speed:
                         if max_speed>bearings[-1].speed_limit:
+                           
+                            
                             valid=False
                             
                             break
-               
+                
                 if (bearings[-1].Cr < 20) or (d > D) or (d == 0) or (D == 0):
                     valid = False
-                    
+                
                     break
                 
             if (dt.current_depth == nb_bearings) and valid:
@@ -138,6 +141,7 @@ class BearingCombinationOptimizer(DessiaObject):
             
             # Testing
             if valid:
+                
                 # Counting possibilities
                 if dt.current_depth == 0:
                     dt.SetCurrentNodeNumberPossibilities(len(first_bearing_possibilies))
@@ -151,13 +155,25 @@ class BearingCombinationOptimizer(DessiaObject):
                 elif dt.current_depth == nb_bearings:
                     list_L10 = []
                     for bearing in bearings:
-                        list_L10.append(bearing.estimate_base_life_time(Fr = self.radial_loads,
+                        
+                        list_L10.append(bearing.adjusted_life_time(Fa=self.axial_loads,Fr = self.radial_loads,
                                                                 N = self.speeds, 
-                                                                t = self.operating_times, Cr = bearing.Cr))
+                                                                t = self.operating_times,
+                                                                Cr = bearing.Cr, S=S))
                     
                     L10 = BearingCombination.estimate_base_life_time(list_L10)
+                   
                     if L10 > L10_objective:
+                      
+                        
                         if bearings[0] not in bearing_possibilies:
+                            for bearing in bearings:
+                                bearing.infos+='L10: ' + str(round(L10,3)) + 'millions de tours \n\n' +\
+                                                'L10_objective: ' + str(round(L10_objective,3)) + 'millions de tours \n\n'  + \
+                                                'speed_limit: ' + str(round(bearing.speed_limit,3)) + ' rad/s \n\n'  + \
+                                                'mass: ' + str(round(bearing.mass,3)) + ' kg \n\n'  + \
+                                                'cost: ' + str(round(bearing.cost,3)) + ' euros \n\n'  
+                                
                             bearing_possibilies.append(bearings[0])
                            
                     dt.SetCurrentNodeNumberPossibilities(0)
@@ -170,7 +186,7 @@ class BearingCombinationOptimizer(DessiaObject):
         
         return bearing_possibilies
         
-    def SelectBearingCombinations(self, bearing_combinations_possibility, L10_objective, max_speed =None):
+    def SelectBearingCombinations(self, bearing_combinations_possibility, L10_objective, max_speed =None,S=0.8):
         
         select_configurations = []
         li_quote = []
@@ -204,7 +220,7 @@ class BearingCombinationOptimizer(DessiaObject):
         return select_configurations
     
     def AnalyzeBearingCombinations(self, select_configurations, L10_objective,
-                                  max_bearing_combinations=10):
+                                  max_bearing_combinations=10,S=0.8):
         
         conceptual_bearing_combination, bearing_possibilies = select_configurations
        
@@ -220,6 +236,7 @@ class BearingCombinationOptimizer(DessiaObject):
         d_pre = 0
         
         dt = DecisionTree()
+      
         while not dt.finished:
             # Constructing BearingCombination
             valid = True
@@ -248,23 +265,24 @@ class BearingCombinationOptimizer(DessiaObject):
                     
                     bearings.append(bearing_possibilities[node])
                     B += bearing.B
-                    
+                  
                 if (d > D):
+                    
                     valid = False
                   
                     break
                 if d == 0:
-                    
+                   
                     valid = False
                   
                     break
                 if D == 0:
                     valid = False
-               
+                    
                     break
                 
                 if B > self.length:
-                    
+                   
                     valid = False
                   
                     break
@@ -289,7 +307,7 @@ class BearingCombinationOptimizer(DessiaObject):
                        
                         break
                 
-                    
+                  
             if (dt.current_depth == nb_bearings) and valid:
                
                 if Cr_current_node_m == Cr_current_node:
@@ -318,7 +336,7 @@ class BearingCombinationOptimizer(DessiaObject):
                 if L10 is False:
                     break
                 if L10 < L10_objective:
-                   
+                    
                     valid = False
                 
                     compt_nb_eval_L10 += 1
@@ -336,7 +354,7 @@ class BearingCombinationOptimizer(DessiaObject):
                         bearing_combination_simulation_result = BearingCombinationSimulationResult(li_bg_results, self.axial_loads,
                                                                         self.radial_loads, self.speeds, self.operating_times)
         
-                        check = bc.base_life_time(bearing_combination_simulation_result)
+                        check = bc.base_life_time(bearing_combination_simulation_result,S=S)
                         if not check:
                             return False
                         
@@ -408,16 +426,17 @@ class BearingCombinationOptimizer(DessiaObject):
             
             dt.NextNode(valid)
         
-    def optimize(self, max_solutions:int=10,max_speed=None)->None:
+    def optimize(self, max_solutions:int=10,S=0.8)->None:
         
         L10_objective = 0
         for speed, time in zip(self.speeds, self.operating_times):
             L10_objective += speed/(2*math.pi)*time
         L10_objective = L10_objective/1e6
         
+     
 #        pos_min = -self.length/2.
 #        pos_max = self.length/2.
-
+        max_speed=max(self.speeds)
         bearing_combination_simulations = []
         sort_bearing_combination_simulations = []
         for max_bearings in self.number_bearings:
@@ -425,7 +444,8 @@ class BearingCombinationOptimizer(DessiaObject):
            
             for (mounting_type, linkage), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
                 bearing_combination_configurations = self.SelectBearingCombinations(bearing_combinations_possibility, 
-                                                                                    L10_objective = L10_objective,max_speed=max_speed)
+                                                                                    L10_objective = L10_objective,
+                                                                                    max_speed=max_speed,S=S)
                 try:
                     li_bearing_assembly_configurations.extend(bearing_combination_configurations)
                 except NameError:
@@ -434,7 +454,7 @@ class BearingCombinationOptimizer(DessiaObject):
             for bearing_combination_configurations in li_bearing_assembly_configurations:
                 bearing_combinations = self.AnalyzeBearingCombinations(bearing_combination_configurations, 
                                                                      L10_objective = L10_objective,
-                                                                     max_bearing_combinations = max_solutions)
+                                                                     max_bearing_combinations = max_solutions,S=S)
                 
                 
                 

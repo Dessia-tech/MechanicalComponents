@@ -285,7 +285,7 @@ class RadialBearing(DessiaObject):
     def __init__(self, d:float, D:float, B:float, alpha:float, i:int, Z:int, Dw:float, Cr:float=None, 
                  C0r:float=None, material:Material=material_iso, 
                  contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 width: float=0.02,mass:float=None, speed_limit: float = None,name:str=''):
+                 width: float=0.02,mass:float=None, speed_limit: float = None,name:str='',infos: str=''):
 
         self.d = d
         self.D = D
@@ -308,6 +308,7 @@ class RadialBearing(DessiaObject):
         self.contact_type_linear = contact_type_linear
         self.contact_type_mixed = contact_type_mixed
         self.speed_limit = speed_limit
+        self.infos=infos
         if Cr is not None:
             self.Cr = Cr
         if C0r is not None:
@@ -358,14 +359,17 @@ class RadialBearing(DessiaObject):
         Pr = 0.
         for fr, ni, ti in zip(Fr, N, t):
             C = fr**(cls.coeff_baselife)
+            
             if C != 0.:
                 cycles = ni * ti * 2 * math.pi
                 Pr += cycles * C
                 total_cycles += cycles
+        
         if total_cycles == 0.:
             return math.inf #TODO
         else:
             Pr = (Pr / total_cycles) ** (1/cls.coeff_baselife)
+            
             L10 = (Cr/Pr)**(cls.coeff_baselife)
             return L10
 
@@ -382,26 +386,31 @@ class RadialBearing(DessiaObject):
         total_cycles = 0.
         Pr = 0.
 
-      
+        
         for fr, fa, ni, ti in zip(Fr, Fa, N, t):
            
             
             C = self.equivalent_dynamic_load(fr, fa)**(self.coeff_baselife)
-           
+            if ti==0:
+                ti=1
             if C != 0.:
                 cycles = ni * ti * 2 * math.pi
                 Pr += cycles * C
                 total_cycles += cycles
                 
-      
+                
+       
         if total_cycles != 0:
             Pr = (Pr / total_cycles) ** (1/self.coeff_baselife)
             L10 = (Cr/Pr)**(self.coeff_baselife)
+            if not self.infos:
+                self.infos+= 'Pr: ' + str(round(Pr,3))+ ' N \n\n' +\
+                             'Cr: ' + str(round(Cr,3)) + ' N \n\n'
             return L10
         else:
             raise BearingL10Error()
 
-    def adjusted_life_time(self, Fr, Fa, N, t, T, Cr=None, C0r=None, S=0.9):
+    def adjusted_life_time(self, Fr, Fa, N, t, T=None, Cr=None, C0r=None, S=0.9):
         """
         Adjusted Lifetime in millions of cycles for a 100* S % fiability
 
@@ -421,8 +430,9 @@ class RadialBearing(DessiaObject):
             self.C0r = C0r
         total_cycles = 0.
         nci_Lpi = 0.
-
-        for fr, fa, n, ti, Ti  in zip(Fr, Fa, N, t, T):
+        
+            
+        for fr, fa, n, ti   in zip(Fr, Fa, N, t, ):
             if (((fr != 0.) or (fa != 0.)) and (n > 0.)):
                 cycles = n * ti * 2 * math.pi
                 total_cycles += cycles
@@ -431,29 +441,29 @@ class RadialBearing(DessiaObject):
                      * (math.log(1/S)/math.log(100/90.))**(1/self.material.weibull_e)
                      + self.material.c_gamma)
                 L10 = self.base_life_time([fr], [fa], [n], [ti], self.Cr)
-                Pr = self.equivalent_dynamic_load(fr, fa)
+                # Pr = self.equivalent_dynamic_load(fr, fa)
                 # viscosité cinématique de référence
-                if n < (1000*2*math.pi/60.):
-                    nu1 = 45000*(n*60/(2*math.pi))**(-0.83)*(self.Dpw*1e3)**(-0.5)
-                else:
-                    nu1 = 4500*(n*60/(2*math.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
+                # if n < (1000*2*math.pi/60.):
+                #     nu1 = 45000*(n*60/(2*math.pi))**(-0.83)*(self.Dpw*1e3)**(-0.5)
+                # else:
+                #     nu1 = 4500*(n*60/(2*math.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
 
 #                coeff_oil = self.oil.oil_kinematic_viscosity_curve
-                nu = 10**(10**(self.oil.A*math.log10(Ti)+self.oil.B))-0.6
-                kappa = nu/nu1
-                # Oil Contamination
-                ec = self.oil.OilParameterContamination(self.Dpw,3)
-                # Wear limit load
-                if self.Dpw<0.1:
-                    Cu = self.C0r/8.2
-                else:
-                    Cu = self.C0r/8.2*(100/(self.Dpw*1e3))**0.3
+                # nu = 10**(10**(self.oil.A*math.log10(Ti)+self.oil.B))-0.6
+                # kappa = nu/nu1
+                # # Oil Contamination
+                # ec = self.oil.OilParameterContamination(self.Dpw,3)
+                # # Wear limit load
+                # if self.Dpw<0.1:
+                #     Cu = self.C0r/8.2
+                # else:
+                #     Cu = self.C0r/8.2*(100/(self.Dpw*1e3))**0.3
 
-                kappa = min(kappa, 4)
-                a_iso = self.a_iso(kappa, ec, Cu, Pr)
-                a_iso = min(50., a_iso)
+                # kappa = min(kappa, 4)
+                # a_iso = self.a_iso(kappa, ec, Cu, Pr)
+                # a_iso = min(50., a_iso)
 
-                Lpi = a1*a_iso*L10 # Corrected lifetime
+                Lpi = a1*L10 # Corrected lifetime
                 nci_Lpi += cycles/Lpi
         if nci_Lpi > 0:
             return total_cycles / nci_Lpi
@@ -616,6 +626,9 @@ class RadialBearing(DessiaObject):
 
     def to_shaft(self):
         return shafts_assembly.Shaft(self.plot_contour(), name=self.name)
+    
+    def to_markdown(self):
+        return self.infos
 
 
 
@@ -639,16 +652,17 @@ class RadialBallBearing(RadialBearing):
                  Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
                  contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02,speed_limit: float = None, name:str=''):
+                 mass:float=None, width: float=0.02,speed_limit: float = None, name:str='',infos: str=''):
         RadialBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
                                mass=mass,width=width,speed_limit=speed_limit,
-                               name=name)
+                               name=name,infos=infos)
 
         # estimation for the graph 2D description
         h1 = self.Dw/2. - (self.E - self.D1)/2.
         self.h = self.B/2. - self.Dw/2.*math.sin(math.acos(h1/(self.Dw/2.))) - 1e-4
+        
 
     def equivalent_static_load(self, fr, fa=None):
         #Charge radiale statique équivalente
@@ -863,11 +877,11 @@ class AngularBallBearing(RadialBearing):
                  Dw:float=None, Cr:float=None, C0r:float=None ,
                  material:Material=material_iso, 
                  contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02,speed_limit: float = None, name:str=''):
+                 mass:float=None, width: float=0.02,speed_limit: float = None, name:str='',infos: str=''):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                               mass=mass, width=width, speed_limit=speed_limit, name=name)
+                               mass=mass, width=width, speed_limit=speed_limit, name=name,infos=infos)
 
 
         # estimation for the graph 2D description
@@ -1113,11 +1127,11 @@ class SphericalBallBearing(RadialBearing):
                  Dw:float=None, Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
                  contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02, speed_limit: float = None, name:str=''):
+                 mass:float=None, width: float=0.02, speed_limit: float = None, name:str='',infos: str=''):
         RadialBearing.__init__(self, d, D, B, alpha, i, Z, Dw, Cr, C0r,
                                material, 
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                               mass=mass, width=width,speed_limit=speed_limit, name=name)
+                               mass=mass, width=width,speed_limit=speed_limit, name=name, infos=infos)
 
 
     def equivalent_static_load(self, fr, fa=None):
@@ -1236,12 +1250,12 @@ class RadialRollerBearing(RadialBearing):
                  Dw:float=None, Cr:float=None, C0r:float=None,
                  material:Material=material_iso,
                  contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02, speed_limit:float =None,name:str=''):
+                 mass:float=None, width: float=0.02, speed_limit:float =None,name:str='',infos: str=''):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw,
                                Cr=Cr, C0r=C0r,
                                material=material, contact_type_point=contact_type_point,
                                contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                               mass=mass, width=width, speed_limit=speed_limit, name=name)
+                               mass=mass, width=width, speed_limit=speed_limit, name=name,infos=infos)
 #        self.typ = typ
 
         # estimation for the graph 2D description
@@ -1469,12 +1483,12 @@ class NUP(RadialRollerBearing):
                  Cr:float=None, C0r:float=None ,
                  material:Material=material_iso, 
                  contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None,speed_limit: float = None, name:str=''):
+                 mass:float=None,speed_limit: float = None, name:str='',infos: str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, speed_limit=speed_limit,name=name)
+                                     mass=mass, speed_limit=speed_limit,name=name,infos = infos)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
 
@@ -1554,12 +1568,12 @@ class N(RadialRollerBearing):
                  Cr:float=None, C0r:float=None ,
                  material:Material=material_iso, 
                  contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None,speed_limit: float=None, name:str=''):
+                 mass:float=None,speed_limit: float=None, name:str='',infos: str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, speed_limit=speed_limit, name=name)
+                                     mass=mass, speed_limit=speed_limit, name=name, infos = infos)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
 
@@ -1631,12 +1645,12 @@ class NF(RadialRollerBearing):
                  Dw:float=None, Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
                  contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, speed_limit: float = None,name:str=''):
+                 mass:float=None, speed_limit: float = None,name:str='',infos: str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, speed_limit=speed_limit,name=name)
+                                     mass=mass, speed_limit=speed_limit,name=name, infos = infos)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
 
@@ -1716,12 +1730,12 @@ class NU(RadialRollerBearing):
                  Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
                  contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, speed_limit: float = None, name:str=''):
+                 mass:float=None, speed_limit: float = None, name:str='', infos: str=''):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, speed_limit=speed_limit, name=name)
+                                     mass=mass, speed_limit=speed_limit, name=name, infos = infos)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
         d1 = self.F - 0.1*(self.F - self.d)
@@ -1790,7 +1804,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                  Dw:float=None, Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
                  contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None,speed_limit: float=None, name:str=''):
+                 mass:float=None,speed_limit: float=None, name:str='',infos: str=''):
 
         if Dw is None:
             self.Dw = (D - d)/7.*math.cos(alpha)
@@ -1799,7 +1813,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                                      Dw = Dw, Cr=Cr, C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass,speed_limit=speed_limit, name=name)
+                                     mass=mass,speed_limit=speed_limit, name=name,infos=infos)
 
         # estimation for the graph 2D description
         self.Dpw = (self.d + self.D)/2.
@@ -2864,7 +2878,7 @@ class BearingCombination(DessiaObject):
             return 0
         return sum_L10_inv**(-1/1.5)
 
-    def base_life_time(self, bearing_combination_simulation_result):
+    def base_life_time(self, bearing_combination_simulation_result,S=0.8):
         
         for bearing_result in bearing_combination_simulation_result.bearing_simulation_results:
             bearing_result.radial_load = []
@@ -2899,8 +2913,8 @@ class BearingCombination(DessiaObject):
         for bg, bg_result in zip(self.bearings,
                                  bearing_combination_simulation_result.bearing_simulation_results):
             try:
-                L10 = bg.base_life_time(Fr = bg_result.radial_load, Fa = bg_result.axial_load,
-                            N = speed, t = time, Cr = bg.Cr)
+                L10 = bg.adjusted_life_time(Fr = bg_result.radial_load, Fa = bg_result.axial_load,
+                            N = speed, t = time, Cr = bg.Cr,S=S)
             except FloatingPointError :
                 L10= False
                 
@@ -3064,6 +3078,14 @@ class BearingCombination(DessiaObject):
     def volmdlr_volume_model(self):
         model = self.volume_model()
         return model
+    
+    def to_markdown(self):
+        infos=''
+        for i,bearing in enumerate(self.bearings):
+            infos+='Bearing ' + str(i) + '\n\n'
+            infos += bearing.infos
+        
+        return infos
 
 #    def Dict(self, subobjects_id={}, stringify_keys=True):
 #        """
