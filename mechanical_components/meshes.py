@@ -1914,7 +1914,10 @@ class MeshCombination(DessiaObject):
                             *coeff_yb_iso[num_mesh][eng2])
             
             axial_contact_ratio_min=total_contact_ratio_min[(eng1, eng2)]-contact_ratio[2][0]
-            width_contact_ratio=abs(axial_contact_ratio_min*math.pi*meshes[eng1].rack.module/(math.sin(helix_angle[eng1])))
+            if helix_angle[eng1]: 
+                width_contact_ratio=abs(axial_contact_ratio_min*math.pi*meshes[eng1].rack.module/(math.sin(helix_angle[eng1])))
+            else:
+                width_contact_ratio=width_torque_gear_1
             gear_width_set = max(gear_width1, gear_width2)
             
             if meshes[eng1].z<meshes[eng2].z:
