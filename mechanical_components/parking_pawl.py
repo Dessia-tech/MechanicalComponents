@@ -1117,6 +1117,19 @@ class ParkingPawl(dc.DessiaObject):
         # print('Sizing width: ', min_width)
 
 
+    def to_markdown(self):
+        s = '''## Parking pawl datasheet\n
+Engaged slack: {} °
+Axis/wheel clearance: {} mm
+ejections levers: {}mm / {}mm
+        '''.format(math.degrees(self.engaged_slack()),
+                   round(1000*self.axis_wheel_clearance(), 3),
+                   round(1000*self.ejection_levers()[0], 3),
+                   round(1000*self.ejection_levers()[1], 3)
+                   )
+
+        return s
+
 class ParkingPawlSimulation(dc.DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes = ['wheel', 'pawl']

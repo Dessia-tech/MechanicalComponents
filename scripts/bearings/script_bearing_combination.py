@@ -39,11 +39,19 @@ bis2 = bearings_opt.BearingCombinationOptimizer(
                     mounting_types = [ bearings.Mounting()],
                     number_bearings =[1, 2],
                     bearing_classes = ['mechanical_components.bearings.RadialBallBearing', 
+<<<<<<< HEAD
                                         'mechanical_components.bearings.AngularBallBearing',
                                         'mechanical_components.bearings.TaperedRollerBearing',
                                         'mechanical_components.bearings.NUP', 
                                         'mechanical_components.bearings.N', 
                                         'mechanical_components.bearings.NU',
+=======
+                                       'mechanical_components.bearings.AngularBallBearing',
+                                      # 'mechanical_components.bearings.TaperedRollerBearing',
+                                      # 'mechanical_components.bearings.NUP', 
+                                      # 'mechanical_components.bearings.N', 
+                                      # 'mechanical_components.bearings.NU',
+>>>>>>> origin/bearings
                                       # bearings_opt.NF
                                       ]
                     )
