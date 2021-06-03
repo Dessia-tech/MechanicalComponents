@@ -1548,12 +1548,13 @@ class MeshCombination(DessiaObject):
 
 
 
-            transverse_contact_ratio.append((1/2.*(math.sqrt(meshes[engr1].outside_diameter**2
+            transverse_contact_ratio.append(1/2.*(math.sqrt(meshes[engr1].outside_diameter**2
                                                              - meshes[engr1].db**2)
                                                    + math.sqrt(meshes[engr2].outside_diameter**2
                                                                - meshes[engr2].db**2)
                                                    - 2*center_distance1*math.sin(transverse_pressure_angle1))
-                                             /(transverse_radial_pitch1*math.cos(transverse_pressure_angle1))))#TODO
+                                             /(transverse_radial_pitch1*math.cos(transverse_pressure_angle1)))#TODO
+           
 
             total_contact_ratio.append(axial_contact_ratio[-1]+transverse_contact_ratio[-1])
 
@@ -1862,13 +1863,24 @@ class MeshCombination(DessiaObject):
                                    *1/contact_ratio[1][0]
                                    *coeff_yb_iso[0][1])
             
+            print(f_eng1)
+            print(f_eng2)
+            # print(x)
+            # print(contact_ratio[1][0])
+            # print(abs((tangential_load[0]
+            #                         / (sigma_lim[0][1]
+            #                            * meshes[1].rack.module))
+            #                        *coeff_yf_iso[0][1]
+            #                        *1/contact_ratio[1][0]
+            #                        *coeff_yb_iso[0][1]))
             
-            
-      
+                
             if contact_ratio[1][0] < total_contact_ratio_min:
                 f_contact_ratio_min = abs(total_contact_ratio_min-transverse_contact_ratio_min-contact_ratio[3][0])
             else:
                 f_contact_ratio_min = 0
+            
+            
             
             return [f_eng1+f_contact_ratio_min, f_eng2+f_contact_ratio_min]
 
@@ -1897,7 +1909,7 @@ class MeshCombination(DessiaObject):
             contact_ratio = cls.gear_contact_ratio_parameter(Z=[meshes[eng1].z, meshes[eng2].z], DF=[[DF[num_mesh][0], DF[num_mesh][1]]], transverse_pressure_angle=[transverse_pressure_angle[num_mesh]],
                                                              center_distance=[center_distance[num_mesh]], meshes=[meshes[eng1], meshes[eng2]], connections_dfs=[(0, 1)],
                                                              connections=[(0, 1)], helix_angle=[helix_angle[eng1], helix_angle[eng2]], gear_width=[gear_width1, gear_width2])
-            
+   
             width_torque_gear_1= abs((tangential_load[num_mesh]
                                   / (sigma_lim[num_mesh][eng1]
                                       * meshes[eng1].rack.module))
@@ -1935,16 +1947,30 @@ class MeshCombination(DessiaObject):
                     gear_width[eng1] = max(gear_width[eng1], gear_width_set)
                     gear_width[eng2] = max(gear_width[eng2], gear_width_set)*(1+percentage_width_difference_pinion_gear[(eng1, eng2)])
             
-            
-            
+            angle = 30./180.*math.pi
+            s_thickness_iso_1, h_height_iso_1 = meshes[eng1].gear_iso_section(angle)
+            coeff_ys_iso_gear_1 = meshes[eng1]._iso_YS(s_thickness_iso_1)
+            s_thickness_iso_2, h_height_iso_2 = meshes[eng2].gear_iso_section(angle)
+            coeff_ys_iso_gear_2 = meshes[eng2]._iso_YS(s_thickness_iso_2)
+            if contact_ratio[2][0]>=1.4 and gear_width[eng1]<width_torque_gear_1:
+                print(contact_ratio)
+                print(width_torque_gear_1)
+                print(gear_width[eng1])
+                dedededede
             infos+= 'module: '+str(round(meshes[eng1].rack.module*10**3,3))+' mm'+'\n\n'
+            infos+= 'safety_factor: '+str(round(safety_factor,3)) +'\n\n'
             infos+= 'tangential_load: '+str(round(tangential_load[num_mesh],3))+' N'+'\n\n \n\n'  
-            infos+= 'width_gear_1:'+str(round(gear_width[eng1]*10**3,2))+' mm'+'\n\n'            
-            infos+='sigma_lim_gear_1: '+str(round(sigma_lim[num_mesh][eng1]*10**6,3))+' MPa'+'\n\n'  
+            infos+= 'width_gear_1: '+str(round(gear_width[eng1]*10**3,2))+' mm'+'\n\n'     
+            infos+='coeff_YS(facteur concentration de contrainte)_gear_1: '+str(round(coeff_ys_iso_gear_1,3))+'\n\n' 
+            infos+='sigma_lim_gear_1: '+str(round(coeff_ys_iso_gear_1*safety_factor*sigma_lim[num_mesh][eng1]*10**-6,3))+' MPa'+'\n\n'  
+            infos+='coeff_YB(facteur d inclinaison )_gear_1: '+str(round(coeff_yb_iso[num_mesh][eng1],3))+'\n\n' 
+            infos+='coeff_YF(facteur de formes )_gear_1: '+str(round(coeff_yf_iso[num_mesh][eng1],3))+'\n\n' 
             infos+= 'width_tangential_load_min_gear_1: '+str(round(width_torque_gear_1*10**3,3))+' mm'+'\n\n \n\n'
-            infos+= 'width_gear_2:'+str(round(gear_width[eng2]*10**3,2))+' mm'+'\n\n'   
-            infos+= 'sigma_lim_gear_2: '+str(round(sigma_lim[num_mesh][eng2],3))+' MPa'+'\n\n'   
-
+            infos+= 'width_gear_2: '+str(round(gear_width[eng2]*10**3,2))+' mm'+'\n\n'   
+            infos+='coeff_YS(facteur concentration de contrainte)_gear_2: '+str(round(coeff_ys_iso_gear_2,3))+'\n\n' 
+            infos+= 'sigma_lim_gear_2: '+str(round(coeff_ys_iso_gear_2*safety_factor*sigma_lim[num_mesh][eng2]*10**-6,3))+' MPa'+'\n\n'   
+            infos+='coeff_YB(facteur d inclinaison )_gear_2: '+str(round(coeff_yb_iso[num_mesh][eng2],3))+'\n\n' 
+            infos+='coeff_YF(facteur de formes )_gear_2: '+str(round(coeff_yf_iso[num_mesh][eng2],3))+'\n\n'
             infos+= 'width_tangential_load_min_gear_2: '+str(round(width_torque_gear_2*10**3,3))+' mm'+'\n\n \n\n'+\
                     'axial_contact_ratio_min: '+str(round(axial_contact_ratio_min,3))+'\n\n'
             infos+= 'helix_angle: '+str(round(helix_angle[eng1]*180/math.pi,3))+'\n\n'

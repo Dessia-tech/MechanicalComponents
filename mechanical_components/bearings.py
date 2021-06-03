@@ -2878,7 +2878,7 @@ class BearingCombination(DessiaObject):
             return 0
         return sum_L10_inv**(-1/1.5)
 
-    def base_life_time(self, bearing_combination_simulation_result,S=0.8):
+    def base_life_time(self, bearing_combination_simulation_result,S=0.9):
         
         for bearing_result in bearing_combination_simulation_result.bearing_simulation_results:
             bearing_result.radial_load = []

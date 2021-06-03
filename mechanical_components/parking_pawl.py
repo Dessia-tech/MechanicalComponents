@@ -723,7 +723,7 @@ class ParkingPawl(dc.DessiaObject):
         dc.DessiaObject.__init__(self, name=name)
 
     def mass(self):
-        return self.wheel.mass() + self.pawl.mass()
+        return abs(self.wheel.mass() + self.pawl.mass())
 
     def minimum_width(self, wheel_torque:float, safety_factor:float=2):
         wheel_min_width = self.wheel.minimum_width(wheel_torque)
