@@ -315,7 +315,7 @@ class RadialBearing(DessiaObject):
             self.infos=[]
         else:
             self.infos=infos
-        if not self.speed_infos:
+        if not speed_infos:
             self.speed_infos=[]
         else:
             self.speed_infos=speed_infos
