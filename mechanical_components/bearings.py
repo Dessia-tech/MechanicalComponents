@@ -677,7 +677,7 @@ class RadialBallBearing(RadialBearing):
                  mass:float=None, width: float=0.02,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='',infos: List[str]=[],speed_infos:List[float]=[]):
+                 name:str='',infos: List[str]=None,speed_infos:List[float]=None):
         
         RadialBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
@@ -925,7 +925,7 @@ class AngularBallBearing(RadialBearing):
                  width: float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name: str='',infos: List[str]=[],speed_infos:List[float]=[]):
+                 name: str='',infos: List[str]=None,speed_infos:List[float]=None):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
@@ -1197,7 +1197,7 @@ class SphericalBallBearing(RadialBearing):
                  mass:float=None, width: float=0.02,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='', infos: List[str]=[],speed_infos:List[float]=[]):
+                 name:str='', infos: List[str]=None,speed_infos:List[float]=None):
         RadialBearing.__init__(self, d, D, B, alpha, i, Z, Dw, Cr, C0r,
                                material, 
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
@@ -1328,7 +1328,7 @@ class RadialRollerBearing(RadialBearing):
                  mass:float=None, width: float=0.02,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='',infos: List[str]=[],speed_infos:List[float]=[]):
+                 name:str='',infos: List[str]=None,speed_infos:List[float]=None):
         
 
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw,
@@ -1571,7 +1571,7 @@ class NUP(RadialRollerBearing):
                  mass:float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='',infos: List[str]=[],speed_infos:List[float]=[]):
+                 name:str='',infos: List[str]=None,speed_infos:List[float]=None):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
                                      material=material, 
@@ -1662,7 +1662,7 @@ class N(RadialRollerBearing):
                  mass:float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='', infos: List[str]=[],speed_infos:List[float]=[]):
+                 name:str='', infos: List[str]=None,speed_infos:List[float]=None):
         
 
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
@@ -1748,7 +1748,7 @@ class NF(RadialRollerBearing):
                  mass:float=None, 
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='',infos: List[str]=[],speed_infos:List[float]=[]):
+                 name:str='',infos: List[str]=None,speed_infos:List[float]=None):
         
 
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
@@ -1843,7 +1843,7 @@ class NU(RadialRollerBearing):
                  mass:float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='', infos: List[str]=[],speed_infos:List[float]=[]):
+                 name:str='', infos: List[str]=None,speed_infos:List[float]=None):
         
 
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
@@ -1926,7 +1926,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                  mass:float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='', infos: List[str]=[],speed_infos:List[float]=[]):
+                 name:str='', infos: List[str]=None,speed_infos:List[float]=None):
 
 
         if Dw is None:
