@@ -479,7 +479,8 @@ class BearingCombinationOptimizer(DessiaObject):
                             bearing_combination_simulations.append(bearing_combination_simulation)
                             sort_bearing_combination_simulations.append(L10)
                             for bearing in bearing_combination_simulation.bearing_combination.bearings:
-                                new_infos='L10: ' + str(round(L10,3)) + 'millions de tours \n\n' +\
+                                new_infos='Name: ' + bearing.name + ' \n\n' +\
+                                        'L10: ' + str(round(L10,3)) + 'millions de tours \n\n' +\
                                         'L10_objective: ' + str(round(L10_objective,3)) + 'millions de tours \n\n'  + \
                                         'speed_limit: ' + str(round(bearing.speed_limit,3)) + ' rad/s \n\n'  + \
                                         'max_speed: ' + str(round(max_speed,3)) + ' rad/s \n\n'  + \
