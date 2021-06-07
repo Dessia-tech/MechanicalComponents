@@ -288,7 +288,7 @@ class RadialBearing(DessiaObject):
                  width: float=0.02,mass:float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='',infos: List[str]=[],speed_infos:List[float]=[]):
+                 name:str='',infos: List[str]=None,speed_infos:List[float]=None):
 
 
         self.d = d
@@ -311,9 +311,14 @@ class RadialBearing(DessiaObject):
         self.contact_type_point = contact_type_point
         self.contact_type_linear = contact_type_linear
         self.contact_type_mixed = contact_type_mixed
-
-        self.infos=infos
-        self.speed_infos=speed_infos
+        if not infos:
+            self.infos=[]
+        else:
+            self.infos=infos
+        if not self.speed_infos:
+            self.speed_infos=[]
+        else:
+            self.speed_infos=speed_infos
 
         
         self.oil_speed_limit = oil_speed_limit
