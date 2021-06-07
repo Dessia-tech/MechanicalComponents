@@ -1849,22 +1849,21 @@ class MeshCombination(DessiaObject):
                                                              connections=connection, helix_angle=helix_angle, gear_width=[abs(x[0]), abs(x[1])])
 
 
-            f_eng1 = abs(x[0])-abs((tangential_load[0]
+            f_eng1 = abs(abs(x[0])-abs((tangential_load[0]
                                     / (sigma_lim[0][0]
                                        * meshes[0].rack.module))
                                    *coeff_yf_iso[0][0]
                                    *1/contact_ratio[1][0]
-                                   *coeff_yb_iso[0][0])
+                                   *coeff_yb_iso[0][0]))
 
-            f_eng2 = abs(x[1])-abs((tangential_load[0]
+            f_eng2 = abs(abs(x[1])-abs((tangential_load[0]
                                     / (sigma_lim[0][1]
                                        * meshes[1].rack.module))
                                    *coeff_yf_iso[0][1]
                                    *1/contact_ratio[1][0]
-                                   *coeff_yb_iso[0][1])
+                                   *coeff_yb_iso[0][1]))
             
-            print(f_eng1)
-            print(f_eng2)
+
             # print(x)
             # print(contact_ratio[1][0])
             # print(abs((tangential_load[0]
@@ -1952,7 +1951,7 @@ class MeshCombination(DessiaObject):
             coeff_ys_iso_gear_1 = meshes[eng1]._iso_YS(s_thickness_iso_1)
             s_thickness_iso_2, h_height_iso_2 = meshes[eng2].gear_iso_section(angle)
             coeff_ys_iso_gear_2 = meshes[eng2]._iso_YS(s_thickness_iso_2)
-            if contact_ratio[2][0]>=1.4 and gear_width[eng1]<width_torque_gear_1:
+            if contact_ratio[2][0]>=1.59 and gear_width[eng1]<width_torque_gear_1:
                 print(contact_ratio)
                 print(width_torque_gear_1)
                 print(gear_width[eng1])

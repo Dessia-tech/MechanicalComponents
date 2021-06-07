@@ -74,8 +74,10 @@ class BearingCombinationOptimizer(DessiaObject):
     
     def ConceptualBearingCombinations(self, max_bearings=2,max_speed=None):
         bearing_combinations_possibilities = {}
+       
         for mounting_type, linkage in self.Configurations():
             if not (mounting_type, linkage) in bearing_combinations_possibilities:
+                
                 DBC = mechanical_components.optimization.bearings.ConceptualBearingCombinationOptimizer(linkage, 
                                                     mounting_type, 
                                                     self.inner_diameter,
@@ -96,6 +98,7 @@ class BearingCombinationOptimizer(DessiaObject):
         list_next_bearings = [0]*nb_bearings
         current_Cr_pre = []
         while not dt.finished:
+           
             valid = True
             bearings = []
             current_Cr = []
@@ -123,7 +126,7 @@ class BearingCombinationOptimizer(DessiaObject):
                 if bearings[-1].speed_limit:
                     if max_speed:
                         if max_speed>bearings[-1].speed_limit:
-                           
+                            
                             
                             valid=False
                             
@@ -194,7 +197,7 @@ class BearingCombinationOptimizer(DessiaObject):
             bearing_combinations.append(conceptual_bearing_combination)
         
         for conceptual_bearing_combination in [bearing_combinations[i] for i in npy.argsort(li_quote)]:
-                    
+            
             first_bearing_possibilies = self.catalog\
                 .search_bearing_catalog(conceptual_bearing_combination.bearing_classes[0],
                                         self.inner_diameter, self.outer_diameter)
@@ -202,6 +205,7 @@ class BearingCombinationOptimizer(DessiaObject):
             
             
             if len(first_bearing_possibilies) == 0:
+                
                 continue
             
             # selection of the best first_bearing_left_possibilies
@@ -435,9 +439,11 @@ class BearingCombinationOptimizer(DessiaObject):
         bearing_combination_simulations = []
         sort_bearing_combination_simulations = []
         for max_bearings in self.number_bearings:
+            
             self.ConceptualBearingCombinations(max_bearings = (max_bearings),max_speed=max_speed)
-           
+            
             for (mounting_type, linkage), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
+                print(self.bearing_combinations_possibilities.items())
                 bearing_combination_configurations = self.SelectBearingCombinations(bearing_combinations_possibility, 
                                                                                     L10_objective = L10_objective,
                                                                                     max_speed=max_speed,S=S)
@@ -476,10 +482,19 @@ class BearingCombinationOptimizer(DessiaObject):
                                 new_infos='L10: ' + str(round(L10,3)) + 'millions de tours \n\n' +\
                                         'L10_objective: ' + str(round(L10_objective,3)) + 'millions de tours \n\n'  + \
                                         'speed_limit: ' + str(round(bearing.speed_limit,3)) + ' rad/s \n\n'  + \
+                                        'max_speed: ' + str(round(max_speed,3)) + ' rad/s \n\n'  + \
+                                        'max_axial_loads: ' + str(round(max(self.axial_loads),3)) + ' N \n\n'  + \
+                                        'max_radial_loads: ' + str(round(max(self.radial_loads),3)) + ' N \n\n'  + \
+                                        'Cr: ' + str(round(bearing.Cr,3)) + ' N \n\n'  + \
                                         'mass: ' + str(round(bearing.mass,3)) + ' kg \n\n'  + \
-                                        'cost: ' + str(round(bearing.cost,3)) + ' euros \n\n'  
-                                if not new_infos in bearing.infos:
-                                    bearing.infos+=new_infos
+                                        'cost: ' + str(round(bearing.cost,3)) + ' euros \n\n' 
+                                valid_append_infos=True
+                                for speed in bearing.speed_infos:
+                                    if speed>=max_speed*0.9 and speed<=max_speed*1.1:
+                                        valid_append_infos=False
+                                if valid_append_infos:
+                                    bearing.infos.append(new_infos)
+                                    bearing.speed_infos.append(max_speed)
                             
 #                            break   
                     if len(bearing_combination_simulations) > max_solutions:
@@ -504,6 +519,7 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
                                    AngularBallBearing,
                                    SphericalBallBearing]:
                 check = True
+        
         if (len(bearings) == 1) and (self.linkage.ball_joint):
             if bearings[0] in [RadialBallBearing, 
                                AngularBallBearing,
@@ -516,6 +532,7 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
         configurations = []
         dt = DecisionTree()
         nclasses = len(self.bearing_classes)
+       
         while not dt.finished:
             # Constructing BearingCombination
             valid = True
@@ -538,25 +555,29 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
             if dt.current_depth // 2 == max_bearings:
                 # Instanciating 
                 valid = self.CheckLinkage(bearings)
-                
+                print(valid)
                 if valid:
                     cbc = ConceptualBearingCombination(bearings, directions, self.mounting)
                     valid = cbc.check_kinematic()  
+                    print(valid)
               
                    
             
             # Testing
-           
+            
             if valid:
                 # Counting possibilities
                 if dt.current_depth % 2 != 0:
+                    
                     # counting sides
                     if bearing.symmetric:
                         dt.SetCurrentNodeNumberPossibilities(1)
                     else:
                         dt.SetCurrentNodeNumberPossibilities(2)
                 else:
+                    print(dt.current_depth // 2)
                     if dt.current_depth // 2 == max_bearings:
+                        print(valid)
                         dt.SetCurrentNodeNumberPossibilities(0)    
                         configurations.append(cbc)
                     else:
@@ -661,6 +682,7 @@ class BearingAssemblyOptimizer(DessiaObject):
         list_next_bearings = [0]*nb_bearings
 #        current_Cr_pre = []
         while not dt.finished:
+            
             valid = True
             bearings = []
             current_Cr = []
@@ -682,10 +704,12 @@ class BearingAssemblyOptimizer(DessiaObject):
                 current_Cr.append(bearings[-1].Cr)
                 
                 if B > length:
+                    
                     valid = False
                     break
                 
                 if (bearings[-1].Cr < 1) or (d > D) or (d == 0) or (D == 0):
+                   
                     valid = False
                     break
                 

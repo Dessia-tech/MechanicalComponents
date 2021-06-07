@@ -288,7 +288,7 @@ class RadialBearing(DessiaObject):
                  width: float=0.02,mass:float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='',infos: str=''):
+                 name:str='',infos: List[str]=[],speed_infos:List[float]=[]):
 
 
         self.d = d
@@ -313,11 +313,12 @@ class RadialBearing(DessiaObject):
         self.contact_type_mixed = contact_type_mixed
 
         self.infos=infos
+        self.speed_infos=speed_infos
 
         
         self.oil_speed_limit = oil_speed_limit
         self.grease_speed_limit = grease_speed_limit
-        
+      
 
         if Cr is not None:
             self.Cr = Cr
@@ -413,9 +414,7 @@ class RadialBearing(DessiaObject):
         if total_cycles != 0:
             Pr = (Pr / total_cycles) ** (1/self.coeff_baselife)
             L10 = (Cr/Pr)**(self.coeff_baselife)
-            if not self.infos:
-                self.infos+= 'Pr: ' + str(round(Pr,3))+ ' N \n\n' +\
-                             'Cr: ' + str(round(Cr,3)) + ' N \n\n'
+
             return L10
         else:
             raise BearingL10Error()
@@ -440,7 +439,12 @@ class RadialBearing(DessiaObject):
             self.C0r = C0r
         total_cycles = 0.
         nci_Lpi = 0.
-        
+        if Fa[0]:
+            print(2555)
+            print(Fa)
+            print(Fr)
+            print(N)
+            print(t)
             
         for fr, fa, n, ti   in zip(Fr, Fa, N, t, ):
             if (((fr != 0.) or (fa != 0.)) and (n > 0.)):
@@ -638,7 +642,10 @@ class RadialBearing(DessiaObject):
         return shafts_assembly.Shaft(self.plot_contour(), name=self.name)
     
     def to_markdown(self):
-        return self.infos
+        infos=''
+        for info in self.infos:
+            infos+=info
+        return info
 
 
 
@@ -665,7 +672,7 @@ class RadialBallBearing(RadialBearing):
                  mass:float=None, width: float=0.02,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='',infos: str=''):
+                 name:str='',infos: List[str]=[],speed_infos:List[float]=[]):
         
         RadialBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
@@ -673,7 +680,7 @@ class RadialBallBearing(RadialBearing):
                                mass=mass,width=width,
                                oil_speed_limit=oil_speed_limit,
                                grease_speed_limit=grease_speed_limit,
-                               name=name,infos=infos)
+                               name=name,infos=infos,speed_infos=speed_infos)
 
 
         # estimation for the graph 2D description
@@ -807,12 +814,17 @@ class RadialBallBearing(RadialBearing):
         plot_datas = []
 
 
-        be_arc2d= self.external_ring_contour()[0]
+        be_arc2d,be_arc2d_2= self.external_ring_contour()
         be_arc2d1=be_arc2d.translation((pos, pos_y), True)
+        be_arc2d1_2=be_arc2d_2.translation((pos, pos_y), True)
         plot_datas.append(be_arc2d1.plot_data())
-        bi_arc2d = self.internal_ring_contour()[0]
+        plot_datas.extend(be_arc2d1_2.plot_data())
+        bi_arc2d,bi_arc2d_2  = self.internal_ring_contour()
+
         bi_arc2d1 = bi_arc2d.translation((pos, pos_y), True)
+        bi_arc2d1_2 = bi_arc2d_2.translation((pos, pos_y), True)
         plot_datas.append(bi_arc2d1.plot_data())
+        plot_datas.extend(bi_arc2d1_2.plot_data())
         ball_sup = self.rolling_contour()
         ball_sup1 = ball_sup.translation((pos, self.Dpw/2.+pos_y), True)
         plot_datas.append(ball_sup1.plot_data())
@@ -820,10 +832,19 @@ class RadialBallBearing(RadialBearing):
         be_arc2d_inf = be_arc2d.rotation(vm.Point2D(0, 0), math.pi, True)
         be_arc2d_inf1 = be_arc2d_inf.translation(vm.Vector2D(pos, pos_y), True)
         plot_datas.append(be_arc2d_inf1.plot_data())
+        be_arc2d_inf_2 = be_arc2d_2.rotation(vm.Point2D(0, 0), math.pi, True)
+        be_arc2d_inf1_2 = be_arc2d_inf_2.translation(vm.Vector2D(pos, pos_y), True)
+        plot_datas.extend(be_arc2d_inf1_2.plot_data())
         
         bi_arc2d_inf = bi_arc2d.rotation(vm.Point2D(0, 0), math.pi, True)
         bi_arc2d_inf1 = bi_arc2d_inf.translation(vm.Vector2D(pos, pos_y), True)
         plot_datas.append(bi_arc2d_inf1.plot_data())
+        
+        bi_arc2d_inf_2 = bi_arc2d_2.rotation(vm.Point2D(0, 0), math.pi, True)
+        bi_arc2d_inf1_2 = bi_arc2d_inf_2.translation(vm.Vector2D(pos, pos_y), True)
+        plot_datas.extend(bi_arc2d_inf1_2.plot_data())
+        
+        
         ball_inf1 = ball_sup1.rotation(vm.Point2D(pos, pos_y), math.pi, True)
         plot_datas.append(ball_inf1.plot_data())
 
@@ -899,14 +920,14 @@ class AngularBallBearing(RadialBearing):
                  width: float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='',infos=infos):
+                 name: str='',infos: List[str]=[],speed_infos:List[float]=[]):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
                                mass=mass, width=width,
                                oil_speed_limit=oil_speed_limit,
                                grease_speed_limit=grease_speed_limit,
-                               name=name,infos=infos)
+                               name=name,infos=infos,speed_infos=speed_infos)
 
 
 
@@ -1062,23 +1083,38 @@ class AngularBallBearing(RadialBearing):
     def plot_data(self, pos=0,pos_y=0, quote=True, constructor=True, direction=1):
 
         plot_datas = []
-        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)[0]
+        be_sup,be_sup_2 = self.external_ring_contour(direction = direction, sign_V = 1)
         be_sup1 = be_sup.translation((pos, pos_y), True)
         plot_datas.append(be_sup1.plot_data())
-        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)[0]
+        be_sup1_2 = be_sup_2.translation((pos, pos_y), True)
+        plot_datas.extend(be_sup1_2.plot_data())
+        
+        
+        bi_sup, bi_sup_2 = self.internal_ring_contour(direction = direction, sign_V = 1)
         bi_sup1 = bi_sup.translation((pos, pos_y), True)
         plot_datas.append(bi_sup1.plot_data())
+        bi_sup1_2 = bi_sup_2.translation((pos, pos_y), True)
+        plot_datas.extend(bi_sup1_2.plot_data())
+        
         ball = self.rolling_contour()
         ball_sup = ball.translation((0, self.Dpw/2.+pos_y), True)
         ball_sup1 = ball_sup.translation((pos, pos_y), True)
         plot_datas.append(ball_sup1.plot_data())
 
-        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)[0]
+        be_inf,be_inf_2 = self.external_ring_contour(direction = direction, sign_V = -1)
         be_inf1 = be_inf.translation((pos, pos_y), True)
         plot_datas.append(be_inf1.plot_data())
-        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)[0]
+        
+        be_inf1_2 = be_inf_2.translation((pos, pos_y), True)
+        plot_datas.extend(be_inf1_2.plot_data())
+        
+        bi_inf,bi_inf_2 = self.internal_ring_contour(direction = direction, sign_V = -1)
         bi_inf1 = bi_inf.translation((pos, pos_y), True)
         plot_datas.append(bi_inf1.plot_data())
+        
+        bi_inf1_2 = bi_inf_2.translation((pos, pos_y), True)
+        plot_datas.extend(bi_inf1_2.plot_data())
+        
         ball_inf = ball.translation((0, -self.Dpw/2.+pos_y), True)
         ball_inf1 = ball_inf.translation((pos, pos_y), True)
         plot_datas.append(ball_inf1.plot_data())
@@ -1156,14 +1192,14 @@ class SphericalBallBearing(RadialBearing):
                  mass:float=None, width: float=0.02,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str=''):
+                 name:str='', infos: List[str]=[],speed_infos:List[float]=[]):
         RadialBearing.__init__(self, d, D, B, alpha, i, Z, Dw, Cr, C0r,
                                material, 
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
                                mass=mass, width=width,
                                oil_speed_limit=oil_speed_limit,
                                grease_speed_limit=grease_speed_limit,
-                               name=name, infos=infos)
+                               name=name, infos=infos,speed_infos=speed_infos)
 
 
 
@@ -1287,7 +1323,7 @@ class RadialRollerBearing(RadialBearing):
                  mass:float=None, width: float=0.02,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='',infos: str=''):
+                 name:str='',infos: List[str]=[],speed_infos:List[float]=[]):
         
 
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw,
@@ -1297,7 +1333,7 @@ class RadialRollerBearing(RadialBearing):
                                mass=mass, width=width,
                                oil_speed_limit=oil_speed_limit,
                                grease_speed_limit=grease_speed_limit,
-                               name=name, infos=infos)
+                               name=name, infos=infos,speed_infos=speed_infos)
 
 #        self.typ = typ
 
@@ -1530,7 +1566,7 @@ class NUP(RadialRollerBearing):
                  mass:float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='',infos: str=''):
+                 name:str='',infos: List[str]=[],speed_infos:List[float]=[]):
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
                                      material=material, 
@@ -1538,7 +1574,7 @@ class NUP(RadialRollerBearing):
                                      mass=mass,       
                                      oil_speed_limit=oil_speed_limit,
                                      grease_speed_limit=grease_speed_limit,
-                                     name=name, infos = infos)
+                                     name=name, infos = infos,speed_infos=speed_infos)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
 
@@ -1621,7 +1657,7 @@ class N(RadialRollerBearing):
                  mass:float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='', infos: str=''):
+                 name:str='', infos: List[str]=[],speed_infos:List[float]=[]):
         
 
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
@@ -1631,7 +1667,7 @@ class N(RadialRollerBearing):
                                      mass=mass,
                                      oil_speed_limit=oil_speed_limit,
                                      grease_speed_limit=grease_speed_limit,
-                                     name=name, infos=infos)
+                                     name=name, infos=infos,speed_infos=speed_infos)
 
 
     def internal_ring_contour(self, direction=1, sign_V=1):
@@ -1707,7 +1743,7 @@ class NF(RadialRollerBearing):
                  mass:float=None, 
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str='',infos: str=''):
+                 name:str='',infos: List[str]=[],speed_infos:List[float]=[]):
         
 
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
@@ -1717,7 +1753,7 @@ class NF(RadialRollerBearing):
                                      mass=mass,
                                      oil_speed_limit=oil_speed_limit,
                                      grease_speed_limit=grease_speed_limit,
-                                     name=name,infos = infos)
+                                     name=name,infos = infos,speed_infos=speed_infos)
 
 
     def internal_ring_contour(self, direction=1, sign_V=1):
@@ -1797,30 +1833,23 @@ class NU(RadialRollerBearing):
     def __init__(self, d:float, D:float, B:float, i:int=1, Z:int=None, Dw:float=None, 
                  Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
-<<<<<<< HEAD
-                 contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, speed_limit: float = None, name:str='', infos: str=''):
-=======
                  contact_type_point:bool=False, contact_type_linear:bool=True,
                  contact_type_mixed:bool=False,
                  mass:float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str=''):
+                 name:str='', infos: List[str]=[],speed_infos:List[float]=[]):
         
->>>>>>> origin/bearings
+
         RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
                                      C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-<<<<<<< HEAD
-                                     mass=mass, speed_limit=speed_limit, name=name, infos = infos)
-=======
                                      mass=mass,
                                      oil_speed_limit=oil_speed_limit,
                                      grease_speed_limit=grease_speed_limit,
-                                     name=name)
->>>>>>> origin/bearings
+                                     name=name, infos=infos,speed_infos=speed_infos)
+
 
     def internal_ring_contour(self, direction=1, sign_V=1):
         d1 = self.F - 0.1*(self.F - self.d)
@@ -1889,14 +1918,11 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                  Dw:float=None, Cr:float=None, C0r:float=None,
                  material:Material=material_iso, 
                  contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-<<<<<<< HEAD
-                 mass:float=None,speed_limit: float=None, name:str='',infos: str=''):
-=======
                  mass:float=None,
                  oil_speed_limit: float = None,
                  grease_speed_limit: float = None,
-                 name:str=''):
->>>>>>> origin/bearings
+                 name:str='', infos: List[str]=[],speed_infos:List[float]=[]):
+
 
         if Dw is None:
             self.Dw = (D - d)/7.*math.cos(alpha)
@@ -1905,14 +1931,10 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                                      Dw = Dw, Cr=Cr, C0r=C0r,
                                      material=material, 
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-<<<<<<< HEAD
-                                     mass=mass,speed_limit=speed_limit, name=name,infos=infos)
-=======
                                      mass=mass,
                                      oil_speed_limit=oil_speed_limit,
                                      grease_speed_limit=grease_speed_limit,
-                                     name=name)
->>>>>>> origin/bearings
+                                     name=name, infos=infos,speed_infos=speed_infos)
 
         # estimation for the graph 2D description
         self.Dpw = (self.d + self.D)/2.
@@ -2408,7 +2430,7 @@ class ConceptualBearingCombination(DessiaObject):
         list_node_bearings = []
         for i, bearing_classe in enumerate(self.bearing_classes):
             list_node_bearings.append(npy.arange(8*(i + 1), 8*(i + 2)))
-
+       
         nx_graph = self.graph(list_node_bearings, list_node_output)
 
         check = self.check_viability_angular_bearing(nx_graph, list_node_bearings,
@@ -2420,8 +2442,9 @@ class ConceptualBearingCombination(DessiaObject):
         list_left_bearing = list_node_bearings[0]
         list_right_bearing = list_node_bearings[-1]
         nx_graph = self.bearing_classes[0].graph(list_left_bearing, self.directions[0])
-
+        
         bg0_load = self.bearing_classes[0].taking_loads
+        print(bg0_load)
         if self.directions[0] == -1:
             if self.bearing_classes[0].taking_loads == 'left':
                 bg0_load = 'right'
@@ -2472,6 +2495,7 @@ class ConceptualBearingCombination(DessiaObject):
                 nx_graph.add_edges_from([(list_nd1[7], list_nd2[3])])
 
         bg_end_load = self.bearing_classes[-1].taking_loads
+        print(bg_end_load)
         if self.directions[-1] == -1:
             if self.bearing_classes[-1].taking_loads == 'left':
                 bg_end_load = 'right'
@@ -2494,6 +2518,9 @@ class ConceptualBearingCombination(DessiaObject):
         # axial load generate by angular_bearing
         node_axial_ring = []
         # if self.mounting in ['left', 'both']:
+        print(2000000)
+        print(self.mounting.left)
+        print(self.mounting.right)
         if self.mounting.left:
             node_axial_ring.append(li_node_output[0])
             node_axial_ring.append(li_node_output[7])
@@ -2524,17 +2551,21 @@ class ConceptualBearingCombination(DessiaObject):
                     pass
             if valid_input == False:
                 valid = False
-
+        
         #check axial mounting load
         # if self.mounting in ['right', 'both']:
         if self.mounting.right:
             node_input = li_node_output[3]
             node_output = li_node_output[5]
+            print(node_input)
+            print(node_output)
+            print(nx_graph.nodes)
             try:
                 if (node_input in nx_graph) and (node_output in nx_graph):
                     list(nx.all_shortest_paths(nx_graph, source=node_input,
                                                 target=node_output))
                 else:
+                    
                     valid = False
             except nx.NetworkXNoPath:
                 valid = False
@@ -2543,6 +2574,9 @@ class ConceptualBearingCombination(DessiaObject):
         if self.mounting.left:
             node_input = li_node_output[6]
             node_output = li_node_output[0]
+            print(node_input)
+            print(node_output)
+            print(nx_graph.nodes)
             try:
                 if (node_input in nx_graph) and (node_output in nx_graph):
                     list(nx.all_shortest_paths(nx_graph, source=node_input,
@@ -2553,7 +2587,7 @@ class ConceptualBearingCombination(DessiaObject):
                 valid = False
                 pass
 
-
+        
         def AnalyseConnection(node_input, node_output):
             valid = True
             try:
