@@ -1119,10 +1119,10 @@ class ParkingPawl(dc.DessiaObject):
 
     def to_markdown(self):
         s = '''## Parking pawl datasheet\n
-Engaged slack: {} °
-Axis/wheel clearance: {} mm
-ejections levers: {}mm / {}mm
-        '''.format(math.degrees(self.engaged_slack()),
+Engaged slack: {} °\n
+Axis/wheel clearance: {} mm\n
+ejections levers: {}mm / {}mm\n
+        '''.format(round(math.degrees(self.engaged_slack()),3),
                    round(1000*self.axis_wheel_clearance(), 3),
                    round(1000*self.ejection_levers()[0], 3),
                    round(1000*self.ejection_levers()[1], 3)

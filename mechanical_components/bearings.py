@@ -3194,7 +3194,7 @@ class BearingCombination(DessiaObject):
         infos=''
         for i,bearing in enumerate(self.bearings):
             infos+='Bearing ' + str(i) + '\n\n'
-            infos += bearing.infos
+            infos += bearing.to_markdown()
         
         return infos
 
