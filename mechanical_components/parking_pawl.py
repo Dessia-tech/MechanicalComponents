@@ -1121,7 +1121,7 @@ class ParkingPawl(dc.DessiaObject):
         s = '''## Parking pawl datasheet\n
 Engaged slack: {} °\n
 Axis/wheel clearance: {} mm\n
-ejections levers: {}mm / {}mm\n
+ejections levers: {}mm / {}mm\n\n
         '''.format(round(math.degrees(self.engaged_slack()),3),
                    round(1000*self.axis_wheel_clearance(), 3),
                    round(1000*self.ejection_levers()[0], 3),
