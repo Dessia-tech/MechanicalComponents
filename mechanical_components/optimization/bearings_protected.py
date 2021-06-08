@@ -478,17 +478,33 @@ class BearingCombinationOptimizer(DessiaObject):
                         if L10 >= L10_objective:
                             bearing_combination_simulations.append(bearing_combination_simulation)
                             sort_bearing_combination_simulations.append(L10)
+                            abs_axial_loads=[]
+                            abs_radial_loads=[]
+                            for force in self.axial_loads:
+                                abs_axial_loads.append(abs(force))
+                            for force in self.radial_loads:
+                                abs_radial_loads.append(abs(force))
                             for bearing in bearing_combination_simulation.bearing_combination.bearings:
-                                new_infos='Name: ' + bearing.name + ' \n\n' +\
-                                        'L10: ' + str(round(L10,3)) + 'millions revolutions \n\n' +\
-                                        'L10_objective: ' + str(round(L10_objective,3)) + 'millions revolutions \n\n'  + \
-                                        'speed_limit: ' + str(round(bearing.speed_limit,3)) + ' rad/s \n\n'  + \
-                                        'max_speed: ' + str(round(max_speed,3)) + ' rad/s \n\n'  + \
-                                        'max_axial_loads: ' + str(round(max(self.axial_loads),3)) + ' N \n\n'  + \
-                                        'max_radial_loads: ' + str(round(max(self.radial_loads),3)) + ' N \n\n'  + \
-                                        'Cr: ' + str(round(bearing.Cr,3)) + ' N \n\n'  + \
-                                        'mass: ' + str(round(bearing.mass,3)) + ' kg \n\n'  + \
-                                        'cost: ' + str(round(bearing.cost,3)) + ' euros \n\n' 
+                                
+                                new_infos='|Name|L10|Speed Limit|Cr|Mass|Cost|' + '\n' + \
+                                          '|:------:|:----------:|:---------------:|:--------:|:---------:|:---------:|' + '\n'+ \
+                                          '|'+ bearing.name+'|'+str(round(L10,3)) + ' millions revolutions |'+ str(round(bearing.speed_limit,3)) + ' rad/s|'+ str(round(bearing.Cr,3)) + ' N|'+ str(round(bearing.mass,3)) + ' kg|'+ str(round(bearing.cost,3)) + ' euros| \n\n'   
+                                new_infos+='|L10 Objective|Max Speed|Max Axial Loads|Max Radial Loads|' + '\n' + \
+                                          '|:------:|:----------:|:---------------:|:--------:|' + '\n'+ \
+                                          '|'+str(round(L10_objective,3)) + ' millions revolutions |'+ str(round(max_speed,3)) + ' rad/s |'+ str(round(max(abs_axial_loads),3)) + ' N|'+  str(round(max(abs_radial_loads),3)) + ' N|'+'\n\n'
+                                
+                                
+                                
+                                # new_infos='Name: ' + bearing.name + ' \n\n' +\
+                                #         'L10: ' + str(round(L10,3)) + 'millions revolutions \n\n' +\
+                                #         'L10_objective: ' + str(round(L10_objective,3)) + 'millions revolutions \n\n'  + \
+                                #         'speed_limit: ' + str(round(bearing.speed_limit,3)) + ' rad/s \n\n'  + \
+                                #         'max_speed: ' + str(round(max_speed,3)) + ' rad/s \n\n'  + \
+                                #         'max_axial_loads: ' + str(round(max(abs_axial_loads),3)) + ' N \n\n'  + \
+                                #         'max_radial_loads: ' + str(round(max(abs_radial_loads),3)) + ' N \n\n'  + \
+                                #         'Cr: ' + str(round(bearing.Cr,3)) + ' N \n\n'  + \
+                                #         'mass: ' + str(round(bearing.mass,3)) + ' kg \n\n'  + \
+                                #         'cost: ' + str(round(bearing.cost,3)) + ' euros \n\n' 
                                 valid_append_infos=True
                                 for speed in bearing.speed_infos:
                                     if speed>=max_speed*0.9 and speed<=max_speed*1.1:

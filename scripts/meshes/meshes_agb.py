@@ -36,18 +36,9 @@ meshopti4 = meshes_opt.MeshOpti(rack=rack, torque_input= 0, speed_input=(480.312
 meshopti5 = meshes_opt.MeshOpti(rack=rack, torque_input= 0, speed_input=(700.6720400543617, 736.6039395443289))
 meshopti6 = meshes_opt.MeshOpti(rack=rack, torque_input= 0, speed_input=(725.5314102562529, 762.738149243753))
 
-<<<<<<< HEAD
+
 center_distance1 = meshes_opt.CenterDistanceOpti((0.11134984458664793, 0.1293457790652981),[meshopti1,meshopti2])
 
-=======
-
-meshopti7 = meshes_opt.MeshOpti(rack=rack, torque_input= 'output', speed_input=(1875.1453579221634, 1974.460504482274))
-meshopti8 = meshes_opt.MeshOpti(rack=rack, torque_input= 40, speed_input=(448.8807309958231, 472.95153771355757))
-
-
-center_distance1 = meshes_opt.CenterDistanceOpti((0.11134984458664793, 0.1293457790652981),[meshopti1,meshopti2,meshopti7,meshopti8])
-
->>>>>>> origin/dev
 center_distance2 = meshes_opt.CenterDistanceOpti((0.11137510812362536, 0.12937512559815068),[meshopti2,meshopti3])
 center_distance3 = meshes_opt.CenterDistanceOpti((0.10568352491185784, 0.1227636905541783),[meshopti3,meshopti4])
 center_distance4 = meshes_opt.CenterDistanceOpti((0.14181884668124436, 0.164739064326698),[meshopti4,meshopti5])
