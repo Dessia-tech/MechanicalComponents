@@ -1951,31 +1951,42 @@ class MeshCombination(DessiaObject):
             coeff_ys_iso_gear_1 = meshes[eng1]._iso_YS(s_thickness_iso_1)
             s_thickness_iso_2, h_height_iso_2 = meshes[eng2].gear_iso_section(angle)
             coeff_ys_iso_gear_2 = meshes[eng2]._iso_YS(s_thickness_iso_2)
-            if contact_ratio[2][0]>=1.59 and gear_width[eng1]<width_torque_gear_1:
-                print(contact_ratio)
-                print(width_torque_gear_1)
-                print(gear_width[eng1])
-                dedededede
-            infos+= 'module: '+str(round(meshes[eng1].rack.module*10**3,3))+' mm'+'\n\n'
-            infos+= 'safety_factor: '+str(round(safety_factor,3)) +'\n\n'
-            infos+= 'tangential_load: '+str(round(tangential_load[num_mesh],3))+' N'+'\n\n \n\n'  
-            infos+= 'width_gear_1: '+str(round(gear_width[eng1]*10**3,2))+' mm'+'\n\n'     
-            infos+='coeff_YS(facteur concentration de contrainte)_gear_1: '+str(round(coeff_ys_iso_gear_1,3))+'\n\n' 
-            infos+='sigma_lim_gear_1: '+str(round(coeff_ys_iso_gear_1*safety_factor*sigma_lim[num_mesh][eng1]*10**-6,3))+' MPa'+'\n\n'  
-            infos+='coeff_YB(facteur d inclinaison )_gear_1: '+str(round(coeff_yb_iso[num_mesh][eng1],3))+'\n\n' 
-            infos+='coeff_YF(facteur de formes )_gear_1: '+str(round(coeff_yf_iso[num_mesh][eng1],3))+'\n\n' 
-            infos+= 'width_tangential_load_min_gear_1: '+str(round(width_torque_gear_1*10**3,3))+' mm'+'\n\n \n\n'
-            infos+= 'width_gear_2: '+str(round(gear_width[eng2]*10**3,2))+' mm'+'\n\n'   
-            infos+='coeff_YS(facteur concentration de contrainte)_gear_2: '+str(round(coeff_ys_iso_gear_2,3))+'\n\n' 
-            infos+= 'sigma_lim_gear_2: '+str(round(coeff_ys_iso_gear_2*safety_factor*sigma_lim[num_mesh][eng2]*10**-6,3))+' MPa'+'\n\n'   
-            infos+='coeff_YB(facteur d inclinaison )_gear_2: '+str(round(coeff_yb_iso[num_mesh][eng2],3))+'\n\n' 
-            infos+='coeff_YF(facteur de formes )_gear_2: '+str(round(coeff_yf_iso[num_mesh][eng2],3))+'\n\n'
-            infos+= 'width_tangential_load_min_gear_2: '+str(round(width_torque_gear_2*10**3,3))+' mm'+'\n\n \n\n'+\
-                    'axial_contact_ratio_min: '+str(round(axial_contact_ratio_min,3))+'\n\n'
-            infos+= 'helix_angle: '+str(round(helix_angle[eng1]*180/math.pi,3))+'\n\n'
-            infos+= 'width_contact_ratio_min: '+str(round(width_contact_ratio*10**3,3))+' mm'+'\n\n'+\
-                    'total_contact_ratio: '+str(round(contact_ratio[1][0],3))+'\n\n'+\
-                    'axial_contact_ratio: '+str(round(contact_ratio[3][0],3))+ '\n\n \n\n'
+
+            infos+= 'For sizing a mesh, we need to determinate the minimum width to support the tangential load for the 2 gears and the minimum width of having the good contact ratio. \n\n'
+            infos+= 'To Begin, some general infos on the mesh that will serve us in all the different calculs: \n\n'
+            infos+='|Module|Safety Factor|Tangential Load|Helix Angle|' + '\n'
+            infos+='|:--------:|:-------------:|:---------------:|:---------------:|' + '\n'
+            infos+='|'+str(round(meshes[eng1].rack.module*10**3,3))+' mm'+'|'+str(round(safety_factor,3))+'|'+str(round(tangential_load[num_mesh],3))+' N'+'|'+str(round(helix_angle[eng1]*180/math.pi,3))+' ° |' + '\n\n'
+            infos+= 'To calculate the minimum width for the tangential load, we need for that to use some factors and parameters which depend on the material and the tooth forms of the gear:' +'\n\n \n\n'     
+            infos+='|Gear|Coeff YS (stress concentration factor)|Coeff YB( helix angle factor )|Coeff YF (form factor)|Sigma Lim|' + '\n'
+            infos+='|:--------:|:-------------:|:---------------:|:---------------:|:---------------:|' + '\n'
+            infos+='| 1 |'+str(round(coeff_ys_iso_gear_1,3))+'|'+str(round(coeff_yb_iso[num_mesh][eng1],3))+'|'+str(round(coeff_yf_iso[num_mesh][eng1],3))+'|' + str(round(coeff_ys_iso_gear_1*safety_factor*sigma_lim[num_mesh][eng1]*10**-6,3))+' MPa'+'|\n'
+            infos+='| 2 |'+str(round(coeff_ys_iso_gear_2,3))+'|'+str(round(coeff_yb_iso[num_mesh][eng2],3))+'|'+str(round(coeff_yf_iso[num_mesh][eng2],3))+'|' + str(round(coeff_ys_iso_gear_1*safety_factor*sigma_lim[num_mesh][eng2]*10**-6,3))+' MPa'+'|\n\n'
+           
+            infos+= 'The minimum width to support the tangential load for the first gear  is '+str(round(width_torque_gear_1*10**3,3))+' mm '
+            infos+= 'and for the second gear is '+str(round(width_torque_gear_2*10**3,3))+' mm'+ '\n\n'
+            infos+= 'To calculate the minimum width for the contact ratio, we need to have the  axial contact ratio minimum require.\n\n'
+            infos+= 'The total contact ratio minimum is ' +str(round(total_contact_ratio_min[(eng1, eng2)],3))+ ' and the actual transverse contact ratio is '+str(round(contact_ratio[2][0],3))+ '\n\n'
+            infos+= 'So the axial contact ratio minimum is ' +str(round(axial_contact_ratio_min,3))+ '\n\n'
+            infos+= 'To have this requirement we need to have a width equal at '+str(round(width_contact_ratio*10**3,3))+' mm'+'\n\n'
+            infos+='|Width Tangential Load minimum|Width Contact Ratio minimum|' + '\n'
+            infos+='|:--------:|:-------------:|' + '\n'
+            infos+='|'+str(round(max([width_torque_gear_1*10**3,width_torque_gear_2*10**3]),3))+' mm'+'|'+str(round(width_contact_ratio*10**3,3))+'|' + '\n\n'
+            if contact_ratio[3][0]>axial_contact_ratio_min*1.05:
+                infos+= 'The tangential load condition is most restritive \n\n'
+            else:
+                infos+= 'The contact ratio condition is most restritive \n\n'
+            infos+= 'Percentage Difference Between Pinion And Gear: ' +str(round(percentage_width_difference_pinion_gear[(eng1, eng2)]*100,3))+' %'+'\n\n'
+            infos+= 'Max Difference Between Pinion And Gear: ' +str(round(max_width_difference_pinion_gear[(eng1, eng2)]*1000,3))+' mm'+'\n\n'
+            infos+= '**SOLUTION:** ' +'\n\n'
+            
+            infos+= 'Width Gear 1: '+str(round(gear_width[eng1]*10**3,2))+' mm'+'\n\n'+\
+                    'Width Gear 2: '+str(round(gear_width[eng2]*10**3,2))+' mm'+'\n\n'+\
+                    'Total Contact Ratio: '+str(round(contact_ratio[1][0],3))+'\n\n'+\
+                    'Transverse Contact Ratio: '+str(round(contact_ratio[2][0],3))+'\n\n'+\
+                    'Axial Contact Ratio: '+str(round(contact_ratio[3][0],3))+ '\n\n \n\n'
+                    
+
                     
             
                                  

@@ -444,12 +444,7 @@ class RadialBearing(DessiaObject):
             self.C0r = C0r
         total_cycles = 0.
         nci_Lpi = 0.
-        if Fa[0]:
-            print(2555)
-            print(Fa)
-            print(Fr)
-            print(N)
-            print(t)
+ 
             
         for fr, fa, n, ti   in zip(Fr, Fa, N, t, ):
             if (((fr != 0.) or (fa != 0.)) and (n > 0.)):
@@ -2449,7 +2444,7 @@ class ConceptualBearingCombination(DessiaObject):
         nx_graph = self.bearing_classes[0].graph(list_left_bearing, self.directions[0])
         
         bg0_load = self.bearing_classes[0].taking_loads
-        print(bg0_load)
+        
         if self.directions[0] == -1:
             if self.bearing_classes[0].taking_loads == 'left':
                 bg0_load = 'right'
@@ -2500,7 +2495,7 @@ class ConceptualBearingCombination(DessiaObject):
                 nx_graph.add_edges_from([(list_nd1[7], list_nd2[3])])
 
         bg_end_load = self.bearing_classes[-1].taking_loads
-        print(bg_end_load)
+        
         if self.directions[-1] == -1:
             if self.bearing_classes[-1].taking_loads == 'left':
                 bg_end_load = 'right'
@@ -2523,9 +2518,7 @@ class ConceptualBearingCombination(DessiaObject):
         # axial load generate by angular_bearing
         node_axial_ring = []
         # if self.mounting in ['left', 'both']:
-        print(2000000)
-        print(self.mounting.left)
-        print(self.mounting.right)
+
         if self.mounting.left:
             node_axial_ring.append(li_node_output[0])
             node_axial_ring.append(li_node_output[7])
@@ -2562,9 +2555,7 @@ class ConceptualBearingCombination(DessiaObject):
         if self.mounting.right:
             node_input = li_node_output[3]
             node_output = li_node_output[5]
-            print(node_input)
-            print(node_output)
-            print(nx_graph.nodes)
+
             try:
                 if (node_input in nx_graph) and (node_output in nx_graph):
                     list(nx.all_shortest_paths(nx_graph, source=node_input,
@@ -2579,9 +2570,7 @@ class ConceptualBearingCombination(DessiaObject):
         if self.mounting.left:
             node_input = li_node_output[6]
             node_output = li_node_output[0]
-            print(node_input)
-            print(node_output)
-            print(nx_graph.nodes)
+
             try:
                 if (node_input in nx_graph) and (node_output in nx_graph):
                     list(nx.all_shortest_paths(nx_graph, source=node_input,

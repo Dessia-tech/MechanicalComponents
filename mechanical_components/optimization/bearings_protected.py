@@ -443,7 +443,7 @@ class BearingCombinationOptimizer(DessiaObject):
             self.ConceptualBearingCombinations(max_bearings = (max_bearings),max_speed=max_speed)
             
             for (mounting_type, linkage), bearing_combinations_possibility in self.bearing_combinations_possibilities.items():
-                print(self.bearing_combinations_possibilities.items())
+               
                 bearing_combination_configurations = self.SelectBearingCombinations(bearing_combinations_possibility, 
                                                                                     L10_objective = L10_objective,
                                                                                     max_speed=max_speed,S=S)
@@ -480,8 +480,8 @@ class BearingCombinationOptimizer(DessiaObject):
                             sort_bearing_combination_simulations.append(L10)
                             for bearing in bearing_combination_simulation.bearing_combination.bearings:
                                 new_infos='Name: ' + bearing.name + ' \n\n' +\
-                                        'L10: ' + str(round(L10,3)) + 'millions de tours \n\n' +\
-                                        'L10_objective: ' + str(round(L10_objective,3)) + 'millions de tours \n\n'  + \
+                                        'L10: ' + str(round(L10,3)) + 'millions revolutions \n\n' +\
+                                        'L10_objective: ' + str(round(L10_objective,3)) + 'millions revolutions \n\n'  + \
                                         'speed_limit: ' + str(round(bearing.speed_limit,3)) + ' rad/s \n\n'  + \
                                         'max_speed: ' + str(round(max_speed,3)) + ' rad/s \n\n'  + \
                                         'max_axial_loads: ' + str(round(max(self.axial_loads),3)) + ' N \n\n'  + \
@@ -556,11 +556,11 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
             if dt.current_depth // 2 == max_bearings:
                 # Instanciating 
                 valid = self.CheckLinkage(bearings)
-                print(valid)
+                
                 if valid:
                     cbc = ConceptualBearingCombination(bearings, directions, self.mounting)
                     valid = cbc.check_kinematic()  
-                    print(valid)
+                    
               
                    
             
@@ -576,9 +576,9 @@ class ConceptualBearingCombinationOptimizer(DessiaObject):
                     else:
                         dt.SetCurrentNodeNumberPossibilities(2)
                 else:
-                    print(dt.current_depth // 2)
+                   
                     if dt.current_depth // 2 == max_bearings:
-                        print(valid)
+                       
                         dt.SetCurrentNodeNumberPossibilities(0)    
                         configurations.append(cbc)
                     else:
