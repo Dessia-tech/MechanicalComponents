@@ -73,10 +73,20 @@ class ContinuousMeshesAssemblyOptimizer:
         self.connections = connections
         self.rigid_links = rigid_links
         self.external_torques = external_torques
-
+        
         self.cycles = cycles
         # Initailization
         self.solutions = []
+        if not axial_contact_ratio:
+            axial_contact_ratio={}
+        if not total_contact_ratio_min:
+            total_contact_ratio_min={}
+        if not transverse_contact_ratio_min:
+            transverse_contact_ratio_min={}
+        if not percentage_width_difference_pinion_gear:
+            percentage_width_difference_pinion_gear={}
+        if not max_width_difference_pinion_gear:
+            max_width_difference_pinion_gear={}
 
 
 
@@ -161,6 +171,7 @@ class ContinuousMeshesAssemblyOptimizer:
                         interval_tpa = self.transverse_pressure_angle[num_mesh]
                         if interval_tpa[0] != interval_tpa[1]:
                             dict_unknown['transverse_pressure_angle'].append(num_mesh)
+                
                 if (eng1, eng2) in list(axial_contact_ratio.keys()):
                     self.axial_contact_ratio[(eng1, eng2)] = axial_contact_ratio[(eng1, eng2)]
                 else:
@@ -258,6 +269,7 @@ class ContinuousMeshesAssemblyOptimizer:
 
         self.db = db
         optimization = 1
+        
         while optimization == 1:
             self.X0 = self.CondInit()
             optimizer_data = self._convert_X2x(self.X0)
@@ -276,6 +288,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 self.mesh_assembly = MeshAssembly.create(**input_dat)
                 optimization = 0
             except ValueError:
+                
                 optimization = 1
         self.save = copy.deepcopy(optimizer_data)
 
@@ -565,6 +578,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 else:
                     transverse_contact_ratio_min[(eng1, eng2)] = 0
             ineq.extend(mesh_assembly_iter.liste_ineq(total_contact_ratio_min, transverse_contact_ratio_min))
+            
             # print(25)
             # print(ineq[-1])
             # print(ineq[-2])
@@ -817,7 +831,7 @@ class ContinuousMeshesAssemblyOptimizer:
 
         i = 0
         arret = 0
-
+       
         while i < max_iter and arret == 0:
             X0 = self.CondInit()
             _ = self.update(X0)
@@ -836,7 +850,7 @@ class ContinuousMeshesAssemblyOptimizer:
             # x=cma.fmin(self.Objective, X0, 1*10e-4,args=(constraint_root_diameter,CA_min), options={'bounds':[min_x, max_x],'tolfun':1e-15,'maxiter': 200})[0:2]
 
 
-
+    
 
 
             try:
@@ -848,7 +862,6 @@ class ContinuousMeshesAssemblyOptimizer:
                                     distances_SAP_root_diameter_active_min))
 
                 _ = self.update(cx.x)
-
 
 
                 valid = True
@@ -891,7 +904,7 @@ class ContinuousMeshesAssemblyOptimizer:
                                 else:
                                     if (SAP2-dia2-d_sap_root) < 0:
                                         valid = False
-
+                        
                         Ca_min = 0
 
                         if list_CA_min:
@@ -902,7 +915,7 @@ class ContinuousMeshesAssemblyOptimizer:
                         de1 = mesh_assembly_iter.meshes_dico[engr1].outside_diameter
                         de2 = mesh_assembly_iter.meshes_dico[engr2].outside_diameter
                         cd = mesh_assembly_iter.center_distance[num_mesh]
-
+                       
                         if Z2 < 0:
 
 
@@ -913,6 +926,7 @@ class ContinuousMeshesAssemblyOptimizer:
 
 
                                     if (cd- 0.5*(de1-dia2_root)-Ca_min) < 0 or (cd- 0.5*(-de2+dia1_root)-Ca_min) < 0:
+                                        
                                         valid = False
 
 
@@ -926,10 +940,11 @@ class ContinuousMeshesAssemblyOptimizer:
 
 
                                     if (cd- 0.5*(-de1+dia2_root)-Ca_min) < 0 or (cd- 0.5*(de2-dia1_root)-Ca_min) < 0:
+                                        
                                         valid = False
                         else:
 
-
+                            
                             if constraints_root_diameter:
 
                                 if constraints_root_diameter[mesh_assignation]:
@@ -937,17 +952,18 @@ class ContinuousMeshesAssemblyOptimizer:
 
 
                                     if (cd- 0.5*(de1+dia2_root)-Ca_min) < 0 or (cd- 0.5*(de2+dia1_root)-Ca_min) < 0:
+                                        
                                         valid = False
 
 
 
 
 
-
+            
 
 
             except ValidGearDiameterError:
-
+               
                 i += 1
                 continue
             Xsol = cx.x
@@ -957,7 +973,8 @@ class ContinuousMeshesAssemblyOptimizer:
             #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
             #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
 
-
+            print(self.Fineq(Xsol, constraints_root_diameter, list_CA_min,
+                              constraints_SAP_diameter, distances_SAP_root_diameter_active_min))
             if min(self.Fineq(Xsol, constraints_root_diameter, list_CA_min,
                               constraints_SAP_diameter, distances_SAP_root_diameter_active_min)) > -1e-3: #TODO
 

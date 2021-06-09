@@ -1125,6 +1125,7 @@ class PlanetaryGear(DessiaObject):
 
 
     def volmdlr_primitives(self, frame=vm.OXYZ):
+        
         axis = self.axis
         center = self.center
         components = self.doubles
@@ -1190,7 +1191,7 @@ class PlanetaryGear(DessiaObject):
                     point = vm.Point2D(position[1], position[2])
                     plot_data.append(point.plot_data('.', size=5, color=color))
 
-            return pld.PrimitiveGroup(primitives=plot_data)
+            return [pld.PrimitiveGroup(primitives=plot_data)]
 
         else:
             return self.plot_kinematic_graph()
@@ -1203,10 +1204,10 @@ class PlanetaryGear(DessiaObject):
         max_length_meshing_chain = []
         for meshing_chain in meshing_chains:
             module = meshing_chain[0].module
-
+           
             rack = meshes_opt.RackOpti(module=[module, module], transverse_pressure_angle_0=[20/180.*npy.pi, 20/180.*npy.pi],
-                                       coeff_gear_addendum=[1, 1], coeff_gear_dedendum=[1.25, 1.25], coeff_root_radius=[0.38, 0.38],
-                                       coeff_circular_tooth_thickness=[0.5, 0.5])
+                                       coeff_gear_addendum=[1, 1], coeff_gear_dedendum=[1.25, 1.25], coeff_root_radius=[0.35, 0.4],
+                                       coeff_circular_tooth_thickness=[0.5, 0.52])
             list_rack = {0:rack}
             rack_choices = {}
             center_distances = []
@@ -1240,8 +1241,8 @@ class PlanetaryGear(DessiaObject):
                 dbs.append([db-0.00001, db])
                 rack_choices[i] = 0
                 Z[i] = Z_2
-
-                coefficient_profile_shift.append([0.01, 0.01])
+                
+                coefficient_profile_shift.append([0.001, 0.02])
 
                 if isinstance(element, Planetary):
                     centers[i] = element.position
