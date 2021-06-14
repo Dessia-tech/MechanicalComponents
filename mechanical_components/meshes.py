@@ -596,14 +596,18 @@ class Mesh(DessiaObject):
 
         self.dff = abs(self.db/math.cos(self.rack.transverse_pressure_angle_0))
 
-        module_rack = self.dff/self.z
+        module_rack = abs(self.dff/self.z)
         self.rack.update(module_rack)
         self.coefficient_profile_shift = coefficient_profile_shift
 
         self.outside_diameter = abs((self.dff
                                      +2*(self.rack.gear_addendum
-                                         +self.rack.module*self.coefficient_profile_shift))*(self.z/abs(self.z)))
-
+                                         +self.rack.module*self.coefficient_profile_shift)*(self.z/abs(self.z))))
+        
+        print(25555)
+        print((self.dff
+                                     +2*(self.rack.gear_addendum
+                                         +self.rack.module*self.coefficient_profile_shift)*(self.z/abs(self.z))))
         self.alpha_outside_diameter = math.acos(self.db/self.outside_diameter)
 
 
@@ -611,20 +615,23 @@ class Mesh(DessiaObject):
                               - 2*(self.rack.gear_dedendum
                                    - self.rack.module*self.coefficient_profile_shift)*(self.z/abs(self.z)))
 
+        
         self.root_diameter_active, self.phi_trochoide = self._root_diameter_active()
-
+        print(self.root_diameter_active)
+        print(self.dff)
       
         self.alpha_root_diameter_active = math.acos(self.db/self.root_diameter_active)
 
         self.alpha_pitch_diameter = math.acos(self.db/self.dff)
         self.circular_tooth_thickness = (self.rack.circular_tooth_thickness
-                                         +self.rack.module*self.coefficient_profile_shift
+                                         +(self.rack.module*self.coefficient_profile_shift
                                          *math.tan(self.rack.transverse_pressure_angle_0)
                                          +self.rack.module*self.coefficient_profile_shift
-                                         *math.tan(self.rack.transverse_pressure_angle_0))
+                                         *math.tan(self.rack.transverse_pressure_angle_0)*self.z/abs(self.z)))
         self.tooth_space = self.rack.transverse_radial_pitch-self.circular_tooth_thickness
+        
         self.outside_active_angle = (2*self.circular_tooth_thickness/self.dff-2
-                                     *(math.tan(self.alpha_outside_diameter)
+                                     *abs(math.tan(self.alpha_outside_diameter)
                                        -self.alpha_outside_diameter
                                        -math.tan(self.alpha_pitch_diameter)
                                        +self.alpha_pitch_diameter))
@@ -646,25 +653,21 @@ class Mesh(DessiaObject):
 
         >>> gs=mesh1.gear_section(44*1e-3)
         """
-        print(588888)
-        print(diameter)
+        
         alpha_diameter = math.acos(self.db/diameter)
 
         theta1 = (math.tan(self.alpha_outside_diameter)-self.alpha_outside_diameter)-(math.tan(alpha_diameter)-alpha_diameter)
-        print(self.alpha_outside_diameter)
-        print(self.outside_diameter)
-        print(alpha_diameter)
-        print(self.outside_active_angle)
+        
         return diameter/2*(2*theta1+abs(self.outside_active_angle)) #TODO
 
     def _root_diameter_active(self):
-        a = self.rack.a
-        b = (self.rack.b-self.rack.module*self.coefficient_profile_shift)
-
+        a = self.rack.a*self.z/abs(self.z)
+        b = (self.rack.b-(self.rack.module*self.coefficient_profile_shift))*self.z/abs(self.z)
+        print(a,b)
         r = self.dff/2
         # if self.z<0:
         #     r=-r
-        phi = -(a+b*math.tan(math.pi/2-self.rack.transverse_pressure_angle_0))/r
+        phi = -(self.z/abs(self.z))*(a+b*math.tan(math.pi/2-self.rack.transverse_pressure_angle_0))/r
         
         root_diameter_active = 2*norm(self._trochoide(phi))
         
@@ -1465,6 +1468,7 @@ class MeshCombination(DessiaObject):
         """
         list_ineq = [] # liste of value to evaluate backlash
         obj = 0
+       
         for lb in self.linear_backlash:
             list_ineq.append(lb) # backlash > 0
             list_ineq.append(backlash_min-lb) # backlash < backlash_min so (backlash_min-backlash)>0
@@ -1511,7 +1515,7 @@ class MeshCombination(DessiaObject):
         _, ineq, _ = self.check_minimum_backlash(4*1e-4)
 
         _, list_ineq, _ = self.check_total_contact_ratio(total_contact_ratio_min, transverse_contact_ratio_min)
-        print(ineq)
+        
         ineq.extend(list_ineq)
 
         for mesh in self.meshes:
@@ -1563,12 +1567,7 @@ class MeshCombination(DessiaObject):
             transverse_radial_pitch1 = math.pi*DF[num_mesh][engr1_position]/abs(meshes[engr1].z)
             space_width1 = transverse_radial_pitch1-circular_tooth_thickness1
             space_width2 = transverse_radial_pitch1-circular_tooth_thickness2
-            print(22)
-            print(space_width1 )
-            print(space_width2 )
-            print(Z)
-            print(circular_tooth_thickness2)
-            print(circular_tooth_thickness1)
+            
             linear_backlash.append(min(space_width1-circular_tooth_thickness2, space_width2-circular_tooth_thickness1))
             transverse_pressure_angle1 = transverse_pressure_angle[num_mesh]
             center_distance1 = abs(center_distance[num_mesh])

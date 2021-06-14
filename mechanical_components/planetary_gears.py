@@ -1204,10 +1204,11 @@ class PlanetaryGear(DessiaObject):
         max_length_meshing_chain = []
         for meshing_chain in meshing_chains:
             module = meshing_chain[0].module
+            
            
             rack = meshes_opt.RackOpti(module=[module, module], transverse_pressure_angle_0=[20/180.*npy.pi, 20/180.*npy.pi],
-                                       coeff_gear_addendum=[1, 1], coeff_gear_dedendum=[1.25, 1.25], coeff_root_radius=[0.35, 0.4],
-                                       coeff_circular_tooth_thickness=[0.5, 0.52])
+                                       coeff_gear_addendum=[1, 1.25], coeff_gear_dedendum=[1, 1.25], coeff_root_radius=[0.35, 0.4],
+                                       coeff_circular_tooth_thickness=[0.5, 0.5])
             list_rack = {0:rack}
             rack_choices = {}
             center_distances = []
@@ -1234,7 +1235,7 @@ class PlanetaryGear(DessiaObject):
                         torques[i] = element.torque
 
                     connections.append([(i-1, i)])
-                    center_distances.append([abs((Z_2+Z_1)*module/2)-0.00001, abs((Z_2+Z_1)*module/2)])
+                    center_distances.append([abs((Z_2+Z_1)*module/2)-0.001, abs((Z_2+Z_1)*module/2)+0.001])
                     transverse_pressure_angle[i-1] = [20/180.*npy.pi-0.00001, 20/180.*npy.pi]
 
                 db = m.cos(20/180.*npy.pi)*module*abs(Z_2)
@@ -1242,7 +1243,7 @@ class PlanetaryGear(DessiaObject):
                 rack_choices[i] = 0
                 Z[i] = Z_2
                 
-                coefficient_profile_shift.append([0.001, 0.02])
+                coefficient_profile_shift.append([0.001, 0.6])
 
                 if isinstance(element, Planetary):
                     centers[i] = element.position

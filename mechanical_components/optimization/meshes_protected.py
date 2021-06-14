@@ -617,7 +617,7 @@ class ContinuousMeshesAssemblyOptimizer:
                             ineq.append((-SAP2+dia2-d_sap_root)*100)
                         else:
                             ineq.append((SAP2-dia2-d_sap_root)*100)
-
+                
                 Ca_min = 0
 
                 if list_CA_min:
@@ -632,7 +632,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 if Z2 < 0:
                     ineq.append(cd- 0.5*(de1-dia2))
                     ineq.append(cd- 0.5*(-de2+dia1))
-
+                    
                     if constraints_root_diameter:
 
                         if constraints_root_diameter[num_mesh]:
@@ -646,7 +646,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 elif Z1 < 0:
                     ineq.append(cd- 0.5*(-de1+dia2))
                     ineq.append(cd- 0.5*(de2-dia1))
-
+                    
                     if constraints_root_diameter:
 
                         if constraints_root_diameter[mesh_assignation]:
@@ -658,7 +658,14 @@ class ContinuousMeshesAssemblyOptimizer:
                 else:
                     ineq.append((cd- 0.5*(de1+dia2))+0.001)
                     ineq.append((cd- 0.5*(de2+dia1))+0.001)
-
+                    print(Z1,Z2)
+                    print(2555555)
+                    print(dia2)
+                    print(de2)
+                    print(dia1)
+                    print(de1)
+                    print(cd)
+                    print((cd- 0.5*(de1+dia2))+0.001)
                     if constraints_root_diameter:
 
                         if constraints_root_diameter[mesh_assignation]:
@@ -972,9 +979,9 @@ class ContinuousMeshesAssemblyOptimizer:
             # if verbose:
             #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
             #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
-
-            print(self.Fineq(Xsol, constraints_root_diameter, list_CA_min,
-                              constraints_SAP_diameter, distances_SAP_root_diameter_active_min))
+            
+           
+           
             if min(self.Fineq(Xsol, constraints_root_diameter, list_CA_min,
                               constraints_SAP_diameter, distances_SAP_root_diameter_active_min)) > -1e-3: #TODO
 
