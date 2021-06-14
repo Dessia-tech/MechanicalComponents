@@ -604,10 +604,7 @@ class Mesh(DessiaObject):
                                      +2*(self.rack.gear_addendum
                                          +self.rack.module*self.coefficient_profile_shift)*(self.z/abs(self.z))))
         
-        print(25555)
-        print((self.dff
-                                     +2*(self.rack.gear_addendum
-                                         +self.rack.module*self.coefficient_profile_shift)*(self.z/abs(self.z))))
+     
         self.alpha_outside_diameter = math.acos(self.db/self.outside_diameter)
 
 
@@ -617,8 +614,7 @@ class Mesh(DessiaObject):
 
         
         self.root_diameter_active, self.phi_trochoide = self._root_diameter_active()
-        print(self.root_diameter_active)
-        print(self.dff)
+
       
         self.alpha_root_diameter_active = math.acos(self.db/self.root_diameter_active)
 
@@ -663,7 +659,7 @@ class Mesh(DessiaObject):
     def _root_diameter_active(self):
         a = self.rack.a*self.z/abs(self.z)
         b = (self.rack.b-(self.rack.module*self.coefficient_profile_shift))*self.z/abs(self.z)
-        print(a,b)
+        
         r = self.dff/2
         # if self.z<0:
         #     r=-r

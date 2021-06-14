@@ -271,7 +271,7 @@ class BearingAssemblyOptimizer(protected_module.BearingAssemblyOptimizer if _ope
             self.mounting_types = [CombinationMounting(list(cm)) for cm in li_pro]
         else:
             self.mounting_types = mounting_types
-        self.mounting_types = mounting_types
+        # self.mounting_types = mounting_types
         if number_bearings is None:
             self.number_bearings = [[1, 2], [1, 2]]
         else:
