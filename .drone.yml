@@ -76,6 +76,7 @@ steps:
   image: appleboy/drone-scp
   when:
     branch: master
+    event: push
   settings:
     host: austerlitz.dessia.tech
     target: /var/www/documentation/MechanicalComponents/

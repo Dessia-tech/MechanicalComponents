@@ -113,7 +113,7 @@ setup(name='mechanical_components',
       setup_requires=['numpy'],
       install_requires=['dessia-common>=0.4.0', 'scipy', 'volmdlr>=0.2.7',
                         'numpy', 'pandas', 'dectree>=0.0.4',
-                        'networkx', 'matplotlib', 'genmechanics>=0.1.5',
+                        'networkx', 'matplotlib', 'genmechanics>=0.1.6',
                         'plot_data>=0.5.3'
                         ],
       include_package_data=True,
