@@ -316,9 +316,13 @@ class Rack(DessiaObject):
     """
     Gear rack definition
 
-    :param transverse_pressure_angle: definition of the transverse pressure angle of the rack
+    :param transverse_pressure_angle_0: definition of the transverse pressure angle of the rack
     :type transverse_pressure_angle: radian
-
+    :param coeff_gear_addendum: update of the gear addendum coefficient (gear_addendum = coeff_gear_addendum*module)
+    :param coeff_gear_dedendum: update of the gear dedendum coefficient (gear_dedendum = coeff_gear_dedendum*module)
+    :param coeff_root_radius: update of the root radius coefficient (root_radius = coeff_root_radius*module)
+    :param coeff_circular_tooth_thickness: update of the circular tooth thickness coefficient (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
+    :param helix_angle: float  define the helix_angle of the rack
     >>> Rack1=Rack(20/180.*math.pi) #definition of an ISO rack
     """
     _standalone_in_db = True
@@ -512,15 +516,14 @@ class Mesh(DessiaObject):
     :param z: number of tooth
     :param db: base diameter
     :type db: m
-    :param cp: coefficient profile shift of the rack
-    :param transverse_pressure_angle_rack: transverse pressure angle of the rack
-    :type transverse_pressure_angle_rack: radian
-    :param coeff_gear_addendum: update of the gear addendum coefficient (gear_addendum = coeff_gear_addendum*module)
-    :param coeff_gear_dedendum: update of the gear dedendum coefficient (gear_dedendum = coeff_gear_dedendum*module)
-    :param coeff_root_radius: update of the root radius coefficient (root_radius = coeff_root_radius*module)
-    :param coeff_circular_tooth_thickness: update of the circular tooth thickness coefficient (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
+    :param coefficient_profile_shift: coefficient profile shift of the rack
+    :param rack: class rack define the rack of the mesh
+    
     :param material: class material define the gear mesh material
     :param gear_width: gear mesh width
+    :param external_torque: the torque 
+    
+
 
     >>> input={'z':13, 'db':40*1e-3, 'coefficient_profile_shift':0.3, 'rack':Rack1
                  coeff_gear_addendum:1, coeff_gear_dedendum:1, coeff_root_radius:1,
@@ -593,14 +596,18 @@ class Mesh(DessiaObject):
 
         self.dff = abs(self.db/math.cos(self.rack.transverse_pressure_angle_0))
 
-        module_rack = self.dff/self.z
+        module_rack = abs(self.dff/self.z)
         self.rack.update(module_rack)
         self.coefficient_profile_shift = coefficient_profile_shift
 
         self.outside_diameter = abs((self.dff
                                      +2*(self.rack.gear_addendum
-                                         +self.rack.module*self.coefficient_profile_shift))*(self.z/abs(self.z)))
-
+                                         +self.rack.module*self.coefficient_profile_shift)*(self.z/abs(self.z))))
+        
+        print(25555)
+        print((self.dff
+                                     +2*(self.rack.gear_addendum
+                                         +self.rack.module*self.coefficient_profile_shift)*(self.z/abs(self.z))))
         self.alpha_outside_diameter = math.acos(self.db/self.outside_diameter)
 
 
@@ -608,20 +615,23 @@ class Mesh(DessiaObject):
                               - 2*(self.rack.gear_dedendum
                                    - self.rack.module*self.coefficient_profile_shift)*(self.z/abs(self.z)))
 
+        
         self.root_diameter_active, self.phi_trochoide = self._root_diameter_active()
-
-
+        print(self.root_diameter_active)
+        print(self.dff)
+      
         self.alpha_root_diameter_active = math.acos(self.db/self.root_diameter_active)
 
         self.alpha_pitch_diameter = math.acos(self.db/self.dff)
         self.circular_tooth_thickness = (self.rack.circular_tooth_thickness
-                                         +self.rack.module*self.coefficient_profile_shift
+                                         +(self.rack.module*self.coefficient_profile_shift
                                          *math.tan(self.rack.transverse_pressure_angle_0)
                                          +self.rack.module*self.coefficient_profile_shift
-                                         *math.tan(self.rack.transverse_pressure_angle_0))
+                                         *math.tan(self.rack.transverse_pressure_angle_0)*self.z/abs(self.z)))
         self.tooth_space = self.rack.transverse_radial_pitch-self.circular_tooth_thickness
+        
         self.outside_active_angle = (2*self.circular_tooth_thickness/self.dff-2
-                                     *(math.tan(self.alpha_outside_diameter)
+                                     *abs(math.tan(self.alpha_outside_diameter)
                                        -self.alpha_outside_diameter
                                        -math.tan(self.alpha_pitch_diameter)
                                        +self.alpha_pitch_diameter))
@@ -643,23 +653,24 @@ class Mesh(DessiaObject):
 
         >>> gs=mesh1.gear_section(44*1e-3)
         """
+        
         alpha_diameter = math.acos(self.db/diameter)
 
         theta1 = (math.tan(self.alpha_outside_diameter)-self.alpha_outside_diameter)-(math.tan(alpha_diameter)-alpha_diameter)
-
+        
         return diameter/2*(2*theta1+abs(self.outside_active_angle)) #TODO
 
     def _root_diameter_active(self):
-        a = self.rack.a
-        b = (self.rack.b-self.rack.module*self.coefficient_profile_shift)
-
+        a = self.rack.a*self.z/abs(self.z)
+        b = (self.rack.b-(self.rack.module*self.coefficient_profile_shift))*self.z/abs(self.z)
+        print(a,b)
         r = self.dff/2
         # if self.z<0:
         #     r=-r
-        phi = -(a+b*math.tan(math.pi/2-self.rack.transverse_pressure_angle_0))/r
-
+        phi = -(self.z/abs(self.z))*(a+b*math.tan(math.pi/2-self.rack.transverse_pressure_angle_0))/r
+        
         root_diameter_active = 2*norm(self._trochoide(phi))
-
+        
         return root_diameter_active, phi
 
     ### Optimization Method
@@ -685,6 +696,8 @@ class Mesh(DessiaObject):
             last_point = self._trochoide_trace(4*discret, 0, 'T').points[-1]
             first_point = self._trochoide_trace(4*discret, 0, 'R').points[0]
             self.reference_point_trochoide = vm.Point2D((first_point[0]-last_point[0])/2+last_point[0], (first_point[1]-last_point[1])/2+last_point[1])
+        
+
 
 
     def contour(self, discret=1, list_number=None):
@@ -700,7 +713,9 @@ class Mesh(DessiaObject):
         >>> G1.MPLPlot() # generate a plot with matplotlib
         """
         # Analytical tooth profil
+        list_number_origin=1
         if not list_number:
+            list_number_origin=0
             list_number = npy.arange(int(abs(self.z)))
         L = [self._outside_trace(list_number[0])]
 
@@ -722,7 +737,19 @@ class Mesh(DessiaObject):
                 L.append(self._root_circle_trace(i))
                 L.append(self._trochoide_trace(4*discret, i, 'R'))
             L.append(self._involute_trace(discret, i+1, 'R'))
-        return L
+        L2=[]
+        primitives=[]
+        for element in L:
+                    for point in element.points:
+                        if not point in L2:
+                                L2.append(point)
+        for point_1,point_2 in zip(L2[:-1],L2[1:]):
+            primitives.append(vm.edges.LineSegment2D(start=point_1,end=point_2))
+        if not list_number_origin:
+            primitives.append(vm.edges.LineSegment2D(start=L2[-1],end=L2[0]))
+                                
+       
+        return primitives
 
 
     def contour_circle(self, list_number=None):
@@ -741,12 +768,13 @@ class Mesh(DessiaObject):
         if not list_number:
             list_number = npy.arange(int(abs(self.z)))
         L = [self._outside_trace(list_number[0])]
-
+        
 
         for i in list_number[1::]:
             L.append(self._outside_trace(i))
-
-        return L
+        arc2d=vm.edges.Arc2D(L[0].points[0], L[int(len(L)/2)].points[int(len(L[int(len(L)/2)].points)/2)], L[-1].points[-1])
+       
+        return [arc2d]
 
     def _involute_trace(self, discret, number, ind='T'):
 
@@ -1074,6 +1102,7 @@ class Mesh(DessiaObject):
         vector_trochoide_gear_1 = vm.Vector2D(self.reference_point_trochoide[0]-position[1],
                                               self.reference_point_trochoide[1]-position[2])
 
+        
         angle_1 = math.acos(vector.dot(vector_trochoide_gear_1)/(vector.norm()*vector_trochoide_gear_1.norm()))
 
         sign_angle_1 = npy.sign(vector_trochoide_gear_1.x*vector.y-vector.x*vector_trochoide_gear_1.y)
@@ -1099,10 +1128,11 @@ class Mesh(DessiaObject):
 class MeshCombination(DessiaObject):
     """
     Gear Mesh Combination definition
-    :param center_distance: 
-    :param connections: List of tuples defining gear mesh connections [[(node1,node2)], [(node2,node3)]...]
+    :param center_distance: List of float defining the center_distance for each connection
+    :param connections: List of tuples of int  defining gear mesh connections [(1,2),(2,3)...] (the int corresponding to the index of the mesh in the List meshes)
     :param meshes: List of class Mesh objects define each mesh
     :param safety_factor: Safety factor used for the ISO design
+    :param transverse_pressure_angle_ini: float defining the first transverse angle of the connections
     """
 
     _standalone_in_db = True
@@ -1117,7 +1147,7 @@ class MeshCombination(DessiaObject):
     def __init__(self, center_distance: List[float], connections: List[Tuple[int, int]],
                  meshes: List[Mesh],
                  safety_factor: float = 1.2, transverse_pressure_angle_ini: float = None,
-                 name: str = ''):
+                 name: str = '', infos : str =''):
 
         self.center_distance = center_distance
         self.transverse_pressure_angle_ini = transverse_pressure_angle_ini
@@ -1128,7 +1158,7 @@ class MeshCombination(DessiaObject):
                self.connections[i] = (connection[0], connection[1])
         self.meshes = meshes
         self.meshes_dico = []
-
+        self.infos=infos
         for i, meshe in enumerate(meshes):
             self.meshes_dico.append(meshe)
 
@@ -1239,6 +1269,7 @@ class MeshCombination(DessiaObject):
                coefficient_profile_shift, transverse_pressure_angle_rack,
                coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
                coeff_circular_tooth_thickness, helix_angle, total_contact_ratio_min, transverse_contact_ratio_min,
+               percentage_width_difference_pinion_gear,max_width_difference_pinion_gear,
                material=None, external_torque=None, cycle=None,
                safety_factor=1):
 
@@ -1252,7 +1283,7 @@ class MeshCombination(DessiaObject):
         gear_graph.add_nodes_from(list_gear)
         gear_graph.add_edges_from(connections)
 
-
+        
         # Definition of default parameters
         minimum_gear_width = 10e-3
 
@@ -1304,14 +1335,15 @@ class MeshCombination(DessiaObject):
             meshes[i] = Mesh(z, db, cp, rack, mat)
             meshes_dico[num_engr] = meshes[i]
 
-        gear_width, sigma_iso, sigma_lim = cls.function_solve_width_definition(safety_factor,
+        gear_width, sigma_iso, sigma_lim,infos = cls.function_solve_width_definition(safety_factor,
                                                                                minimum_gear_width,
                                                                                list_gear, tangential_load, meshes_dico,
                                                                                connections,
                                                                                material, cycle, helix_angle,
                                                                                transverse_pressure_angle, DF,
                                                                                center_distance, connections_dfs, total_contact_ratio_min,
-                                                                               transverse_contact_ratio_min)
+                                                                               transverse_contact_ratio_min,percentage_width_difference_pinion_gear,
+                                                                               max_width_difference_pinion_gear)
 
 
 
@@ -1329,14 +1361,15 @@ class MeshCombination(DessiaObject):
             if num_gear in cycle.keys():
                 meshes_dico[num_gear].cycle = cycle[num_gear]
 
-        mesh_combination = cls(center_distance, connections, meshes, safety_factor, transverse_pressure_angle_ini)
+        mesh_combination = cls(center_distance, connections, meshes, safety_factor, transverse_pressure_angle_ini,infos=infos)
         return mesh_combination
 
     def update(self, Z, center_distance, connections, transverse_pressure_angle_ini,
                coefficient_profile_shift,
                transverse_pressure_angle_rack, coeff_gear_addendum,
                coeff_gear_dedendum, coeff_root_radius, coeff_circular_tooth_thickness,
-               material, internal_torque, cycle, safety_factor, total_contact_ratio_min, transverse_contact_ratio_min):
+               material, internal_torque, cycle, safety_factor, total_contact_ratio_min, transverse_contact_ratio_min,percentage_width_difference_pinion_gear,
+               max_width_difference_pinion_gear):
         """ update of the gear mesh assembly
 
         :param all: same parameters of this class initialisation
@@ -1364,13 +1397,14 @@ class MeshCombination(DessiaObject):
             self.meshes_dico[num_engr].update(z, db, cp, tpa, cga, cgd,
                                               crr, cct, mat)
 
-        self.gear_width, self.sigma_iso, self.sigma_lim = self.function_solve_width_definition(self.safety_factor,
+        self.gear_width, self.sigma_iso, self.sigma_lim,self.infos = self.function_solve_width_definition(self.safety_factor,
                                                                                                self.minimum_gear_width,
                                                                                                self.list_gear, self.tangential_load, self.meshes_dico,
                                                                                                self.connections,
                                                                                                self.material, self.cycle, self.helix_angle,
                                                                                                self.transverse_pressure_angle, self.DF, self.center_distance,
-                                                                                               self.connections_dfs, total_contact_ratio_min, transverse_contact_ratio_min)
+                                                                                               self.connections_dfs, total_contact_ratio_min, transverse_contact_ratio_min,
+                                                                                               percentage_width_difference_pinion_gear,max_width_difference_pinion_gear)
 
 
         self.linear_backlash, self.total_contact_ratio, self.transverse_contact_ratio, self.axial_contact_ratio = \
@@ -1382,7 +1416,8 @@ class MeshCombination(DessiaObject):
 
         self._SAP_diameter()
 
-    def update_helix_angle(self, helix_angle, total_contact_ratio_min, transverse_contact_ratio_min):
+    def update_helix_angle(self, helix_angle, total_contact_ratio_min, transverse_contact_ratio_min,percentage_width_difference_pinion_gear,
+                           max_width_difference_pinion_gear):
         """ update of the gear mesh assembly
 
         :param all: same parameters of this class initialisation
@@ -1394,20 +1429,21 @@ class MeshCombination(DessiaObject):
         if helix_angle:
             self.helix_angle = helix_angle
 
-        self.internal_torque, self.normal_load, self.tangential_load,
+        self.internal_torque, self.normal_load, self.tangential_load,\
         self.radial_load, self.axial_load = MeshCombination.gear_torque(self.Z, self.external_torque, self.DB,
                                                                         self.gear_graph, self.list_gear,
                                                                         self.connections, self.DF,
                                                                         self.transverse_pressure_angle, self.helix_angle)
 
-        self.gear_width, sigma_iso, sigma_lim = self.function_solve_width_definition(self.safety_factor,
+        self.gear_width, sigma_iso, sigma_lim,self.infos = self.function_solve_width_definition(self.safety_factor,
                                                                                      self.minimum_gear_width,
                                                                                      self.list_gear, self.tangential_load, self.meshes_dico,
                                                                                      self.connections,
                                                                                      self.material, self.cycle, self.helix_angle,
                                                                                      self.transverse_pressure_angle, self.DF,
                                                                                      self.center_distance, self.connections_dfs,
-                                                                                     total_contact_ratio_min, transverse_contact_ratio_min)
+                                                                                     total_contact_ratio_min, transverse_contact_ratio_min,
+                                                                                     percentage_width_difference_pinion_gear,max_width_difference_pinion_gear)
 
         for num_engr in self.list_gear:
             helix_angle = self.helix_angle[num_engr]
@@ -1432,6 +1468,7 @@ class MeshCombination(DessiaObject):
         """
         list_ineq = [] # liste of value to evaluate backlash
         obj = 0
+       
         for lb in self.linear_backlash:
             list_ineq.append(lb) # backlash > 0
             list_ineq.append(backlash_min-lb) # backlash < backlash_min so (backlash_min-backlash)>0
@@ -1478,7 +1515,7 @@ class MeshCombination(DessiaObject):
         _, ineq, _ = self.check_minimum_backlash(4*1e-4)
 
         _, list_ineq, _ = self.check_total_contact_ratio(total_contact_ratio_min, transverse_contact_ratio_min)
-
+        
         ineq.extend(list_ineq)
 
         for mesh in self.meshes:
@@ -1530,7 +1567,7 @@ class MeshCombination(DessiaObject):
             transverse_radial_pitch1 = math.pi*DF[num_mesh][engr1_position]/abs(meshes[engr1].z)
             space_width1 = transverse_radial_pitch1-circular_tooth_thickness1
             space_width2 = transverse_radial_pitch1-circular_tooth_thickness2
-
+            
             linear_backlash.append(min(space_width1-circular_tooth_thickness2, space_width2-circular_tooth_thickness1))
             transverse_pressure_angle1 = transverse_pressure_angle[num_mesh]
             center_distance1 = abs(center_distance[num_mesh])
@@ -1538,12 +1575,13 @@ class MeshCombination(DessiaObject):
 
 
 
-            transverse_contact_ratio.append((1/2.*(math.sqrt(meshes[engr1].outside_diameter**2
+            transverse_contact_ratio.append(1/2.*(math.sqrt(meshes[engr1].outside_diameter**2
                                                              - meshes[engr1].db**2)
                                                    + math.sqrt(meshes[engr2].outside_diameter**2
                                                                - meshes[engr2].db**2)
                                                    - 2*center_distance1*math.sin(transverse_pressure_angle1))
-                                             /(transverse_radial_pitch1*math.cos(transverse_pressure_angle1))))#TODO
+                                             /(transverse_radial_pitch1*math.cos(transverse_pressure_angle1)))#TODO
+           
 
             total_contact_ratio.append(axial_contact_ratio[-1]+transverse_contact_ratio[-1])
 
@@ -1802,7 +1840,8 @@ class MeshCombination(DessiaObject):
                                         list_gear, tangential_load, meshes, connections,
                                         material, cycle, helix_angle,
                                         transverse_pressure_angle, DF, center_distance, connections_dfs,
-                                        total_contact_ratio_min, transverse_contact_ratio_min):
+                                        total_contact_ratio_min, transverse_contact_ratio_min, percentage_width_difference_pinion_gear,
+                                        max_width_difference_pinion_gear):
         """ Calculation of the gear width
 
         :param safety_factor: Safety factor used for the ISO design
@@ -1816,7 +1855,7 @@ class MeshCombination(DessiaObject):
         """
 
 
-
+        infos=''
         coeff_yf_iso = cls._coeff_YF_iso(connections, meshes, transverse_pressure_angle)
 
         coeff_yb_iso = cls._coeff_YB_iso(connections, material, helix_angle)
@@ -1827,8 +1866,7 @@ class MeshCombination(DessiaObject):
         gear_width = {}
         for eng in list_gear:
             gear_width[eng] = minimum_gear_width
-
-
+        
         def f(x, tangential_load, sigma_lim, meshes, coeff_yf_iso,
               coeff_yb_iso, DF, connection, transverse_pressure_angle,
               center_distance, connections_dfs, helix_angle, total_contact_ratio_min, transverse_contact_ratio_min):
@@ -1838,25 +1876,38 @@ class MeshCombination(DessiaObject):
                                                              connections=connection, helix_angle=helix_angle, gear_width=[abs(x[0]), abs(x[1])])
 
 
-            f_eng1 = abs(x[0])-abs((tangential_load[0]
+            f_eng1 = abs(abs(x[0])-abs((tangential_load[0]
                                     / (sigma_lim[0][0]
                                        * meshes[0].rack.module))
                                    *coeff_yf_iso[0][0]
                                    *1/contact_ratio[1][0]
-                                   *coeff_yb_iso[0][0])
+                                   *coeff_yb_iso[0][0]))
 
-            f_eng2 = abs(x[1])-abs((tangential_load[0]
+            f_eng2 = abs(abs(x[1])-abs((tangential_load[0]
                                     / (sigma_lim[0][1]
                                        * meshes[1].rack.module))
                                    *coeff_yf_iso[0][1]
                                    *1/contact_ratio[1][0]
-                                   *coeff_yb_iso[0][1])
+                                   *coeff_yb_iso[0][1]))
+            
 
+            # print(x)
+            # print(contact_ratio[1][0])
+            # print(abs((tangential_load[0]
+            #                         / (sigma_lim[0][1]
+            #                            * meshes[1].rack.module))
+            #                        *coeff_yf_iso[0][1]
+            #                        *1/contact_ratio[1][0]
+            #                        *coeff_yb_iso[0][1]))
+            
+                
             if contact_ratio[1][0] < total_contact_ratio_min:
                 f_contact_ratio_min = abs(total_contact_ratio_min-transverse_contact_ratio_min-contact_ratio[3][0])
             else:
                 f_contact_ratio_min = 0
-
+            
+            
+            
             return [f_eng1+f_contact_ratio_min, f_eng2+f_contact_ratio_min]
 
         for num_mesh, (eng1, eng2) in enumerate(connections):
@@ -1875,19 +1926,103 @@ class MeshCombination(DessiaObject):
                                                [helix_angle[eng1], helix_angle[eng2]],
                                                total_contact_ratio_min[(eng1, eng2)],
                                                transverse_contact_ratio_min[(eng1, eng2)]), full_output=0)
+            
+            
 
             gear_width1 = abs(xs[0])
             gear_width2 = abs(xs[1])
-
-
+            
+            contact_ratio = cls.gear_contact_ratio_parameter(Z=[meshes[eng1].z, meshes[eng2].z], DF=[[DF[num_mesh][0], DF[num_mesh][1]]], transverse_pressure_angle=[transverse_pressure_angle[num_mesh]],
+                                                             center_distance=[center_distance[num_mesh]], meshes=[meshes[eng1], meshes[eng2]], connections_dfs=[(0, 1)],
+                                                             connections=[(0, 1)], helix_angle=[helix_angle[eng1], helix_angle[eng2]], gear_width=[gear_width1, gear_width2])
+   
+            width_torque_gear_1= abs((tangential_load[num_mesh]
+                                  / (sigma_lim[num_mesh][eng1]
+                                      * meshes[eng1].rack.module))
+                            *coeff_yf_iso[num_mesh][eng1]
+                            *1/contact_ratio[1][0]
+                            *coeff_yb_iso[num_mesh][eng1])
+            
+            
+            width_torque_gear_2= abs((tangential_load[num_mesh]
+                                  / (sigma_lim[num_mesh][eng2]
+                                      * meshes[eng2].rack.module))
+                            *coeff_yf_iso[num_mesh][eng2]
+                            *1/contact_ratio[1][0]
+                            *coeff_yb_iso[num_mesh][eng2])
+            
+            axial_contact_ratio_min=total_contact_ratio_min[(eng1, eng2)]-contact_ratio[2][0]
+            if helix_angle[eng1]: 
+                width_contact_ratio=abs(axial_contact_ratio_min*math.pi*meshes[eng1].rack.module/(math.sin(helix_angle[eng1])))
+            else:
+                width_contact_ratio=width_torque_gear_1
             gear_width_set = max(gear_width1, gear_width2)
-            gear_width[eng1] = max(gear_width[eng1], gear_width_set)
-            gear_width[eng2] = max(gear_width[eng2], gear_width_set)
+            
+            if meshes[eng1].z<meshes[eng2].z:
+                if max(gear_width[eng1], gear_width_set)*percentage_width_difference_pinion_gear[(eng1, eng2)] > max_width_difference_pinion_gear[(eng1, eng2)]:
+                    gear_width[eng1] = max(gear_width[eng1], gear_width_set) + max_width_difference_pinion_gear[(eng1, eng2)] 
+                    gear_width[eng2] = max(gear_width[eng2], gear_width_set)
+                else:
+                    gear_width[eng1] = max(gear_width[eng1], gear_width_set)*(1+percentage_width_difference_pinion_gear[(eng1, eng2)])
+                    gear_width[eng2] = max(gear_width[eng2], gear_width_set)
+            else:
+                if max(gear_width[eng2], gear_width_set)*percentage_width_difference_pinion_gear[(eng1, eng2)] > max_width_difference_pinion_gear[(eng1, eng2)]:
+                    gear_width[eng1] = max(gear_width[eng1], gear_width_set)
+                    gear_width[eng2] = max(gear_width[eng2], gear_width_set) + max_width_difference_pinion_gear[(eng1, eng2)]
+                else:
+                    gear_width[eng1] = max(gear_width[eng1], gear_width_set)
+                    gear_width[eng2] = max(gear_width[eng2], gear_width_set)*(1+percentage_width_difference_pinion_gear[(eng1, eng2)])
+            
+            angle = 30./180.*math.pi
+            s_thickness_iso_1, h_height_iso_1 = meshes[eng1].gear_iso_section(angle)
+            coeff_ys_iso_gear_1 = meshes[eng1]._iso_YS(s_thickness_iso_1)
+            s_thickness_iso_2, h_height_iso_2 = meshes[eng2].gear_iso_section(angle)
+            coeff_ys_iso_gear_2 = meshes[eng2]._iso_YS(s_thickness_iso_2)
+
+            infos+= 'For sizing a mesh, we need to determinate the minimum width to support the tangential load for the 2 gears and the minimum width of having the good contact ratio. \n\n'
+            infos+= 'To Begin, some general infos on the mesh that will serve us in all the different calculs: \n\n'
+            infos+='|Module|Safety Factor|Tangential Load|Helix Angle|' + '\n'
+            infos+='|:--------:|:-------------:|:---------------:|:---------------:|' + '\n'
+            infos+='|'+str(round(meshes[eng1].rack.module*10**3,3))+' mm'+'|'+str(round(safety_factor,3))+'|'+str(round(tangential_load[num_mesh],3))+' N'+'|'+str(round(helix_angle[eng1]*180/math.pi,3))+' ° |' + '\n\n'
+            infos+= 'To calculate the minimum width for the tangential load, we need for that to use some factors and parameters which depend on the material and the tooth forms of the gear:' +'\n\n \n\n'     
+            infos+='|Gear|Coeff YS (stress concentration factor)|Coeff YB( helix angle factor )|Coeff YF (form factor)|Sigma Lim|' + '\n'
+            infos+='|:--------:|:-------------:|:---------------:|:---------------:|:---------------:|' + '\n'
+            infos+='| 1 |'+str(round(coeff_ys_iso_gear_1,3))+'|'+str(round(coeff_yb_iso[num_mesh][eng1],3))+'|'+str(round(coeff_yf_iso[num_mesh][eng1],3))+'|' + str(round(coeff_ys_iso_gear_1*safety_factor*sigma_lim[num_mesh][eng1]*10**-6,3))+' MPa'+'|\n'
+            infos+='| 2 |'+str(round(coeff_ys_iso_gear_2,3))+'|'+str(round(coeff_yb_iso[num_mesh][eng2],3))+'|'+str(round(coeff_yf_iso[num_mesh][eng2],3))+'|' + str(round(coeff_ys_iso_gear_1*safety_factor*sigma_lim[num_mesh][eng2]*10**-6,3))+' MPa'+'|\n\n'
+           
+            infos+= 'The minimum width to support the tangential load for the first gear  is **'+str(round(width_torque_gear_1*10**3,3))+'** mm '
+            infos+= 'and for the second gear is **'+str(round(width_torque_gear_2*10**3,3))+'** mm'+ '\n\n'
+            infos+= 'To calculate the minimum width for the contact ratio, we need to have the  axial contact ratio minimum require.\n\n'
+            infos+= 'The total contact ratio minimum is **' +str(round(total_contact_ratio_min[(eng1, eng2)],3))+ '** and the actual transverse contact ratio is '+str(round(contact_ratio[2][0],3))+ '\n\n'
+            infos+= 'So the axial contact ratio minimum is **' +str(round(axial_contact_ratio_min,3))+ '**\n\n'
+            infos+= 'To have this requirement we need to have a width equal at **'+str(round(width_contact_ratio*10**3,3))+'** mm'+'\n\n'
+            infos+='|Width Tangential Load minimum|Width Contact Ratio minimum|' + '\n'
+            infos+='|:--------:|:-------------:|' + '\n'
+            infos+='|'+str(round(max([width_torque_gear_1*10**3,width_torque_gear_2*10**3]),3))+' mm'+'|'+str(round(width_contact_ratio*10**3,3))+'|' + '\n\n'
+            if contact_ratio[3][0]>axial_contact_ratio_min*1.05:
+                infos+= 'The tangential load condition is most restritive \n\n'
+            else:
+                infos+= 'The contact ratio condition is most restritive \n\n'
+            infos+= 'Percentage Difference Between Pinion And Gear: ' +str(round(percentage_width_difference_pinion_gear[(eng1, eng2)]*100,3))+' %'+'\n\n'
+            infos+= 'Max Difference Between Pinion And Gear: ' +str(round(max_width_difference_pinion_gear[(eng1, eng2)]*1000,3))+' mm'+'\n\n'
+            infos+= '####Solution: ' +'\n\n'
+            
+            infos+= 'Width Gear 1: '+str(round(gear_width[eng1]*10**3,2))+' mm'+'\n\n'+\
+                    'Width Gear 2: '+str(round(gear_width[eng2]*10**3,2))+' mm'+'\n\n'+\
+                    'Total Contact Ratio: '+str(round(contact_ratio[1][0],3))+'\n\n'+\
+                    'Transverse Contact Ratio: '+str(round(contact_ratio[2][0],3))+'\n\n'+\
+                    'Axial Contact Ratio: '+str(round(contact_ratio[3][0],3))+ '\n\n \n\n'
+                    
+
+                    
+            
+                                 
+            
 
         sigma_iso = sigma_lim
 
 
-        return gear_width, sigma_iso, sigma_lim
+        return gear_width, sigma_iso, sigma_lim,infos
 
     @classmethod
     def sigma_material_iso(cls, safety_factor, connections, material, cycle,
@@ -1983,26 +2118,6 @@ class MeshCombination(DessiaObject):
 
         for (index, i, center, k) in zip(gear_index, list_gear, list_center, list_rot):
             model_export = []
-            position = [self.meshes_dico[index].reference_point_trochoide[0]+center[0],
-                        self.meshes_dico[index].reference_point_trochoide[1]+center[1]]
-
-
-            u = [position[0] - center[0], position[1] - center[1]]
-            v2x = math.cos(k)*u[0] - math.sin(k)*u[1] + center[0]
-            v2y = math.sin(k)*u[0] + math.cos(k)*u[1] + center[1]
-
-            self.meshes_dico[index].reference_point_trochoide.x = v2x
-            self.meshes_dico[index].reference_point_trochoide.y = v2y
-
-
-            position = [self.meshes_dico[index].reference_point_outside[0]+center[0],
-                        self.meshes_dico[index].reference_point_outside[1]+center[1]]
-
-            u = [position[0] - center[0], position[1] - center[1]]
-            v2x = math.cos(k)*u[0] - math.sin(k)*u[1] + center[0]
-            v2y = math.sin(k)*u[0] + math.cos(k)*u[1] + center[1]
-            self.meshes_dico[index].reference_point_outside.x = v2x
-            self.meshes_dico[index].reference_point_outside.y = v2y
 
 
 
@@ -2015,7 +2130,7 @@ class MeshCombination(DessiaObject):
             export.append(model_export)
         return export
 
-    def gear_rotate_part_gear(self, gear_index, list_center, list_rot):
+    def gear_rotate_reference_point(self, gear_index, list_center,list_trans, list_rot):
         """ Displacement of the volmdlr gear profile (rotation and translation)
 
         :param list_gear: list of volmdlr contour [meshes.Contour, meshes.Contour ...], each contour is centered on the origin
@@ -2026,10 +2141,10 @@ class MeshCombination(DessiaObject):
         """
         export = []
 
-        for (index, center, k) in zip(gear_index, list_center, list_rot):
-            model_export = []
-            position = [self.meshes_dico[index].reference_point_trochoide[0]+center[0],
-                        self.meshes_dico[index].reference_point_trochoide[1]+center[1]]
+        for (index, center,trans, k) in zip(gear_index, list_center,list_trans, list_rot):
+            
+            position = [self.meshes_dico[index].reference_point_trochoide[0]+trans[0],
+                        self.meshes_dico[index].reference_point_trochoide[1]+trans[1]]
 
 
             u = [position[0] - center[0], position[1] - center[1]]
@@ -2040,8 +2155,8 @@ class MeshCombination(DessiaObject):
             self.meshes_dico[index].reference_point_trochoide.y = v2y
 
 
-            position = [self.meshes_dico[index].reference_point_outside[0]+center[0],
-                        self.meshes_dico[index].reference_point_outside[1]+center[1]]
+            position = [self.meshes_dico[index].reference_point_outside[0]+trans[0],
+                        self.meshes_dico[index].reference_point_outside[1]+trans[1]]
 
             u = [position[0] - center[0], position[1] - center[1]]
             v2x = math.cos(k)*u[0] - math.sin(k)*u[1] + center[0]
@@ -2065,20 +2180,19 @@ class MeshCombination(DessiaObject):
 
 
         reference_point_trochoide_gear_1 = self.meshes_dico[liste_eng[0]].reference_point_trochoide
-        reference_point_trochoide_gear_1_translate = (reference_point_trochoide_gear_1[0]+positions[0][1],
-                                                      reference_point_trochoide_gear_1[1]+positions[0][2])
+
+       
 
         reference_point_outside_gear_2 = self.meshes_dico[liste_eng[1]].reference_point_outside
-        reference_point_outside_gear_2_translate = (reference_point_outside_gear_2[0]+positions[1][1],
-                                                    reference_point_outside_gear_2[1]+positions[1][2])
+
 
         center_distance = vm.Vector2D((positions[1][1]-positions[0][1]), (positions[1][2]-positions[0][2]))
 
-        vector_trochoide_gear_1 = vm.Vector2D(reference_point_trochoide_gear_1_translate[0]-positions[0][1],
-                                              reference_point_trochoide_gear_1_translate[1]-positions[0][2])
+        vector_trochoide_gear_1 = vm.Vector2D(reference_point_trochoide_gear_1[0]-positions[0][1],
+                                              reference_point_trochoide_gear_1[1]-positions[0][2])
 
-        vector_outside_gear_2 = vm.Vector2D(reference_point_outside_gear_2_translate[0]-positions[1][1],
-                                            reference_point_outside_gear_2_translate[1]-positions[1][2])
+        vector_outside_gear_2 = vm.Vector2D(reference_point_outside_gear_2[0]-positions[1][1],
+                                            reference_point_outside_gear_2[1]-positions[1][2])
 
         angle_1 = math.acos(center_distance.dot(vector_trochoide_gear_1)/(center_distance.norm()*vector_trochoide_gear_1.norm()))
         angle_2 = math.acos(center_distance.dot(vector_outside_gear_2)/(center_distance.norm()*vector_outside_gear_2.norm()))
@@ -2131,15 +2245,26 @@ class MeshCombination(DessiaObject):
         plot_datas = []
         # plt.figure()
         # plt.axis('equal')
-
+        list_rot = [0]*len(self.meshes)
         for set_pos_dfs, (eng1, eng2) in enumerate(self.connections_dfs):
-
+            
             position1 = centers[eng1]
             position2 = centers[eng2]
             if set_pos_dfs == 0:
                 Gears3D[eng1] = self.meshes_dico[eng1].contour(3)
 
             Gears3D[eng2] = self.meshes_dico[eng2].contour(3)
+            
+            vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
+            vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
+            self.meshes_dico[eng1].update_reference_point()
+            self.meshes_dico[eng2].update_reference_point()
+            self.gear_rotate_reference_point([eng1, eng2],
+                                             [([vect_position_1.dot(y), vect_position_1.dot(z)]),
+                                              ([vect_position_2.dot(y), vect_position_2.dot(z)])],
+                                             [([vect_position_1.dot(y), vect_position_1.dot(z)]),
+                                              ([vect_position_2.dot(y), vect_position_2.dot(z)])],
+                                             list_rot=[list_rot[eng1], list_rot[eng2]])
 
             if (eng1, eng2) in self.connections:
                 set_pos = self.connections.index((eng1, eng2))
@@ -2158,15 +2283,22 @@ class MeshCombination(DessiaObject):
             Struct.append(vm.wires.Circle2D(vm.Point2D(position1[0],position1[1]),self.DF[set_pos][eng1_position]/2.))
             Struct.append(vm.wires.Circle2D(vm.Point2D(position2[0],position2[1]),self.DF[set_pos][eng2_position]/2.))
 
+            list_rot[eng1]+=rot_gear_2[0]
             
-            vect_position_1 = vm.Vector3D(position1[0],position1[1],position1[2])
-            vect_position_2 = vm.Vector3D(position2[0],position2[1],position2[2])
+            list_rot[eng2]+=rot_gear_2[1]
+            
 
-            Gears3D_Rotate = self.gear_rotate([eng1, eng2],
-                                              [Gears3D[eng1], Gears3D[eng2]],
-                                              [([vect_position_1.dot(y), vect_position_1.dot(z)]),
-                                               ([vect_position_2.dot(y), vect_position_2.dot(z)])],
-                                              list_rot=[rot_gear_2[0], rot_gear_2[1]])
+            if set_pos_dfs == 0:
+                Gears3D_Rotate = self.gear_rotate([eng1, eng2],
+                                                  [Gears3D[eng1], Gears3D[eng2]],
+                                                  [([vect_position_1.dot(y), vect_position_1.dot(z)]),
+                                                   ([vect_position_2.dot(y), vect_position_2.dot(z)])],
+                                                  list_rot=[list_rot[eng1], list_rot[eng2]])
+            else:
+                Gears3D_Rotate = self.gear_rotate([ eng2],
+                                                  [Gears3D[eng2]],
+                                                  [([vect_position_2.dot(y), vect_position_2.dot(z)])],
+                                                  list_rot=[list_rot[eng2]])
 
 
 
@@ -2175,15 +2307,15 @@ class MeshCombination(DessiaObject):
 
 
 
-            L = []
-            L_vector = []
-            i = 0
-            for element in Gears3D_Rotate[0]:
-                    for point in element.points:
-                       if not point in L_vector:
-                           # if i==100:
-                               L_vector.append(point)
-                               L.append(point)
+            # L = []
+            # L_vector = []
+            # i = 0
+            # for element in Gears3D_Rotate[0]:
+            #         for point in element.points:
+            #            if not point in L_vector:
+            #                # if i==100:
+            #                    L_vector.append(point)
+            #                    L.append(point)
                            #     i=0
                            # else:
                            #     i+=1
@@ -2193,30 +2325,32 @@ class MeshCombination(DessiaObject):
                        # print(point)
             # L.append(L[0])
 
-            C1 = vm.wires.ClosedPolygon2D(L, {})
+           
             # vmp.plot([C1.plot_data('contour')])
-            L2 = []
-            L2_vector = []
-            i = 0
-            for element in Gears3D_Rotate[1]:
-                    for point in element.points:
-                       if not point in L2_vector:
-                           # if i==100:
-                               L2_vector.append(point)
-                               L2.append(point)
-                               i = 0
+            # L2 = []
+            # L2_vector = []
+            # i = 0
+            # for element in Gears3D_Rotate[1]:
+            #         for point in element.points:
+            #            if not point in L2_vector:
+            #                # if i==100:
+            #                    L2_vector.append(point)
+            #                    L2.append(point)
+            #                    i = 0
                            # else:
                            #     i+=1
 
             # L2.append(L2[0])
 
             # L2=set(L2)
-            C2 = vm.wires.ClosedPolygon2D(L2, {})
+           
 
 
 
 
             if set_pos_dfs == 0:
+                C1 = vm.wires.Contour2D(Gears3D_Rotate[0], {})
+                C2 = vm.wires.Contour2D(Gears3D_Rotate[1], {})
 
                 circle_DF = vm.wires.Circle2D(center=vect_position_1, radius=self.DF[0][eng1_position]/2)
 
@@ -2249,7 +2383,7 @@ class MeshCombination(DessiaObject):
 
 
             else:
-
+                C2 = vm.wires.Contour2D(Gears3D_Rotate[0], {})
                 
                 C2_plot_data = C2.plot_data(surface_style=surface_style, edge_style=edge_style)
                 plot_datas.extend([C2_plot_data])
@@ -2478,8 +2612,9 @@ class MeshCombination(DessiaObject):
         # plt.figure()
         # plt.axis('equal')
         list_z_gear = [0]*len(self.meshes)
-
+        primitive_plot_data=[]
         list_rot = [0]*len(self.meshes)
+            
         for set_pos_dfs, (eng1, eng2) in enumerate(self.connections_dfs):
             if not list_z_gear[eng1]:
                 list_z_gear[eng1] = []
@@ -2492,29 +2627,38 @@ class MeshCombination(DessiaObject):
 
             self.meshes_dico[eng1].update_reference_point()
             self.meshes_dico[eng2].update_reference_point()
-            if not list_rot[eng1] and not list_rot[eng2]:
+            vect_position_1 = vm.Vector3D(position1[0], position1[1], position1[2])
+            vect_position_2 = vm.Vector3D(position2[0], position2[1], position2[2])
+            x = vm.Vector3D(axis[0], axis[1], axis[2])
+            y = x.deterministic_unit_normal_vector()
 
-                if (eng1, eng2) in self.connections:
-                    set_pos = self.connections.index((eng1, eng2))
-                    rot_gear_2 = list(self.initial_position([position1, position2], (eng1, eng2)))
-                    eng1_position = 0
-                    eng2_position = 1
+            z = x.cross(y)
+            
+            self.gear_rotate_reference_point([eng1, eng2],
+                                             [([vect_position_1.dot(y), vect_position_1.dot(z)]), ([vect_position_2.dot(y), vect_position_2.dot(z)])],
+                                             [([vect_position_1.dot(y), vect_position_1.dot(z)]), ([vect_position_2.dot(y), vect_position_2.dot(z)])],
+                                             list_rot=[list_rot[eng1], list_rot[eng2]])
+           
+        
 
-                elif (eng2, eng1) in self.connections:
-                    set_pos = self.connections.index((eng2, eng1))
-                    rot_gear_2 = list(self.initial_position([position2, position1], (eng2, eng1)))
-                    eng1_position = 1
-                    eng2_position = 0
+            if (eng1, eng2) in self.connections:
+                set_pos = self.connections.index((eng1, eng2))
+                rot_gear_2 = list(self.initial_position([position1, position2], (eng1, eng2)))
+                eng1_position = 0
+                eng2_position = 1
 
-            if list_rot[eng1]:
-                 rot_gear_2[0] = list_rot[eng1]
-            else:
-                 list_rot[eng1] = rot_gear_2[0]
+            elif (eng2, eng1) in self.connections:
+                set_pos = self.connections.index((eng2, eng1))
+                rot_gear_2 = list(self.initial_position([position2, position1], (eng2, eng1)))
+                eng1_position = 1
+                eng2_position = 0
+            
 
-            if list_rot[eng2]:
-                 rot_gear_2[1] = list_rot[eng2]
-            else:
-                 list_rot[eng2] = rot_gear_2[1]
+            list_rot[eng1] += rot_gear_2[0]
+
+
+            list_rot[eng2] += rot_gear_2[1]
+           
 
 
 
@@ -2532,16 +2676,17 @@ class MeshCombination(DessiaObject):
             y = x.deterministic_unit_normal_vector()
 
             z = x.cross(y)
-            Gears3D_Rotate = self.gear_rotate_part_gear([eng1, eng2],
-                                                        [([vect_position_1.dot(y), vect_position_1.dot(z)]), ([vect_position_2.dot(y), vect_position_2.dot(z)])],
-                                                        list_rot=[rot_gear_2[0], rot_gear_2[1]])
+            Gears3D_Rotate = self.gear_rotate_reference_point([eng1, eng2],
+                                                              [([vect_position_1.dot(y), vect_position_1.dot(z)]), ([vect_position_2.dot(y), vect_position_2.dot(z)])],
+                                                             [([0, 0]), ([0, 0])],
+                                                            list_rot=[rot_gear_2[0], rot_gear_2[1]])
 
             center_distance = vm.Vector2D((position2[1]-position1[1]), (position2[2]-position1[2]))
 
             estimate_z_1 = self.meshes_dico[eng1].z_number_position_gears(vector=center_distance, position=position1)
             estimate_z_2 = self.meshes_dico[eng2].z_number_position_gears(vector=center_distance, position=position2, first_gear=False)
 
-
+          
 
 
             z_num = z_number/2-1
@@ -2612,18 +2757,21 @@ class MeshCombination(DessiaObject):
             model_trans_rot_1 = []
             position1 = centers[num_gear]
             vect_center_1 = vm.Point2D(position1[1], position1[2])
-
+            
             for element in L_total:
                 model_trans_1 = element.translation(vect_center_1)
                 model_trans_rot_1.append(model_trans_1.rotation(vect_center_1, list_rot[num_gear]))
-            L = []
+            # L = []
+            
+            C1 = vm.wires.Contour2D(primitives=model_trans_rot_1)
+            
+            # print(C1.primitives)
+            # for element in model_trans_rot_1:
+            #         for point in element.points:
+            #            if not point in L:
+            #                    L.append(point)
 
-            for element in model_trans_rot_1:
-                    for point in element.points:
-                       if not point in L:
-                               L.append(point)
-
-            C1 = vm.wires.ClosedPolygon2D(L, {})
+            # C1 = vm.wires.ClosedPolygon2D(L, {})
 
             x = vm.Vector3D(axis[0], axis[1], axis[2])
             y = x.deterministic_unit_normal_vector()
@@ -2635,7 +2783,7 @@ class MeshCombination(DessiaObject):
 
             extrusion_vector1 = (self.gear_width[num_gear]*x)
 
-
+            
 
             vect_x = -0.5*self.gear_width[num_gear]*x + x.dot(vm.Vector3D(centers[num_gear][0], centers[num_gear][1], centers[num_gear][2]))*x
 
@@ -2656,12 +2804,14 @@ class MeshCombination(DessiaObject):
                     vector = vm.Vector2D(vect_center.dot(y), vect_center.dot(z))
                     circle = vm.wires.Circle2D(vm.Point2D(vector[0], vector[1]), (self.DB[num_gear])/2)
                     t1 = primitives3D.ExtrudedProfile(vm.Vector3D(vect_x[0], vect_x[1], vect_x[2]), y, z, circle, [], vm.Vector3D(extrusion_vector1[0], extrusion_vector1[1], extrusion_vector1[2]))
-
+            
             primitives.append(t1)
 
 
-
-
+        
+        
+       
+        
 
 
         return primitives
@@ -2861,6 +3011,11 @@ class MeshCombination(DessiaObject):
             centers[num_eng] = [x_opt[2*opt_pos], x_opt[2*opt_pos+1]]
 
         return centers
+    
+    def to_markdown(self):
+        
+        if hasattr(self,'infos'):
+            return self.infos
 
 
 class MeshAssembly(DessiaObject):
@@ -2868,12 +3023,14 @@ class MeshAssembly(DessiaObject):
     """
     Gear Mesh Assembly definition
     
-    :param connections: List of list of tuples defining gear mesh connections [[[(node1,node2)], [(node2,node3)]],[[(node1,node2)], [(node2,node3)]]...]
+    :param connections: List of list of tuples defining gear mesh connections [[[(1,2),(5,6)], [(2,3)]],[[(3,4)]...]
     :param mesh_combinaitons: List of class MechCombination objetcs defining each mesh combination 
-    :num_gear_match: List of tuple containing three integer values, each corresponding to one index value. The first corresponds to the gear index in the mesh assembly,
+    :param num_gear_match: List of tuple containing three integer values, each corresponding to one index value. The first corresponds to the gear index in the mesh assembly,
         the second to the gear index in the mesh combination and finally the third to the index of mesh combination. 
     :param safety_factor: Safety factor used for the ISO design
-    :param dict_index_gear_match: Dictionnary of indexes, following the following format {gear_index_mesh_assembly: (gear_index_mesh_combination, index_mesh_combination)}
+    
+    }
+    
     """
 
     _standalone_in_db = True
@@ -3068,7 +3225,9 @@ class MeshAssembly(DessiaObject):
                coefficient_profile_shift, transverse_pressure_angle_rack,
                coeff_gear_addendum, coeff_gear_dedendum, coeff_root_radius,
                coeff_circular_tooth_thickness, Z, helix_angle, total_contact_ratio_min,
-               transverse_contact_ratio_min, strong_links=None, material=None,
+               transverse_contact_ratio_min, percentage_width_difference_pinion_gear,
+               max_width_difference_pinion_gear, 
+               strong_links=None, material=None,
                internal_torque=None, external_torque=None, cycle=None,
                safety_factor=1):
 
@@ -3089,7 +3248,8 @@ class MeshAssembly(DessiaObject):
                           'coefficient_profile_shift': {}, 'transverse_pressure_angle_rack': {},
                           'coeff_gear_addendum': {}, 'coeff_gear_dedendum': {},
                           'coeff_root_radius': {}, 'coeff_circular_tooth_thickness': {},
-                          'helix_angle':{}, 'total_contact_ratio_min':{}, 'transverse_contact_ratio_min':{}}
+                          'helix_angle':{}, 'total_contact_ratio_min':{}, 'transverse_contact_ratio_min':{},
+                          'percentage_width_difference_pinion_gear':{},'max_width_difference_pinion_gear':{}}
 
 
             li_connection = []
@@ -3137,6 +3297,8 @@ class MeshAssembly(DessiaObject):
                             input_data['transverse_pressure_angle_ini'] = transverse_pressure_angle[num_mesh]
                         input_data['total_contact_ratio_min'][li_connection[-1]] = total_contact_ratio_min[gs]
                         input_data['transverse_contact_ratio_min'][li_connection[-1]] = transverse_contact_ratio_min[gs]
+                        input_data['percentage_width_difference_pinion_gear'][li_connection[-1]] = percentage_width_difference_pinion_gear[gs]
+                        input_data['max_width_difference_pinion_gear'][li_connection[-1]] = max_width_difference_pinion_gear[gs]
                         num_mesh += 1
                         num_mesh_assignation += 1
                 input_data['center_distance'].append(center_distance[num_cd])
@@ -3238,7 +3400,8 @@ class MeshAssembly(DessiaObject):
                           'coefficient_profile_shift':{}, 'transverse_pressure_angle_rack':{},
                           'coeff_gear_addendum':{}, 'coeff_gear_dedendum':{},
                           'coeff_root_radius':{}, 'coeff_circular_tooth_thickness':{}, 'total_contact_ratio_min':{},
-                          'transverse_contact_ratio_min':{}}
+                          'transverse_contact_ratio_min':{},'percentage_width_difference_pinion_gear':{},
+                          'max_width_difference_pinion_gear':{}}
             li_connection = []
             for num_cd, list_connection in enumerate(self.connections):
                 for num_mesh_iter, (eng1, eng2) in enumerate(list_connection):
@@ -3263,6 +3426,10 @@ class MeshAssembly(DessiaObject):
                             = optimizer_data['total_contact_ratio_min'][(eng1, eng2)]
                             input_data['transverse_contact_ratio_min'][(num_gear_assignation_1, num_gear_assignation_2)] \
                             = optimizer_data['transverse_contact_ratio_min'][(eng1, eng2)]
+                            input_data['percentage_width_difference_pinion_gear'][(num_gear_assignation_1, num_gear_assignation_2)] \
+                            = optimizer_data['percentage_width_difference_pinion_gear'][(eng1, eng2)]
+                            input_data['max_width_difference_pinion_gear'][(num_gear_assignation_1, num_gear_assignation_2)] \
+                            = optimizer_data['max_width_difference_pinion_gear'][(eng1, eng2)]
                     num_mesh += 1
             input_data['transverse_pressure_angle_ini'] = input_data['transverse_pressure_angle_ini'][0]
             xt = dict(list(input_data.items())+list(self.general_data[num_graph].items()))
@@ -3276,7 +3443,9 @@ class MeshAssembly(DessiaObject):
         output_x = []
         for num_graph, list_sub_graph in enumerate(self.sub_graph_dfs):
             num_mesh = 0
-            input_data = {'helix_angle':{}, 'total_contact_ratio_min':{}, 'transverse_contact_ratio_min':{}}
+            input_data = {'helix_angle':{}, 'total_contact_ratio_min':{}, 'transverse_contact_ratio_min':{},
+                          'percentage_width_difference_pinion_gear':{},
+                          'max_width_difference_pinion_gear':{}}
             li_connection = []
             for num_cd, list_connection in enumerate(self.connections):
                 for num_mesh_iter, (eng1, eng2) in enumerate(list_connection):
@@ -3293,6 +3462,10 @@ class MeshAssembly(DessiaObject):
                             optimizer_data['total_contact_ratio_min'][(eng1, eng2)]
                             input_data['transverse_contact_ratio_min'][(num_gear_assignation_1, num_gear_assignation_2)] = \
                             optimizer_data['transverse_contact_ratio_min'][(eng1, eng2)]
+                            input_data['percentage_width_difference_pinion_gear'][(num_gear_assignation_1, num_gear_assignation_2)] = \
+                            optimizer_data['percentage_width_difference_pinion_gear'][(eng1, eng2)]
+                            input_data['max_width_difference_pinion_gear'][(num_gear_assignation_1, num_gear_assignation_2)] = \
+                            optimizer_data['max_width_difference_pinion_gear'][(eng1, eng2)]
                     num_mesh += 1
 
             xt = dict(list(input_data.items()))
