@@ -224,15 +224,20 @@ class Wheel(dc.DessiaObject):
         area = self.surface2d().area()
         return 7800*area*self.width
 
-    def plot_data(self, angle=0.):
+    def plot_data(self, angle=0.,x=0,y=0):
         line_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.WATERCRESS,
                                          dashline=[5, 5, 20, 5])
+        point_translated=vm.Point2D(x,y)
+        outer_contour_rotation=self.outer_contour().rotation(vm.O2D, angle)
+        inner_contour_rotation= self.inner_contour().rotation(vm.O2D, angle)
+        action_line1_rotation=self.action_line1.rotation(vm.O2D, angle)
+        action_line2_rotation=self.action_line2.rotation(vm.O2D, angle)
 
-        primitives = [self.basis_circle.plot_data(edge_style=line_style),
-                      self.outer_contour().rotation(vm.O2D, angle).plot_data(),
-                      self.inner_contour().rotation(vm.O2D, angle).plot_data(),
-                      self.action_line1.rotation(vm.O2D, angle).plot_data(edge_style=line_style),
-                      self.action_line2.rotation(vm.O2D, angle).plot_data(edge_style=line_style)]
+        primitives = [self.basis_circle.translation(point_translated).plot_data(edge_style=line_style),
+                      outer_contour_rotation.translation(point_translated).plot_data(),
+                      inner_contour_rotation.translation(point_translated).plot_data(),
+                      action_line1_rotation.translation(point_translated).plot_data(edge_style=line_style),
+                      action_line2_rotation.translation(point_translated).plot_data(edge_style=line_style)]
         return [plot_data.PrimitiveGroup(primitives)]
         
     def volmdlr_primitives(self, frame=vm.OXYZ):
@@ -461,14 +466,21 @@ class Pawl(dc.DessiaObject):
     def surface2d(self):
         return vmf.Surface2D(self.outer_contour(), [self.inner_contour()])
 
-    def plot_data(self, angle=0.):
+    def plot_data(self, angle=0.,x=0,y=0):
         line_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.FERN,
                                          dashline=[5, 5, 20, 5])
-        primitives = [self.outer_contour().rotation(self.axis_position, angle).plot_data(),
-                     self.inner_contour().rotation(self.axis_position, angle).plot_data(),
-                     self.action_line1.rotation(self.axis_position, angle).plot_data(edge_style=line_style),
-                     self.action_line2.rotation(self.axis_position, angle).plot_data(edge_style=line_style)]
-
+        point_translated=vm.Point2D(x,y)
+        outer_contour_rotation=self.outer_contour().rotation(self.axis_position, angle)
+        inner_contour_rotation= self.inner_contour().rotation(self.axis_position, angle)
+        action_line1_rotation=self.action_line1.rotation(self.axis_position, angle)
+        action_line2_rotation=self.action_line2.rotation(self.axis_position, angle)
+        
+        primitives = [outer_contour_rotation.translation(point_translated).plot_data(),
+                     inner_contour_rotation.translation(point_translated).plot_data(),
+                     action_line1_rotation.translation(point_translated).plot_data(edge_style=line_style),
+                     action_line2_rotation.translation(point_translated).plot_data(edge_style=line_style)]
+        
+        
 
         return [plot_data.PrimitiveGroup(primitives)]
 
@@ -566,17 +578,19 @@ class RollerLockingMechanism(dc.DessiaObject):
         return vmw.Circle2D(vm.Point2D(0., 0.),
                             0.25 * self.roller_diameter)
 
-    def plot_data(self, center_distance=0., position=0.):
+    def plot_data(self, center_distance=0., position=0.,x=0,y=0):
         # line_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.FERN,
         #                                  dashline=[5, 5, 20, 5])
-        primitives = [self.outer_contour().translation(vm.Point2D(position, center_distance)).plot_data(),
-                      self.inner_contour().translation(vm.Point2D(position, center_distance)).plot_data(),
+        primitives = [self.outer_contour().translation(vm.Point2D(position+x, center_distance+y)).plot_data(),
+                      self.inner_contour().translation(vm.Point2D(position+x, center_distance+y)).plot_data(),
                       self.outer_contour().translation(
-                          vm.Point2D(position, center_distance+self.roller_diameter)).plot_data(),
+                          vm.Point2D(position+x, center_distance+self.roller_diameter+y)).plot_data(),
                       self.inner_contour().translation(
-                          vm.Point2D(position, center_distance+self.roller_diameter)).plot_data(),
+                          vm.Point2D(position+x, center_distance+self.roller_diameter+y)).plot_data(),
 
                       ]
+        
+        
 
         return [plot_data.PrimitiveGroup(primitives)]
 
@@ -705,9 +719,11 @@ class ParkingPawl(dc.DessiaObject):
         self.locking_mechanism_center_distance = self.pawl.slope.end.y + 0.5*self.locking_mechanism.roller_diameter
         self.locking_mechanism_start_position = self.locking_contact_results[1][-1]
         self.locking_mechanism_end_position = self.pawl.slope.end.x - 0.002
+        
+        dc.DessiaObject.__init__(self, name=name)
 
     def mass(self):
-        return self.wheel.mass() + self.pawl.mass()
+        return abs(self.wheel.mass() + self.pawl.mass())
 
     def minimum_width(self, wheel_torque:float, safety_factor:float=2):
         wheel_min_width = self.wheel.minimum_width(wheel_torque)
@@ -782,23 +798,26 @@ class ParkingPawl(dc.DessiaObject):
 
         return True
 
-    def plot_data(self, pawl_angle=None, wheel_angle=None):
+    def plot_data(self, pawl_angle=None, wheel_angle=None,x=0,y=0):
 
         if pawl_angle is None and wheel_angle is None:
             primitives_p1 = self.locking_mechanism.plot_data(position=self.locking_mechanism_end_position,
-                                                             center_distance=self.locking_mechanism_center_distance)
-            primitives_p1 += self.wheel.plot_data(angle=self.contact1_wheel_angle)[0].primitives
-            primitives_p1 += self.pawl.plot_data(angle=0.)[0].primitives
-
+                                                             center_distance=self.locking_mechanism_center_distance,
+                                                             x=x,y=y)
+            primitives_p1 += self.wheel.plot_data(angle=self.contact1_wheel_angle,x=x,y=y)[0].primitives
+            primitives_p1 += self.pawl.plot_data(angle=0.,x=x,y=y)[0].primitives
+            
             primitives_p2 = self.locking_mechanism.plot_data(position=self.locking_mechanism_end_position,
-                                                             center_distance=self.locking_mechanism_center_distance)
-            primitives_p2 += self.wheel.plot_data(angle=self.contact2_wheel_angle)[0].primitives
-            primitives_p2 += self.pawl.plot_data(angle=0.)[0].primitives
+                                                             center_distance=self.locking_mechanism_center_distance,
+                                                             x=x,y=y)
+            primitives_p2 += self.wheel.plot_data(angle=self.contact2_wheel_angle,x=x,y=y)[0].primitives
+            primitives_p2 += self.pawl.plot_data(angle=0.,x=x,y=y)[0].primitives
 
             primitives_p3 = self.locking_mechanism.plot_data(position=self.locking_mechanism_start_position,
-                                                             center_distance=self.locking_mechanism_center_distance)
-            primitives_p3 += self.wheel.plot_data(angle=0.)[0].primitives
-            primitives_p3 += self.pawl.plot_data(angle=self.minimal_up_pawl_angle)[0].primitives
+                                                             center_distance=self.locking_mechanism_center_distance,
+                                                             x=x,y=y)
+            primitives_p3 += self.wheel.plot_data(angle=0.,x=x,y=y)[0].primitives
+            primitives_p3 += self.pawl.plot_data(angle=self.minimal_up_pawl_angle,x=x,y=y)[0].primitives
 
             # An example of Graph2D instantiation. It draws one or several datasets on
             # one canvas and is useful for displaying numerical functions
@@ -1098,6 +1117,18 @@ class ParkingPawl(dc.DessiaObject):
         # print('Sizing width: ', min_width)
 
 
+    def to_markdown(self):
+        s = '''## Parking pawl datasheet\n
+Engaged slack: {} °\n
+Axis/wheel clearance: {} mm\n
+ejections levers: {}mm / {}mm\n\n'''.format(round(math.degrees(self.engaged_slack()),3),
+                                           round(1000*self.axis_wheel_clearance(), 3),
+                                           round(1000*self.ejection_levers()[0], 3),
+                                           round(1000*self.ejection_levers()[1], 3)
+                                           )
+
+        return s
+
 class ParkingPawlSimulation(dc.DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes = ['wheel', 'pawl']
@@ -1121,7 +1152,15 @@ class ParkingPawlSimulation(dc.DessiaObject):
                                  locking_mechanism_forces=locking_mechanism_forces,
                                  max_locking_speed=max_locking_speed,
                                  name=name)
-
+        
+        self.mass = parking_pawl.mass()
+        self.axis_wheel_clearance = parking_pawl.axis_wheel_clearance()
+        self.engaged_slack = parking_pawl.engaged_slack()
+        self.rest_margin = parking_pawl.rest_margin()
+        self.width = parking_pawl.width
+        
+        
+        
     def volmdlr_primitives(self):
         wheel = self.parking_pawl.wheel.volmdlr_primitives()[0]
         pawl = self.parking_pawl.pawl.volmdlr_primitives()[0]

@@ -6,26 +6,11 @@ Created on Mon Mar  9 12:43:48 2020
 @author: launay
 """
 
-import matplotlib.pyplot as plt
+
+
 import mechanical_components.planetary_gears_generator as pg_generator
 import mechanical_components.planetary_gears as pg
-import networkx as nx
-import numpy as npy
-import dectree 
-import math as m
-import copy
-import volmdlr as vm
-import volmdlr.plot_data as vmp
-import volmdlr.primitives3D as p3d
-import volmdlr.primitives2D as p2d
-import mechanical_components.meshes as meshes
-import sys
-import time
-import dessia_common
-from dessia_api_client import Client
-import mechanical_components.optimization.meshes_protected as mg
-import mechanical_components.optimization.meshes as meshes_opt
-from mechanical_components.meshes import hardened_alloy_steel
+
 
 
 # volumic_mass=7800

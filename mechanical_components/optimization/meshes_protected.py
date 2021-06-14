@@ -60,7 +60,8 @@ class ContinuousMeshesAssemblyOptimizer:
                  coefficient_profile_shift, rack_list, rack_choice,
                  material, external_torques, cycles, safety_factor, db, verbose=False,
                  axial_contact_ratio=None, total_contact_ratio_min=None,
-                 transverse_contact_ratio_min=None):
+                 transverse_contact_ratio_min=None, percentage_width_difference_pinion_gear=None,
+                 max_width_difference_pinion_gear=None,):
         self.center_distances = center_distances
         self.transverse_pressure_angle = transverse_pressure_angle
         self.coefficient_profile_shift = coefficient_profile_shift
@@ -72,10 +73,20 @@ class ContinuousMeshesAssemblyOptimizer:
         self.connections = connections
         self.rigid_links = rigid_links
         self.external_torques = external_torques
-
+        
         self.cycles = cycles
         # Initailization
         self.solutions = []
+        if not axial_contact_ratio:
+            axial_contact_ratio={}
+        if not total_contact_ratio_min:
+            total_contact_ratio_min={}
+        if not transverse_contact_ratio_min:
+            transverse_contact_ratio_min={}
+        if not percentage_width_difference_pinion_gear:
+            percentage_width_difference_pinion_gear={}
+        if not max_width_difference_pinion_gear:
+            max_width_difference_pinion_gear={}
 
 
 
@@ -131,6 +142,8 @@ class ContinuousMeshesAssemblyOptimizer:
         self.axial_contact_ratio = {}
         self.total_contact_ratio_min = {}
         self.transverse_contact_ratio_min = {}
+        self.percentage_width_difference_pinion_gear = {}
+        self.max_width_difference_pinion_gear = {}
         for num_cd, list_connections in enumerate(connections):
             for (eng1, eng2) in list_connections:
                 for num_line_iter, list_dfs in enumerate(self.sub_graph_dfs): # search the number of the line gear analyze
@@ -158,6 +171,7 @@ class ContinuousMeshesAssemblyOptimizer:
                         interval_tpa = self.transverse_pressure_angle[num_mesh]
                         if interval_tpa[0] != interval_tpa[1]:
                             dict_unknown['transverse_pressure_angle'].append(num_mesh)
+                
                 if (eng1, eng2) in list(axial_contact_ratio.keys()):
                     self.axial_contact_ratio[(eng1, eng2)] = axial_contact_ratio[(eng1, eng2)]
                 else:
@@ -172,6 +186,16 @@ class ContinuousMeshesAssemblyOptimizer:
                     self.transverse_contact_ratio_min[(eng1, eng2)] = transverse_contact_ratio_min[(eng1, eng2)]
                 else:
                     self.transverse_contact_ratio_min[(eng1, eng2)] = 0
+                    
+                if (eng1, eng2) in list(percentage_width_difference_pinion_gear.keys()):
+                    self.percentage_width_difference_pinion_gear[(eng1, eng2)] = percentage_width_difference_pinion_gear[(eng1, eng2)]
+                else:
+                    self.percentage_width_difference_pinion_gear[(eng1, eng2)] = 0
+                    
+                if (eng1, eng2) in list(max_width_difference_pinion_gear.keys()):
+                    self.max_width_difference_pinion_gear[(eng1, eng2)] = max_width_difference_pinion_gear[(eng1, eng2)]
+                else:
+                    self.max_width_difference_pinion_gear[(eng1, eng2)] = 0
 
 
                 num_mesh += 1
@@ -245,6 +269,7 @@ class ContinuousMeshesAssemblyOptimizer:
 
         self.db = db
         optimization = 1
+        
         while optimization == 1:
             self.X0 = self.CondInit()
             optimizer_data = self._convert_X2x(self.X0)
@@ -253,13 +278,17 @@ class ContinuousMeshesAssemblyOptimizer:
             self.general_data = {'Z': Z, 'connections': connections,
                                  'material':material, 'internal_torque':dic_torque, 'external_torque':self.external_torques, 'cycle':dic_cycle,
                                  'safety_factor':safety_factor, 'total_contact_ratio_min':self.total_contact_ratio_min,
-                                 'transverse_contact_ratio_min':self.transverse_contact_ratio_min}
+                                 'transverse_contact_ratio_min':self.transverse_contact_ratio_min,
+                                 'percentage_width_difference_pinion_gear':self.percentage_width_difference_pinion_gear,
+                                 'max_width_difference_pinion_gear':self.max_width_difference_pinion_gear,
+                                 }
             input_dat = dict(list(optimizer_data.items())+list(self.general_data.items()))
 
             try:
                 self.mesh_assembly = MeshAssembly.create(**input_dat)
                 optimization = 0
             except ValueError:
+                
                 optimization = 1
         self.save = copy.deepcopy(optimizer_data)
 
@@ -507,6 +536,8 @@ class ContinuousMeshesAssemblyOptimizer:
         optimizer_data = self._convert_X2x(X)
         optimizer_data['total_contact_ratio_min'] = self.total_contact_ratio_min
         optimizer_data['transverse_contact_ratio_min'] = self.transverse_contact_ratio_min
+        optimizer_data['percentage_width_difference_pinion_gear'] = self.percentage_width_difference_pinion_gear
+        optimizer_data['max_width_difference_pinion_gear'] = self.max_width_difference_pinion_gear
         _ = self.mesh_assembly.update(optimizer_data)
         return optimizer_data
 
@@ -519,6 +550,8 @@ class ContinuousMeshesAssemblyOptimizer:
                 optimizer_data['helix_angle'][num_eng] = helix_angle
         optimizer_data['total_contact_ratio_min'] = self.total_contact_ratio_min
         optimizer_data['transverse_contact_ratio_min'] = self.transverse_contact_ratio_min
+        optimizer_data['percentage_width_difference_pinion_gear'] = self.percentage_width_difference_pinion_gear
+        optimizer_data['max_width_difference_pinion_gear'] = self.max_width_difference_pinion_gear
         _ = self.mesh_assembly.update_helix_angle(optimizer_data)
         return optimizer_data
 
@@ -545,6 +578,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 else:
                     transverse_contact_ratio_min[(eng1, eng2)] = 0
             ineq.extend(mesh_assembly_iter.liste_ineq(total_contact_ratio_min, transverse_contact_ratio_min))
+            
             # print(25)
             # print(ineq[-1])
             # print(ineq[-2])
@@ -583,7 +617,7 @@ class ContinuousMeshesAssemblyOptimizer:
                             ineq.append((-SAP2+dia2-d_sap_root)*100)
                         else:
                             ineq.append((SAP2-dia2-d_sap_root)*100)
-
+                
                 Ca_min = 0
 
                 if list_CA_min:
@@ -598,7 +632,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 if Z2 < 0:
                     ineq.append(cd- 0.5*(de1-dia2))
                     ineq.append(cd- 0.5*(-de2+dia1))
-
+                    
                     if constraints_root_diameter:
 
                         if constraints_root_diameter[num_mesh]:
@@ -612,7 +646,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 elif Z1 < 0:
                     ineq.append(cd- 0.5*(-de1+dia2))
                     ineq.append(cd- 0.5*(de2-dia1))
-
+                    
                     if constraints_root_diameter:
 
                         if constraints_root_diameter[mesh_assignation]:
@@ -624,7 +658,14 @@ class ContinuousMeshesAssemblyOptimizer:
                 else:
                     ineq.append((cd- 0.5*(de1+dia2))+0.001)
                     ineq.append((cd- 0.5*(de2+dia1))+0.001)
-
+                    print(Z1,Z2)
+                    print(2555555)
+                    print(dia2)
+                    print(de2)
+                    print(dia1)
+                    print(de1)
+                    print(cd)
+                    print((cd- 0.5*(de1+dia2))+0.001)
                     if constraints_root_diameter:
 
                         if constraints_root_diameter[mesh_assignation]:
@@ -711,6 +752,7 @@ class ContinuousMeshesAssemblyOptimizer:
     def Objective(self, X, constraints_root_diameter, list_CA_min,
                   constraints_SAP_diameter,
                   distances_SAP_root_diameter_active_min):
+        
         _ = self.update(X)
         fineq = self.Fineq(X, constraints_root_diameter, list_CA_min,
                            constraints_SAP_diameter,
@@ -752,7 +794,8 @@ class ContinuousMeshesAssemblyOptimizer:
             else:
                 obj += 0.000001*i
 
-
+        obj+=self.mesh_assembly.mesh_combinations[0].mass()/10
+        
         return obj
 
 
@@ -795,7 +838,7 @@ class ContinuousMeshesAssemblyOptimizer:
 
         i = 0
         arret = 0
-
+       
         while i < max_iter and arret == 0:
             X0 = self.CondInit()
             _ = self.update(X0)
@@ -814,7 +857,7 @@ class ContinuousMeshesAssemblyOptimizer:
             # x=cma.fmin(self.Objective, X0, 1*10e-4,args=(constraint_root_diameter,CA_min), options={'bounds':[min_x, max_x],'tolfun':1e-15,'maxiter': 200})[0:2]
 
 
-
+    
 
 
             try:
@@ -826,7 +869,6 @@ class ContinuousMeshesAssemblyOptimizer:
                                     distances_SAP_root_diameter_active_min))
 
                 _ = self.update(cx.x)
-
 
 
                 valid = True
@@ -869,7 +911,7 @@ class ContinuousMeshesAssemblyOptimizer:
                                 else:
                                     if (SAP2-dia2-d_sap_root) < 0:
                                         valid = False
-
+                        
                         Ca_min = 0
 
                         if list_CA_min:
@@ -880,7 +922,7 @@ class ContinuousMeshesAssemblyOptimizer:
                         de1 = mesh_assembly_iter.meshes_dico[engr1].outside_diameter
                         de2 = mesh_assembly_iter.meshes_dico[engr2].outside_diameter
                         cd = mesh_assembly_iter.center_distance[num_mesh]
-
+                       
                         if Z2 < 0:
 
 
@@ -891,6 +933,7 @@ class ContinuousMeshesAssemblyOptimizer:
 
 
                                     if (cd- 0.5*(de1-dia2_root)-Ca_min) < 0 or (cd- 0.5*(-de2+dia1_root)-Ca_min) < 0:
+                                        
                                         valid = False
 
 
@@ -904,10 +947,11 @@ class ContinuousMeshesAssemblyOptimizer:
 
 
                                     if (cd- 0.5*(-de1+dia2_root)-Ca_min) < 0 or (cd- 0.5*(de2-dia1_root)-Ca_min) < 0:
+                                        
                                         valid = False
                         else:
 
-
+                            
                             if constraints_root_diameter:
 
                                 if constraints_root_diameter[mesh_assignation]:
@@ -915,17 +959,18 @@ class ContinuousMeshesAssemblyOptimizer:
 
 
                                     if (cd- 0.5*(de1+dia2_root)-Ca_min) < 0 or (cd- 0.5*(de2+dia1_root)-Ca_min) < 0:
+                                        
                                         valid = False
 
 
 
 
 
-
+            
 
 
             except ValidGearDiameterError:
-
+               
                 i += 1
                 continue
             Xsol = cx.x
@@ -934,8 +979,9 @@ class ContinuousMeshesAssemblyOptimizer:
             # if verbose:
             #     # print('Iteration n°{} with status {}, min(fineq):{}'.format(i,
             #     #       cx.status,min(self.Fineq(Xsol)))) #TODO
-
-
+            
+           
+           
             if min(self.Fineq(Xsol, constraints_root_diameter, list_CA_min,
                               constraints_SAP_diameter, distances_SAP_root_diameter_active_min)) > -1e-3: #TODO
 
@@ -1054,7 +1100,7 @@ class MeshAssemblyOptimizer(DessiaObject):
                 for rack_num in self.rack_choice[engr2]:
                     mod_min, mod_max = self.rack_list[rack_num].module
                     module2_min, module2_max = (min(module2_min, mod_min), max(module2_max, mod_max))
-
+                
                 demul_min = self.gear_speeds[engr1][0]/self.gear_speeds[engr2][1]
 
                 demul_max = self.gear_speeds[engr1][1]/self.gear_speeds[engr2][0]
@@ -1447,15 +1493,17 @@ class MeshAssemblyOptimizer(DessiaObject):
                     plex['axial_contact_ratio'] = self.axial_contact_ratio
                     plex['total_contact_ratio_min'] = self.total_contact_ratio_min
                     plex['transverse_contact_ratio_min'] = self.transverse_contact_ratio_min
+                    plex['percentage_width_difference_pinion_gear'] = self.percentage_width_difference_pinion_gear
+                    plex['max_width_difference_pinion_gear'] = self.max_width_difference_pinion_gear
                     ga = ContinuousMeshesAssemblyOptimizer(**plex)
                 except AttributeError:
-
+                   
                     if verbose:
 
                         print('Convergence problem')
                     continue
                 except ValueError:
-
+                    
                     if verbose:
 
                         print('Convergence problem')
@@ -1465,14 +1513,14 @@ class MeshAssemblyOptimizer(DessiaObject):
                                 self.constraints_SAP_diameter,
                                 self.distances_SAP_root_diameter_active_min)
                 except ValueError:
-
+                   
                     if verbose:
-
+                        
                         print('Convergence problem')
                 if len(ga.solutions) > 0:
                     sol1 = ga.solutions[-1]
                     self.solutions.append(sol1)
-
+                    
                     compt_nb_sol += 1
 
     #                if verbose:
@@ -1539,6 +1587,7 @@ class MeshAssemblyOptimizer(DessiaObject):
                 ga.Optimize(verbose)
             except ValueError:
                 if verbose:
+                    
                     print('Convergence Problem')
             if len(ga.solutions) > 0:
                 solutions = ga.solutions[-1]
@@ -1572,6 +1621,7 @@ class MeshAssemblyOptimizer(DessiaObject):
                         print('unvalid solution')
             else:
                 if verbose:
+                    
                     print('Convergence Problem')
             if compt_nb_sol == nb_sol:
                 break

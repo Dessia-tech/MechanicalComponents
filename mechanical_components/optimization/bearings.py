@@ -22,7 +22,7 @@ from mechanical_components.bearings import BearingCombination, \
         BearingL10Error, CatalogSearchError, Linkage, Mounting, \
         CombinationMounting, SelectionLinkage
 
-from mechanical_components.models.catalogs import schaeffler_catalog
+from mechanical_components.models.catalogs import schaeffler_catalog,ntn_catalog
 # schaeffler_catalog = models.schaeffler_catalog
 
 import numpy as npy
@@ -91,7 +91,7 @@ class BearingCombinationOptimizer(protected_module.BearingCombinationOptimizer i
             self.bearing_classes = bearing_classes
         self.bearing_combination_simulations = bearing_combination_simulations
         if catalog is None:
-            self.catalog = schaeffler_catalog
+            self.catalog = ntn_catalog
         else:
             self.catalog = catalog
         
@@ -282,7 +282,7 @@ class BearingAssemblyOptimizer(protected_module.BearingAssemblyOptimizer if _ope
             self.bearing_classes = bearing_classes
         self.bearing_assembly_simulations = bearing_assembly_simulations
         if catalog is None:
-            self.catalog = schaeffler_catalog
+            self.catalog = ntn_catalog
         else:
             self.catalog = catalog
         
