@@ -658,14 +658,7 @@ class ContinuousMeshesAssemblyOptimizer:
                 else:
                     ineq.append((cd- 0.5*(de1+dia2))+0.001)
                     ineq.append((cd- 0.5*(de2+dia1))+0.001)
-                    print(Z1,Z2)
-                    print(2555555)
-                    print(dia2)
-                    print(de2)
-                    print(dia1)
-                    print(de1)
-                    print(cd)
-                    print((cd- 0.5*(de1+dia2))+0.001)
+                   
                     if constraints_root_diameter:
 
                         if constraints_root_diameter[mesh_assignation]:
