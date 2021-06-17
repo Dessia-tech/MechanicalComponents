@@ -701,8 +701,7 @@ class RadialBallBearing(RadialBearing):
         return Pr
 
     def equivalent_dynamic_load(self, fr, fa=0):
-        if not fa==0:
-            print(fa)
+
 
         alphap = fsolve((lambda alphap:math.cos(5/180.*math.pi)/math.cos(alphap) \
                         -(1.+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2) \
