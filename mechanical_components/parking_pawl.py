@@ -1311,54 +1311,7 @@ class ParkingPawlOptimizer(dc_opt.InstantiatingModelOptimizer):
 
         self.number_parameters = len(self.optimization_bounds)
     
-    def scipy_bounds(self):
-        # return [(b.min_value, b.max_value) for b in self.optimization_bounds]
-        return [(0, 1) for b in self.optimization_bounds]
 
-    def cma_bounds(self):
-        return [[0]*len(self.optimization_bounds),
-                [1]*len(self.optimization_bounds)]
-        # return [[b.min_value for b in self.optimization_bounds],
-        #         [b.max_value for b in self.optimization_bounds]]
-    
-    def optimize_gradient(self):
-        
-        x0 = npy.random.random(self.number_parameters)
-        bounds = self.scipy_bounds()
-        result = scipy.optimize.minimize(self.objective_from_dimensionless_vector,
-                                         x0, bounds=bounds)
-        # print('x', result.x)
-
-        attributes_values = self.vector_to_attributes_values(
-            self.dimensionless_vector_to_vector(result.x))
-        
-        
-
-        model = self.instantiate_model(attributes_values)
-        return model, result.fun
-
-    def optimize_cma(self):
-        
-        x0 = npy.random.random(self.number_parameters)
-        
-        bounds = self.cma_bounds()
-        xra, fx = cma.fmin(self.objective_from_dimensionless_vector,
-                           x0, 0.6, options={'bounds': bounds,
-                                             'tolfun': 1e-3,
-                                             'maxiter': 250,
-                                             'verbose': 0,
-                                             'ftarget': 0.2})[0:2]
-        # print('x', result.x)
-
-        attributes_values = self.vector_to_attributes_values(
-            self.dimensionless_vector_to_vector(xra))
-        
-        try:
-            model = self.instantiate_model(attributes_values)
-        except ValueError:
-            return None, fx
-
-        return model, fx
     
     
     def instantiate_model(self, attributes_values):

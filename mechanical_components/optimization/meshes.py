@@ -25,7 +25,7 @@ except (ModuleNotFoundError, ImportError) as _:
 
 class RackOpti(DessiaObject):
      _standalone_in_db = True
-     
+
      """
     Rack Optimisation definition
 
@@ -36,7 +36,7 @@ class RackOpti(DessiaObject):
     :param coeff_root_radius:  Tuple of 2 float which define the limit of the root radius coefficient(min,max) (root_radius = coeff_root_radius*module)
     :param coeff_circular_tooth_thickness: Tuple of 2 float which define the limit of  the circular tooth thickness coefficient (min,max) (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
     :param helix_angle: Tuple of 2 float which define the limit of  the helix_angle of the rack
-    
+
     """
 
      def __init__(self, transverse_pressure_angle_0: Tuple[float, float] = None, module: Tuple[float, float] = None,
@@ -44,7 +44,7 @@ class RackOpti(DessiaObject):
                   coeff_root_radius: Tuple[float, float] = None, coeff_circular_tooth_thickness: Tuple[float, float] = None,
                   helix_angle: Tuple[float, float] = None,
                   name: str = ''):
-         
+
 
          self.transverse_pressure_angle_0 = transverse_pressure_angle_0
          self.module = module
@@ -72,9 +72,9 @@ class MeshOpti(DessiaObject):
     :param rack: RackOpti objet which define the specification for the rack of the mesh
     :param Z: int to impose the value of the number_tooth of the gear
     :param gearing_interior: string, equal 'True' if it's an interior gear, 'False' if not
-    :param coefficient_profile_shift: Tuple of 2 float which define the limit of  the coefficient_profile_shift of the gear(min,max) 
+    :param coefficient_profile_shift: Tuple of 2 float which define the limit of  the coefficient_profile_shift of the gear(min,max)
     :param material: Material Objet with define the material of the mesh
-    :param transverse_pressure_angle: Tuple of 2 float which define the limit of  the coefficient_profile_shift of the gear(min,max) 
+    :param transverse_pressure_angle: Tuple of 2 float which define the limit of  the coefficient_profile_shift of the gear(min,max)
     """
 
     def __init__(self, torque_input: float, speed_input: Tuple[float, float], Z: int = 0, rack: RackOpti = None, gearing_interior: str = 'False',
@@ -95,36 +95,43 @@ class MeshOpti(DessiaObject):
 
 class CenterDistanceOpti(DessiaObject):
     """
-    
+
     Objet for define the specification of the connexion between minimum 2 gears for the optimisation.
-    
+
     :param center_distance: Tuple of 2 float which define the limit of the center_distance (min,max)
     :param meshes: List of MeshOpti which represent the meshes which have the same center_distances.
-    [MeshOpti1,MeshOpti2,MeshOpti3,MeshOpti4] -> MeshOpti1 are connected to the MeshOpti2 and MeshOpti3 are connected to the MeshOpti4 butthe two connections have the same center_distance
-    
+    [MeshOpti1,MeshOpti2,MeshOpti3,MeshOpti4] -> MeshOpti1 are connected to the MeshOpti2 and MeshOpti3 are connected to the MeshOpti4 but the two connections have the same center_distance
+
     :param constraint_root_diameter: List of bool which specify if the diameter take for the condition of No Collisions between gears is the Root Diameter (If it's False the diameter taken is the Root_diameter active)
     The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
-    
+
     :param CA_min: List of float which define the CA_min  for the connexions,  the CA is the space between the root_diameter of the first_gear and the tip_diameter of the other_gear
     The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
-    
-    :param constraint_SAP_diameter: List of bool which activate a condition of distance betwen the SAP_diameter(Start of Active Profile) of the first gear and the root_diameter_active of the second. 
+
+    :param constraint_SAP_diameter: List of bool which activate a condition of distance betwen the SAP_diameter(Start of Active Profile) of the first gear and the root_diameter_active of the second.
      The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
-    
+
     :param distance_SAP_root_diameter_active_min: List of float which define the distance minimum between the SAP_diameter of the first gear and the root_diameter_active of the second
     The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
-    
-    :param total_contact_ratio_min: List of float which define the condition total_contact_ratio_min (axial_contact_ratio+transverse_contact_ratio) between the gears 
+
+    :param total_contact_ratio_min: List of float which define the condition total_contact_ratio_min (axial_contact_ratio+transverse_contact_ratio) between the gears
     The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
-    
-    :param axial_contact_ratio: List of float which define the  axial_contact_ratio  imposed between the gears 
+
+    :param axial_contact_ratio: List of float which define the  axial_contact_ratio  imposed between the gears
     The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
-    
-    :param transverse_contact_ratio_min: List of float which define the condition of transverse_contact_ratio_min between the gears 
+
+    :param transverse_contact_ratio_min: List of float which define the condition of transverse_contact_ratio_min between the gears
     The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
-    
+
+    :param percentage_width_difference_pinion_gear: List of float which define the percentage of difference between the width of a pinion and the width of a gear (width_pinion = width_gears*(1+percentage))
+    The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
+
+    :param max_width_difference_pinion_gear: List of float which define the max difference allowed between the width of a pinion and the width of a gear
+    (width_pinion = width_gears*(1+percentage) but if width_gears*percentage>param max_width_difference_pinion_gear so width_pinion = width_gears + max_width_difference_pinion_gear)
+    The first element of this list which specify the connexion between MeshOpti1 and MeshOpti2, the second the connexion between MeshOpti3 and MeshOpti4 and etc...
+
     """
-    
+
     _standalone_in_db = True
 
     def __init__(self, center_distance: Tuple[float, float], meshes: List[MeshOpti], name: str = '',
@@ -179,13 +186,13 @@ class CenterDistanceOpti(DessiaObject):
 
         else:
             self.transverse_contact_ratio_min = transverse_contact_ratio_min
-            
+
         if percentage_width_difference_pinion_gear == None:
             self.percentage_width_difference_pinion_gear = [0]*(int(len(meshes)/2))
 
         else:
             self.percentage_width_difference_pinion_gear = percentage_width_difference_pinion_gear
-            
+
         if max_width_difference_pinion_gear == None:
             self.max_width_difference_pinion_gear = [0]*(int(len(meshes)/2))
 
@@ -208,7 +215,7 @@ class MeshAssemblyOptimizer(protected_module.MeshAssemblyOptimizer if _open_sour
     :param cycles: List of float which define the cycle of hte gears
     :param rigid_links: List of Tuple of 2 MeshOpti which define if there have a rigid connexion between mesh
 
-   
+
     """
 
 
