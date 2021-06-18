@@ -882,7 +882,10 @@ class Mesh(DessiaObject):
 
         
         space=p2[1]-p1[1]
-      
+        print(25147)
+        print(space)
+        print(self.phi_trochoide)
+        print(self.rack.a)
         if space>0:
             theta_t = npy.linspace(1*self.phi_trochoide, phi0_t, discret)
             for t in theta_t:
@@ -893,20 +896,36 @@ class Mesh(DessiaObject):
                 point = self._trochoide(t, 'R')
                 list_2D.append(vm.Point2D(point[0], point[1]))
         else:
-            phi0_t=a_t*2*(self.z/abs(self.z))/((self.dff)/2)
-            phi0_r=a_r*2*(self.z/abs(self.z))/((self.dff)/2)
-       
-            theta_t = npy.linspace(1*self.phi_trochoide, phi0_t, discret)
-            for t in theta_t:
-                point = self._trochoide(t, 'T')
-                list_2D.append(vm.Point2D(point[0], point[1]))
-            p1=list_2D[-1]
-            theta_r = npy.linspace(phi0_r,-1*self.phi_trochoide, discret)
-            for t in theta_r:
-                point = self._trochoide(t, 'R')
-                list_2D.append(vm.Point2D(point[0], point[1]))   
-                
-            p2 =list_2D[-len(theta_r)]
+            if self.phi_trochoide<0 and self.rack.a>0:
+                phi0_t=a_t*(self.z/abs(self.z))/((self.dff)/2)
+                phi0_r=a_r*(self.z/abs(self.z))/((self.dff)/2)
+           
+                theta_t = npy.linspace(1*self.phi_trochoide, phi0_r, discret)
+                for t in theta_t:
+                    point = self._trochoide(t, 'T')
+                    list_2D.append(vm.Point2D(point[0], point[1]))
+                p1=list_2D[-1]
+                theta_r = npy.linspace(phi0_t,-1*self.phi_trochoide, discret)
+                for t in theta_r:
+                    point = self._trochoide(t, 'R')
+                    list_2D.append(vm.Point2D(point[0], point[1]))   
+                    
+                p2 =list_2D[-len(theta_r)]
+            else:
+                phi0_t=a_t*2*(self.z/abs(self.z))/((self.dff)/2)
+                phi0_r=a_r*2*(self.z/abs(self.z))/((self.dff)/2)
+           
+                theta_t = npy.linspace(1*self.phi_trochoide, phi0_t, discret)
+                for t in theta_t:
+                    point = self._trochoide(t, 'T')
+                    list_2D.append(vm.Point2D(point[0], point[1]))
+                p1=list_2D[-1]
+                theta_r = npy.linspace(phi0_r,-1*self.phi_trochoide, discret)
+                for t in theta_r:
+                    point = self._trochoide(t, 'R')
+                    list_2D.append(vm.Point2D(point[0], point[1]))   
+                    
+                p2 =list_2D[-len(theta_r)]
            
         
             space_2=p2[0]-p1[0]
