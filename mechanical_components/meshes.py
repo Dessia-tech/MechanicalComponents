@@ -879,10 +879,10 @@ class Mesh(DessiaObject):
         
         p2 = vm.Point2D(trochoide_end[0], trochoide_end[1])
         p2 = p1.rotation(vm.Point2D(0, 0), -self.root_angle/2)
-        
-        space=p2[0]-p1[0]
 
         
+        space=p2[1]-p1[1]
+      
         if space>0:
             theta_t = npy.linspace(1*self.phi_trochoide, phi0_t, discret)
             for t in theta_t:
@@ -893,8 +893,9 @@ class Mesh(DessiaObject):
                 point = self._trochoide(t, 'R')
                 list_2D.append(vm.Point2D(point[0], point[1]))
         else:
-            phi0_t=a_t*(self.z/abs(self.z))/((self.dff-6*space)/2)
-            phi0_r=a_r*(self.z/abs(self.z))/((self.dff-6*space)/2)
+            phi0_t=a_t*2*(self.z/abs(self.z))/((self.dff)/2)
+            phi0_r=a_r*2*(self.z/abs(self.z))/((self.dff)/2)
+       
             theta_t = npy.linspace(1*self.phi_trochoide, phi0_t, discret)
             for t in theta_t:
                 point = self._trochoide(t, 'T')
