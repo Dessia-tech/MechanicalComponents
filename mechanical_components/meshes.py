@@ -631,6 +631,8 @@ class Mesh(DessiaObject):
                                           -self.alpha_outside_diameter
                                           -math.tan(self.alpha_pitch_diameter)
                                           +self.alpha_pitch_diameter))
+        
+       
         self.base_circular_tooth_thickness = (self.db/2
                                               *(2*self.circular_tooth_thickness/self.dff
                                                 +2*(math.tan(self.alpha_pitch_diameter)
@@ -715,23 +717,20 @@ class Mesh(DessiaObject):
             list_number = npy.arange(int(abs(self.z)))
         L = [self._outside_trace(list_number[0])]
 
-        self.reference_point_outside = copy.copy(L[0].points[int(len(L[0].points)/2)])
+ 
         L.append(self._involute_trace(discret, list_number[0], 'T'))
         if self.z > 0:
-            L.append(self._trochoide_trace(4*discret, list_number[0], 'T'))
-            last_point = L[-1].points[-1]
-            L.append(self._root_circle_trace(list_number[0]))
-            L.append(self._trochoide_trace(4*discret, list_number[0], 'R'))
-            first_point = L[-1].points[0]
-            self.reference_point_trochoide = vm.Point2D((first_point[0]-last_point[0])/2+last_point[0], (first_point[1]-last_point[1])/2+last_point[1])
+            L.append(self._trochoide_root_circle_trace(2*discret, list_number[0]))
+           
+           
         L.append(self._involute_trace(discret, list_number[0]+1, 'R'))
         for i in list_number[1::]:
             L.append(self._outside_trace(i))
             L.append(self._involute_trace(discret, i, 'T'))
+            
             if self.z > 0:
-                L.append(self._trochoide_trace(4*discret, i, 'T'))
-                L.append(self._root_circle_trace(i))
-                L.append(self._trochoide_trace(4*discret, i, 'R'))
+                L.append(self._trochoide_root_circle_trace(2*discret, i))
+
             L.append(self._involute_trace(discret, i+1, 'R'))
         L2 = []
         primitives = []
@@ -739,12 +738,19 @@ class Mesh(DessiaObject):
                     for point in element.points:
                         if not point in L2:
                                 L2.append(point)
+                        # else:
+                        #     index=len(L2)-1
+        # a=vm.edges.LineSegment2D(start=L2[0], end=L2[1]).plot()
         for point_1, point_2 in zip(L2[:-1], L2[1:]):
-            primitives.append(vm.edges.LineSegment2D(start=point_1, end=point_2))
+            line_segment=vm.edges.LineSegment2D(start=point_1, end=point_2)
+
+            primitives.append(line_segment)
+            
         if not list_number_origin:
             primitives.append(vm.edges.LineSegment2D(start=L2[-1], end=L2[0]))
-                                
-       
+  
+        
+
         return primitives
 
 
@@ -822,10 +828,12 @@ class Mesh(DessiaObject):
         else:
             indice_flank = -1
 
-        a = indice_flank*self.rack.a # indice a in the ISO definition of the rack
+        a = indice_flank*self.rack.a  # indice a in the ISO definition of the rack
+       
         phi0 = a/(self.dff/2)
-
+        
         list_2D = []
+        
         if type_flank == 'R':
             theta = npy.linspace(phi0, indice_flank*self.phi_trochoide, discret)
         else:
@@ -853,6 +861,74 @@ class Mesh(DessiaObject):
         #     plt.plot(x,y)
         return export_2D
 
+
+    def _trochoide_root_circle_trace(self, discret, number):
+        # Function evolution of the trochoide
+        
+        list_2D=[]
+        a_t = self.rack.a
+        phi0_t = a_t*(self.z/abs(self.z))/(self.dff/2)
+        trochoide_start = self._trochoide(phi0_t, 'T')
+        
+        p1 = vm.Point2D(trochoide_start[0], trochoide_start[1])
+        p1 = p1.rotation(vm.Point2D(0, 0), -self.root_angle/2)
+        
+        a_r = -1*self.rack.a
+        phi0_r = a_r*(self.z/abs(self.z))/(self.dff/2)
+        trochoide_end = (self._trochoide(phi0_r, 'R'))
+        
+        p2 = vm.Point2D(trochoide_end[0], trochoide_end[1])
+        p2 = p1.rotation(vm.Point2D(0, 0), -self.root_angle/2)
+        
+        space=p2[0]-p1[0]
+
+        
+        if space>0:
+            theta_t = npy.linspace(1*self.phi_trochoide, phi0_t, discret)
+            for t in theta_t:
+                point = self._trochoide(t, 'T')
+                list_2D.append(vm.Point2D(point[0], point[1]))
+            theta_r = npy.linspace( phi0_r,-1*self.phi_trochoide, discret)
+            for t in theta_r:
+                point = self._trochoide(t, 'R')
+                list_2D.append(vm.Point2D(point[0], point[1]))
+        else:
+            phi0_t=a_t*(self.z/abs(self.z))/((self.dff-6*space)/2)
+            phi0_r=a_r*(self.z/abs(self.z))/((self.dff-6*space)/2)
+            theta_t = npy.linspace(1*self.phi_trochoide, phi0_t, discret)
+            for t in theta_t:
+                point = self._trochoide(t, 'T')
+                list_2D.append(vm.Point2D(point[0], point[1]))
+            p1=list_2D[-1]
+            theta_r = npy.linspace(phi0_r,-1*self.phi_trochoide, discret)
+            for t in theta_r:
+                point = self._trochoide(t, 'R')
+                list_2D.append(vm.Point2D(point[0], point[1]))   
+                
+            p2 =list_2D[-len(theta_r)]
+           
+        
+            space_2=p2[0]-p1[0]
+            for i,(point_1,point_2) in enumerate(zip(list_2D[:-1],list_2D[1:])):
+                space_2=point_2[0]-point_1[0]
+                # if space_2<0:
+                #     print(i)
+                #     print(len(list_2D))
+                #     print(space_2)
+                #     print(space)
+                
+          
+        
+        list_2D = primitives2D.OpenedRoundedLineSegments2D(list_2D, {}, False)
+
+        list_2D = list_2D.rotation(vm.Point2D(0, 0), -self.root_angle/2)
+
+        
+        export_2D = list_2D.rotation(vm.Point2D(0, 0), -number*2*math.pi/self.z)
+        export_2D.points[0] = self.rac
+        self.rac = export_2D.points[-1]
+        
+        return export_2D
     def _root_circle_trace(self, number):
         # 2D trace of the connection between the two trochoide
 
@@ -864,14 +940,15 @@ class Mesh(DessiaObject):
         point = vm.Point2D(trochoide[0], trochoide[1])
         p1 = vm.Point2D(point[0], point[1])
         p1 = p1.rotation(vm.Point2D(0, 0), -self.root_angle/2)
-
+        
         # on the coast flank
-        indice_flank = -1
+        
         a = indice_flank*self.rack.a
         phi0 = a*(self.z/abs(self.z))/(self.dff/2)
         trochoide = (self._trochoide(phi0, 'R'))
         p2 = vm.Point2D(trochoide[0], trochoide[1])
         p2 = p2.rotation(vm.Point2D(0, 0), -self.root_angle/2)
+       
 
         list_2D = primitives2D.OpenedRoundedLineSegments2D([p1, p2], {}, False)
 
@@ -2740,7 +2817,7 @@ class MeshCombination(DessiaObject):
                 if z-list_z[i-1] > 1:
                     L_total.extend(self.meshes_dico[num_gear].contour(3, list_number=l_contour_z))
                     l_contour_z = []
-                    list_z_circle = list(npy.arange(list_z[i-1]+1, z+1))
+                    list_z_circle = list(npy.arange(list_z[i-1]+1, z+2))
 
                     L_total.extend(self.meshes_dico[num_gear].contour_circle(list_number=list_z_circle))
                 else:
@@ -2761,7 +2838,9 @@ class MeshCombination(DessiaObject):
             # L = []
             
             C1 = vm.wires.Contour2D(primitives=model_trans_rot_1)
-            
+            a=C1.plot()
+            point2D=vm.Point2D(0.027424313991234184, 0.002572406430608787)
+
             # print(C1.primitives)
             # for element in model_trans_rot_1:
             #         for point in element.points:
@@ -2772,9 +2851,9 @@ class MeshCombination(DessiaObject):
 
             x = vm.Vector3D(axis[0], axis[1], axis[2])
             y = x.deterministic_unit_normal_vector()
-
+            
             z = x.cross(y)
-
+            
 
 
 

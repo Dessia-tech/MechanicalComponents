@@ -45,14 +45,13 @@ center_distance4 = meshes_opt.CenterDistanceOpti((0.14181884668124436, 0.1647390
 center_distance5 = meshes_opt.CenterDistanceOpti((0.07722003844178454, 0.0897000446545982),[meshopti1,meshopti6])
 
 
-center_distances = [center_distance1,center_distance2,center_distance3,
-                  center_distance4,center_distance5,]
+center_distances = [center_distance1]
 
 
-cycles = {0: 1272321481513.054,2: 1272321481513.054}
+cycles = {0: 1272321481513.054}
 
 
-torques = {0: 'output', 1: 40, 2: 10.0, 3: 0, 4: 0, 5: 0, 6: 0}
+torques = {0: 'output', 1: 40,}
 
 
 
@@ -71,6 +70,8 @@ solution=GA.solutions[0]
     
 for mesh_assembly in GA.solutions:
     m=mesh_assembly.mesh_combinations
+    
+m[0].babylonjs()
 #solution=GA.solutions[-1]
 #solution.SVGExport('name.txt',{6 : [0,0], 4 : [0.5,0]})
 #solution.FreeCADExport('meshes3')
