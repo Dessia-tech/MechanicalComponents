@@ -24,8 +24,8 @@ except (ModuleNotFoundError, ImportError) as _:
 
 
 class RackOpti(DessiaObject):
-     _standalone_in_db = True
-
+    
+    
      """
     Rack Optimisation definition
 
@@ -44,7 +44,11 @@ class RackOpti(DessiaObject):
     :param helix_angle: Tuple of 2 float which define the limit of  the helix_angle of the rack
     :type helix_angle: Tuple[float, float]
 
-    """
+     """
+    
+     _standalone_in_db = True
+
+  
 
      def __init__(self, transverse_pressure_angle_0: Tuple[float, float] = None, module: Tuple[float, float] = None,
                   coeff_gear_addendum: Tuple[float, float] = None, coeff_gear_dedendum: Tuple[float, float] = None,
