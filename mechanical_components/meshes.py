@@ -882,10 +882,7 @@ class Mesh(DessiaObject):
 
         
         space=p2[1]-p1[1]
-        print(25147)
-        print(space)
-        print(self.phi_trochoide)
-        print(self.rack.a)
+
         if space>0:
             theta_t = npy.linspace(1*self.phi_trochoide, phi0_t, discret)
             for t in theta_t:

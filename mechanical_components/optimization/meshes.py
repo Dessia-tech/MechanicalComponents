@@ -30,12 +30,19 @@ class RackOpti(DessiaObject):
     Rack Optimisation definition
 
     :param transverse_pressure_angle_0: Tuple of 2 float which define the limit of the transverse_pressure_angle of the rack (min,max)
+    :type transverse_pressure_angle_0: Tuple[float, float]
     :param module: Tuple of 2 float which define the limit of the module of the rack (min,max)
+    :type module: Tuple[float, float]
     :param coeff_gear_addendum: Tuple of 2 float which define the limit of the gear addendum coefficient (min,max) (gear_addendum = coeff_gear_addendum*module)
+    :type coeff_gear_addendum: Tuple[float, float]
     :param coeff_gear_dedendum: Tuple of 2 float which define the limit of the gear dedendum coefficient (min,max) (gear_dedendum = coeff_gear_dedendum*module)
+    :type coeff_gear_dedendum:  Tuple[float, float]
     :param coeff_root_radius:  Tuple of 2 float which define the limit of the root radius coefficient(min,max) (root_radius = coeff_root_radius*module)
+    :type coeff_root_radius:  Tuple[float, float]
     :param coeff_circular_tooth_thickness: Tuple of 2 float which define the limit of  the circular tooth thickness coefficient (min,max) (circular_tooth_thickness = coeff_circular_tooth_thickness*transverse_radial_pitch)
+    :type coeff_circular_tooth_thickness: Tuple[float, float]
     :param helix_angle: Tuple of 2 float which define the limit of  the helix_angle of the rack
+    :type helix_angle: Tuple[float, float]
 
     """
 
