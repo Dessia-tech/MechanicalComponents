@@ -2855,8 +2855,7 @@ class MeshCombination(DessiaObject):
             # L = []
             
             C1 = vm.wires.Contour2D(primitives=model_trans_rot_1)
-            a=C1.plot()
-            point2D=vm.Point2D(0.027424313991234184, 0.002572406430608787)
+
 
             # print(C1.primitives)
             # for element in model_trans_rot_1:
