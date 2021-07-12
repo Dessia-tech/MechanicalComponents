@@ -7,6 +7,7 @@ Created on Tue Sep 25 15:11:29 2018
 
 from typing import List, Tuple
 from dessia_common.core import DessiaObject
+from scipy.optimize import bisect
 import volmdlr as vm
 import volmdlr.edges as vme
 import volmdlr.wires as vmw
@@ -31,7 +32,7 @@ class Wire(DessiaObject):
                 
         self._utd_path = False
         
-    def _Path(self):
+    def _path(self):
         radii = {}
         for i in range(len(self.waypoints)-2):
             # if lines are not colinear
@@ -44,9 +45,13 @@ class Wire(DessiaObject):
             self.waypoints, radii, adapt_radius = True)
 #        return  primitives3d.RoundedLineSegments3D(self.waypoints, {}, adapt_radius = True)        
     
+    # def _bspline_path(self):
+    #     for p1, p2 in 
+
+
     def _get_path(self):
         if not self._utd_path:
-            self._path = self._Path()
+            self._path = self._path()
             self._utd_path = True
         return self._path
     
@@ -61,7 +66,7 @@ class Wire(DessiaObject):
         else:
             return self.path.length()
     
-    def Draw(self, ax):
+    def Draw(self, ax=None):
         x = []
         y = []
         for waypoint in self.waypoints:
@@ -97,6 +102,44 @@ class IECWire(Wire):
         diameter = 2 * math.sqrt(section/math.pi)
         Wire.__init__(self, waypoints, diameter, name)
 
+class JunctionWire(Wire):
+    def __init__(self,
+                 point1: vm.Point3D, tangeancy1:vm.Vector3D,
+                 point2: vm.Point3D, tangeancy2:vm.Vector3D,
+                 targeted_length:float, diameter:float, name:str=''):
+        # diameter = 2 * math.sqrt(section/math.pi)
+        self.tangeancy1 = tangeancy1
+        self.tangeancy2 = tangeancy2
+        self.targeted_length = targeted_length
+        Wire.__init__(self, [point1, point2], diameter, name)
+
+    def _create_path_from_force(self, force):
+        point1 = self.waypoints[0]
+        point2 = self.waypoints[1]
+        
+        point1_t = point1 + force * self.tangeancy1
+        point2_t = point2 + force * self.tangeancy2
+        
+        points = [point1, point1_t, point2_t, point2]
+        
+        bezier_curve = vme.BezierCurve3D(degree=3,
+                                         control_points=points,
+                                         name='bezier curve 1')
+        return vmw.Wire3D([bezier_curve])
+
+
+
+    def _path(self):
+        
+        def find_force(force):
+            bezier_curve = self._create_path_from_force(force)
+            
+            return bezier_curve.length() - self.targeted_length
+        
+        # print(self.diameter, self.length())
+        res = bisect(find_force, self.diameter, self.targeted_length)
+        print(res)
+        return self._create_path_from_force(res)
 
 class WireHarness(DessiaObject):
     _standalone_in_db = True
