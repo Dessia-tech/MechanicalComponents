@@ -445,7 +445,7 @@ class RadialBearing(DessiaObject):
         total_cycles = 0.
         nci_Lpi = 0.
  
-            
+        
         for fr, fa, n, ti   in zip(Fr, Fa, N, t, ):
             if (((fr != 0.) or (fa != 0.)) and (n > 0.)):
                 cycles = n * ti * 2 * math.pi
@@ -701,7 +701,8 @@ class RadialBallBearing(RadialBearing):
         return Pr
 
     def equivalent_dynamic_load(self, fr, fa=0):
-  
+
+
         alphap = fsolve((lambda alphap:math.cos(5/180.*math.pi)/math.cos(alphap) \
                         -(1.+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2) \
                         *math.sin(alphap)))**(2/3.))),self.alpha + 1.)[0]
@@ -962,10 +963,11 @@ class AngularBallBearing(RadialBearing):
         return Pr
 
     def equivalent_dynamic_load(self, fr, fa = 0):
-       
+        if not fa==0:
+            print(fa)
         
         alphap = fsolve((lambda alphap:math.cos(self.alpha)/math.cos(alphap) \
-                    -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2)*math.sin(alphap)))**(2/3.))),self.alpha + 1)[0]
+                    -(1+0.012534*(abs(fa)/(self.i*self.Z*((self.Dw*1e3)**2)*math.sin(alphap)))**(2/3.))),self.alpha + 1)[0]
         
         if self.alpha <= 5/180.*math.pi:
             if self.i == 1:
@@ -3451,13 +3453,16 @@ class BearingAssembly(DessiaObject):
         bearing2 = linkages.FrictionlessLinearAnnularLinkage(ground,shaft1,p2,[0,0,0],'bearing2')
 
         bearing_combination_results= []
+       
         for ind_load_case, load_cases in enumerate(loads):
             load1 = []
+          
             for pos, ld, tq in load_cases:
+                
                 load1.append(gm_loads.KnownLoad(shaft1, pos, [0,0,0], ld, tq, 'input'))
             load2 = gm_loads.SimpleUnknownLoad(shaft1, [(pos1 + pos2)/2,0,0], [0,0,0], [], [0], 'output torque')
             imposed_speeds = [(bearing1, 0, 100)]
-
+        
             mech = genmechanics.Mechanism([bearing1, bearing2], ground, imposed_speeds, load1, [load2])
 
             axial_load = 0
@@ -3522,8 +3527,11 @@ class BearingAssembly(DessiaObject):
     @classmethod
     def estimate_base_life_time(cls, L10s):
         sum_L10_inv = 0
+        
         for L10 in L10s:
             sum_L10_inv += (1/L10)**1.5
+        if sum_L10_inv==0:
+            return 0
         return sum_L10_inv**(-1/1.5)
 
     def base_life_time(self, bearing_assembly_simulation_result):

@@ -689,7 +689,7 @@ class BearingAssemblyOptimizer(DessiaObject):
         return bearing_combinations_possibilities
         
     def SelectBestBearingCombinations(self, first_bearing_possibilies, conceptual_bearing_combination, 
-                                      radial_elementary_load, L10_objective, length):
+                                      radial_elementary_load, L10_objective, length,max_solutions=10):
         dt = DecisionTree()
         nb_bearings = len(conceptual_bearing_combination.bearing_classes)
         
@@ -726,7 +726,7 @@ class BearingAssemblyOptimizer(DessiaObject):
                     break
                 
                 if (bearings[-1].Cr < 1) or (d > D) or (d == 0) or (D == 0):
-                   
+                    
                     valid = False
                     break
                 
@@ -754,12 +754,15 @@ class BearingAssemblyOptimizer(DessiaObject):
                                                                 N = self.speeds, 
                                                                 t = self.operating_times, Cr = bearing.Cr))
                         L10 = BearingAssembly.estimate_base_life_time(list_L10)
-    
+                      
                         if L10 > L10_objective:
                             best_L10 = max(best_L10, L10)
 
                             if bearings[0] not in bearing_possibilies:
+                                
                                 bearing_possibilies.append(bearings[0])
+                                if len(bearing_possibilies)>max_solutions:
+                                    return best_L10, bearing_possibilies
 
                     dt.SetCurrentNodeNumberPossibilities(0)
                 else:
@@ -772,7 +775,7 @@ class BearingAssemblyOptimizer(DessiaObject):
         return best_L10, bearing_possibilies
         
     def SelectBearingCombinations(self, bearing_combinations_possibility, radial_load, 
-                                  L10_objective):
+                                  L10_objective,max_solutions=10):
         
         radial_load_left, radial_load_right = radial_load
         
@@ -809,18 +812,27 @@ class BearingAssemblyOptimizer(DessiaObject):
                 continue
             
             # selection of the best first_bearing_left_possibilies
+            # print(L10_objective)
+            # print(conceptual_bearing_combination_left)
+            # print(radial_load_left)
+            # print(self.lengths[0])
             best_L10_left, bearing_left_possibilies = self.SelectBestBearingCombinations(first_bearing_left_possibilies,
                                                conceptual_bearing_combination_left,
                                                [r/(1.*nb_bearings_left) for r in radial_load_left],
-                                               L10_objective, self.lengths[0])
+                                               L10_objective, self.lengths[0],max_solutions)
+            # print(bearing_left_possibilies)
 #            bearing_left_possibilies = first_bearing_left_possibilies
                     
             # selection of the best first_bearing_right_possibilies
+            # print(L10_objective)
+            # print(conceptual_bearing_combination_right)
+            # print(radial_load_right)
+            # print(self.lengths[1])
             best_L10_right, bearing_right_possibilies = self.SelectBestBearingCombinations(first_bearing_right_possibilies,
                                                conceptual_bearing_combination_right,
                                                [r/(1.*nb_bearings_right) for r in radial_load_right],
-                                               L10_objective, self.lengths[1])
-            
+                                               L10_objective, self.lengths[1],max_solutions)
+            # print(bearing_right_possibilies)
             if (best_L10_left != 0) and (best_L10_right != 0):
                 L10 = BearingAssembly.estimate_base_life_time([best_L10_left, best_L10_right])
             else:
@@ -1136,8 +1148,10 @@ class BearingAssemblyOptimizer(DessiaObject):
             for pos1, pos2 in product([pos1_min, pos1_moy, pos1_max], [pos2_min, pos2_moy, pos2_max]):
                 load_simul = BearingAssembly.quick_shaft_load((pos1, pos2), [load])
                 for rl in load_simul:
+                    
                     radial_load_left_temp.append((rl[0]**2 + (0)**2)**0.5)
                     radial_load_right_temp.append((rl[1]**2 + (0)**2)**0.5)
+           
             radial_load_left.append(min(radial_load_left_temp))
             radial_load_right.append(min(radial_load_right_temp))
             
@@ -1160,11 +1174,12 @@ class BearingAssemblyOptimizer(DessiaObject):
             
             if len(bearing_combinations_possibilities) == 0:
                 continue
+            print(bearing_combinations_possibilities)
             for (left, right), bearing_combinations_possibility in bearing_combinations_possibilities.items():
                 bearing_assembly_configurations, bearing_assembly_L10 = self.SelectBearingCombinations(bearing_combinations_possibility, 
                                                                     radial_load = (radial_load_left, radial_load_right), 
-                                                                    L10_objective = L10_objective)
-
+                                                                    L10_objective = L10_objective,max_solutions=max_solutions)
+                print(bearing_assembly_configurations)
                 li_bearing_assembly_configurations.extend(bearing_assembly_configurations)
                 li_bearing_assembly_L10.extend(bearing_assembly_L10)
                 
