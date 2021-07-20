@@ -10,13 +10,12 @@ import networkx as nx
 from .common import RoutingOptimizer
 import mechanical_components.wires as wires
 import volmdlr.primitives3d as vmp3d
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import minimum_spanning_tree
 
 class WiringOptimizer(RoutingOptimizer):
 
     def NumberHarnesses(self, paths):
-        if self.line_graph is None:
-            self.get_line_graph()
-        
         G = nx.Graph()
         G.add_nodes_from(self.line_graph)
         for path in paths:
@@ -41,21 +40,18 @@ class WiringOptimizer(RoutingOptimizer):
                     self._shortest_paths_cache:
                 shortest_path = self._shortest_paths_cache[
                     (wire_spec.source, wire_spec.destination)]
-            elif (wire_spec.destination, wire_spec.source) in \
+            elif (wire_spec.source, wire_spec.destination) in \
                     self._shortest_paths_cache:
                 shortest_path = self._shortest_paths_cache[
-                    (wire_spec.destination, wire_spec.source)]
+                    (wire_spec.source, wire_spec.destination)]
             else:            
                 shortest_path = nx.shortest_path(self.graph,
                                                  wire_spec.source,
                                                  wire_spec.destination,
                                                  weight='distance')
-                                                 # method='bellman-ford')
                 self._shortest_paths_cache[
                     (wire_spec.source, wire_spec.destination)] = shortest_path
-                self._shortest_paths_cache[
-                    (wire_spec.destination, wire_spec.source)] = shortest_path
-
+                
             shortest_paths.append(shortest_path)
             length = self.PathLength(shortest_path)
             shortest_paths_lengths.append(length)
@@ -76,3 +72,23 @@ class WiringOptimizer(RoutingOptimizer):
                                           (point2-point1).norm())
                 volumes.append(cylinder)
         return volumes
+
+class WireRouting():
+    def __init__(self, edges):
+        self.edges = edges
+    
+    def weigthed_graph(self):
+        G = nx.Graph()
+        for edge in self.edges:
+            distance = edge[0].point_distance(edge[1])
+            G.add_edges_from([(edge[0], edge[1],{'distance': distance})])
+            #  {'distance' : 2}
+        return G
+
+
+    def minimim_spannig_tree(self):
+        G = self.weigthed_graph()
+        mst = nx.minimum_spanning_tree(G, 'distance')
+        return mst
+
+
