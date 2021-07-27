@@ -138,8 +138,14 @@ class JunctionWire(Wire):
         
         # print(self.diameter, self.length())
         res = bisect(find_force, self.diameter, self.targeted_length)
-        print(res)
-        return self._create_path_from_force(res)
+        # print(res)
+        bezier_curve = self._create_path_from_force(res)
+        l = bezier_curve.length()
+        n = 20
+        points = [bezier_curve.point_at_abscissa(i * l / n) for i in range (n+1)]
+        return primitives3d.OpenRoundedLineSegments3D(
+            points, {}, adapt_radius=True)
+
 
 class WireHarness(DessiaObject):
     _standalone_in_db = True
