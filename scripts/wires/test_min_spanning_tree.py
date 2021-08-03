@@ -2,45 +2,91 @@ import mechanical_components.wires as wires
 import mechanical_components.optimization.wires as wires_opt
 import numpy as npy
 import random
-import mechanical_components.optimization.wires_protected as protected_module
+
 import volmdlr as vm
-import networkx as nx
-import matplotlib.pyplot as plt
-
-point1 = vm.Point3D(1,0,0)
-point2 = vm.Point3D(1,0.5,0)
-point3 = vm.Point3D(1,1,0)
-point4 = vm.Point3D(0,0,0)
-point5 = vm.Point3D(-0.5,0.5,0)
-point6 = vm.Point3D(-1,1,0)
-point7 = vm.Point3D(-1,-0.5,0)
-point8 = vm.Point3D(-0.5,-1,0)
-point9 = vm.Point3D(-0.5,-0.5,0)
-point10 = vm.Point3D(0.5,-0.5,0)
-point11 = vm.Point3D(0,1,0)
 
 
+n_wpts = (15, 5, 4)# Length, width, heightvm.Line2D(waypoints[i),waypoints[i+1]).DirectionVector(unit=True).Dot(vm.Line2D(waypoints[i+1), waypoints[i+2]).DirectionVector(unit=True))==1
+grid_size = (0.16, 0.15, 0.08)
+min_length_paths = n_wpts[0] + 2
+n_wires = 10
+connection_probability = 1
 
-edges = [(point1, point2), (point2, point3), (point3, point4), (point4, point5), (point5, point7), (point7, point8), (point8, point9), (point9, point10), (point4, point9), (point3, point11), (point11, point5), 
-         (point8, point10), (point10, point1)]
+waypoints = []
+for i in range(n_wpts[0]):
+    for j in range(n_wpts[1]):
+        for k in range(n_wpts[2]):
+            grid_point = vm.Point3D(i*grid_size[0], j*grid_size[1], k*grid_size[2])
+            waypoints.append(grid_point)
 
-graph = nx.Graph()
-graph.add_edges_from(edges)
-print(list(graph.edges))
-ax = list(graph.edges)[0][0].plot()
-for start, end in list(graph.edges):
-    start.plot(ax=ax)
-    end.plot(ax=ax)
-    line = vm.edges.LineSegment3D(start, end)
-    line.plot(ax=ax, color = 'g')
+routes = []            
+for i in range(n_wpts[0]):
+    for j in range(n_wpts[1]):
+        for k in range(n_wpts[2]-1):
+            if random.random() < connection_probability:
+                routes.append((waypoints[i*n_wpts[1]*n_wpts[2] + j*n_wpts[2] +k],
+                                waypoints[i*n_wpts[1]*n_wpts[2] + j*n_wpts[2] +k+1]))
+
+for i in range(n_wpts[0]):
+    for k in range(n_wpts[2]):
+        for j in range(n_wpts[1]-1):
+            if random.random() < connection_probability:
+                routes.append((waypoints[i*n_wpts[1]*n_wpts[2] + j*n_wpts[2] +k],
+                                waypoints[i*n_wpts[1]*n_wpts[2] + (j+1)*n_wpts[2] +k]))
+                
+for j in range(n_wpts[1]):
+    for k in range(n_wpts[2]):
+        for i in range(n_wpts[0]-1):
+            if random.random() < connection_probability:
+                routes.append((waypoints[i*n_wpts[1]*n_wpts[2] + j*n_wpts[2] +k],
+                                waypoints[(i+1)*n_wpts[1]*n_wpts[2] + j*n_wpts[2] +k]))
+
+
+wo = wires_opt.WiringOptimizer(routes)
+
+
+wires_specs = []
+connected_sources = []
+for i in range(n_wires):
+    source = random.choice(waypoints[:n_wpts[0]])
+    destination = random.choice(waypoints[-n_wpts[0]:])
     
+    wires_specs.append(wires.RoutingSpec(source=source,
+                                          destination=destination,
+                                          diameter=0.005 + 0.005*random.random()))
 
-wire_routing = protected_module.WireRouting(edges)
-mst = wire_routing.minimim_spannig_tree()
-ax = list(mst.edges)[0][0].plot()
-for start, end in list(mst.edges):
-    start.plot(ax=ax)
-    end.plot(ax=ax)
-    line = vm.edges.LineSegment3D(start, end)
-    line.plot(ax=ax, color = 'r')
+wiring = wo.multi_source_multi_destination_routing(wires_specs)
+wiring.babylonjs()
+    
+# # source_destination = [(vm.Point3D( 0.0, 0.15, 0.24), vm.Point3D( 2.24, 0.3, 0.0)),
+# #   (vm.Point3D( 0.0, 0.0, 0.0), vm.Point3D( 2.24, 0.15, 0.08)),
+# #   (vm.Point3D( 0.0, 0.15, 0.16), vm.Point3D( 2.24, 0.15, 0.16)),
+# #   (vm.Point3D( 0.0, 0.3, 0.0), vm.Point3D( 2.24, 0.44999999999999996, 0.0)),
+# #   (vm.Point3D( 0.0, 0.15, 0.24), vm.Point3D( 2.24, 0.6, 0.16))]
 
+
+# source_destination = [(vm.Point3D(0.0, 0.15, 0.08), vm.Point3D(2.24, 0.44999999999999996, 0.08)),
+#   (vm.Point3D(0.0, 0.44999999999999996, 0.08), vm.Point3D(2.24, 0.3, 0.08)),
+#   (vm.Point3D(0.0, 0.3, 0.24), vm.Point3D(2.24, 0.3, 0.16)),
+#   (vm.Point3D(0.0, 0.44999999999999996, 0.08), vm.Point3D(2.24, 0.6, 0.16)),
+#   (vm.Point3D(0.0, 0.0, 0.24), vm.Point3D(2.24, 0.3, 0.24))]
+
+# # source_destination =[(vm.Point3D(0.0, 0.0, 0.24), vm.Point3D(2.24, 0.44999999999999996, 0.24)),
+# #  (vm.Point3D(0.0, 0.15, 0.0), vm.Point3D(2.24, 0.15, 0.08)),
+# #  (vm.Point3D(0.0, 0.0, 0.16), vm.Point3D(2.24, 0.6, 0.24)),
+# #  (vm.Point3D(0.0, 0.15, 0.08), vm.Point3D(2.24, 0.3, 0.08)),
+# #  (vm.Point3D(0.0, 0.3, 0.0), vm.Point3D(2.24, 0.3, 0.08)),
+# #  (vm.Point3D(0.0, 0.3, 0.16), vm.Point3D(2.24, 0.44999999999999996, 0.16)),
+# #  (vm.Point3D(0.0, 0.15, 0.24), vm.Point3D(2.24, 0.15, 0.16)),
+# #  (vm.Point3D(0.0, 0.44999999999999996, 0.0), vm.Point3D(2.24, 0.3, 0.0)),
+# #  (vm.Point3D(0.0, 0.15, 0.0), vm.Point3D(2.24, 0.6, 0.24)),
+# #  (vm.Point3D(0.0, 0.0, 0.24), vm.Point3D(2.24, 0.6, 0.0))]
+  
+# wires_specs =[wires.RoutingSpec(source=vm.Point3D(0.0, 0.15, 0.08),
+#                                             destination=destination,
+#                                             diameter=0.005 + 0.005*random.random()) for source, destination in source_destination]
+
+# paths = wo.single_source_multi_destination_routing(wires_specs)
+# # wo.plot_routes([paths], wires_specs)
+# # # wiring = wo.route2(wires_specs)
+# # wiring = wo.route_wiring2(wires_specs)
