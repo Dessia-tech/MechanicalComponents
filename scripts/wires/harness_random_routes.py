@@ -50,7 +50,7 @@ for j in range(n_wpts[1]):
                                waypoints[(i+1)*n_wpts[1]*n_wpts[2] + j*n_wpts[2] +k]))
 
 
-wo = wires_opt.WiringOptimizer(waypoints, routes)
+wo = wires_opt.WiringOptimizer(routes)
 
 
 wires_specs = []

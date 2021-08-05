@@ -9,7 +9,7 @@ import volmdlr as vm
 n_wpts = (15, 5, 4)# Length, width, heightvm.Line2D(waypoints[i),waypoints[i+1]).DirectionVector(unit=True).Dot(vm.Line2D(waypoints[i+1), waypoints[i+2]).DirectionVector(unit=True))==1
 grid_size = (0.16, 0.15, 0.08)
 min_length_paths = n_wpts[0] + 2
-n_wires = 10
+n_wires = 20
 connection_probability = 1
 
 waypoints = []
@@ -45,48 +45,78 @@ for j in range(n_wpts[1]):
 wo = wires_opt.WiringOptimizer(routes)
 
 
-wires_specs = []
-connected_sources = []
-for i in range(n_wires):
-    source = random.choice(waypoints[:n_wpts[0]])
-    destination = random.choice(waypoints[-n_wpts[0]:])
+# wires_specs = []
+# connected_sources = []
+# for i in range(n_wires):
+#     source = random.choice(waypoints[:2*n_wpts[0]])
+#     destination = random.choice(waypoints[-2*n_wpts[0]:])
     
-    wires_specs.append(wires.RoutingSpec(source=source,
-                                          destination=destination,
-                                          diameter=0.005 + 0.005*random.random()))
+#     wires_specs.append(wires.RoutingSpec(source=source,
+#                                           destination=destination,
+#                                           diameter=0.005 + 0.005*random.random()))
 
-wiring = wo.multi_source_multi_destination_routing(wires_specs)
-wiring.babylonjs()
+# wiring = wo.multi_source_multi_destination_routing(wires_specs)
+# # wiring.babylonjs()
     
-# # source_destination = [(vm.Point3D( 0.0, 0.15, 0.24), vm.Point3D( 2.24, 0.3, 0.0)),
-# #   (vm.Point3D( 0.0, 0.0, 0.0), vm.Point3D( 2.24, 0.15, 0.08)),
-# #   (vm.Point3D( 0.0, 0.15, 0.16), vm.Point3D( 2.24, 0.15, 0.16)),
-# #   (vm.Point3D( 0.0, 0.3, 0.0), vm.Point3D( 2.24, 0.44999999999999996, 0.0)),
-# #   (vm.Point3D( 0.0, 0.15, 0.24), vm.Point3D( 2.24, 0.6, 0.16))]
+# source_destination = [(vm.Point3D( 0.0, 0.15, 0.24), vm.Point3D( 2.24, 0.3, 0.0)),
+#   (vm.Point3D( 0.0, 0.0, 0.0), vm.Point3D( 2.24, 0.15, 0.08)),
+#   (vm.Point3D( 0.0, 0.15, 0.16), vm.Point3D( 2.24, 0.15, 0.16)),
+#   (vm.Point3D( 0.0, 0.3, 0.0), vm.Point3D( 2.24, 0.44999999999999996, 0.0)),
+#   (vm.Point3D( 0.0, 0.15, 0.24), vm.Point3D( 2.24, 0.6, 0.16))]
 
 
-# source_destination = [(vm.Point3D(0.0, 0.15, 0.08), vm.Point3D(2.24, 0.44999999999999996, 0.08)),
-#   (vm.Point3D(0.0, 0.44999999999999996, 0.08), vm.Point3D(2.24, 0.3, 0.08)),
-#   (vm.Point3D(0.0, 0.3, 0.24), vm.Point3D(2.24, 0.3, 0.16)),
-#   (vm.Point3D(0.0, 0.44999999999999996, 0.08), vm.Point3D(2.24, 0.6, 0.16)),
-#   (vm.Point3D(0.0, 0.0, 0.24), vm.Point3D(2.24, 0.3, 0.24))]
+# # source_destination = [(vm.Point3D(0.0, 0.15, 0.08), vm.Point3D(2.24, 0.44999999999999996, 0.08)),
+# #   (vm.Point3D(0.0, 0.44999999999999996, 0.08), vm.Point3D(2.24, 0.3, 0.08)),
+# #   (vm.Point3D(0.0, 0.3, 0.24), vm.Point3D(2.24, 0.3, 0.16)),
+# #   (vm.Point3D(0.0, 0.44999999999999996, 0.08), vm.Point3D(2.24, 0.6, 0.16)),
+# #   (vm.Point3D(0.0, 0.0, 0.24), vm.Point3D(2.24, 0.3, 0.24))]
 
-# # source_destination =[(vm.Point3D(0.0, 0.0, 0.24), vm.Point3D(2.24, 0.44999999999999996, 0.24)),
-# #  (vm.Point3D(0.0, 0.15, 0.0), vm.Point3D(2.24, 0.15, 0.08)),
-# #  (vm.Point3D(0.0, 0.0, 0.16), vm.Point3D(2.24, 0.6, 0.24)),
-# #  (vm.Point3D(0.0, 0.15, 0.08), vm.Point3D(2.24, 0.3, 0.08)),
-# #  (vm.Point3D(0.0, 0.3, 0.0), vm.Point3D(2.24, 0.3, 0.08)),
-# #  (vm.Point3D(0.0, 0.3, 0.16), vm.Point3D(2.24, 0.44999999999999996, 0.16)),
-# #  (vm.Point3D(0.0, 0.15, 0.24), vm.Point3D(2.24, 0.15, 0.16)),
-# #  (vm.Point3D(0.0, 0.44999999999999996, 0.0), vm.Point3D(2.24, 0.3, 0.0)),
-# #  (vm.Point3D(0.0, 0.15, 0.0), vm.Point3D(2.24, 0.6, 0.24)),
-# #  (vm.Point3D(0.0, 0.0, 0.24), vm.Point3D(2.24, 0.6, 0.0))]
-  
-# wires_specs =[wires.RoutingSpec(source=vm.Point3D(0.0, 0.15, 0.08),
-#                                             destination=destination,
-#                                             diameter=0.005 + 0.005*random.random()) for source, destination in source_destination]
+# # # source_destination =[(vm.Point3D(0.0, 0.0, 0.24), vm.Point3D(2.24, 0.44999999999999996, 0.24)),
+# # #  (vm.Point3D(0.0, 0.15, 0.0), vm.Point3D(2.24, 0.15, 0.08)),
+# # #  (vm.Point3D(0.0, 0.0, 0.16), vm.Point3D(2.24, 0.6, 0.24)),
+# # #  (vm.Point3D(0.0, 0.15, 0.08), vm.Point3D(2.24, 0.3, 0.08)),
+# # #  (vm.Point3D(0.0, 0.3, 0.0), vm.Point3D(2.24, 0.3, 0.08)),
+# # #  (vm.Point3D(0.0, 0.3, 0.16), vm.Point3D(2.24, 0.44999999999999996, 0.16)),
+# # #  (vm.Point3D(0.0, 0.15, 0.24), vm.Point3D(2.24, 0.15, 0.16)),
+# # #  (vm.Point3D(0.0, 0.44999999999999996, 0.0), vm.Point3D(2.24, 0.3, 0.0)),
+# # #  (vm.Point3D(0.0, 0.15, 0.0), vm.Point3D(2.24, 0.6, 0.24)),
+# # #  (vm.Point3D(0.0, 0.0, 0.24), vm.Point3D(2.24, 0.6, 0.0))]
 
-# paths = wo.single_source_multi_destination_routing(wires_specs)
-# # wo.plot_routes([paths], wires_specs)
+# source_destination = [(vm.Point3D(0.0, 0.15, 0.0),  vm.Point3D(2.24, 0.15, 0.16)),
+#  (vm.Point3D(0.0, 0.44999999999999996, 0.08), 
+#   vm.Point3D(2.24, 0.44999999999999996, 0.16)),
+#  (vm.Point3D(0.0, 0.0, 0.24),  vm.Point3D(2.24, 0.3, 0.0)),
+#  (vm.Point3D(0.0, 0.3, 0.08),  vm.Point3D(2.24, 0.44999999999999996, 0.24)),
+#  (vm.Point3D(0.0, 0.0, 0.24),  vm.Point3D(2.24, 0.44999999999999996, 0.0))]
+
+source_destination = [(vm.Point3D(0.0, 0.0, 0.24), vm.Point3D(2.08, 0.44999999999999996, 0.08)),
+ (vm.Point3D(0.16, 0.0, 0.24), vm.Point3D(2.08, 0.6, 0.24)),
+ (vm.Point3D(0.0, 0.3, 0.24), vm.Point3D(2.24, 0.6, 0.0)),
+ (vm.Point3D(0.16, 0.0, 0.08), vm.Point3D(2.08, 0.44999999999999996, 0.0)),
+ (vm.Point3D(0.0, 0.15, 0.24), vm.Point3D(2.24, 0.44999999999999996, 0.16)),
+ (vm.Point3D(0.0, 0.15, 0.24), vm.Point3D(2.24, 0.0, 0.08)),
+ (vm.Point3D(0.0, 0.15, 0.24), vm.Point3D(2.08, 0.44999999999999996, 0.0)),
+ (vm.Point3D(0.16, 0.0, 0.16), vm.Point3D(2.08, 0.3, 0.24)),
+ (vm.Point3D(0.16, 0.15, 0.0), vm.Point3D(2.24, 0.15, 0.24)),
+ (vm.Point3D(0.0, 0.6, 0.24), vm.Point3D(2.24, 0.3, 0.0)),
+ (vm.Point3D(0.16, 0.0, 0.0), vm.Point3D(2.08, 0.6, 0.08)),
+ (vm.Point3D(0.0, 0.6, 0.08), vm.Point3D(2.08, 0.44999999999999996, 0.24)),
+ (vm.Point3D(0.0, 0.0, 0.16), vm.Point3D(2.24, 0.3, 0.24)),
+ (vm.Point3D(0.0, 0.15, 0.08), vm.Point3D(2.08, 0.44999999999999996, 0.0)),
+ (vm.Point3D(0.0, 0.3, 0.08), vm.Point3D(2.08, 0.6, 0.08)),
+ (vm.Point3D(0.0, 0.44999999999999996, 0.0),
+  vm.Point3D(2.08, 0.44999999999999996, 0.16)),
+ (vm.Point3D(0.0, 0.0, 0.08), vm.Point3D(2.24, 0.44999999999999996, 0.08)),
+ (vm.Point3D(0.0, 0.3, 0.0), vm.Point3D(2.24, 0.15, 0.08)),
+ (vm.Point3D(0.0, 0.44999999999999996, 0.16), vm.Point3D(2.24, 0.15, 0.08)),
+ (vm.Point3D(0.0, 0.3, 0.0), vm.Point3D(2.08, 0.44999999999999996, 0.08))]
+
+wires_specs =[wires.RoutingSpec(source=source,
+                                            destination=destination,
+                                            diameter=0.005 + 0.005*random.random()) for source, destination in source_destination]
+
+paths = wo.multi_source_multi_destination_routing(wires_specs)
+
+# wo.plot_routes([paths], wires_specs)
 # # # wiring = wo.route2(wires_specs)
 # # wiring = wo.route_wiring2(wires_specs)

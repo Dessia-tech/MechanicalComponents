@@ -13,6 +13,8 @@ import volmdlr.primitives3d as vmp3d
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import minimum_spanning_tree
 import volmdlr as vm
+# import networkx.algorithms.shortest_paths.weighted as sp
+import math
 
 # class WiringOptimizer(RoutingOptimizer):
 
@@ -168,34 +170,59 @@ class WiringOptimizer(RoutingOptimizer):
 
         return wires.Wiring(wires2, [])
 
-    def multi_source_multi_destination_routing(self,wires_specs: List[wires.RoutingSpec]):
-        
+    def multi_source_multi_destination_routing(self, wires_specs: List[wires.RoutingSpec]):
         ''' 
         Calculaes the wiring routing for multi-source-multi-destination problems
         :param wires_specs: list of the wires specifications 
         returns a list of wires for the shortest paths
         '''
+        list_shortests_paths_lengths = []
         list_shortest_paths = []
         for i in range(len(wires_specs)):
             wires_specs_ = wires_specs[i:] + wires_specs[:i]
             shortest_paths = []
-            for wire_spec in wires_specs_:
+            bigger_equal_length_1 = False
+            valid = True
+            print('combination ', i+1, ':')
+            for j, wire_spec in enumerate(wires_specs_):
                 shortest_path = nx.shortest_path(self.graph,
                                          wire_spec.source,
                                          wire_spec.destination,
                                          weight='distance')
+                
+                if i == 0:
+                    list_shortests_paths_lengths.append(self.PathLength(shortest_path))
+                elif j == 0:
+                    length = self.PathLength(shortest_path)
+                    if length <= list_shortests_paths_lengths[j]:
+                        bigger_equal_length_1 = True
+                    else:
+                        valid = False
+                        break
+                elif bigger_equal_length_1 and j==1:
+                    length2 = self.PathLength(shortest_path)
+                    if length2 < list_shortests_paths_lengths[j]:
+                        list_shortests_paths_lengths[j-1] = length
+                        list_shortests_paths_lengths[j] = length2
+                    else:
+                        valid = False
+                        break
                 self.update_graph([shortest_path])
                 shortest_paths.append(shortest_path)
-
+                print('(source, destination) :', (wire_spec.source, wire_spec.destination), 'length path :', self.PathLength(shortest_path))
+            self.restart_graph()
+            if not valid:
+                continue
             # self.plot_routes(shortest_paths, wires_specs)
             over_all_path_cost = self.over_all_path_cost(shortest_paths,self._graph)
             list_shortest_paths.append([over_all_path_cost, shortest_paths])
-            # print('over_all_path_cost :', over_all_path_cost)
-            self.restart_graph()
+            print('over_all_path_cost :', over_all_path_cost)
+            
 
         list_shortest_paths.sort()
         shortest_paths = list_shortest_paths[0][1]
-        # print('final over_all_path_cost :', list_shortest_paths[0][0])
+        self.plot_routes(shortest_paths, wires_specs)
+        print('final over_all_path_cost :', list_shortest_paths[0][0])
 
         wires2 = []
         for ipath, path in enumerate(shortest_paths):
@@ -211,7 +238,7 @@ class WiringOptimizer(RoutingOptimizer):
         :param wires_specs: list of the wires specifications 
         returns a list of wires for the shortest paths
         '''
-        paths = []
+        paths = [] 
         previous_path = []
         shortest_paths =[]
         finished = False
@@ -265,7 +292,6 @@ class WiringOptimizer(RoutingOptimizer):
         return paths
 
     def over_all_path_cost(self, shortest_paths, graph = None):
-
         '''
         Calculates the over all distance for the shotest paths. The calculation does not take into the same edge more than once
 
@@ -314,8 +340,7 @@ class WiringOptimizer(RoutingOptimizer):
         
         for shortest_path in shortest_paths:
             for node1, node2 in zip(shortest_path[:-1], shortest_path[1:]):
-                if self.graph.edges[node1, node2]['distance'] > self._graph.edges[node1, node2]['distance'] * 0.1:
-                    self.graph.edges[node1, node2]['distance'] *= 0.8
+                self.graph.edges[node1, node2]['distance'] *= 0.8
                 if (node1, node2) not in shortest_paths_edges:
                     shortest_paths_edges.append((node1, node2))
                 if node1 not in shortest_paths_nodes:
