@@ -16,67 +16,6 @@ import volmdlr as vm
 # import networkx.algorithms.shortest_paths.weighted as sp
 import math
 
-# class WiringOptimizer(RoutingOptimizer):
-
-#     def NumberHarnesses(self, paths):
-#         G = nx.Graph()
-#         G.add_nodes_from(self.line_graph)
-#         for path in paths:
-#             routes = [(w1, w2) for w1, w2 in zip(path[:-1], path[1:])]
-#             for route1, route2 in zip(routes[:-1], routes[1:]):
-#                 G.add_edge(route1, route2)
-        
-#         # Removing nodes with degree == 0
-#         for node in self.line_graph.nodes():
-#             if G.degree(node) == 0:
-#                 G.remove_node(node)
-# #        nx.draw_kamada_kawai(G)
-#         return nx.number_connected_components(G)
-        
-#     def route(self, wires_specs: List[wires.RoutingSpec]):
-#         shortest_paths = []
-#         shortest_paths_lengths = []
-#         for wire_spec in wires_specs:
-#             # Checking if pat is in cache
-
-#             if (wire_spec.source, wire_spec.destination) in \
-#                     self._shortest_paths_cache:
-#                 shortest_path = self._shortest_paths_cache[
-#                     (wire_spec.source, wire_spec.destination)]
-#             elif (wire_spec.source, wire_spec.destination) in \
-#                     self._shortest_paths_cache:
-#                 shortest_path = self._shortest_paths_cache[
-#                     (wire_spec.source, wire_spec.destination)]
-#             else:            
-#                 shortest_path = nx.shortest_path(self.graph,
-#                                                  wire_spec.source,
-#                                                  wire_spec.destination,
-#                                                  weight='distance')
-#                 self._shortest_paths_cache[
-#                     (wire_spec.source, wire_spec.destination)] = shortest_path
-                
-#             shortest_paths.append(shortest_path)
-#             length = self.PathLength(shortest_path)
-#             shortest_paths_lengths.append(length)
-            
-#         wires2 = []
-#         for ipath, path in enumerate(shortest_paths):
-#             wires2.append(wires.Wire(path, wires_specs[ipath].diameter,
-#                                      color=wires_specs[ipath].color,
-#                                      name=wires_specs[ipath].name))
-#         return wires.Wiring(wires2, [])
-
-#     def volmdlr_primitives(self):
-#         volumes = []
-#         for route in self.routes:
-#             point1, point2 = route[0], route[1]
-#             if point1 != point2:
-#                 cylinder = vmp3d.Cylinder((point1+point2)/2, point2-point1, 0.05,
-#                                           (point2-point1).norm())
-#                 volumes.append(cylinder)
-#         return volumes
-
-
 class WiringOptimizer(RoutingOptimizer):
 
     def NumberHarnesses(self, paths):
@@ -127,49 +66,6 @@ class WiringOptimizer(RoutingOptimizer):
                                      name=wires_specs[ipath].name))
         return wires.Wiring(wires2, [])
 
-
-    def route2(self, wires_specs: List[wires.RoutingSpec]):
-
-        counter = 0
-        # self.plot()
-        for i in range(len(wires_specs)):
-            shortest_paths = []
-            path_changed = False
-            for wire_spec in wires_specs:
-                shortest_path = nx.shortest_path(self.graph,
-                                         wire_spec.source,
-                                         wire_spec.destination,
-                                         weight='distance')
-                shortest_paths.append(shortest_path)
-                if (wire_spec.source, wire_spec.destination) in self._shortest_paths_cache:
-                    if self._shortest_paths_cache[(wire_spec.source, wire_spec.destination)] != shortest_path:
-                        path_changed = True
-                        self._shortest_paths_cache[(wire_spec.source, wire_spec.destination)] = shortest_path
-                else:
-                    self._shortest_paths_cache[(wire_spec.source, wire_spec.destination)] = shortest_path
-                    path_changed = True
-
-            if path_changed:
-                print('changed path', i+1, 'times')
-                self.plot_routes(shortest_paths, wires_specs)
-                over_all_path_cost = self.over_all_path_cost(shortest_paths,self._graph)
-                print('over_all_path_cost :', over_all_path_cost)
-                update_graph = self.update_graph(shortest_paths)
-            else:
-                if counter < 3 and i < len(wires_specs) * 1:
-                    counter +=1
-                    self.update_graph(shortest_paths)
-                else:
-                    break
-
-        wires2 = []
-        for ipath, path in enumerate(shortest_paths):
-            wires2.append(wires.Wire(path, wires_specs[ipath].diameter,
-                                     color=wires_specs[ipath].color,
-                                     name=wires_specs[ipath].name))
-
-        return wires.Wiring(wires2, [])
-
     def multi_source_multi_destination_routing(self, wires_specs: List[wires.RoutingSpec]):
         ''' 
         Calculaes the wiring routing for multi-source-multi-destination problems
@@ -209,20 +105,18 @@ class WiringOptimizer(RoutingOptimizer):
                         break
                 self.update_graph([shortest_path])
                 shortest_paths.append(shortest_path)
-                print('(source, destination) :', (wire_spec.source, wire_spec.destination), 'length path :', self.PathLength(shortest_path))
             self.restart_graph()
             if not valid:
                 continue
-            # self.plot_routes(shortest_paths, wires_specs)
             over_all_path_cost = self.over_all_path_cost(shortest_paths,self._graph)
             list_shortest_paths.append([over_all_path_cost, shortest_paths])
-            print('over_all_path_cost :', over_all_path_cost)
+            # print('over_all_path_cost :', over_all_path_cost)
             
 
         list_shortest_paths.sort()
         shortest_paths = list_shortest_paths[0][1]
-        self.plot_routes(shortest_paths, wires_specs)
-        print('final over_all_path_cost :', list_shortest_paths[0][0])
+        # self.plot_routes(shortest_paths, wires_specs)
+        # print('final over_all_path_cost :', list_shortest_paths[0][0])
 
         wires2 = []
         for ipath, path in enumerate(shortest_paths):
