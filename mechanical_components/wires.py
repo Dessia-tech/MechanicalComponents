@@ -163,48 +163,20 @@ class JunctionWire(Wire):
                                           name='bezier curve 1')
         return vmw.Wire3D([bezier_curve])
     
-    # def _create_path_from_forcesv2(self, force1, force2):
-    #     point1 = self.waypoints[0]
-    #     point2 = self.waypoints[1]
-        
-    #     point1_t = point1 + force1 * self.tangeancy1
-    #     point2_t = point2 + force2 * self.tangeancy2
-        
-    #     middle_point = (point1_t + point2_t)/2 + force2*self.tangeancy2/100 + \
-    #         force1 * self.tangeancy1/100
-        
-    #     points = [point1, point1_t, middle_point, point2_t, point2]
-        
-    #     bezier_curve = vme.BezierCurve3D(degree=3,
-    #                                      control_points=points,
-    #                                      name='bezier curve 1')
-    #     return vmw.Wire3D([bezier_curve])
-    
     def _path(self):
         
         def find_forces(forces):
-            # if self.minimum_radius_curv == 0:
-            #     bezier_curve = self._create_path_from_forces(abs(forces[0]), forces[1])
+            if self.minimum_radius_curv == 0:
+                bezier_curve = self._create_path_from_forces(abs(forces[0]), forces[1])
             
-            #     return abs(bezier_curve.length() - self.targeted_length)
+                return abs(bezier_curve.length() - self.targeted_length)
             
-            # else :
-            #     bezier_curve = self._create_path_from_forces(abs(forces[0]), forces[1])
-                
-            #     points = bezier_curve.primitives[0].points
-            #     start = points[0]
-                
-            #     radius = []
-            #     for middle, end in zip(points[1:-1],points[2:]):
-            #         circle = vmw.Circle3D.from_3_points(start, middle, end)
-            #         radius.append(circle.radius)
-            #         start = middle
+            else :
+                bezier_curve = self._create_path_from_forces(abs(forces[0]), forces[1])
+                radius = bezier_curve.primitives[0].minimum_curvature_radius()
                   
-            #     return abs(bezier_curve.length() - self.targeted_length) + \
-            #         100*(self.minimum_radius_curv - min(radius))
-            bezier_curve = self._create_path_from_forces(abs(forces[0]), forces[1])
-            
-            return abs(bezier_curve.length() - self.targeted_length)
+                return abs(bezier_curve.length() - self.targeted_length)*10 + \
+                    1000*(self.minimum_radius_curv - min(radius))
                 
         
         # print(self.diameter, self.length())
@@ -217,22 +189,24 @@ class JunctionWire(Wire):
         
         # print(res)
         bezier_curve = self._create_path_from_forces(abs(res.x[0]), res.x[1])
-        l = bezier_curve.length()
-        n = 20
-        points = [bezier_curve.point_at_abscissa(i * l / n) for i in range (n+1)]
-        return primitives3d.OpenRoundedLineSegments3D(
-            points, {}, adapt_radius=True)
-    
-    def minimum_curvature_radius(self):
-        points = self.path.points
-        start = points[0]
+        # l = bezier_curve.length()
+        # n = 20
+        # points = [bezier_curve.point_at_abscissa(i * l / n) for i in range (n+1)]
+        # return primitives3d.OpenRoundedLineSegments3D(
+        #     points, {}, adapt_radius=True)
         
-        radius = []
-        for middle, end in zip(points[1:-1],points[2:]):
-            circle = vmw.Circle3D.from_3_points(start, middle, end)
-            radius.append(circle.radius)
-            start = middle         
-            
+        return bezier_curve.primitives[0]
+        # return bezier_curve
+    
+    # def minimum_curvature_radius(self):
+        # points = self.path.points
+        # start = points[0]
+        
+        # radius = []
+        # for middle, end in zip(points[1:-1],points[2:]):
+        #     circle = vmw.Circle3D.from_3_points(start, middle, end)
+        #     radius.append(circle.radius)
+        #     start = middle   
         # print('>>>>>>>',radius)
         
         # ax = self.path.plot()
@@ -243,6 +217,9 @@ class JunctionWire(Wire):
         #         pt.plot(ax=ax, color='r')
         #     else :
         #         pt.plot(ax=ax)
+    def minimum_curvature_radius(self):
+        curve = self.path
+        radius = curve.minimum_curvature_radius()
         return min(radius)
     
     def to_bezier_curv(self):
@@ -255,9 +232,9 @@ class JunctionWire(Wire):
         # ax = self.path.plot()
         
         for third in points[2:]:
-            ax = self.path.plot()
-            start.plot(ax=ax, color='r')
-            second.plot(ax=ax, color='b')
+            # ax = self.path.plot()
+            # start.plot(ax=ax, color='r')
+            # second.plot(ax=ax, color='b')
             # third.plot(ax=ax, color='g')
             
             circle = vmw.Circle3D.from_3_points(start, second, third)
@@ -267,87 +244,21 @@ class JunctionWire(Wire):
                 s_to_c = circle.center - second
                 s_to_c.normalize()
                 new_center = second + s_to_c*self.minimum_radius_curv
-                new_center.plot(ax=ax, color='m')
+                # new_center.plot(ax=ax, color='m')
                 
-                # line_to_cut = vme.LineSegment3D(new_center, third)
-                # line_to_cut.plot(ax=ax, color='g')
-                new_circle = vmw.Circle3D(vm.Frame3D(new_center, circle.frame.u, 
-                                                     circle.frame.v,circle.frame.w), 
-                                          self.minimum_radius_curv)
-                new_circle.plot(ax=ax, color='m')
+                c_to_nt = third - new_center
+                c_to_nt.normalize()
                 
-                new_circle_2d = new_circle.to_2d(new_circle.frame.origin,
-                                                 new_circle.frame.u,
-                                                 new_circle.frame.v)
+                new_third = new_center + c_to_nt*self.minimum_radius_curv
                 
-                third2d = third.to_2d(new_circle.frame.origin,
-                                      new_circle.frame.u,
-                                      new_circle.frame.v)
                 
-                c_to_t = third2d - new_circle_2d.center
-                
-                # line_to_cut2d = line_to_cut.to_2d(new_circle.frame.origin,
-                #                                   new_circle.frame.u,
-                #                                   new_circle.frame.v)
-                line_to_cut2d = vme.LineSegment2D(new_circle_2d.center, third2d + c_to_t)
-                
-                ax2d = new_circle_2d.plot(color='r')
-                line_to_cut2d.plot(ax=ax2d, color='g')
-                
-                tessel_pts = new_circle_2d.tessellation_points()
-                
-                #initialization
-                start2d = start.to_2d(new_circle.frame.origin,
-                                      new_circle.frame.u,
-                                      new_circle.frame.v)
-                
-                second2d = second.to_2d(new_circle.frame.origin,
-                                        new_circle.frame.u,
-                                        new_circle.frame.v)
-                
-                start2d.plot(ax=ax2d, color='r')
-                second2d.plot(ax=ax2d, color='b')
-                
-                dist_min = None
-                for pt1, pt2 in zip(tessel_pts, tessel_pts[1:]+[tessel_pts[0]]):
-                    line_circle = vme.LineSegment2D(pt1, pt2)
-                    inter = line_circle.linesegment_intersections(line_to_cut2d)
-                    if inter :
-                        new_dist = second2d.point_distance(inter[0])
-                        if dist_min is None or new_dist < dist_min:
-                            dist_min = new_dist
-                            soluce = inter[0]
-                            new_third = inter[0].to_3d(new_circle.frame.origin,
-                                                       new_circle.frame.u,
-                                                       new_circle.frame.v)
-                
-                # inter = vme.Line2D(tessel_pts[0], tessel_pts[1]).line_intersections(line_to_cut2d)
-                # dist_min = second2d.point_distance(inter[0])
-                # soluce = inter[0]
-                
-                # new_third = inter[0].to_3d(new_circle.frame.origin,
-                #                            new_circle.frame.u,
-                #                            new_circle.frame.v)
-                
-                # for pt1, pt2 in zip(tessel_pts[1:], tessel_pts[2:]+[tessel_pts[0]]):
-                #     line_circle = vme.Line2D(pt1, pt2)
-                #     inter = line_circle.line_intersections(line_to_cut2d)
-                #     new_dist = second2d.point_distance(inter[0])
-                #     if new_dist < dist_min :
-                #         dist_min = new_dist
-                #         soluce = inter[0]
-                #         new_third = inter[0].to_3d(new_circle.frame.origin,
-                #                                    new_circle.frame.u,
-                #                                    new_circle.frame.v)
-                # new_third.plot(ax=ax2d)
                 ctl_points.append(new_third)
-                soluce.plot(ax=ax2d, color='g')
                 
             else :
                 ctl_points.append(third)
              
                 
-            ctl_points[-1].plot(ax=ax, color='g')
+            # ctl_points[-1].plot(ax=ax, color='g')
             
             
             start = second
@@ -361,12 +272,7 @@ class JunctionWire(Wire):
         # points = [bezier_curve.point_at_abscissa(i * l / n) for i in range (n+1)]
         return primitives3d.OpenRoundedLineSegments3D(
             ctl_points, {}, adapt_radius=True)
-            
-            
-                
-        
-                    
-
+    
 class WireHarness(DessiaObject):
     _standalone_in_db = True
     
