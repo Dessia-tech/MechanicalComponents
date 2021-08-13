@@ -7,6 +7,7 @@ Created on Tue Sep 25 15:11:29 2018
 
 from typing import List, Tuple
 from dessia_common.core import DessiaObject
+from scipy.optimize import bisect, minimize
 import volmdlr as vm
 import volmdlr.edges as vme
 import volmdlr.wires as vmw
@@ -15,6 +16,8 @@ import matplotlib.pyplot as plt
 import math
 import networkx as nx
 
+
+import volmdlr.faces as vmf
 
 class Wire(DessiaObject):
     """
@@ -31,7 +34,7 @@ class Wire(DessiaObject):
                 
         self._utd_path = False
         
-    def _Path(self):
+    def _path(self):
         radii = {}
         for i in range(len(self.waypoints)-2):
             # if lines are not colinear
@@ -44,9 +47,13 @@ class Wire(DessiaObject):
             self.waypoints, radii, adapt_radius = True)
 #        return  primitives3d.RoundedLineSegments3D(self.waypoints, {}, adapt_radius = True)        
     
+    # def _bspline_path(self):
+    #     for p1, p2 in 
+
+
     def _get_path(self):
         if not self._utd_path:
-            self._path = self._Path()
+            self._path = self._path()
             self._utd_path = True
         return self._path
     
@@ -61,7 +68,7 @@ class Wire(DessiaObject):
         else:
             return self.path.length()
     
-    def Draw(self, ax):
+    def Draw(self, ax=None):
         x = []
         y = []
         for waypoint in self.waypoints:
@@ -97,7 +104,175 @@ class IECWire(Wire):
         diameter = 2 * math.sqrt(section/math.pi)
         Wire.__init__(self, waypoints, diameter, name)
 
+class JunctionWire(Wire):
+    def __init__(self,
+                 point1: vm.Point3D, tangeancy1:vm.Vector3D,
+                 point2: vm.Point3D, tangeancy2:vm.Vector3D,
+                 targeted_length:float, diameter:float,
+                 minimum_radius_curv:float = 0, name:str=''):
+        # diameter = 2 * math.sqrt(section/math.pi)
+        self.tangeancy1 = tangeancy1
+        self.tangeancy2 = tangeancy2
+        self.targeted_length = targeted_length
+        
+        self.minimum_radius_curv = minimum_radius_curv
+        Wire.__init__(self, [point1, point2], diameter, name)
 
+    # def _create_path_from_force(self, force):
+    #     point1 = self.waypoints[0]
+    #     point2 = self.waypoints[1]
+        
+    #     point1_t = point1 + force * self.tangeancy1
+    #     point2_t = point2 + force * self.tangeancy2
+        
+    #     points = [point1, point1_t, point2_t, point2]
+        
+    #     bezier_curve = vme.BezierCurve3D(degree=3,
+    #                                       control_points=points,
+    #                                       name='bezier curve 1')
+    #     return vmw.Wire3D([bezier_curve])
+
+    # def _path(self):
+        
+    #     def find_force(force):
+    #         bezier_curve = self._create_path_from_force(force)
+            
+    #         return bezier_curve.length() - self.targeted_length
+        
+    #     # print(self.diameter, self.length())
+    #     res = bisect(find_force, self.diameter, self.targeted_length)
+    #     # print(res)
+    #     bezier_curve = self._create_path_from_force(res)
+    #     l = bezier_curve.length()
+    #     n = 20
+    #     points = [bezier_curve.point_at_abscissa(i * l / n) for i in range (n+1)]
+    #     return primitives3d.OpenRoundedLineSegments3D(
+    #         points, {}, adapt_radius=True)
+    
+    def _create_path_from_forces(self, force1, force2):
+        point1 = self.waypoints[0]
+        point2 = self.waypoints[1]
+        
+        point1_t = point1 + force1 * self.tangeancy1
+        point2_t = point2 + force2 * self.tangeancy2
+        
+        points = [point1, point1_t, point2_t, point2]
+        
+        bezier_curve = vme.BezierCurve3D(degree=3,
+                                          control_points=points,
+                                          name='bezier curve 1')
+        return vmw.Wire3D([bezier_curve])
+    
+    def _path(self):
+        
+        def find_forces(forces):
+            if self.minimum_radius_curv == 0:
+                bezier_curve = self._create_path_from_forces(abs(forces[0]), forces[1])
+            
+                return abs(bezier_curve.length() - self.targeted_length)
+            
+            else :
+                bezier_curve = self._create_path_from_forces(abs(forces[0]), forces[1])
+                radius = bezier_curve.primitives[0].minimum_curvature_radius()
+                  
+                return abs(bezier_curve.length() - self.targeted_length)*10 + \
+                    1000*(self.minimum_radius_curv - min(radius))
+                
+        
+        # print(self.diameter, self.length())
+        # res = bisect(find_force, self.diameter, self.targeted_length)
+        res = minimize(find_forces, (self.targeted_length, self.targeted_length),
+                            options={'eps': 1e-6})
+        # print()
+        # print(res.x, self.targeted_length)
+        # print(res.fun)
+        
+        # print(res)
+        bezier_curve = self._create_path_from_forces(abs(res.x[0]), res.x[1])
+        # l = bezier_curve.length()
+        # n = 20
+        # points = [bezier_curve.point_at_abscissa(i * l / n) for i in range (n+1)]
+        # return primitives3d.OpenRoundedLineSegments3D(
+        #     points, {}, adapt_radius=True)
+        
+        return bezier_curve.primitives[0]
+        # return bezier_curve
+    
+    # def minimum_curvature_radius(self):
+        # points = self.path.points
+        # start = points[0]
+        
+        # radius = []
+        # for middle, end in zip(points[1:-1],points[2:]):
+        #     circle = vmw.Circle3D.from_3_points(start, middle, end)
+        #     radius.append(circle.radius)
+        #     start = middle   
+        # print('>>>>>>>',radius)
+        
+        # ax = self.path.plot()
+        # points[0].plot(ax=ax, color='g')
+        # points[-1].plot(ax=ax, color='m')
+        # for pt, rad in zip(points[1:-1], radius) :
+        #     if rad < self.minimum_radius_curv :
+        #         pt.plot(ax=ax, color='r')
+        #     else :
+        #         pt.plot(ax=ax)
+    def minimum_curvature_radius(self):
+        curve = self.path
+        radius = curve.minimum_curvature_radius()
+        return min(radius)
+    
+    def to_bezier_curv(self):
+        
+        points = self.path.points
+        start, second = points[0], points[1]
+         
+        ctl_points = [start, second]
+        
+        # ax = self.path.plot()
+        
+        for third in points[2:]:
+            # ax = self.path.plot()
+            # start.plot(ax=ax, color='r')
+            # second.plot(ax=ax, color='b')
+            # third.plot(ax=ax, color='g')
+            
+            circle = vmw.Circle3D.from_3_points(start, second, third)
+            
+            # circle.plot(ax=ax)
+            if circle.radius < self.minimum_radius_curv :
+                s_to_c = circle.center - second
+                s_to_c.normalize()
+                new_center = second + s_to_c*self.minimum_radius_curv
+                # new_center.plot(ax=ax, color='m')
+                
+                c_to_nt = third - new_center
+                c_to_nt.normalize()
+                
+                new_third = new_center + c_to_nt*self.minimum_radius_curv
+                
+                
+                ctl_points.append(new_third)
+                
+            else :
+                ctl_points.append(third)
+             
+                
+            # ctl_points[-1].plot(ax=ax, color='g')
+            
+            
+            start = second
+            second = ctl_points[-1]
+            
+        # bezier_curve = vme.BezierCurve3D(degree=3, control_points=ctl_points,
+        #                                   name='bezier curvature')
+        # l = bezier_curve.length()
+        # print('>>>>', l)
+        # n = 20
+        # points = [bezier_curve.point_at_abscissa(i * l / n) for i in range (n+1)]
+        return primitives3d.OpenRoundedLineSegments3D(
+            ctl_points, {}, adapt_radius=True)
+    
 class WireHarness(DessiaObject):
     _standalone_in_db = True
     
