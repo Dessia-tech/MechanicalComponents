@@ -109,15 +109,55 @@ class JunctionWire(Wire):
                  point1: vm.Point3D, tangeancy1:vm.Vector3D,
                  point2: vm.Point3D, tangeancy2:vm.Vector3D,
                  targeted_length:float, diameter:float,
-                 minimum_radius_curv:float = 0, name:str=''):
+                 name:str=''):
         # diameter = 2 * math.sqrt(section/math.pi)
         self.tangeancy1 = tangeancy1
         self.tangeancy2 = tangeancy2
         self.targeted_length = targeted_length
         
-        self.minimum_radius_curv = minimum_radius_curv
         Wire.__init__(self, [point1, point2], diameter, name)
-
+        
+    @classmethod
+    def curvature_radius(cls, point1: vm.Point3D, tangeancy1:vm.Vector3D,
+                         point2: vm.Point3D, tangeancy2:vm.Vector3D,
+                         length_min : float, targeted_curv:float, 
+                         diameter:float, name:str=''):
+        
+        # def find_length(length):
+        #     bezier_curve1 = cls(point1 = point1, tangeancy1 = tangeancy1,
+        #                         point2 = point2, tangeancy2 = tangeancy2,
+        #                         targeted_length = length[0], diameter = diameter, 
+        #                         name = name )
+            
+        #     radius = bezier_curve1.path.minimum_curvature_radius()
+            
+        #     print(bezier_curve1.path.length(), length_min)
+        #     print(min(radius), targeted_curv)
+        #     print()
+        #     return targeted_curv - min(radius)
+                
+        # res = minimize(find_length, (length_min),
+        #                     options={'eps': 1e-6})
+         
+        # return cls(point1 = point1, tangeancy1 = tangeancy1,
+        #            point2 = point2, tangeancy2 = tangeancy2,
+        #            targeted_length = res[0], diameter = diameter, 
+        #            name = name )
+        
+        length1 = length_min*0.99
+        curve = 0
+        while curve < targeted_curv :
+            length1 += length_min*0.01
+            bezier_curve1 = cls(point1=point1, tangeancy1=tangeancy1,
+                                point2=point2, tangeancy2=tangeancy2,
+                                targeted_length=length1, diameter=diameter, 
+                                name=name)
+            curve = bezier_curve1.minimum_curvature_radius()
+            print(bezier_curve1.path.length(), length_min)
+            print(curve, targeted_curv)
+            print()
+            
+        
     # def _create_path_from_force(self, force):
     #     point1 = self.waypoints[0]
     #     point2 = self.waypoints[1]
@@ -166,28 +206,16 @@ class JunctionWire(Wire):
     def _path(self):
         
         def find_forces(forces):
-            if self.minimum_radius_curv == 0:
-                bezier_curve = self._create_path_from_forces(abs(forces[0]), forces[1])
-            
-                return abs(bezier_curve.length() - self.targeted_length)
-            
-            else :
-                bezier_curve = self._create_path_from_forces(abs(forces[0]), forces[1])
-                radius = bezier_curve.primitives[0].minimum_curvature_radius()
-                  
-                return abs(bezier_curve.length() - self.targeted_length)*10 + \
-                    1000*(self.minimum_radius_curv - min(radius))
-                
+            bezier_curve = self._create_path_from_forces(abs(forces[0]), forces[1])
         
-        # print(self.diameter, self.length())
-        # res = bisect(find_force, self.diameter, self.targeted_length)
+            return abs(bezier_curve.length() - self.targeted_length)
+            
         res = minimize(find_forces, (self.targeted_length, self.targeted_length),
                             options={'eps': 1e-6})
         # print()
         # print(res.x, self.targeted_length)
         # print(res.fun)
         
-        # print(res)
         bezier_curve = self._create_path_from_forces(abs(res.x[0]), res.x[1])
         # l = bezier_curve.length()
         # n = 20
@@ -196,82 +224,11 @@ class JunctionWire(Wire):
         #     points, {}, adapt_radius=True)
         
         return bezier_curve.primitives[0]
-        # return bezier_curve
     
-    # def minimum_curvature_radius(self):
-        # points = self.path.points
-        # start = points[0]
-        
-        # radius = []
-        # for middle, end in zip(points[1:-1],points[2:]):
-        #     circle = vmw.Circle3D.from_3_points(start, middle, end)
-        #     radius.append(circle.radius)
-        #     start = middle   
-        # print('>>>>>>>',radius)
-        
-        # ax = self.path.plot()
-        # points[0].plot(ax=ax, color='g')
-        # points[-1].plot(ax=ax, color='m')
-        # for pt, rad in zip(points[1:-1], radius) :
-        #     if rad < self.minimum_radius_curv :
-        #         pt.plot(ax=ax, color='r')
-        #     else :
-        #         pt.plot(ax=ax)
     def minimum_curvature_radius(self):
         curve = self.path
         radius = curve.minimum_curvature_radius()
         return min(radius)
-    
-    def to_bezier_curv(self):
-        
-        points = self.path.points
-        start, second = points[0], points[1]
-         
-        ctl_points = [start, second]
-        
-        # ax = self.path.plot()
-        
-        for third in points[2:]:
-            # ax = self.path.plot()
-            # start.plot(ax=ax, color='r')
-            # second.plot(ax=ax, color='b')
-            # third.plot(ax=ax, color='g')
-            
-            circle = vmw.Circle3D.from_3_points(start, second, third)
-            
-            # circle.plot(ax=ax)
-            if circle.radius < self.minimum_radius_curv :
-                s_to_c = circle.center - second
-                s_to_c.normalize()
-                new_center = second + s_to_c*self.minimum_radius_curv
-                # new_center.plot(ax=ax, color='m')
-                
-                c_to_nt = third - new_center
-                c_to_nt.normalize()
-                
-                new_third = new_center + c_to_nt*self.minimum_radius_curv
-                
-                
-                ctl_points.append(new_third)
-                
-            else :
-                ctl_points.append(third)
-             
-                
-            # ctl_points[-1].plot(ax=ax, color='g')
-            
-            
-            start = second
-            second = ctl_points[-1]
-            
-        # bezier_curve = vme.BezierCurve3D(degree=3, control_points=ctl_points,
-        #                                   name='bezier curvature')
-        # l = bezier_curve.length()
-        # print('>>>>', l)
-        # n = 20
-        # points = [bezier_curve.point_at_abscissa(i * l / n) for i in range (n+1)]
-        return primitives3d.OpenRoundedLineSegments3D(
-            ctl_points, {}, adapt_radius=True)
     
 class WireHarness(DessiaObject):
     _standalone_in_db = True
