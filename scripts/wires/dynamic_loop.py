@@ -19,12 +19,13 @@ tan2 = vm.Vector3D(0, -1, 0)
 length = 1.3 * p1.point_distance(p2)
 
 wire = wires.JunctionWire(p1, tan1, p2, tan2, length, diameter=5e-3)
-wire.path.plot()
+ax = wire.path.plot()
 # wire.babylonjs()
 # wire.Draw()
 
 wire2 = wires.JunctionWire.curvature_radius(point1=p1, tangeancy1=tan1, 
                                             point2=p2, tangeancy2=tan2, 
-                                            length_min=2*length, targeted_curv=32e-3, 
+                                            targeted_curv=32e-3, 
+                                            length_min=2*length, length_max=4*length,
                                             diameter=5e-3)
-    
+wire2.path.plot(ax=ax, color='r')

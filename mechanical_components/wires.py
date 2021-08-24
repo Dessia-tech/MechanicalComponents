@@ -120,8 +120,9 @@ class JunctionWire(Wire):
     @classmethod
     def curvature_radius(cls, point1: vm.Point3D, tangeancy1:vm.Vector3D,
                          point2: vm.Point3D, tangeancy2:vm.Vector3D,
-                         length_min : float, targeted_curv:float, 
-                         diameter:float, name:str=''):
+                         targeted_curv:float, diameter:float, 
+                         length_min : float,  length_max : float = None,
+                         name:str=''):
         
         # def find_length(length):
         #     bezier_curve1 = cls(point1 = point1, tangeancy1 = tangeancy1,
@@ -145,17 +146,36 @@ class JunctionWire(Wire):
         #            name = name )
         
         length1 = length_min*0.99
-        curve = 0
+        curve, best_curve, best_length = 0, 0, 0
         while curve < targeted_curv :
             length1 += length_min*0.01
-            bezier_curve1 = cls(point1=point1, tangeancy1=tangeancy1,
-                                point2=point2, tangeancy2=tangeancy2,
-                                targeted_length=length1, diameter=diameter, 
-                                name=name)
-            curve = bezier_curve1.minimum_curvature_radius()
-            print(bezier_curve1.path.length(), length_min)
-            print(curve, targeted_curv)
-            print()
+            if length_max is None :
+                bezier_curve1 = cls(point1=point1, tangeancy1=tangeancy1,
+                                    point2=point2, tangeancy2=tangeancy2,
+                                    targeted_length=length1, diameter=diameter, 
+                                    name=name)
+                curve = bezier_curve1.minimum_curvature()
+                if curve > best_curve :
+                    best_curve = curve
+                    best_length = length1
+            else :
+                if length1 > length_max :
+                    length1 = length_max 
+                bezier_curve1 = cls(point1=point1, tangeancy1=tangeancy1,
+                                    point2=point2, tangeancy2=tangeancy2,
+                                    targeted_length=length1, diameter=diameter, 
+                                    name=name)
+                curve = bezier_curve1.minimum_curvature()
+                if length1 == length_max :
+                    if curve > best_curve :
+                        best_curve = curve
+                        best_length = length1
+                        break
+            
+        return cls(point1=point1, tangeancy1=tangeancy1,
+                   point2=point2, tangeancy2=tangeancy2,
+                   targeted_length=best_length, diameter=diameter,
+                   name=name)
             
         
     # def _create_path_from_force(self, force):
@@ -225,10 +245,10 @@ class JunctionWire(Wire):
         
         return bezier_curve.primitives[0]
     
-    def minimum_curvature_radius(self):
+    def minimum_curvature(self):
         curve = self.path
-        radius = curve.minimum_curvature_radius()
-        return min(radius)
+        radius = curve.global_minimum_curvature()
+        return 1/max(radius)
     
 class WireHarness(DessiaObject):
     _standalone_in_db = True
