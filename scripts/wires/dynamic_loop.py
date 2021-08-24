@@ -26,6 +26,8 @@ ax = wire.path.plot()
 wire2 = wires.JunctionWire.curvature_radius(point1=p1, tangeancy1=tan1, 
                                             point2=p2, tangeancy2=tan2, 
                                             targeted_curv=32e-3, 
-                                            length_min=2*length, length_max=4*length,
+                                            length_min=length, length_max=3*length,
                                             diameter=5e-3)
 wire2.path.plot(ax=ax, color='r')
+
+print(wire2.minimum_curvature(), wire.minimum_curvature() ,32e-3)
