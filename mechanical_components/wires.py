@@ -124,26 +124,6 @@ class JunctionWire(Wire):
                          length_min : float,  length_max : float = None,
                          name:str=''):
         
-        # def find_length(length):
-        #     bezier_curve1 = cls(point1 = point1, tangeancy1 = tangeancy1,
-        #                         point2 = point2, tangeancy2 = tangeancy2,
-        #                         targeted_length = length[0], diameter = diameter, 
-        #                         name = name )
-            
-        #     radius = bezier_curve1.path.minimum_curvature_radius()
-            
-        #     print(bezier_curve1.path.length(), length_min)
-        #     print(min(radius), targeted_curv)
-        #     print()
-        #     return targeted_curv - min(radius)
-                
-        # res = minimize(find_length, (length_min),
-        #                     options={'eps': 1e-6})
-         
-        # return cls(point1 = point1, tangeancy1 = tangeancy1,
-        #            point2 = point2, tangeancy2 = tangeancy2,
-        #            targeted_length = res[0], diameter = diameter, 
-        #            name = name )
         inv_targeted_curv = 1/targeted_curv
         
         bezier_curve1 = cls(point1=point1, tangeancy1=tangeancy1,
@@ -154,7 +134,6 @@ class JunctionWire(Wire):
         
         
         length1 = length_min
-        # while curve < targeted_curv :
         while best_curve >= inv_targeted_curv :
             length1 += length_min*0.01
             if length_max is None :
@@ -174,6 +153,7 @@ class JunctionWire(Wire):
                                     targeted_length=length1, diameter=diameter, 
                                     name=name)
                 curve = bezier_curve1.minimum_curvature(False)
+                # print(curve, inv_targeted_curv)
                 if curve < best_curve :
                     best_curve = curve
                     best_length = length1
@@ -187,43 +167,12 @@ class JunctionWire(Wire):
                    name=name)
             
         
-    # def _create_path_from_force(self, force):
-    #     point1 = self.waypoints[0]
-    #     point2 = self.waypoints[1]
-        
-    #     point1_t = point1 + force * self.tangeancy1
-    #     point2_t = point2 + force * self.tangeancy2
-        
-    #     points = [point1, point1_t, point2_t, point2]
-        
-    #     bezier_curve = vme.BezierCurve3D(degree=3,
-    #                                       control_points=points,
-    #                                       name='bezier curve 1')
-    #     return vmw.Wire3D([bezier_curve])
-
-    # def _path(self):
-        
-    #     def find_force(force):
-    #         bezier_curve = self._create_path_from_force(force)
-            
-    #         return bezier_curve.length() - self.targeted_length
-        
-    #     # print(self.diameter, self.length())
-    #     res = bisect(find_force, self.diameter, self.targeted_length)
-    #     # print(res)
-    #     bezier_curve = self._create_path_from_force(res)
-    #     l = bezier_curve.length()
-    #     n = 20
-    #     points = [bezier_curve.point_at_abscissa(i * l / n) for i in range (n+1)]
-    #     return primitives3d.OpenRoundedLineSegments3D(
-    #         points, {}, adapt_radius=True)
-    
-    def _create_path_from_forces(self, force1, force2):
+    def _create_path_from_force(self, force):
         point1 = self.waypoints[0]
         point2 = self.waypoints[1]
         
-        point1_t = point1 + force1 * self.tangeancy1
-        point2_t = point2 + force2 * self.tangeancy2
+        point1_t = point1 + force * self.tangeancy1
+        point2_t = point2 + force * self.tangeancy2
         
         points = [point1, point1_t, point2_t, point2]
         
@@ -231,28 +180,60 @@ class JunctionWire(Wire):
                                           control_points=points,
                                           name='bezier curve 1')
         return vmw.Wire3D([bezier_curve])
-    
+
     def _path(self):
         
-        def find_forces(forces):
-            bezier_curve = self._create_path_from_forces(abs(forces[0]), forces[1])
-        
-            return abs(bezier_curve.length() - self.targeted_length)
+        def find_force(force):
+            bezier_curve = self._create_path_from_force(force)
             
-        res = minimize(find_forces, (self.targeted_length, self.targeted_length),
-                            options={'eps': 1e-6})
-        # print()
-        # print(res.x, self.targeted_length)
-        # print(res.fun)
+            return bezier_curve.length() - self.targeted_length
         
-        bezier_curve = self._create_path_from_forces(abs(res.x[0]), res.x[1])
+        # print(self.diameter, self.length())
+        res = bisect(find_force, self.diameter, self.targeted_length)
+        # print(res)
+        bezier_curve = self._create_path_from_force(res)
         # l = bezier_curve.length()
         # n = 20
         # points = [bezier_curve.point_at_abscissa(i * l / n) for i in range (n+1)]
         # return primitives3d.OpenRoundedLineSegments3D(
         #     points, {}, adapt_radius=True)
-        
         return bezier_curve.primitives[0]
+    
+    # def _create_path_from_forces(self, force1, force2):
+    #     point1 = self.waypoints[0]
+    #     point2 = self.waypoints[1]
+        
+    #     point1_t = point1 + force1 * self.tangeancy1
+    #     point2_t = point2 + force2 * self.tangeancy2
+        
+    #     points = [point1, point1_t, point2_t, point2]
+        
+    #     bezier_curve = vme.BezierCurve3D(degree=3,
+    #                                       control_points=points,
+    #                                       name='bezier curve 1')
+    #     return vmw.Wire3D([bezier_curve])
+    
+    # def _path(self):
+        
+    #     def find_forces(forces):
+    #         bezier_curve = self._create_path_from_forces(abs(forces[0]), abs(forces[1]))
+        
+    #         return abs(bezier_curve.length() - self.targeted_length)
+            
+    #     res = minimize(find_forces, (self.targeted_length, self.targeted_length),
+    #                         options={'eps': 1e-6})
+    #     # print()
+    #     # print(res.x, self.targeted_length)
+    #     # print(res.fun)
+        
+    #     bezier_curve = self._create_path_from_forces(abs(res.x[0]), abs(res.x[1]))
+    #     # l = bezier_curve.length()
+    #     # n = 20
+    #     # points = [bezier_curve.point_at_abscissa(i * l / n) for i in range (n+1)]
+    #     # return primitives3d.OpenRoundedLineSegments3D(
+    #     #     points, {}, adapt_radius=True)
+        
+    #     return bezier_curve.primitives[0]
     
     def minimum_curvature(self, inv: bool = True):
         curve = self.path
