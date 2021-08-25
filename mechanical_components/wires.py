@@ -121,45 +121,59 @@ class JunctionWire(Wire):
     def curvature_radius(cls, point1: vm.Point3D, tangeancy1:vm.Vector3D,
                          point2: vm.Point3D, tangeancy2:vm.Vector3D,
                          targeted_curv:float, diameter:float, 
-                         length_min : float,  length_max : float = None,
+                         length_min : float,  length_max : float,
                          name:str=''):
         
         inv_targeted_curv = 1/targeted_curv
         
         bezier_curve1 = cls(point1=point1, tangeancy1=tangeancy1,
                             point2=point2, tangeancy2=tangeancy2,
-                            targeted_length=length_min, diameter=diameter, 
+                            # targeted_length=length_min, diameter=diameter, 
+                            targeted_length=length_max, diameter=diameter, 
                             name=name)
-        best_curve, best_length = bezier_curve1.minimum_curvature(False), length_min
+        best_curve, best_length = bezier_curve1.minimum_curvature(False), length_max#length_min
         
         
-        length1 = length_min
+        # length1 = length_min
+        length1 = length_max
         while best_curve >= inv_targeted_curv :
-            length1 += length_min*0.01
-            if length_max is None :
+            # length1 += length_min*0.01
+            length1 -= length_min*0.01
+            # if length_max is None : #default length_max = None but i think it is not a good idea : Mack, algo unstoppable
+            #     bezier_curve1 = cls(point1=point1, tangeancy1=tangeancy1,
+            #                         point2=point2, tangeancy2=tangeancy2,
+            #                         targeted_length=length1, diameter=diameter, 
+            #                         name=name)
+            #     curve = bezier_curve1.minimum_curvature(False)
+            #     if curve < best_curve :
+            #         best_curve = curve
+            #         best_length = length1
+            # else :
+                
+            # if length1 > length_max :
+            #     length1 = length_max 
+            if length1 < length_min :
+                length1 = length_min 
+            try :
                 bezier_curve1 = cls(point1=point1, tangeancy1=tangeancy1,
                                     point2=point2, tangeancy2=tangeancy2,
                                     targeted_length=length1, diameter=diameter, 
                                     name=name)
+            except :
+                break
+            
+            try :
                 curve = bezier_curve1.minimum_curvature(False)
-                if curve < best_curve :
-                    best_curve = curve
-                    best_length = length1
-            else :
-                if length1 > length_max :
-                    length1 = length_max 
-                bezier_curve1 = cls(point1=point1, tangeancy1=tangeancy1,
-                                    point2=point2, tangeancy2=tangeancy2,
-                                    targeted_length=length1, diameter=diameter, 
-                                    name=name)
-                curve = bezier_curve1.minimum_curvature(False)
-                # print(curve, inv_targeted_curv)
-                if curve < best_curve :
-                    best_curve = curve
-                    best_length = length1
-                    
-                if length1 == length_max :
-                    break
+            except :
+                break
+            
+            # print(curve, inv_targeted_curv)
+            if curve < best_curve :
+                best_curve = curve
+                best_length = length1
+                
+            if length1 == length_min :
+                break
             
         return cls(point1=point1, tangeancy1=tangeancy1,
                    point2=point2, tangeancy2=tangeancy2,
