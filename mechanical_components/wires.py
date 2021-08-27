@@ -445,10 +445,25 @@ class Wiring(DessiaObject):
         return Gr, wires_from_waypoints
     
     def ListPoints_CommonRoutes(self):
+        
+        def in_ways(ways, way_to_add):
+            res = False
+            start1, end1 = way_to_add[0], way_to_add[-1]
+            start2, end2 = way_to_add[-1], way_to_add[0]
+            for way in ways:
+                if way[0] == start1 and way[-1] == end1 :
+                    res=True
+                    break
+                if way[-1] == start2 and way[0] == end2 :
+                    res=True
+                    break
+            return res
+        
         single_wires = self.single_wires
         all_waypoints = []
         for wire in single_wires :
-            all_waypoints.append(wire.waypoints)
+            wirepoints = wire.waypoints
+            all_waypoints.append(wirepoints)
                 
         ways = []    
         subways = [[all_waypoints[0][0]]]
@@ -473,9 +488,15 @@ class Wiring(DessiaObject):
                     
                     if len(point_connected_to_sub) > 1:
                         if len(new_sub)>1:
-                            ways.append(new_sub)
+                            subway_in = in_ways(ways, new_sub)
+                            if not subway_in :
+                                ways.append(new_sub)
                         for ptcs in point_connected_to_sub:
-                            next_subways.append([continue_pipe, ptcs])
+                            # next_subways.append([continue_pipe, ptcs])
+                            next_subway = [continue_pipe, ptcs]
+                            subway_in = in_ways(ways, next_subway)
+                            if not subway_in :
+                                next_subways.append(next_subway)
                         
                         finished = True
                     else :
@@ -483,12 +504,13 @@ class Wiring(DessiaObject):
                             finished = True
                         
                         elif point_connected_to_sub[0] is None or point_connected_to_sub[0] in new_sub:
-                            ways.append(new_sub)
+                            subway_in = in_ways(ways, new_sub)
+                            if not subway_in :
+                                ways.append(new_sub)
                             
                             finished = True
                         else:
                             new_sub.extend(point_connected_to_sub)
-                            
             subways = next_subways
             if not next_subways:
                 parcour_done = True
