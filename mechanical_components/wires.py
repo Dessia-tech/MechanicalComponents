@@ -131,8 +131,10 @@ class JunctionWire(Wire):
                             # targeted_length=length_min, diameter=diameter, 
                             targeted_length=length_max, diameter=diameter, 
                             name=name)
-        best_curve, best_length = bezier_curve1.minimum_curvature(False), length_max#length_min
-        
+        try :
+            best_curve, best_length = bezier_curve1.minimum_curvature(False), length_max#length_min
+        except : 
+            return
         
         # length1 = length_min
         length1 = length_max
@@ -154,13 +156,10 @@ class JunctionWire(Wire):
             #     length1 = length_max 
             if length1 < length_min :
                 length1 = length_min 
-            try :
-                bezier_curve1 = cls(point1=point1, tangeancy1=tangeancy1,
-                                    point2=point2, tangeancy2=tangeancy2,
-                                    targeted_length=length1, diameter=diameter, 
-                                    name=name)
-            except :
-                break
+            bezier_curve1 = cls(point1=point1, tangeancy1=tangeancy1,
+                                point2=point2, tangeancy2=tangeancy2,
+                                targeted_length=length1, diameter=diameter, 
+                                name=name)
             
             try :
                 curve = bezier_curve1.minimum_curvature(False)
@@ -444,6 +443,57 @@ class Wiring(DessiaObject):
                         break
         
         return Gr, wires_from_waypoints
+    
+    def ListPoints_CommonRoutes(self):
+        single_wires = self.single_wires
+        all_waypoints = []
+        for wire in single_wires :
+            all_waypoints.append(wire.waypoints)
+                
+        ways = []    
+        subways = [[all_waypoints[0][0]]]
+        parcour_done = False
+        while not parcour_done :
+            next_subways = []
+            for sub in subways:
+                
+                new_sub = sub
+                finished = False
+                while not finished :
+                    continue_pipe = new_sub[-1]
+                    point_connected_to_sub = []
+                    for way in all_waypoints :
+                        if continue_pipe in way :
+                            try :
+                                point_connected = way[way.index(continue_pipe)+1]
+                            except IndexError:
+                                point_connected = None
+                            if point_connected not in point_connected_to_sub:
+                                point_connected_to_sub.append(point_connected)
+                    
+                    if len(point_connected_to_sub) > 1:
+                        if len(new_sub)>1:
+                            ways.append(new_sub)
+                        for ptcs in point_connected_to_sub:
+                            next_subways.append([continue_pipe, ptcs])
+                        
+                        finished = True
+                    else :
+                        if not point_connected_to_sub :
+                            finished = True
+                        
+                        elif point_connected_to_sub[0] is None or point_connected_to_sub[0] in new_sub:
+                            ways.append(new_sub)
+                            
+                            finished = True
+                        else:
+                            new_sub.extend(point_connected_to_sub)
+                            
+            subways = next_subways
+            if not next_subways:
+                parcour_done = True
+                
+        return ways
                     
     # TODO: Performance caching this and graph
     def WiresFromWaypoints(self):
