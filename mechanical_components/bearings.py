@@ -57,27 +57,27 @@ class Mounting(DessiaObject):
     _non_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, left:bool=False, right:bool=False,
-                 name:str=''):
-        
+    def __init__(self, left: bool = False, right: bool = False,
+                 name: str = ''):
+
         self.left = left
         self.right = right
         DessiaObject.__init__(self, name=name)
-        
+
     @property
     def both(self):
         if self.left and self.right:
             return True
         else:
             return False
-    
+
     @property
     def free(self):
         if not self.left and not self.right:
             return True
         else:
             return False
-        
+
 class CombinationMounting(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes = []
@@ -85,12 +85,12 @@ class CombinationMounting(DessiaObject):
     _non_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, mountings:List[Mounting],
-                 name:str=''):
-       
+    def __init__(self, mountings: List[Mounting],
+                 name: str = ''):
+
         self.mountings = mountings
         DessiaObject.__init__(self, name=name)
-        
+
 class Linkage(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes = []
@@ -98,13 +98,13 @@ class Linkage(DessiaObject):
     _non_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, ball_joint:bool=False, cylindric_joint:bool=False,
-                 name:str=''):
-        
+    def __init__(self, ball_joint: bool = False, cylindric_joint: bool = False,
+                 name: str = ''):
+
         self.ball_joint = ball_joint
         self.cylindric_joint = cylindric_joint
         DessiaObject.__init__(self, name=name)
-        
+
 class SelectionLinkage(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes = []
@@ -112,12 +112,12 @@ class SelectionLinkage(DessiaObject):
     _non_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, linkages:List[Linkage],
-                 name:str=''):
-        
+    def __init__(self, linkages: List[Linkage],
+                 name: str = ''):
+
         self.linkages = linkages
         DessiaObject.__init__(self, name=name)
-    
+
 #oil_kinematic_viscosity
 #iso_vg_1500={'data':[[47.21238870380181,922.5481847223729],
 #                     [76.41592953982855,191.5471560481642],
@@ -164,8 +164,8 @@ class SelectionLinkage(DessiaObject):
 
 
 #Ordre de rangement du coefficient de contamination de l'huile: Dpw mini/ Dpw maxi/ grade/ coeff de contamination
-dict_oil_contamination={0:{0.1:{1:1,2:0.7,3:0.55,4:0.4,5:0.2,6:0.05,7:0}},
-                        0.1:{math.inf:{1:1,2:0.85,3:0.7,4:0.5,5:0.3,6:0.05,7:0}}}
+dict_oil_contamination = {0:{0.1:{1:1, 2:0.7, 3:0.55, 4:0.4, 5:0.2, 6:0.05, 7:0}},
+                          0.1:{math.inf:{1:1, 2:0.85, 3:0.7, 4:0.5, 5:0.3, 6:0.05, 7:0}}}
 
 class TypeEvolution(DessiaObject):
     _standalone_in_db = False
@@ -173,30 +173,30 @@ class TypeEvolution(DessiaObject):
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = True
-    
-    def __init__(self, _linear:bool=True, _log:bool=False, name:str=''):
+
+    def __init__(self, _linear: bool = True, _log: bool = False, name: str = ''):
         self._linear = _linear
         self._log = _log
-        
+
         DessiaObject.__init__(self, name=name)
-        
+
 class Oil(DessiaObject):
     _standalone_in_db = True
     _non_serializable_attributes = []
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = True
-    
-    def __init__(self, oil_kinematic_viscosity:Evolution, oil_temperature:Evolution,
-                 oil_kinematic_viscosity_type:TypeEvolution, oil_temperature_type:TypeEvolution,
+
+    def __init__(self, oil_kinematic_viscosity: Evolution, oil_temperature: Evolution,
+                 oil_kinematic_viscosity_type: TypeEvolution, oil_temperature_type: TypeEvolution,
                  name=''):
         self.oil_kinematic_viscosity = oil_kinematic_viscosity
         self.oil_temperature = oil_temperature
         self.oil_kinematic_viscosity_type = oil_kinematic_viscosity_type
         self.oil_temperature_type = oil_temperature_type
-        
+
         self.A, self.B = self.kinematic_viscosity(oil_temperature, oil_kinematic_viscosity)
-        
+
         DessiaObject.__init__(self, name=name)
 
     def kinematic_viscosity(self, oil_temperature, oil_kinematic_viscosity):
@@ -218,15 +218,15 @@ class Oil(DessiaObject):
 #        return oil_kinematic_viscosity_curve['data']
 
     def oil_parameter_contamination(self, Dpw, grade):
-        for k,v in dict_oil_contamination.items():
-            if (Dpw>=k) and (Dpw<list(v.keys())[0]):
+        for k, v in dict_oil_contamination.items():
+            if (Dpw >= k) and (Dpw < list(v.keys())[0]):
                 return list(v.values())[0][grade]
 
-    
-oil_iso_vg_1500=Oil(oil_kinematic_viscosity=Evolution([47.21238870380181, 76.41592953982855, 110.70796589064605]), 
-                    oil_temperature=Evolution([922.5481847223729, 191.5471560481642, 54.90426918109079]), 
-                    oil_kinematic_viscosity_type=TypeEvolution(False, True), 
-                    oil_temperature_type=TypeEvolution(True, False))
+
+oil_iso_vg_1500 = Oil(oil_kinematic_viscosity=Evolution([47.21238870380181, 76.41592953982855, 110.70796589064605]),
+                      oil_temperature=Evolution([922.5481847223729, 191.5471560481642, 54.90426918109079]),
+                      oil_kinematic_viscosity_type=TypeEvolution(False, True),
+                      oil_temperature_type=TypeEvolution(True, False))
 
 #oil_iso_vg_1000=Oil(iso_vg_1000)
 #oil_iso_vg_680=Oil(iso_vg_680)
@@ -248,9 +248,9 @@ class Material(DessiaObject):
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = True
-    
-    def __init__(self, weibull_e:float, weibull_c:float, weibull_h:float,
-                 B1:float, mu_delta:float, c_gamma:float, name:str=''):
+
+    def __init__(self, weibull_e: float, weibull_c: float, weibull_h: float,
+                 B1: float, mu_delta: float, c_gamma: float, name: str = ''):
 
         """
         Definition of the object material for ring
@@ -265,10 +265,10 @@ class Material(DessiaObject):
         self.B1 = B1
         self.mu_delta = mu_delta
         self.c_gamma = c_gamma
-        
+
         DessiaObject.__init__(self, name=name)
 
-material_iso=Material(9/8., 31/3., 7/3., 551.13373/0.483, 0.83, 0.05)
+material_iso = Material(9/8., 31/3., 7/3., 551.13373/0.483, 0.83, 0.05)
 
 class RadialBearing(DessiaObject):
     _standalone_in_db = True
@@ -276,23 +276,27 @@ class RadialBearing(DessiaObject):
     _non_eq_attributes = ['E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _non_hash_attributes = ['E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
-    
+
     symmetric = None
     taking_loads = None
     generate_axial_load = None
     linkage = None
 
-    def __init__(self, d:float, D:float, B:float, alpha:float, i:int, Z:int, Dw:float, Cr:float=None, 
-                 C0r:float=None, material:Material=material_iso, 
-                 contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 width: float=0.02,mass:float=None, name:str=''):
+    def __init__(self, d: float, D: float, B: float, alpha: float, i: int, Z: int, Dw: float, Cr: float = None,
+                 C0r: float = None, material: Material = material_iso,
+                 contact_type_point: bool = True, contact_type_linear: bool = False, contact_type_mixed: bool = False,
+                 width: float = 0.02, mass: float = None,
+                 oil_speed_limit: float = None,
+                 grease_speed_limit: float = None,
+                 name: str = '', infos: List[str] = None, speed_infos: List[float] = None):
+
 
         self.d = d
         self.D = D
         self.B = B
         self.Dpw = (d + D)/2.
         self.i = i
-        self.width=width
+        self.width = width
         if Dw is None:
             self.Dw = min((D - d)/4, 0.85*B)
         else:
@@ -307,7 +311,20 @@ class RadialBearing(DessiaObject):
         self.contact_type_point = contact_type_point
         self.contact_type_linear = contact_type_linear
         self.contact_type_mixed = contact_type_mixed
-        
+        if not infos:
+            self.infos = []
+        else:
+            self.infos = infos
+        if not speed_infos:
+            self.speed_infos = []
+        else:
+            self.speed_infos = speed_infos
+
+
+        self.oil_speed_limit = oil_speed_limit
+        self.grease_speed_limit = grease_speed_limit
+
+
         if Cr is not None:
             self.Cr = Cr
         if C0r is not None:
@@ -329,21 +346,21 @@ class RadialBearing(DessiaObject):
 
         DessiaObject.__init__(self, name=name)
 
-#    def __eq__(self, other_bearing):
-#        if self.class_name != other_bearing.class_name:
-#            return False
-#
-#        for k,v in self.__dict__.items():
-#            if k in ['d', 'D', 'B', 'alpha', 'i', 'Z', 'Dw', 'Cr', 'C0r', 'mass']:
-#                v2 = getattr(other_bearing, k)
-#                if v != v2:
-#                    return False
-#        return True
-#
-#    def __hash__(self):
-#        h = int(self.d*4e3) + int(self.D*12e3) + int(self.B*1e3)+self.i+ int(1000*self.mass)
-#        h += len(self.__class__.__name__)
-#        return h
+    @property
+    def speed_limit(self):
+        if self.grease_speed_limit:
+            speed_limit = self.grease_speed_limit
+        else:
+            speed_limit = None
+
+        if self.oil_speed_limit:
+            if speed_limit:
+                return max(speed_limit, self.oil_speed_limit)
+            else:
+                return self.oil_speed_limit
+
+        else:
+            return speed_limit
 
     def check(self):
         if self.d <= 0.:
@@ -358,18 +375,21 @@ class RadialBearing(DessiaObject):
         Pr = 0.
         for fr, ni, ti in zip(Fr, N, t):
             C = fr**(cls.coeff_baselife)
+
             if C != 0.:
                 cycles = ni * ti * 2 * math.pi
                 Pr += cycles * C
                 total_cycles += cycles
+
         if total_cycles == 0.:
             return math.inf #TODO
         else:
             Pr = (Pr / total_cycles) ** (1/cls.coeff_baselife)
+
             L10 = (Cr/Pr)**(cls.coeff_baselife)
             return L10
 
-    def base_life_time(self,Fr, Fa, N, t, Cr):
+    def base_life_time(self, Fr, Fa, N, t, Cr, verbose=False):
         """
         Lifetime in millions of cycles for 90% fiability
 
@@ -381,23 +401,40 @@ class RadialBearing(DessiaObject):
         """
         total_cycles = 0.
         Pr = 0.
-        
+
+      
         for fr, fa, ni, ti in zip(Fr, Fa, N, t):
+
+
+
             C = self.equivalent_dynamic_load(fr, fa)**(self.coeff_baselife)
-            
+
+           
+            if ti == 0:
+                ti = 1
             if C != 0.:
                 cycles = ni * ti * 2 * math.pi
+
                 Pr += cycles * C
                 total_cycles += cycles
-      
+
+
+       
         if total_cycles != 0:
+
             Pr = (Pr / total_cycles) ** (1/self.coeff_baselife)
+
             L10 = (Cr/Pr)**(self.coeff_baselife)
+            if verbose:
+                print(Cr)
+                print(Pr)
+
+
             return L10
         else:
             raise BearingL10Error()
 
-    def adjusted_life_time(self, Fr, Fa, N, t, T, Cr=None, C0r=None, S=0.9):
+    def adjusted_life_time(self, Fr, Fa, N, t, T=None, Cr=None, C0r=None, S=0.9):
         """
         Adjusted Lifetime in millions of cycles for a 100* S % fiability
 
@@ -418,38 +455,38 @@ class RadialBearing(DessiaObject):
         total_cycles = 0.
         nci_Lpi = 0.
 
-        for fr, fa, n, ti, Ti  in zip(Fr, Fa, N, t, T):
+        for fr, fa, n, ti   in zip(Fr, Fa, N, t, ):
             if (((fr != 0.) or (fa != 0.)) and (n > 0.)):
                 cycles = n * ti * 2 * math.pi
                 total_cycles += cycles
 
                 a1 = ((1-self.material.c_gamma)
-                     * (math.log(1/S)/math.log(100/90.))**(1/self.material.weibull_e)
-                     + self.material.c_gamma)
+                      * (math.log(1/S)/math.log(100/90.))**(1/self.material.weibull_e)
+                      + self.material.c_gamma)
                 L10 = self.base_life_time([fr], [fa], [n], [ti], self.Cr)
-                Pr = self.equivalent_dynamic_load(fr, fa)
+                # Pr = self.equivalent_dynamic_load(fr, fa)
                 # viscosité cinématique de référence
-                if n < (1000*2*math.pi/60.):
-                    nu1 = 45000*(n*60/(2*math.pi))**(-0.83)*(self.Dpw*1e3)**(-0.5)
-                else:
-                    nu1 = 4500*(n*60/(2*math.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
+                # if n < (1000*2*math.pi/60.):
+                #     nu1 = 45000*(n*60/(2*math.pi))**(-0.83)*(self.Dpw*1e3)**(-0.5)
+                # else:
+                #     nu1 = 4500*(n*60/(2*math.pi))**(-0.5)*(self.Dpw*1e3)**(-0.5)
 
 #                coeff_oil = self.oil.oil_kinematic_viscosity_curve
-                nu = 10**(10**(self.oil.A*math.log10(Ti)+self.oil.B))-0.6
-                kappa = nu/nu1
-                # Oil Contamination
-                ec = self.oil.OilParameterContamination(self.Dpw,3)
-                # Wear limit load
-                if self.Dpw<0.1:
-                    Cu = self.C0r/8.2
-                else:
-                    Cu = self.C0r/8.2*(100/(self.Dpw*1e3))**0.3
+                # nu = 10**(10**(self.oil.A*math.log10(Ti)+self.oil.B))-0.6
+                # kappa = nu/nu1
+                # # Oil Contamination
+                # ec = self.oil.OilParameterContamination(self.Dpw,3)
+                # # Wear limit load
+                # if self.Dpw<0.1:
+                #     Cu = self.C0r/8.2
+                # else:
+                #     Cu = self.C0r/8.2*(100/(self.Dpw*1e3))**0.3
 
-                kappa = min(kappa, 4)
-                a_iso = self.a_iso(kappa, ec, Cu, Pr)
-                a_iso = min(50., a_iso)
+                # kappa = min(kappa, 4)
+                # a_iso = self.a_iso(kappa, ec, Cu, Pr)
+                # a_iso = min(50., a_iso)
 
-                Lpi = a1*a_iso*L10 # Corrected lifetime
+                Lpi = a1*L10 # Corrected lifetime
                 nci_Lpi += cycles/Lpi
         if nci_Lpi > 0:
             return total_cycles / nci_Lpi
@@ -472,7 +509,7 @@ class RadialBearing(DessiaObject):
         # TODO: enhance this but without querying CAD volumes!
         return 7800 * math.pi*self.B*(self.D-self.d) * (self.d+self.D)
 
-    def volmdlr_primitives(self, center = vm.O3D, axis = vm.X3D):
+    def volmdlr_primitives(self, center=vm.O3D, axis=vm.X3D):
         # TODO: mutualization of this in parent class?
         axis.normalize()
 
@@ -480,24 +517,24 @@ class RadialBearing(DessiaObject):
         z = axis.cross(y)
 
         #Internal Ring
-        cbi1,bi1 = self.internal_ring_contour()
+        cbi1, bi1 = self.internal_ring_contour()
         if cbi1:
-            IRC=vm.wires.Contour2D([cbi1]+bi1.primitives)
+            IRC = vm.wires.Contour2D([cbi1]+bi1.primitives)
         else:
-            IRC=vm.wires.Contour2D(bi1.primitives)
+            IRC = vm.wires.Contour2D(bi1.primitives)
         irc = primitives3d.RevolvedProfile(center, axis, z, IRC, center,
                                            axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
-        
-        cbe1,be1=self.external_ring_contour()
+
+        cbe1, be1 = self.external_ring_contour()
         if cbe1:
-            ERC=vm.wires.Contour2D([cbe1]+be1.primitives)
+            ERC = vm.wires.Contour2D([cbe1]+be1.primitives)
         else:
-            ERC=vm.wires.Contour2D(be1.primitives)
-        erc=primitives3d.RevolvedProfile(center, axis, z, ERC, center,
-                                         axis, angle=2*math.pi,name='External Ring')
+            ERC = vm.wires.Contour2D(be1.primitives)
+        erc = primitives3d.RevolvedProfile(center, axis, z, ERC, center,
+                                           axis, angle=2*math.pi, name='External Ring')
         #roller
-        ROL=self.rolling_contour_cad()
+        ROL = self.rolling_contour_cad()
 
         # radius=self.F/2.+self.slack+self.Dw/2.
         # rollers=[]
@@ -505,13 +542,13 @@ class RadialBearing(DessiaObject):
 
         # for zi in range(int(self.Z)):
         #     center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
-     
+
         #     axis_2=vm.Vector3D(1,0,0)
         #     rollers.append(primitives3d.RevolvedProfile(center_roller, axis_2, z, ROL,
         #                                             center_roller, axis_2,
         #                                             angle=2*math.pi,name='Roller {}'.format(zi+1)))
 
-        volumes = [irc, erc] 
+        volumes = [irc, erc]
         return volumes
 
     def FreeCADExport(self, fcstd_filepath, python_path='python',
@@ -529,13 +566,13 @@ class RadialBearing(DessiaObject):
         quote_x = 1.1*self.B/2.
         line1 = vm.edges.LineSegment2D(vm.Point2D(0, self.d/2.), vm.Point2D(quote_x + delta_quote, self.d/2.))
         line1.translation(vm.Vector2D(pos, 0))
-        li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True)]
+        li_data = [line1.plot_data(color=(0, 0, 0), stroke_width=0.1, dash=True)]
         line2 = vm.edges.LineSegment2D(vm.Point2D(0, -self.d/2.), vm.Point2D(quote_x + delta_quote, -self.d/2.))
         line2.translation(vm.Vector2D(pos, 0))
-        li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True))
+        li_data.append(line2.plot_data(color=(0, 0, 0), stroke_width=0.1, dash=True))
         line3 = vm.edges.LineSegment2D(vm.Point2D(quote_x, self.d/2.), vm.Point2D(quote_x, -self.d/2.))
         line3.translation(vm.Vector2D(pos, 0))
-        li_data.append(line3.plot_data(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
+        li_data.append(line3.plot_data(color=(0, 0, 0), stroke_width=0.1, dash=False, marker='triangle_quote'))
 
         pt_data = {}
         pt_data['fill'] = None
@@ -552,13 +589,13 @@ class RadialBearing(DessiaObject):
         quote_x = -1.3*self.B/2.
         line1 = vm.edgesLineSegment2D(vm.Point2D(0, self.D/2.), vm.Point2D(quote_x - delta_quote, self.D/2.))
         line1.translation(vm.Vector2D(pos, 0))
-        li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True)]
+        li_data = [line1.plot_data(color=(0, 0, 0), stroke_width=0.1, dash=True)]
         line2 = vm.edges.LineSegment2D(vm.Point2D(0, -self.D/2.), vm.Point2D(quote_x - delta_quote, -self.D/2.))
         line2.translation(vm.Vector2D(pos, 0))
-        li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True))
+        li_data.append(line2.plot_data(color=(0, 0, 0), stroke_width=0.1, dash=True))
         line3 = vm.edges.LineSegment2D(vm.Point2D(quote_x, self.D/2.), vm.Point2D(quote_x, -self.D/2.))
         line3.translation(vm.Vector2D(pos, 0))
-        li_data.append(line3.plot_data(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
+        li_data.append(line3.plot_data(color=(0, 0, 0), stroke_width=0.1, dash=False, marker='triangle_quote'))
 
         pt_data = {}
         pt_data['fill'] = None
@@ -575,13 +612,13 @@ class RadialBearing(DessiaObject):
         quote_x = 1.1*self.B/2.
         line1 = vm.edges.LineSegment2D(vm.Point2D(-self.B/2., -self.D/2.), vm.Point2D(-self.B/2., -self.D/2. - quote_x - delta_quote))
         line1.translation(vm.Vector2D(pos, 0))
-        li_data = [line1.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True)]
+        li_data = [line1.plot_data(color=(0, 0, 0), stroke_width=0.1, dash=True)]
         line2 = vm.edges.LineSegment2D(vm.Point2D(self.B/2., -self.D/2.), vm.Point2D(self.B/2., -self.D/2. - quote_x - delta_quote))
         line2.translation(vm.Vector2D(pos, 0))
-        li_data.append(line2.plot_data(color = (0,0,0), stroke_width = 0.1, dash = True))
+        li_data.append(line2.plot_data(color=(0, 0, 0), stroke_width=0.1, dash=True))
         line3 = vm.edges.LineSegment2D(vm.Point2D(self.B/2., -self.D/2. - quote_x), vm.Point2D(-self.B/2., -self.D/2. - quote_x))
         line3.translation(vm.Vector2D(pos, 0))
-        li_data.append(line3.plot_data(color = (0,0,0), stroke_width = 0.1, dash = False, marker = 'triangle_quote'))
+        li_data.append(line3.plot_data(color=(0, 0, 0), stroke_width=0.1, dash=False, marker='triangle_quote'))
 
         pt_data = {}
         pt_data['fill'] = None
@@ -596,22 +633,29 @@ class RadialBearing(DessiaObject):
         plot_data.append(pt_data)
         return plot_data
 
-    def plot(self, direction=1, a=None, typ=None):
-        bg = self.plot_contour(direction)
-        if a is None:
-            f, a = bg.MPLPlot(color = 'k')
-        else:
-            bg.MPLPlot(a,color = '-k')
+    # def plot(self, direction=1, a=None, typ=None):
+    #     bg = self.plot_contour(direction)
+    #     if a is None:
+    #         f, a = bg.MPLPlot(color = 'k')
+    #     else:
+    #         bg.MPLPlot(a,color = '-k')
 
-        if typ == 'Graph':
-            graph = self.PlotGraph()
-            graph.MPLPlot(a, 'b', True)
+    #     if typ == 'Graph':
+    #         graph = self.PlotGraph()
+    #         graph.MPLPlot(a, 'b', True)
 
-        elif typ == 'Load':
-            self.PlotLoad(a)
+    #     elif typ == 'Load':
+    #         self.PlotLoad(a)
 
     def to_shaft(self):
         return shafts_assembly.Shaft(self.plot_contour(), name=self.name)
+
+    def to_markdown(self):
+        infos = ''
+        for info in self.infos:
+            if info:
+                infos += info
+        return info
 
 
 
@@ -621,7 +665,7 @@ class RadialBallBearing(RadialBearing):
     _non_eq_attributes = ['h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _non_hash_attributes = ['h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
-    
+
     symmetric = True
     taking_loads = 'both'
     generate_axial_load = False
@@ -631,26 +675,34 @@ class RadialBallBearing(RadialBearing):
     cost_coefficient = 0.2
     cost_constant = 1
 
-    def __init__(self, d:float, D:float, B:float, i:int=1, Z:int=None, Dw:float=None, 
-                 Cr:float=None, C0r:float=None,
-                 material:Material=material_iso, 
-                 contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02, name:str=''):
+    def __init__(self, d: float, D: float, B: float, i: int = 1, Z: int = None, Dw: float = None,
+                 Cr: float = None, C0r: float = None,
+                 material: Material = material_iso,
+                 contact_type_point: bool = True, contact_type_linear: bool = False, contact_type_mixed: bool = False,
+                 mass: float = None, width: float = 0.02,
+                 oil_speed_limit: float = None,
+                 grease_speed_limit: float = None,
+                 name: str = '', infos: List[str] = None, speed_infos: List[float] = None):
+
         RadialBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                               mass=mass,width=width,
-                               name=name)
+                               mass=mass, width=width,
+                               oil_speed_limit=oil_speed_limit,
+                               grease_speed_limit=grease_speed_limit,
+                               name=name, infos=infos, speed_infos=speed_infos)
+
 
         # estimation for the graph 2D description
         h1 = self.Dw/2. - (self.E - self.D1)/2.
         self.h = self.B/2. - self.Dw/2.*math.sin(math.acos(h1/(self.Dw/2.))) - 1e-4
 
+
     def equivalent_static_load(self, fr, fa=None):
         #Charge radiale statique équivalente
         X0 = 0.6
         Y0 = 0.5
-        P0r = max(fr,X0*fr+Y0*fa)
+        P0r = max(fr, X0*fr+Y0*fa)
         return P0r
 
     @classmethod
@@ -659,9 +711,12 @@ class RadialBallBearing(RadialBearing):
         return Pr
 
     def equivalent_dynamic_load(self, fr, fa=0):
-        alphap = fsolve((lambda alphap:math.cos(5/180.*math.pi)/math.cos(alphap) \
-                        -(1.+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2) \
-                        *math.sin(alphap)))**(2/3.))),self.alpha + 1.)[0]
+
+        alphap = fsolve((lambda alphap: math.cos(5/180.*math.pi)/math.cos(alphap) \
+                        -(1.+0.012534*(abs(fa)/(self.i*self.Z*((self.Dw*1e3)**2) \
+                        *math.sin(alphap)))**(2/3.))), self.alpha + 1.)[0]
+
+
 #        alphap = 0.001
         ksi = 1.05
         nu = 1-math.sin(5/180.*math.pi)/2.5
@@ -682,17 +737,17 @@ class RadialBallBearing(RadialBearing):
                 Pr = X3*fr+Y3*fa
             else:
                 Pr = X2*fr+Y2*fa
-       
+
         return Pr
 
     def a_iso(self, kappa, ec, Cu, Pr):
         if kappa < 0.4:
-            f = lambda coeff:(1-(2.5671-2.2649/(kappa**0.054381))**(0.83)*((coeff)**(1/3.)))
+            f = lambda coeff: (1-(2.5671-2.2649/(kappa**0.054381))**(0.83)*((coeff)**(1/3.)))
         elif kappa < 1:
-            f = lambda coeff:(1-(2.5671-1.9987/(kappa**0.019087))**(0.83)*((coeff)**(1/3.)))
+            f = lambda coeff: (1-(2.5671-1.9987/(kappa**0.019087))**(0.83)*((coeff)**(1/3.)))
         else:
-            f = lambda coeff:(1-(2.5671-1.9987/(kappa**0.071739))**(0.83)*((coeff)**(1/3.)))
-        coeff0 = fsolve(f,ec*Cu/Pr)[0]
+            f = lambda coeff: (1-(2.5671-1.9987/(kappa**0.071739))**(0.83)*((coeff)**(1/3.)))
+        coeff0 = fsolve(f, ec*Cu/Pr)[0]
         coeff = min(coeff0, ec*Cu/Pr)
         a_iso = 0.1*(f(coeff)**(-9.3))
         return a_iso
@@ -700,41 +755,43 @@ class RadialBallBearing(RadialBearing):
     def internal_ring_contour(self):
 
         pbi2 = vm.Point2D(-self.B/2., self.d1/2.)
-        pbi1 = pbi2.translation(vm.Vector2D(self.h, 0))
+        pbi2v = pbi2.to_vector()
+        pbi1v = pbi2v.translation(vm.Vector2D(self.h, 0))
+        pbi1 = pbi1v.to_point()
         pbi3 = vm.Point2D(-self.B/2., self.d/2.)
         pbi4 = vm.Point2D(self.B/2., self.d/2.)
         pbi5 = vm.Point2D(self.B/2., self.d1/2.)
-        pbi6 = pbi5.translation(vm.Vector2D(-self.h, 0))
+        pbi6 = pbi5.to_vector().translation(vm.Vector2D(-self.h, 0)).to_point()
         bi1 = primitives2d.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1],
-                                                 {1: self.radius,
-                                                  2: self.radius,
-                                                  3: self.radius,
-                                                  4: self.radius},
-                                                  adapt_radius=True)
+                                                       {1: self.radius,
+                                                        2: self.radius,
+                                                        3: self.radius,
+                                                        4: self.radius},
+                                                       adapt_radius=True)
         cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi6)
-        
-        return cbi1,bi1
+
+        return cbi1, bi1
 
     def external_ring_contour(self):
 
         pbe2 = vm.Point2D(-self.B/2., self.D1/2.)
-        pbe1 = pbe2.translation(vm.Vector2D(self.h, 0))
+        pbe1 = pbe2.to_vector().translation(vm.Vector2D(self.h, 0)).to_point()
         pbe3 = vm.Point2D(-self.B/2., self.D/2.)
         pbe4 = vm.Point2D(self.B/2., self.D/2.)
         pbe5 = vm.Point2D(self.B/2., self.D1/2.)
-        pbe6 = pbe5.translation(vm.Vector2D(-self.h, 0))
+        pbe6 = pbe5.to_vector().translation(vm.Vector2D(-self.h, 0)).to_point()
 
 
         be1 = primitives2d.OpenedRoundedLineSegments2D([pbe6, pbe5, pbe4, pbe3, pbe2, pbe1],
-                                                 {1: self.radius,
-                                                  2: self.radius,
-                                                  3: self.radius,
-                                                  4: self.radius},
-                                                  adapt_radius=True)
+                                                       {1: self.radius,
+                                                        2: self.radius,
+                                                        3: self.radius,
+                                                        4: self.radius},
+                                                       adapt_radius=True)
         cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.E/2), pbe6)
-        
-        
-        return cbe1,be1
+
+
+        return cbe1, be1
 
     def rolling_contour(self):
 
@@ -747,7 +804,7 @@ class RadialBallBearing(RadialBearing):
         p1 = vm.Point2D(0, self.Dw/2.)
         p2 = vm.Point2D(self.Dw/2., 0)
         a1 = vm.edges.Arc2D(p0, p1, p2)
-        l1 = vm.edges.LineSegment2D(p2,p0)
+        l1 = vm.edges.LineSegment2D(p2, p0)
 #        c1 = vm.Circle2D(p0, self.Dw/2.)
         return a1
 
@@ -764,31 +821,45 @@ class RadialBallBearing(RadialBearing):
         bg = vm.wires.Contour2D([bearing_sup, bearing_inf])
         return bg
 
-    def plot_data(self, pos=0, stroke_width=1):
+    def plot_data(self, pos=0, pos_y=0, stroke_width=1):
         plot_datas = []
 
 
-        be_arc2d= self.external_ring_contour()[0]
-        be_arc2d1=be_arc2d.translation((pos, 0), True)
+        be_arc2d, be_arc2d_2 = self.external_ring_contour()
+        be_arc2d1 = be_arc2d.translation((pos, pos_y), True)
+        be_arc2d1_2 = be_arc2d_2.translation((pos, pos_y), True)
         plot_datas.append(be_arc2d1.plot_data())
-        bi_arc2d = self.internal_ring_contour()[0]
-        bi_arc2d1 = bi_arc2d.translation((pos, 0), True)
+        plot_datas.extend(be_arc2d1_2.plot_data())
+        bi_arc2d, bi_arc2d_2 = self.internal_ring_contour()
+
+        bi_arc2d1 = bi_arc2d.translation((pos, pos_y), True)
+        bi_arc2d1_2 = bi_arc2d_2.translation((pos, pos_y), True)
         plot_datas.append(bi_arc2d1.plot_data())
+        plot_datas.extend(bi_arc2d1_2.plot_data())
         ball_sup = self.rolling_contour()
-        ball_sup1 = ball_sup.translation((pos, self.Dpw/2.), True)
+        ball_sup1 = ball_sup.translation((pos, self.Dpw/2.+pos_y), True)
         plot_datas.append(ball_sup1.plot_data())
 
         be_arc2d_inf = be_arc2d.rotation(vm.Point2D(0, 0), math.pi, True)
-        be_arc2d_inf1 = be_arc2d_inf.translation(vm.Vector2D(pos, 0), True)
+        be_arc2d_inf1 = be_arc2d_inf.translation(vm.Vector2D(pos, pos_y), True)
         plot_datas.append(be_arc2d_inf1.plot_data())
-        
+        be_arc2d_inf_2 = be_arc2d_2.rotation(vm.Point2D(0, 0), math.pi, True)
+        be_arc2d_inf1_2 = be_arc2d_inf_2.translation(vm.Vector2D(pos, pos_y), True)
+        plot_datas.extend(be_arc2d_inf1_2.plot_data())
+
         bi_arc2d_inf = bi_arc2d.rotation(vm.Point2D(0, 0), math.pi, True)
-        bi_arc2d_inf1 = bi_arc2d_inf.translation(vm.Vector2D(pos, 0), True)
+        bi_arc2d_inf1 = bi_arc2d_inf.translation(vm.Vector2D(pos, pos_y), True)
         plot_datas.append(bi_arc2d_inf1.plot_data())
-        ball_inf1 = ball_sup1.rotation(vm.Point2D(pos, 0), math.pi, True)
+
+        bi_arc2d_inf_2 = bi_arc2d_2.rotation(vm.Point2D(0, 0), math.pi, True)
+        bi_arc2d_inf1_2 = bi_arc2d_inf_2.translation(vm.Vector2D(pos, pos_y), True)
+        plot_datas.extend(bi_arc2d_inf1_2.plot_data())
+
+
+        ball_inf1 = ball_sup1.rotation(vm.Point2D(pos, pos_y), math.pi, True)
         plot_datas.append(ball_inf1.plot_data())
 
-        return plot_data.PrimitiveGroup(plot_datas)
+        return [plot_data.PrimitiveGroup(plot_datas)]
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -841,7 +912,7 @@ class AngularBallBearing(RadialBearing):
     _non_eq_attributes = ['h1', 'h2', 'D2', 'd2', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _non_hash_attributes = ['h1', 'h2', 'D2', 'd2', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
-    
+
     symmetric = False
     taking_loads = 'right'
     generate_axial_load = True
@@ -851,15 +922,24 @@ class AngularBallBearing(RadialBearing):
     cost_coefficient = 0.4
     cost_constant = 1.5
 
-    def __init__(self, d:float, D:float, B:float, alpha:float, i:int=1, Z:int=None, 
-                 Dw:float=None, Cr:float=None, C0r:float=None ,
-                 material:Material=material_iso, 
-                 contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02, name:str=''):
+    def __init__(self, d: float, D: float, B: float, alpha: float, i: int = 1, Z: int = None,
+                 Dw: float = None, Cr: float = None, C0r: float = None,
+                 material: Material = material_iso,
+                 contact_type_point: bool = True, contact_type_linear: bool = False,
+                 contact_type_mixed: bool = False,
+                 mass: float = None,
+                 width: float = None,
+                 oil_speed_limit: float = None,
+                 grease_speed_limit: float = None,
+                 name: str = '', infos: List[str] = None, speed_infos: List[float] = None):
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw, Cr=Cr,
                                C0r=C0r, material=material,
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                               mass=mass, width=width, name=name)
+                               mass=mass, width=width,
+                               oil_speed_limit=oil_speed_limit,
+                               grease_speed_limit=grease_speed_limit,
+                               name=name, infos=infos, speed_infos=speed_infos)
+
 
 
         # estimation for the graph 2D description
@@ -876,15 +956,15 @@ class AngularBallBearing(RadialBearing):
             X0 = 0.5
             evol_Y0 = [0.52, 0.5, 0.46, 0.42, 0.38, 0.33, 0.29, 0.26, 0.22]
             evol_alpha = npy.array([5, 10, 15, 20, 25, 30, 35, 40, 45])/180*math.pi
-            f = interpolate.interp1d(list(evol_alpha),evol_Y0, fill_value='extrapolate')
+            f = interpolate.interp1d(list(evol_alpha), evol_Y0, fill_value='extrapolate')
             Y0 = float(f(self.alpha))
         elif self.i == 2:
             X0 = 1
             evol_Y0 = [1.04, 1, 0.92, 0.84, 0.76, 0.66, 0.58, 0.52, 0.44]
             evol_alpha = npy.array([5, 10, 15, 20, 25, 30, 35, 40, 45])/180*math.pi
-            f = interpolate.interp1d(list(evol_alpha),evol_Y0, fill_value='extrapolate')
+            f = interpolate.interp1d(list(evol_alpha), evol_Y0, fill_value='extrapolate')
             Y0 = float(f(self.alpha))
-        P0r = max(fr,X0*fr+Y0*fa)
+        P0r = max(fr, X0*fr+Y0*fa)
         return P0r
 
     @classmethod
@@ -892,11 +972,14 @@ class AngularBallBearing(RadialBearing):
         Pr = fr
         return Pr
 
-    def equivalent_dynamic_load(self, fr, fa = 0):
-       
-        alphap = fsolve((lambda alphap:math.cos(self.alpha)/math.cos(alphap) \
-                    -(1+0.012534*(fa/(self.i*self.Z*((self.Dw*1e3)**2)*math.sin(alphap)))**(2/3.))),self.alpha + 1)[0]
-    
+
+    def equivalent_dynamic_load(self, fr, fa=0):
+
+
+        alphap = fsolve((lambda alphap: math.cos(self.alpha)/math.cos(alphap) \
+                    -(1+0.012534*(abs(fa)/(self.i*self.Z*((self.Dw*1e3)**2)*math.sin(alphap)))**(2/3.))), self.alpha + 1)[0]
+
+
         if self.alpha <= 5/180.*math.pi:
             if self.i == 1:
                 ksi = 1.05
@@ -918,7 +1001,7 @@ class AngularBallBearing(RadialBearing):
             Y1 = 0.4/nu*1/math.tan(alphap)
         else:
             alpha1 = math.acos(math.cos(self.alpha)*0.9724)
-            Y1 = fsolve((lambda Y1:Y1-(0.4/math.tan(alpha1))/(1-(1/3.)*math.sin(alpha1))),1)[0]
+            Y1 = fsolve((lambda Y1: Y1-(0.4/math.tan(alpha1))/(1-(1/3.)*math.sin(alpha1))), 1)[0]
         if self.alpha > 15/180.*math.pi:
             e = (1-X1)/Y1
             Y3 = 0.625/e
@@ -926,27 +1009,34 @@ class AngularBallBearing(RadialBearing):
             Y3 = 0.625/ksi*(1/math.tan(alphap))
         X2 = 1.625*X1
         Y2 = 1.625*Y1
+
+
         if self.i == 1:
-            if fa <= e*fr:
+            if abs(fa) <= e*fr:
+
                 Pr = fr
             else:
-                Pr = X1*fr+Y1*fa
+
+
+                Pr = X1*fr+Y1*abs(fa)
         elif self.i == 2:
-            if fa <= e*fr:
-                Pr = X3*fr+Y3*fa
+            if abs(fa) <= e*fr:
+
+                Pr = X3*fr+Y3*abs(fa)
             else:
-                Pr = X2*fr+Y2*fa
-    
+
+                Pr = X2*fr+Y2*abs(fa)
+
         return Pr
 
     def a_iso(self, kappa, ec, Cu, Pr):
         if kappa < 0.4:
-            f = lambda coeff:(1-(2.5671-2.2649/(kappa**0.054381))**(0.83)*((coeff)**(1/3.)))
+            f = lambda coeff: (1-(2.5671-2.2649/(kappa**0.054381))**(0.83)*((coeff)**(1/3.)))
         elif kappa < 1:
-            f = lambda coeff:(1-(2.5671-1.9987/(kappa**0.019087))**(0.83)*((coeff)**(1/3.)))
+            f = lambda coeff: (1-(2.5671-1.9987/(kappa**0.019087))**(0.83)*((coeff)**(1/3.)))
         else:
-            f = lambda coeff:(1-(2.5671-1.9987/(kappa**0.071739))**(0.83)*((coeff)**(1/3.)))
-        coeff0 = fsolve(f,ec*Cu/Pr)[0]
+            f = lambda coeff: (1-(2.5671-1.9987/(kappa**0.071739))**(0.83)*((coeff)**(1/3.)))
+        coeff0 = fsolve(f, ec*Cu/Pr)[0]
         coeff = min(coeff0, ec*Cu/Pr)
         a_iso = 0.1*(f(coeff)**(-9.3))
         return a_iso
@@ -958,28 +1048,29 @@ class AngularBallBearing(RadialBearing):
         pbi3 = vm.Point2D(direction*self.B/2., sign_V*self.d/2.)
         pbi4 = vm.Point2D(-direction*self.B/2., sign_V*self.d/2.)
         pbi5 = vm.Point2D(-direction*self.B/2., sign_V*self.d1/2.)
-        pbi6 = pbi5.translation(vm.Vector2D(direction*self.h1, 0))
-        bi1 = primitives2d.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1], {1: self.radius,
-                                             2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
+        pbi6 = pbi5.to_vector().translation(vm.Vector2D(direction*self.h1, 0)).to_point()
+        bi1 = primitives2d.OpenedRoundedLineSegments2D([pbi6, pbi5, pbi4, pbi3, pbi2, pbi1],
+                                                       {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius},
+                                                       adapt_radius=True)
 
         cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, sign_V*self.F/2), pbi6)
 
-        return cbi1,bi1
+        return cbi1, bi1
 
     def external_ring_contour(self, direction=1, sign_V=1):
 
         pbe2 = vm.Point2D(direction*self.B/2., sign_V*self.D1/2.)
-        pbe1 = pbe2.translation(vm.Vector2D(-direction*self.h1, 0))
+        pbe1 = pbe2.to_vector().translation(vm.Vector2D(-direction*self.h1, 0)).to_point()
         pbe3 = vm.Point2D(direction*self.B/2., sign_V*self.D/2.)
         pbe4 = vm.Point2D(-direction*self.B/2., sign_V*self.D/2.)
         pbe5 = vm.Point2D(-direction*self.B/2., sign_V*self.D2/2.)
         pbe6 = vm.Point2D(-direction*(self.B/2. - self.h2), sign_V*(self.Dpw/2. + self.Dw/2.*0.95))
-        be1 = primitives2d.OpenedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], 
-                                                       {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius}, 
-                                                       adapt_radius = True)
+        be1 = primitives2d.OpenedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
+                                                       {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius},
+                                                       adapt_radius=True)
 
         cbe1 = vm.edges.Arc2D(pbe6, vm.Point2D(0, sign_V*self.E/2), pbe1)
-        return cbe1,be1
+        return cbe1, be1
 
 
     def rolling_contour(self):
@@ -994,47 +1085,104 @@ class AngularBallBearing(RadialBearing):
         p1 = vm.Point2D(0, self.Dw/2.)
         p2 = vm.Point2D(self.Dw/2., 0)
         a1 = vm.edges.Arc2D(p0, p1, p2)
-        l1 = vm.edges.LineSegment2D(p2,p0)
+        l1 = vm.edges.LineSegment2D(p2, p0)
 #        c1 = vm.Circle2D(p0, self.Dw/2.)
         return vm.wires.Contour2D([a1, l1])
 
     def plot_contour(self, direction=1):
 
-        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
-        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
-        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
-        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
+        be_sup = self.external_ring_contour(direction=direction, sign_V=1)
+        be_inf = self.external_ring_contour(direction=direction, sign_V=-1)
+        bi_sup = self.internal_ring_contour(direction=direction, sign_V=1)
+        bi_inf = self.internal_ring_contour(direction=direction, sign_V=-1)
         ball = self.rolling_contour()
         ball_sup = ball.translation(vm.Vector2D(0, self.Dpw/2.), True)
         ball_inf = ball.translation(vm.Vector2D(0, -self.Dpw/2.), True)
         bg = vm.wires.Contour2D([be_sup, bi_sup, ball_sup, be_inf, bi_inf, ball_inf])
         return bg
 
-    def plot_data(self, pos=0, quote=True, constructor=True, direction=1):
+    def plot_data(self, pos=0, pos_y=0, quote=True, constructor=True, direction=1):
 
         plot_datas = []
-        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)[0]
-        be_sup1 = be_sup.translation((pos, 0), True)
+        be_sup, be_sup_2 = self.external_ring_contour(direction=direction, sign_V=1)
+        be_sup1 = be_sup.translation((pos, pos_y), True)
         plot_datas.append(be_sup1.plot_data())
-        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)[0]
-        bi_sup1 = bi_sup.translation((pos, 0), True)
+        be_sup1_2 = be_sup_2.translation((pos, pos_y), True)
+        plot_datas.extend(be_sup1_2.plot_data())
+
+
+        bi_sup, bi_sup_2 = self.internal_ring_contour(direction=direction, sign_V=1)
+        bi_sup1 = bi_sup.translation((pos, pos_y), True)
         plot_datas.append(bi_sup1.plot_data())
+        bi_sup1_2 = bi_sup_2.translation((pos, pos_y), True)
+        plot_datas.extend(bi_sup1_2.plot_data())
+
         ball = self.rolling_contour()
         ball_sup = ball.translation((0, self.Dpw/2.), True)
-        ball_sup1 = ball_sup.translation((pos, 0), True)
+        ball_sup1 = ball_sup.translation((pos, pos_y), True)
         plot_datas.append(ball_sup1.plot_data())
 
-        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)[0]
-        be_inf1 = be_inf.translation((pos, 0), True)
+        be_inf, be_inf_2 = self.external_ring_contour(direction=direction, sign_V=-1)
+        be_inf1 = be_inf.translation((pos, pos_y), True)
         plot_datas.append(be_inf1.plot_data())
-        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)[0]
-        bi_inf1 = bi_inf.translation((pos, 0), True)
+
+        be_inf1_2 = be_inf_2.translation((pos, pos_y), True)
+        plot_datas.extend(be_inf1_2.plot_data())
+
+        bi_inf, bi_inf_2 = self.internal_ring_contour(direction=direction, sign_V=-1)
+        bi_inf1 = bi_inf.translation((pos, pos_y), True)
         plot_datas.append(bi_inf1.plot_data())
+
+        bi_inf1_2 = bi_inf_2.translation((pos, pos_y), True)
+        plot_datas.extend(bi_inf1_2.plot_data())
+
         ball_inf = ball.translation((0, -self.Dpw/2.), True)
-        ball_inf1 = ball_inf.translation((pos, 0), True)
+        ball_inf1 = ball_inf.translation((pos, pos_y), True)
         plot_datas.append(ball_inf1.plot_data())
 
-        return plot_data.PrimitiveGroup(plot_datas)
+        return [plot_data.PrimitiveGroup(plot_datas)]
+
+    def volmdlr_primitives(self, center=vm.O3D, axis=vm.X3D, direction=1):
+        # TODO: mutualization of this in parent class?
+        axis.normalize()
+
+        y = axis.random_unit_normal_vector()
+        z = axis.cross(y)
+
+        #Internal Ring
+        cbi1, bi1 = self.internal_ring_contour(direction=direction)
+        if cbi1:
+            IRC = vm.wires.Contour2D([cbi1]+bi1.primitives)
+        else:
+            IRC = vm.wires.Contour2D(bi1.primitives)
+        irc = primitives3d.RevolvedProfile(center, axis, z, IRC, center,
+                                           axis, angle=2*math.pi, name='Internal Ring')
+        #External Ring
+
+        cbe1, be1 = self.external_ring_contour(direction=direction)
+        if cbe1:
+            ERC = vm.wires.Contour2D([cbe1]+be1.primitives)
+        else:
+            ERC = vm.wires.Contour2D(be1.primitives)
+        erc = primitives3d.RevolvedProfile(center, axis, z, ERC, center,
+                                           axis, angle=2*math.pi, name='External Ring')
+        #roller
+        ROL = self.rolling_contour_cad()
+
+        # radius=self.F/2.+self.slack+self.Dw/2.
+        # rollers=[]
+        # theta=2*math.pi/self.Z
+
+        # for zi in range(int(self.Z)):
+        #     center_roller = center + radius*math.cos(zi*theta) * y + radius*math.sin(zi*theta) * z
+
+        #     axis_2=vm.Vector3D(1,0,0)
+        #     rollers.append(primitives3d.RevolvedProfile(center_roller, axis_2, z, ROL,
+        #                                             center_roller, axis_2,
+        #                                             angle=2*math.pi,name='Roller {}'.format(zi+1)))
+
+        volumes = [irc, erc]
+        return volumes
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1090,7 +1238,7 @@ class SphericalBallBearing(RadialBearing):
     _non_eq_attributes = ['E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _non_hash_attributes = ['E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
-    
+
     symmetric = True
     taking_loads = 'both'
     generate_axial_load = False
@@ -1100,15 +1248,22 @@ class SphericalBallBearing(RadialBearing):
     cost_coefficient = 0.4
     cost_constant = 2
 
-    def __init__(self, d:float, D:float, B:float, alpha:float=0, i:int=1, Z:int=None, 
-                 Dw:float=None, Cr:float=None, C0r:float=None,
-                 material:Material=material_iso, 
-                 contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02, name:str=''):
+    def __init__(self, d: float, D: float, B: float, alpha: float = 0, i: int = 1, Z: int = None,
+                 Dw: float = None, Cr: float = None, C0r: float = None,
+                 material: Material = material_iso,
+                 contact_type_point: bool = True, contact_type_linear: bool = False, contact_type_mixed: bool = False,
+                 mass: float = None, width: float = 0.02,
+                 oil_speed_limit: float = None,
+                 grease_speed_limit: float = None,
+                 name: str = '', infos: List[str] = None, speed_infos: List[float] = None):
         RadialBearing.__init__(self, d, D, B, alpha, i, Z, Dw, Cr, C0r,
-                               material, 
+                               material,
                                contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                               mass=mass, width=width, name=name)
+                               mass=mass, width=width,
+                               oil_speed_limit=oil_speed_limit,
+                               grease_speed_limit=grease_speed_limit,
+                               name=name, infos=infos, speed_infos=speed_infos)
+
 
 
     def equivalent_static_load(self, fr, fa=None):
@@ -1119,7 +1274,7 @@ class SphericalBallBearing(RadialBearing):
         elif self.i == 2:
             X0 = 1
             Y0 = 0.44/math.tan(self.alpha)
-        P0r = max(fr,X0*fr+Y0*fa)
+        P0r = max(fr, X0*fr+Y0*fa)
         return P0r
 
     @classmethod
@@ -1127,7 +1282,7 @@ class SphericalBallBearing(RadialBearing):
         Pr = fr
         return Pr
 
-    def equivalent_dynamic_load(self, fr, fa = 0):
+    def equivalent_dynamic_load(self, fr, fa=0):
         alphap = self.alpha
         ksi = 1.5
         nu = 1
@@ -1139,25 +1294,25 @@ class SphericalBallBearing(RadialBearing):
         X2 = 1.625*X1
         Y2 = 1.625*Y1
         if self.i == 1:
-            if fa <= e*fr:
+            if abs(fa) <= e*fr:
                 Pr = fr
             else:
-                Pr = X1*fr+Y1*fa
+                Pr = X1*fr+Y1*abs(fa)
         elif self.i == 2:
-            if fa <= e*fr:
-                Pr = X3*fr+Y3*fa
+            if abs(fa) <= e*fr:
+                Pr = X3*fr+Y3*abs(fa)
             else:
-                Pr = X2*fr+Y2*fa
+                Pr = X2*fr+Y2*abs(fa)
         return Pr
 
     def a_iso(self, kappa, ec, Cu, Pr):
         if kappa < 0.4:
-            f = lambda coeff:(1-(2.5671-2.2649/(kappa**0.054381))**(0.83)*((coeff)**(1/3.)))
+            f = lambda coeff: (1-(2.5671-2.2649/(kappa**0.054381))**(0.83)*((coeff)**(1/3.)))
         elif kappa < 1:
-            f = lambda coeff:(1-(2.5671-1.9987/(kappa**0.019087))**(0.83)*((coeff)**(1/3.)))
+            f = lambda coeff: (1-(2.5671-1.9987/(kappa**0.019087))**(0.83)*((coeff)**(1/3.)))
         else:
-            f = lambda coeff:(1-(2.5671-1.9987/(kappa**0.071739))**(0.83)*((coeff)**(1/3.)))
-        coeff0 = fsolve(f,ec*Cu/Pr)[0]
+            f = lambda coeff: (1-(2.5671-1.9987/(kappa**0.071739))**(0.83)*((coeff)**(1/3.)))
+        coeff0 = fsolve(f, ec*Cu/Pr)[0]
         coeff = min(coeff0, ec*Cu/Pr)
         a_iso = 0.1*(f(coeff)**(-9.3))
         return a_iso
@@ -1216,23 +1371,33 @@ class RadialRollerBearing(RadialBearing):
     _non_eq_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _non_hash_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
-    
-    symmetric = True
+
+    # symmetric = True
     linkage = 'cylindric'
     coeff_baselife = 10/3.
     cost_coefficient = 0.5
     cost_constant = 2.5
 
-    def __init__(self, d:float, D:float, B:float, alpha:float, i:int=1, Z:int=None, 
-                 Dw:float=None, Cr:float=None, C0r:float=None,
-                 material:Material=material_iso,
-                 contact_type_point:bool=True, contact_type_linear:bool=False, contact_type_mixed:bool=False,
-                 mass:float=None, width: float=0.02, name:str=''):
+    def __init__(self, d: float, D: float, B: float, alpha: float, i: int = 1, Z: int = None,
+                 Dw: float = None, Cr: float = None, C0r: float = None,
+                 material: Material = material_iso,
+                 contact_type_point: bool = True, contact_type_linear: bool = False,
+                 contact_type_mixed: bool = False,
+                 mass: float = None, width: float = 0.02,
+                 oil_speed_limit: float = None,
+                 grease_speed_limit: float = None,
+                 name: str = '', infos: List[str] = None, speed_infos: List[float] = None):
+
+
         RadialBearing.__init__(self, d, D, B, alpha=alpha, i=1, Z=Z, Dw=Dw,
                                Cr=Cr, C0r=C0r,
                                material=material, contact_type_point=contact_type_point,
                                contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                               mass=mass, width=width, name=name)
+                               mass=mass, width=width,
+                               oil_speed_limit=oil_speed_limit,
+                               grease_speed_limit=grease_speed_limit,
+                               name=name, infos=infos, speed_infos=speed_infos)
+
 #        self.typ = typ
 
         # estimation for the graph 2D description
@@ -1248,7 +1413,7 @@ class RadialRollerBearing(RadialBearing):
         else:
             x0 = 1
             y0 = 0
-        P0r = max(fr,x0*fr+y0*fa)
+        P0r = max(fr, x0*fr+y0*fa)
         return P0r
 
     @classmethod
@@ -1256,7 +1421,7 @@ class RadialRollerBearing(RadialBearing):
         Pr = fr
         return Pr
 
-    def equivalent_dynamic_load(self, fr, fa = 0):
+    def equivalent_dynamic_load(self, fr, fa=0):
 
         ksi = 1.5 #param of the ISO 1281
         e = ksi*math.tan(self.alpha)
@@ -1308,32 +1473,32 @@ class RadialRollerBearing(RadialBearing):
 
         if self.alpha > 0:
             if self.i == 1:
-                if fa <= e*fr:
+                if abs(fa) <= e*fr:
                     Pr = fr
                 else:
-                    Pr = X1*fr+Y1*fa
+                    Pr = X1*fr+Y1*abs(fa)
             elif self.i == 2:
-                if fa <= e*fr:
-                    Pr = X3*fr+Y3*fa
+                if abs(fa) <= e*fr:
+                    Pr = X3*fr+Y3*abs(fa)
                 else:
-                    Pr = X2*fr+Y2*fa
+                    Pr = X2*fr+Y2*abs(fa)
         else: # for alpha=0 the axial load is not include in the L10
             if self.i == 1:
                 Pr = fr
             elif self.i == 2:
                 Pr = X3*fr
-       
+
         return Pr
 
     def a_iso(self, kappa, ec, Cu, Pr):
         if kappa < 0.4:
-            f = lambda coeff:(1-(1.5859-1.3993/(kappa**0.054381))*((coeff)**0.4))
+            f = lambda coeff: (1-(1.5859-1.3993/(kappa**0.054381))*((coeff)**0.4))
         elif kappa < 1:
-            f = lambda coeff:(1-(1.5859-1.2348/(kappa**0.19087))*((coeff)**0.4))
+            f = lambda coeff: (1-(1.5859-1.2348/(kappa**0.19087))*((coeff)**0.4))
         else:
-            f = lambda coeff:(1-(1.5859-1.2348/(kappa**0.071739))*((coeff)**0.4))
+            f = lambda coeff: (1-(1.5859-1.2348/(kappa**0.071739))*((coeff)**0.4))
         try:
-            coeff0 = fsolve(f,ec*Cu/Pr)[0]
+            coeff0 = fsolve(f, ec*Cu/Pr)[0]
         except FloatingPointError:# TODO check this for a better solution
             coeff0 = ec*Cu/Pr
         coeff = min(coeff0, ec*Cu/Pr)
@@ -1346,12 +1511,12 @@ class RadialRollerBearing(RadialBearing):
 
     def rolling_contour(self):
 
-        p1 = vm.Point2D(-self.Lw/2.,-self.Dw/2.)
-        p2 = vm.Point2D(-self.Lw/2.,self.Dw/2.)
-        p3 = vm.Point2D(self.Lw/2.,self.Dw/2.)
-        p4 = vm.Point2D(self.Lw/2.,-self.Dw/2.)
-        rol = primitives2d.ClosedRoundedLineSegments2D([p1, p2, p3, p4], {0: self.radius,
-                                             1: self.radius, 2: self.radius, 3: self.radius})
+        p1 = vm.Point2D(-self.Lw/2., -self.Dw/2.)
+        p2 = vm.Point2D(-self.Lw/2., self.Dw/2.)
+        p3 = vm.Point2D(self.Lw/2., self.Dw/2.)
+        p4 = vm.Point2D(self.Lw/2., -self.Dw/2.)
+        rol = primitives2d.ClosedRoundedLineSegments2D([p1, p2, p3, p4],
+                                                       {0: self.radius, 1: self.radius, 2: self.radius, 3: self.radius})
         return rol
 
     def rolling_contour_cad(self):
@@ -1363,42 +1528,43 @@ class RadialRollerBearing(RadialBearing):
         return rol
 
 
-    def plot_data(self, pos=0, quote=True, constructor=True, direction=1, stroke_width=1):
+    def plot_data(self, pos=0, pos_y=0,
+                  quote=True, constructor=True, direction=1, stroke_width=1):
 
         plot_datas = []
-        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
-        be_sup1 = be_sup.translation((pos, 0), True)
+        be_sup = self.external_ring_contour(direction=direction, sign_V=1)[1]
+        be_sup1 = be_sup.translation((pos, pos_y), True)
         plot_datas.append(be_sup1.plot_data())
 
-        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
-        be_inf1 = be_inf.translation((pos, 0), True)
+        be_inf = self.external_ring_contour(direction=direction, sign_V=-1)[1]
+        be_inf1 = be_inf.translation((pos, pos_y), True)
         plot_datas.append(be_inf1.plot_data())
 
-        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
-        bi_sup1 = bi_sup.translation((pos, 0), True)
+        bi_sup = self.internal_ring_contour(direction=direction, sign_V=1)[1]
+        bi_sup1 = bi_sup.translation((pos, pos_y), True)
         plot_datas.append(bi_sup1.plot_data())
 
-        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
-        bi_inf1 = bi_inf.translation((pos, 0), True)
+        bi_inf = self.internal_ring_contour(direction=direction, sign_V=-1)[1]
+        bi_inf1 = bi_inf.translation((pos, pos_y), True)
         plot_datas.append(bi_inf1.plot_data())
 
         roller = self.rolling_contour()
         roller_sup = roller.translation((0, self.Dpw/2.), True)
-        roller_sup1 = roller_sup.translation((pos, 0), True)
+        roller_sup1 = roller_sup.translation((pos, pos_y), True)
         plot_datas.append(roller_sup1.plot_data())
 
         roller_inf = roller.translation((0, -self.Dpw/2.), True)
-        roller_inf1 = roller_inf.translation((pos, 0), True)
+        roller_inf1 = roller_inf.translation((pos, pos_y), True)
         plot_datas.append(roller_inf1.plot_data())
 
-        return plot_data.PrimitiveGroup(plot_datas)
+        return [plot_data.PrimitiveGroup(plot_datas)]
 
     def plot_contour(self, direction=1):
 
-        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
-        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
-        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
-        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
+        be_sup = self.external_ring_contour(direction=direction, sign_V=1)
+        be_inf = self.external_ring_contour(direction=direction, sign_V=-1)
+        bi_sup = self.internal_ring_contour(direction=direction, sign_V=1)
+        bi_inf = self.internal_ring_contour(direction=direction, sign_V=-1)
         roller = self.rolling_contour()
         roller_sup = roller.translation(vm.Vector2D(0, self.Dpw/2.), True)
         roller_inf = roller.translation(vm.Vector2D(0, -self.Dpw/2.), True)
@@ -1416,29 +1582,29 @@ class RadialRollerBearing(RadialBearing):
         else:
             C0r = self.C0r
         if self.class_name == 'N':
-            return N(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z,
-                     Dw = self.Dw, Cr = Cr, C0r = C0r,
-                     oil = self.oil, material = self.material,
+            return N(d=self.d, D=self.D, B=self.B, i=self.i, Z=self.Z,
+                     Dw=self.Dw, Cr=Cr, C0r=C0r,
+                     oil=self.oil, material=self.material,
                      contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
-                     name = self.name)
+                     name=self.name)
         elif self.class_name == 'NU':
-            return NU(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z,
-                     Dw = self.Dw, Cr = Cr, C0r = C0r,
-                     oil = self.oil, material = self.material,
-                     contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
-                     name = self.name)
+            return NU(d=self.d, D=self.D, B=self.B, i=self.i, Z=self.Z,
+                      Dw=self.Dw, Cr=Cr, C0r=C0r,
+                      oil=self.oil, material=self.material,
+                      contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
+                      name=self.name)
         elif self.class_name == 'NF':
-            return NF(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z,
-                     Dw = self.Dw, Cr = Cr, C0r = C0r,
-                     oil = self.oil, material = self.material,
-                     contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
-                     name = self.name)
+            return NF(d=self.d, D=self.D, B=self.B, i=self.i, Z=self.Z,
+                      Dw=self.Dw, Cr=Cr, C0r=C0r,
+                      oil=self.oil, material=self.material,
+                      contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
+                      name=self.name)
         elif self.class_name == 'NUP':
-            return NUP(d = self.d, D = self.D, B = self.B, i = self.i, Z = self.Z,
-                     Dw = self.Dw, Cr = Cr, C0r = C0r,
-                     oil = self.oil, material = self.material,
-                     contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
-                     name = self.name)
+            return NUP(d=self.d, D=self.D, B=self.B, i=self.i, Z=self.Z,
+                       Dw=self.Dw, Cr=Cr, C0r=C0r,
+                       oil=self.oil, material=self.material,
+                       contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
+                       name=self.name)
 
 class NUP(RadialRollerBearing):
     _standalone_in_db = True
@@ -1446,7 +1612,7 @@ class NUP(RadialRollerBearing):
     _non_eq_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _non_hash_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
-    
+
     symmetric = True
     taking_loads = 'both'
     generate_axial_load = False
@@ -1455,16 +1621,23 @@ class NUP(RadialRollerBearing):
     cost_constant = 2.7
 
     # TODO: remove alpha?
-    def __init__(self, d:float, D:float, B:float, i:int=1, Z:int=None, Dw:float=None, 
-                 Cr:float=None, C0r:float=None ,
-                 material:Material=material_iso, 
-                 contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, name:str=''):
-        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
+    def __init__(self, d: float, D: float, B: float, i: int = 1, Z: int = None, Dw: float = None,
+                 Cr: float = None, C0r: float = None,
+                 material: Material = material_iso,
+                 contact_type_point: bool = False, contact_type_linear: bool = True,
+                 contact_type_mixed: bool = False,
+                 mass: float = None,
+                 oil_speed_limit: float = None,
+                 grease_speed_limit: float = None,
+                 name: str = '', infos: List[str] = None, speed_infos: List[float] = None):
+        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr,
                                      C0r=C0r,
-                                     material=material, 
+                                     material=material,
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, name=name)
+                                     mass=mass,
+                                     oil_speed_limit=oil_speed_limit,
+                                     grease_speed_limit=grease_speed_limit,
+                                     name=name, infos=infos, speed_infos=speed_infos)
 
     def internal_ring_contour(self, direction=1, sign_V=1):
 
@@ -1478,12 +1651,14 @@ class NUP(RadialRollerBearing):
         pbi6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*d1/2.)
         pbi7 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.F/2.))
         irc = primitives2d.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
-                           {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius, 6: self.radius}, adapt_radius = True)
+                                                       {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
+                                                        5: self.radius, 6: self.radius}, adapt_radius=True)
+
+        # cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
 
 
-        
-        return None,irc
+
+        return None, irc
 
 
 
@@ -1499,12 +1674,13 @@ class NUP(RadialRollerBearing):
         pbe6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*D1/2.)
         pbe7 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.E/2.))
         be1 = primitives2d.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
-                           {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius, 6: self.radius}, adapt_radius = True)
+                                                       {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
+                                                        5: self.radius, 6: self.radius}, adapt_radius=True)
 
 
         # erc = vm.Contour2D([be1])
-        return None,be1
+        # cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe7)
+        return None, be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1529,7 +1705,7 @@ class N(RadialRollerBearing):
     _non_eq_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _non_hash_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
-    
+
     symmetric = True
     taking_loads = 'free'
     generate_axial_load = False
@@ -1537,16 +1713,25 @@ class N(RadialRollerBearing):
     cost_coefficient = 0.5
     cost_constant = 2.5
 
-    def __init__(self, d:float, D:float, B:float, i:int=1, Z:int=None, Dw:float=None, 
-                 Cr:float=None, C0r:float=None ,
-                 material:Material=material_iso, 
-                 contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, name:str=''):
-        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
+    def __init__(self, d: float, D: float, B: float, i: int = 1, Z: int = None, Dw: float = None,
+                 Cr: float = None, C0r: float = None,
+                 material: Material = material_iso,
+                 contact_type_point: bool = False, contact_type_linear: bool = True, contact_type_mixed: bool = False,
+                 mass: float = None,
+                 oil_speed_limit: float = None,
+                 grease_speed_limit: float = None,
+                 name: str = '', infos: List[str] = None, speed_infos: List[float] = None):
+
+
+        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr,
                                      C0r=C0r,
-                                     material=material, 
+                                     material=material,
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, name=name)
+                                     mass=mass,
+                                     oil_speed_limit=oil_speed_limit,
+                                     grease_speed_limit=grease_speed_limit,
+                                     name=name, infos=infos, speed_infos=speed_infos)
+
 
     def internal_ring_contour(self, direction=1, sign_V=1):
 
@@ -1560,10 +1745,12 @@ class N(RadialRollerBearing):
         pbi6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*d1/2.)
         pbi7 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.F/2.))
         irc = primitives2d.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
-                           {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius, 6: self.radius}, adapt_radius = True)
+                                                       {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
+                                                        5: self.radius, 6: self.radius}, adapt_radius=True)
 
-        return vm.wires.Contour2D(irc.primitives)
+        # cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
+
+        return None, irc
 
 
 
@@ -1576,12 +1763,15 @@ class N(RadialRollerBearing):
         pbe4 = vm.Point2D(direction*self.B/2., sign_V*self.D/2.)
         pbe5 = vm.Point2D(direction*self.B/2., sign_V*D1/2.)
         pbe6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.E/2.))
-        be1 = primitives2d.ClosedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6], {1: self.radius,
-                           2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius = True)
+        be1 = primitives2d.ClosedRoundedLineSegments2D([pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
+                                                       {1: self.radius,
+                                                        2: self.radius, 3: self.radius, 4: self.radius}, adapt_radius=True)
+
+        # cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe6)
 
 
         # erc = vm.Contour2D([be1])
-        return vm.wires.Contour2D(be1.primitives)
+        return None, be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1601,7 +1791,7 @@ class NF(RadialRollerBearing):
     _non_eq_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _non_hash_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
-    
+
     symmetric = True
     taking_loads = 'right'
     generate_axial_load = False
@@ -1610,16 +1800,25 @@ class NF(RadialRollerBearing):
     cost_constant = 2.5
 
 
-    def __init__(self, d:float, D:float, B:float, i:int=1, Z:int=None, 
-                 Dw:float=None, Cr:float=None, C0r:float=None,
-                 material:Material=material_iso, 
-                 contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, name:str=''):
-        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
+    def __init__(self, d: float, D: float, B: float, i: int = 1, Z: int = None,
+                 Dw: float = None, Cr: float = None, C0r: float = None,
+                 material: Material = material_iso,
+                 contact_type_point: bool = False, contact_type_linear: bool = True, contact_type_mixed: bool = False,
+                 mass: float = None,
+                 oil_speed_limit: float = None,
+                 grease_speed_limit: float = None,
+                 name: str = '', infos: List[str] = None, speed_infos: List[float] = None):
+
+
+        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr,
                                      C0r=C0r,
-                                     material=material, 
+                                     material=material,
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, name=name)
+                                     mass=mass,
+                                     oil_speed_limit=oil_speed_limit,
+                                     grease_speed_limit=grease_speed_limit,
+                                     name=name, infos=infos, speed_infos=speed_infos)
+
 
     def internal_ring_contour(self, direction=1, sign_V=1):
 
@@ -1633,10 +1832,12 @@ class NF(RadialRollerBearing):
         pbi6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*d1/2.)
         pbi7 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.F/2.))
         irc = primitives2d.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
-                           {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius, 6: self.radius}, adapt_radius = True)
+                                                       {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
+                                                        5: self.radius, 6: self.radius}, adapt_radius=True)
 
-        return vm.wires.Contour2D(irc.primitives)
+        # cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi7)
+
+        return None, irc
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
@@ -1651,13 +1852,15 @@ class NF(RadialRollerBearing):
         pbe5 = vm.Point2D(direction*self.B/2., sign_V*D2/2.)
         pbe6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.E/2.))
         be1 = primitives2d.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6],
-                           {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius}, adapt_radius = True)
+                                                       {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
+                                                        5: self.radius}, adapt_radius=True)
+
+        # cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe6)
 
 
         # erc = vm.Contour2D([be1])
 
-        return vm.wires.Contour2D(be1.primitives)
+        return None, be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1683,7 +1886,7 @@ class NU(RadialRollerBearing):
     _non_eq_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _non_hash_attributes = ['Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
-    
+
     symmetric = True
     taking_loads = 'free'
     generate_axial_load = False
@@ -1691,16 +1894,26 @@ class NU(RadialRollerBearing):
     cost_coefficient = 0.5
     cost_constant = 2.5
 
-    def __init__(self, d:float, D:float, B:float, i:int=1, Z:int=None, Dw:float=None, 
-                 Cr:float=None, C0r:float=None,
-                 material:Material=material_iso, 
-                 contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, name:str=''):
-        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i = i, Z = Z, Dw = Dw, Cr=Cr,
+    def __init__(self, d: float, D: float, B: float, i: int = 1, Z: int = None, Dw: float = None,
+                 Cr: float = None, C0r: float = None,
+                 material: Material = material_iso,
+                 contact_type_point: bool = False, contact_type_linear: bool = True,
+                 contact_type_mixed: bool = False,
+                 mass: float = None,
+                 oil_speed_limit: float = None,
+                 grease_speed_limit: float = None,
+                 name: str = '', infos: List[str] = None, speed_infos: List[float] = None):
+
+
+        RadialRollerBearing.__init__(self, d, D, B, alpha=0, i=i, Z=Z, Dw=Dw, Cr=Cr,
                                      C0r=C0r,
-                                     material=material, 
+                                     material=material,
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, name=name)
+                                     mass=mass,
+                                     oil_speed_limit=oil_speed_limit,
+                                     grease_speed_limit=grease_speed_limit,
+                                     name=name, infos=infos, speed_infos=speed_infos)
+
 
     def internal_ring_contour(self, direction=1, sign_V=1):
         d1 = self.F - 0.1*(self.F - self.d)
@@ -1710,11 +1923,13 @@ class NU(RadialRollerBearing):
         pbi4 = vm.Point2D(direction*self.B/2., sign_V*self.d/2.)
         pbi5 = vm.Point2D(direction*self.B/2., sign_V*d1/2.)
         pbi6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.F/2.))
-        irc = primitives2d.ClosedRoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6], {1: self.radius,
-                           2: self.radius, 3: self.radius, 4: self.radius},
-                           adapt_radius = True)
+        irc = primitives2d.ClosedRoundedLineSegments2D([pbi1, pbi2, pbi3, pbi4, pbi5, pbi6],
+                                                       {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius},
+                                                       adapt_radius=True)
 
-        return vm.wires.Contour2D(irc.primitives)
+        # cbi1 = vm.edges.Arc2D(pbi1, vm.Point2D(0, self.F/2), pbi6)
+
+        return None, irc
 
 
     def external_ring_contour(self, direction=1, sign_V=1):
@@ -1728,11 +1943,12 @@ class NU(RadialRollerBearing):
         pbe6 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*D1/2.)
         pbe7 = vm.Point2D(direction*(self.B/2. - self.h), sign_V*(self.E/2.))
         be1 = primitives2d.ClosedRoundedLineSegments2D([pbe0, pbe1, pbe2, pbe3, pbe4, pbe5, pbe6, pbe7],
-                           {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
-                            5: self.radius, 6: self.radius}, adapt_radius=True)
+                                                       {1: self.radius, 2: self.radius, 3: self.radius, 4: self.radius,
+                                                        5: self.radius, 6: self.radius}, adapt_radius=True)
         # erc = vm.Contour2D([be1])
+        # cbe1 = vm.edges.Arc2D(pbe1, vm.Point2D(0, self.F/2), pbe7)
 
-        return vm.wires.Contour2D(be1.primitives)
+        return None, be1
 
     @classmethod
     def graph(cls, list_node, direction=1):
@@ -1751,7 +1967,7 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     _non_eq_attributes = ['beta', 'Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _non_hash_attributes = ['beta', 'Dpw', 'Lw', 'h', 'E', 'F', 'd1', 'D1', 'radius', 'slack', 'mass', 'cost', 'name']
     _generic_eq = True
-    
+
     symmetric = False
     taking_loads = 'right'
     linkage = 'cylindric_joint'
@@ -1762,20 +1978,27 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
     cost_constant = 2
 
 
-    def __init__(self, d:float, D:float, B:float, alpha:float, i:int=1, Z:int=None, 
-                 Dw:float=None, Cr:float=None, C0r:float=None,
-                 material:Material=material_iso, 
-                 contact_type_point:bool=False, contact_type_linear:bool=True, contact_type_mixed:bool=False,
-                 mass:float=None, name:str=''):
+    def __init__(self, d: float, D: float, B: float, alpha: float, i: int = 1, Z: int = None,
+                 Dw: float = None, Cr: float = None, C0r: float = None,
+                 material: Material = material_iso,
+                 contact_type_point: bool = False, contact_type_linear: bool = True, contact_type_mixed: bool = False,
+                 mass: float = None,
+                 oil_speed_limit: float = None,
+                 grease_speed_limit: float = None,
+                 name: str = '', infos: List[str] = None, speed_infos: List[float] = None):
+
 
         if Dw is None:
             self.Dw = (D - d)/7.*math.cos(alpha)
 
-        RadialRollerBearing.__init__(self, d, D, B, alpha=alpha, i = i, Z = Z,
-                                     Dw = Dw, Cr=Cr, C0r=C0r,
-                                     material=material, 
+        RadialRollerBearing.__init__(self, d, D, B, alpha=alpha, i=i, Z=Z,
+                                     Dw=Dw, Cr=Cr, C0r=C0r,
+                                     material=material,
                                      contact_type_point=contact_type_point, contact_type_linear=contact_type_linear, contact_type_mixed=contact_type_mixed,
-                                     mass=mass, name=name)
+                                     mass=mass,
+                                     oil_speed_limit=oil_speed_limit,
+                                     grease_speed_limit=grease_speed_limit,
+                                     name=name, infos=infos, speed_infos=speed_infos)
 
         # estimation for the graph 2D description
         self.Dpw = (self.d + self.D)/2.
@@ -1788,35 +2011,41 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 #        shift_be = 1e-3
 
         p0 = vm.Point2D(0, sign_V*self.Dpw/2.)
-        p1 = p0.translation((math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha)), True)
+        p0v = p0.to_vector()
+        p1v = p0v.translation((math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha)), True)
+        p1 = p1v.to_point()
         l1 = vm.edges.Line2D(p0, p1)
         l1.rotation(p0, direction*sign_V*self.beta)
         l1.translation((-0.8*direction*self.Dw/2.*math.sin(self.alpha), -sign_V*0.8*self.Dw/2.*math.cos(self.alpha)))
         l2 = l1.translation((-0.2*direction*self.Dw/2.*math.sin(self.alpha), -sign_V*0.2*self.Dw/2.*math.cos(self.alpha)), True)
         pbi3 = vm.Point2D(direction*(self.B/2. - shift_bi), sign_V*self.d/2.)
-        pbi3T = pbi3.translation((0, 1))
+        pbi3v = pbi3.to_vector()
+        pbi3Tv = pbi3v.translation((0, 1))
+        pbi3T = pbi3Tv.to_point()
         pbi4 = vm.Point2D(-direction*(self.B/2.), sign_V*self.d/2.)
-        pbi4T = pbi4.translation((0, 1))
+        pbi4v = pbi4.to_vector()
+        pbi4Tv = pbi4v.translation((0, 1))
+        pbi4T = pbi4Tv.to_point()
         l3 = vm.edges.Line2D(pbi3, pbi3T)
         l4 = vm.edges.Line2D(pbi4, pbi4T)
         pbi2 = vm.Point2D.line_intersection(l1, l3)
         pbi5 = vm.Point2D.line_intersection(l1, l4)
-        l5 = vm.edges.Line2D(vm.Point2D(direction*self.Lw/2.,0), vm.Point2D(direction*self.Lw/2.,1))
-        l5.rotation(vm.Point2D(0,sign_V*self.Dpw/2.), -sign_V*direction*self.alpha)
-        l6 = vm.edges.Line2D(vm.Point2D(-direction*self.Lw/2.,0), vm.Point2D(-direction*self.Lw/2.,1))
-        l6.rotation(vm.Point2D(0,sign_V*self.Dpw/2.),-sign_V*direction*self.alpha)
+        l5 = vm.edges.Line2D(vm.Point2D(direction*self.Lw/2., 0), vm.Point2D(direction*self.Lw/2., 1))
+        l5.rotation(vm.Point2D(0, sign_V*self.Dpw/2.), -sign_V*direction*self.alpha)
+        l6 = vm.edges.Line2D(vm.Point2D(-direction*self.Lw/2., 0), vm.Point2D(-direction*self.Lw/2., 1))
+        l6.rotation(vm.Point2D(0, sign_V*self.Dpw/2.), -sign_V*direction*self.alpha)
         pbi1 = vm.Point2D.line_intersection(l1, l5)
         pbi0 = vm.Point2D.line_intersection(l2, l5)
         pbi6 = vm.Point2D.line_intersection(l1, l6)
         pbi7 = vm.Point2D.line_intersection(l2, l6)
 
         bi1 = primitives2d.ClosedRoundedLineSegments2D([pbi0, pbi1, pbi2, pbi3, pbi4, pbi5, pbi6, pbi7],
-                                                 {1: self.radius, 2: self.radius, 3: self.radius,
-                                                  4: self.radius, 5: self.radius,
-                                                  6: self.radius}, adapt_radius=False)
+                                                       {1: self.radius, 2: self.radius, 3: self.radius,
+                                                        4: self.radius, 5: self.radius,
+                                                        6: self.radius}, adapt_radius=False)
 
         # irc = vm.Contour2D([bi1])
-# 
+#
         return bi1
 
     def external_ring_contour(self, direction=1, sign_V=1):
@@ -1825,14 +2054,14 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         shift_be = 1e-3
 
         p0 = vm.Point2D(0, sign_V*self.Dpw/2.)
-        p1 = p0.translation(vm.Vector2D(math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha)), True)
+        p1 = p0.to_vector().translation(vm.Vector2D(math.cos(self.alpha), -direction*sign_V*math.sin(self.alpha)), True).to_point()
         l0 = vm.edges.Line2D(p0, p1)
         l0.rotation(p0, -direction*sign_V*self.beta)
         l0.translation(vm.Vector2D(direction*self.Dw/2.*math.sin(self.alpha), sign_V*self.Dw/2.*math.cos(self.alpha)))
         pbe3 = vm.Point2D(direction*self.B/2., sign_V*self.D/2.)
-        pbe3T = pbe3.translation(vm.Vector2D(0, 1))
+        pbe3T = pbe3.to_vector().translation(vm.Vector2D(0, 1)).to_point()
         pbe4 = vm.Point2D(-direction*(self.B/2. - shift_be), sign_V*self.D/2.)
-        pbe4T = pbe4.translation(vm.Vector2D(0, 1))
+        pbe4T = pbe4.to_vector().translation(vm.Vector2D(0, 1)).to_point()
         l3 = vm.edges.Line2D(pbe3, pbe3T)
         l4 = vm.edges.Line2D(pbe4, pbe4T)
         pbe2 = vm.Point2D.line_intersection(l0, l3)
@@ -1842,11 +2071,11 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
                                                         1: self.radius,
                                                         2: self.radius,
                                                         3: self.radius},
-                                                        adapt_radius=True)
+                                                       adapt_radius=True)
 
         return be1
 
-    def volmdlr_primitives(self, center = vm.O3D, axis = vm.X3D):
+    def volmdlr_primitives(self, center=vm.O3D, axis=vm.X3D):
         axis.normalize()
 
         y = axis.random_unit_normal_vector()
@@ -1857,15 +2086,15 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
 #        z = axis.Cross(y)
 
         #Internal Ring
-        IRC=vm.wires.Contour2D(self.internal_ring_contour().primitives)
-        
-        irc=primitives3d.RevolvedProfile(center, axis, y, IRC, center,
-                                         axis, angle=2*math.pi, name='Internal Ring')
+        IRC = vm.wires.Contour2D(self.internal_ring_contour().primitives)
+
+        irc = primitives3d.RevolvedProfile(center, axis, y, IRC, center,
+                                           axis, angle=2*math.pi, name='Internal Ring')
         #External Ring
-    
-        ERC=vm.wires.Contour2D(self.external_ring_contour().primitives)
-        erc=primitives3d.RevolvedProfile(center, axis, y, ERC, center,
-                                         axis, angle=2*math.pi,name='External Ring')
+
+        ERC = vm.wires.Contour2D(self.external_ring_contour().primitives)
+        erc = primitives3d.RevolvedProfile(center, axis, y, ERC, center,
+                                           axis, angle=2*math.pi, name='External Ring')
 
         volumes = [irc, erc]
         return volumes
@@ -1878,55 +2107,55 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
         r2 = vm.Point2D(-direction*self.Lw/2., self.Dw/2. + self.Lw/2.*math.tan(self.beta))
         r3 = vm.Point2D(-direction*self.Lw/2., -self.Dw/2. - self.Lw/2.*math.tan(self.beta))
         r4 = vm.Point2D(--direction*self.Lw/2., -self.Dw/2. + self.Lw/2.*math.tan(self.beta))
-        rol = primitives2d.ClosedRoundedLineSegments2D([r1, r2, r3, r4], {0: self.radius,
-                                             1: self.radius, 2: self.radius, 3: self.radius})
+        rol = primitives2d.ClosedRoundedLineSegments2D([r1, r2, r3, r4],
+                                                       {0: self.radius, 1: self.radius, 2: self.radius, 3: self.radius})
 
 #        bg = vm.Contour2D([rol])
         return vm.wires.Contour2D(rol.primitives)
 
-    def plot_data(self, pos=0, direction=1, quote=True, constructor=True, stroke_width=1):
+    def plot_data(self, pos=0, pos_y=0, direction=1, quote=True, constructor=True, stroke_width=1):
 
         plot_datas = []
-        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
-        be_sup1 = be_sup.translation((pos, 0), True)
+        be_sup = self.external_ring_contour(direction=direction, sign_V=1)
+        be_sup1 = be_sup.translation((pos, pos_y), True)
         plot_datas.append(be_sup1.plot_data())
 
-        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
-        be_inf1 = be_inf.translation((pos, 0), True)
+        be_inf = self.external_ring_contour(direction=direction, sign_V=-1)
+        be_inf1 = be_inf.translation((pos, pos_y), True)
         plot_datas.append(be_inf1.plot_data())
 
-        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
-        bi_sup1 = bi_sup.translation((pos, 0), True)
+        bi_sup = self.internal_ring_contour(direction=direction, sign_V=1)
+        bi_sup1 = bi_sup.translation((pos, pos_y), True)
         plot_datas.append(bi_sup1.plot_data())
 
-        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
-        bi_inf1 = bi_inf.translation((pos, 0), True)
+        bi_inf = self.internal_ring_contour(direction=direction, sign_V=-1)
+        bi_inf1 = bi_inf.translation((pos, pos_y), True)
         plot_datas.append(bi_inf1.plot_data())
 #
-        roller_sup = self.rolling_contour(direction = direction, sign_V = 1)
+        roller_sup = self.rolling_contour(direction=direction, sign_V=1)
         roller_sup = roller_sup.rotation(vm.Point2D(0, 0), -direction*self.alpha, True)
         roller_sup = roller_sup.translation((0, self.Dpw/2.), True)
-        roller_sup1 = roller_sup.translation((pos, 0), True)
+        roller_sup1 = roller_sup.translation((pos, pos_y), True)
         plot_datas.append(roller_sup1.plot_data())
 
-        roller_inf = self.rolling_contour(direction = direction, sign_V = -1)
+        roller_inf = self.rolling_contour(direction=direction, sign_V=-1)
         roller_inf = roller_inf.rotation(vm.Point2D(0, 0), direction*self.alpha, True)
         roller_inf = roller_inf.translation((0, -self.Dpw/2.), True)
-        roller_inf1 = roller_inf.translation((pos, 0), True)
+        roller_inf1 = roller_inf.translation((pos, pos_y), True)
         plot_datas.append(roller_inf1.plot_data())
 
-        return plot_data.PrimitiveGroup(plot_datas)
+        return [plot_data.PrimitiveGroup(plot_datas)]
 
     def plot_contour(self, direction=1):
 
-        be_sup = self.external_ring_contour(direction = direction, sign_V = 1)
-        be_inf = self.external_ring_contour(direction = direction, sign_V = -1)
-        bi_sup = self.internal_ring_contour(direction = direction, sign_V = 1)
-        bi_inf = self.internal_ring_contour(direction = direction, sign_V = -1)
-        roller_sup = self.rolling_contour(direction = direction, sign_V = 1)
+        be_sup = self.external_ring_contour(direction=direction, sign_V=1)
+        be_inf = self.external_ring_contour(direction=direction, sign_V=-1)
+        bi_sup = self.internal_ring_contour(direction=direction, sign_V=1)
+        bi_inf = self.internal_ring_contour(direction=direction, sign_V=-1)
+        roller_sup = self.rolling_contour(direction=direction, sign_V=1)
         roller_sup = roller_sup.rotation(vm.Point2D(0, 0), -direction*self.alpha, True)
         roller_sup = roller_sup.translation(vm.Vector2D(0, self.Dpw/2.), True)
-        roller_inf = self.rolling_contour(direction = direction, sign_V = -1)
+        roller_inf = self.rolling_contour(direction=direction, sign_V=-1)
         roller_inf = roller_inf.rotation(vm.Point2D(0, 0), direction*self.alpha, True)
         roller_inf = roller_inf.translation(vm.Vector2D(0, -self.Dpw/2.), True)
 
@@ -1955,22 +2184,22 @@ class TaperedRollerBearing(RadialRollerBearing, AngularBallBearing):
             C0r = None
         else:
             C0r = self.C0r
-        obj = TaperedRollerBearing(d = self.d, D = self.D, B = self.B, alpha = self.alpha,
-                            i = self.i, Z = self.Z,
-                            Dw = self.Dw, Cr = Cr, C0r = C0r,
-                            oil = self.oil, material = self.material,
-                            contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
-                            name = self.name)
+        obj = TaperedRollerBearing(d=self.d, D=self.D, B=self.B, alpha=self.alpha,
+                                   i=self.i, Z=self.Z,
+                                   Dw=self.Dw, Cr=Cr, C0r=C0r,
+                                   oil=self.oil, material=self.material,
+                                   contact_type_point=self.contact_type_point, contact_type_linear=self.contact_type_linear, contact_type_mixed=self.contact_type_mixed,
+                                   name=self.name)
         return obj
 
 class BearingCatalog(DessiaObject):
     _standalone_in_db = True
-    _non_serializable_attributes = ['bearings_by_types',  'bearings_by_dict']
+    _non_serializable_attributes = ['bearings_by_types', 'bearings_by_dict']
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = True
-    
-    def __init__(self, bearings:List[RadialBearing], name:str=''):
+
+    def __init__(self, bearings: List[RadialBearing], name: str = ''):
         self.bearings = bearings
         self.bearings_by_types = {}
         for bearing in bearings:
@@ -2024,91 +2253,67 @@ class BearingCatalog(DessiaObject):
     def load_from_dataframe(cls, dataframe, catalog_name):
         bearings = []
         for index in dataframe.index:
-            typ_rlt = dataframe.loc[index,'typ_bearing']
-            d = round(dataframe.loc[index,'d'], 3)
-            D = round(dataframe.loc[index,'D'], 3)
-            B = round(dataframe.loc[index,'B'],3)
-            i = dataframe.loc[index,'i']
-            Z = dataframe.loc[index,'Z']
-            Dw = dataframe.loc[index,'Dw']
+            typ_rlt = dataframe.loc[index, 'typ_bearing']
+            d = round(dataframe.loc[index, 'd'], 3)
+            D = round(dataframe.loc[index, 'D'], 3)
+            B = round(dataframe.loc[index, 'B'], 3)
+            i = dataframe.loc[index, 'i']
+            Z = dataframe.loc[index, 'Z']
+            Dw = dataframe.loc[index, 'Dw']
             mass = None
-            alp = dataframe.loc[index,'alpha']
+            alp = dataframe.loc[index, 'alpha']
             if str(alp) == 'nan':
                 alpha = 0
             else:
                 alpha = alp
-            Cr = dataframe.loc[index,'Cr']*1e3
-            C0r = dataframe.loc[index,'C0r']
+            Cr = dataframe.loc[index, 'Cr']*1e3
+            C0r = dataframe.loc[index, 'C0r']
 
             if typ_rlt == 'radial_roller_bearing':
-                typ = dataframe.loc[index,'mounting']
+                typ = dataframe.loc[index, 'mounting']
                 if typ == 'NUP':
                     bearings.append(NUP(d, D, B, i,
-                                                      Z, Dw, Cr, C0r,
-                                                      mass = mass))
+                                        Z, Dw, Cr, C0r,
+                                        mass=mass))
                 elif typ == 'N':
                     bearings.append(N(d, D, B, i,
-                                                      Z, Dw, Cr, C0r,
-                                                      mass = mass))
+                                      Z, Dw, Cr, C0r,
+                                      mass=mass))
                 elif typ == 'NF':
                     bearings.append(NF(d, D, B, i,
-                                                      Z, Dw, Cr, C0r,
-                                                      mass = mass,))
+                                       Z, Dw, Cr, C0r,
+                                       mass=mass,))
                 elif typ == 'NU':
                     bearings.append(NU(d, D, B, i,
-                                                      Z, Dw, Cr, C0r,
-                                                      mass = mass,))
+                                       Z, Dw, Cr, C0r,
+                                       mass=mass,))
 
             elif typ_rlt == 'radial_ball_bearing':
                 bearings.append(RadialBallBearing(d, D, B, i, Z,
-                                                    Dw, Cr, C0r, mass = mass))
+                                                  Dw, Cr, C0r, mass=mass))
 
             elif typ_rlt == 'angular_ball_bearing':
                 bearings.append(AngularBallBearing(d, D, B, i, Z, Dw, alpha,
-                                                 Cr, C0r, mass = mass))
+                                                   Cr, C0r, mass=mass))
 
             elif typ_rlt == 'spherical_ball_bearing':
                 bearings.append(SphericalBallBearing(d, D, B, i, Z, Dw, alpha,
-                                                   Cr, C0r, mass = mass))
+                                                     Cr, C0r, mass=mass))
 
             elif typ_rlt == 'tapered_roller_bearing':
                 bearings.append(TaperedRollerBearing(d, D, B, i, Z, Dw,
-                                                   Cr, C0r, mass = mass))
+                                                     Cr, C0r, mass=mass))
         return cls(bearings, catalog_name)
 
-#    def Dict(self):
-#        d = {'name': self.name}
-#        bearings_dicts = []
-#        for bearing in self.bearings:
-#            bearings_dicts.append(bearing.Dict())
-#
-#        d['bearings'] = bearings_dicts
-#        return d
-
-#    @classmethod
-#    def dict_to_object(cls, dict_):
-#        bearings = [RadialBearing.dict_to_object(b) for b in dict_['bearings']]
-#        return cls(bearings, dict_['name'])
-
-    def save_to_file(self, filepath, indent = 0):
-        with open(filepath+'.json', 'w') as file:
-            json.dump(self.to_dict(), file, indent = indent)
-
-    @classmethod
-    def load_from_file(cls, filepath):
-        if type(filepath) is str:
-            with open(filepath, 'r') as file:
-                d = json.loads(file)
-        else:
-            d = json.loads(filepath.read().decode('utf-8'))
-        return DessiaObject.dict_to_object(d)
-
     def search_bearing_catalog(self, bearing_class, d, D):
+
         if bearing_class in self.bearings_by_types:
+
             bearings = self.bearings_by_types[bearing_class]
             list_bearings = []
             list_sort = []
             for bearing in bearings:
+
                 if (bearing.d >= d) and (bearing.D <= D):
                     list_bearings.append(bearing)
                     list_sort.append(bearing.Cr)
@@ -2144,7 +2349,7 @@ class BearingCatalog(DessiaObject):
         B = [b.B for b in self.bearings]
         Cr = [b.Cr for b in self.bearings]
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-        ax1.plot(d ,D, 'o')
+        ax1.plot(d, D, 'o')
         ax1.set_xlabel('d')
         ax1.set_ylabel('D')
 
@@ -2173,7 +2378,7 @@ class BearingCatalog(DessiaObject):
 
         datasets_values = []
         datasets_names = []
-        
+
         values = []
         for bearing in self.bearings:
             value = {'d': bearing.d,
@@ -2193,10 +2398,10 @@ class BearingCatalog(DessiaObject):
         datasets = []
         for ids, (dataset_values, name) in enumerate(zip(datasets_values, datasets_names)):
             datasets.append({'label' : name,
-                             'color' : matplotlib.colors.to_hex(matplotlib.colors.hsv_to_rgb((ids/(nds-1),0.8, 0.7))),
+                             'color' : matplotlib.colors.to_hex(matplotlib.colors.hsv_to_rgb((ids/(nds-1), 0.8, 0.7))),
                              'values' : dataset_values,
-                      })
-    
+                             })
+
         displays = [{'angular_component': 'results',
                      'filters': filters,
                      'references_attribute': 'bearings',
@@ -2205,9 +2410,9 @@ class BearingCatalog(DessiaObject):
         return displays
 
 bearing_classes_ = [RadialBallBearing, AngularBallBearing,
-                   NUP, N,
-                   NF, NU,
-                   TaperedRollerBearing]
+                    NUP, N,
+                    NF, NU,
+                    TaperedRollerBearing]
 
 dict_bearing_classes = {str(RadialBallBearing): RadialBallBearing,
                         str(AngularBallBearing): AngularBallBearing,
@@ -2218,27 +2423,25 @@ dict_bearing_classes = {str(RadialBallBearing): RadialBallBearing,
                         str(TaperedRollerBearing): TaperedRollerBearing}
 
 strength_bearing_classes = {str(RadialBallBearing): 1,
-                        str(AngularBallBearing): 1,
-                        str(NUP): 3,
-                        str(N): 3,
-                        str(NF): 3,
-                        str(NU): 3,
-                        str(TaperedRollerBearing): 2}
+                            str(AngularBallBearing): 1,
+                            str(NUP): 3,
+                            str(N): 3,
+                            str(NF): 3,
+                            str(NU): 3,
+                            str(TaperedRollerBearing): 2}
 
 class ConceptualBearingCombination(DessiaObject):
     _standalone_in_db = True
-    _non_serializable_attributes = []
-    _non_eq_attributes = ['name']
-    _non_hash_attributes = ['name']
+    _non_serializable_attributes = ['bearing_classes']
     _generic_eq = True
-    
-    def __init__(self, bearing_classes:List[RadialBearing], directions:List[int], mounting:Mounting,
-                 name:str=''):
+
+    def __init__(self, bearing_classes: List[RadialBearing], directions: List[int], mounting: Mounting,
+                 name: str = ''):
 
         self.bearing_classes = bearing_classes
         self.directions = directions
         self.mounting = mounting
-        
+
         DessiaObject.__init__(self, name=name)
 
 #    def __eq__(self, other_eb):
@@ -2257,12 +2460,15 @@ class ConceptualBearingCombination(DessiaObject):
 #        return h
 
     def bearing_combination(self, bearings):
+
         if self.mounting.left and self.mounting.right:
             connection_bi = Mounting(left=True, right=True)
-            connection_be = Mounting(left=False, right=False)
+            connection_be = Mounting(left=True, right=True)
+
+
         elif not self.mounting.left and not self.mounting.right:
             connection_bi = Mounting(left=True, right=True)
-            connection_be = Mounting(left=True, right=True)
+            connection_be = Mounting(left=False, right=False)
         elif self.mounting.left:
             connection_bi = Mounting(left=False, right=True)
             connection_be = Mounting(left=True, right=False)
@@ -2281,9 +2487,9 @@ class ConceptualBearingCombination(DessiaObject):
 #        elif self.mounting == 'left':
 #            connection_bi=['right']
 #            connection_be=['left']
-        return BearingCombination(bearings, self.directions, radial_load_linkage = [True]*len(bearings),
-                                  connection_bi = connection_bi, connection_be = connection_be,
-                                  behavior_link = self.mounting)
+        return BearingCombination(bearings, self.directions, radial_load_linkage=[True]*len(bearings),
+                                  connection_bi=connection_bi, connection_be=connection_be,
+                                  behavior_link=self.mounting)
 
     def check_kinematic(self):
 
@@ -2295,7 +2501,7 @@ class ConceptualBearingCombination(DessiaObject):
         nx_graph = self.graph(list_node_bearings, list_node_output)
 
         check = self.check_viability_angular_bearing(nx_graph, list_node_bearings,
-                                                  list_node_output)
+                                                     list_node_output)
         return check
 
     def graph(self, list_node_bearings, list_node_output):
@@ -2305,6 +2511,7 @@ class ConceptualBearingCombination(DessiaObject):
         nx_graph = self.bearing_classes[0].graph(list_left_bearing, self.directions[0])
 
         bg0_load = self.bearing_classes[0].taking_loads
+
         if self.directions[0] == -1:
             if self.bearing_classes[0].taking_loads == 'left':
                 bg0_load = 'right'
@@ -2355,6 +2562,7 @@ class ConceptualBearingCombination(DessiaObject):
                 nx_graph.add_edges_from([(list_nd1[7], list_nd2[3])])
 
         bg_end_load = self.bearing_classes[-1].taking_loads
+
         if self.directions[-1] == -1:
             if self.bearing_classes[-1].taking_loads == 'left':
                 bg_end_load = 'right'
@@ -2377,6 +2585,7 @@ class ConceptualBearingCombination(DessiaObject):
         # axial load generate by angular_bearing
         node_axial_ring = []
         # if self.mounting in ['left', 'both']:
+
         if self.mounting.left:
             node_axial_ring.append(li_node_output[0])
             node_axial_ring.append(li_node_output[7])
@@ -2401,7 +2610,7 @@ class ConceptualBearingCombination(DessiaObject):
             for nd_axial_ring in node_axial_ring:
                 try:
                     list(nx.all_shortest_paths(nx_graph, source=nd_axial_input,
-                                                target=nd_axial_ring))
+                                               target=nd_axial_ring))
                     valid_input = True
                 except nx.NetworkXNoPath:
                     pass
@@ -2413,11 +2622,13 @@ class ConceptualBearingCombination(DessiaObject):
         if self.mounting.right:
             node_input = li_node_output[3]
             node_output = li_node_output[5]
+
             try:
                 if (node_input in nx_graph) and (node_output in nx_graph):
                     list(nx.all_shortest_paths(nx_graph, source=node_input,
-                                                target=node_output))
+                                               target=node_output))
                 else:
+
                     valid = False
             except nx.NetworkXNoPath:
                 valid = False
@@ -2426,10 +2637,11 @@ class ConceptualBearingCombination(DessiaObject):
         if self.mounting.left:
             node_input = li_node_output[6]
             node_output = li_node_output[0]
+
             try:
                 if (node_input in nx_graph) and (node_output in nx_graph):
                     list(nx.all_shortest_paths(nx_graph, source=node_input,
-                                                target=node_output))
+                                               target=node_output))
                 else:
                     valid = False
             except nx.NetworkXNoPath:
@@ -2442,7 +2654,7 @@ class ConceptualBearingCombination(DessiaObject):
             try:
                 if (node_input in nx_graph) and (node_output in nx_graph):
                     list(nx.all_shortest_paths(nx_graph, source=node_input,
-                                                target=node_output))
+                                               target=node_output))
                 else:
                     valid = False
             except nx.NetworkXNoPath:
@@ -2481,16 +2693,16 @@ class BearingCombination(DessiaObject):
     _non_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, bearings:List[RadialBearing], directions:List[int], 
-                 radial_load_linkage, internal_pre_load=0,
-                 connection_bi:Mounting=None, 
-                 connection_be:Mounting=None, 
-                 behavior_link:Mounting=None,
-                 axial_positions:List[float]=None,
-                 internal_diameters:List[float]=None, 
-                 external_diameters:List[float]=None, 
-                 length:float=None, 
-                 name:str=''):
+    def __init__(self, bearings: List[RadialBearing], directions: List[int],
+                 radial_load_linkage: List[float], internal_pre_load: bool=False,
+                 connection_bi: Mounting = None,
+                 connection_be: Mounting = None,
+                 behavior_link: Mounting = None,
+                 axial_positions: List[float] = None,
+                 internal_diameters: List[float] = None,
+                 external_diameters: List[float] = None,
+                 length: float = None,
+                 name: str = ''):
         self.bearings = bearings
         self.radial_load_linkage = radial_load_linkage
         self.internal_pre_load = internal_pre_load
@@ -2531,9 +2743,9 @@ class BearingCombination(DessiaObject):
         for bg in bearings:
             self.d = min(self.d, bg.d)
         self.number_bearing = len(self.bearings)
-            
+
         DessiaObject.__init__(self, name=name)
-        
+
 
 #    def __eq__(self, other_eb):
 #
@@ -2562,19 +2774,19 @@ class BearingCombination(DessiaObject):
 #        h += sum(self.directions)
 #        return h
 
-    def plot_graph(self):
+    # def plot_graph(self):
 
-        for gp in self.graph:
-            list_graph = []
-            pos_m = -self.B/2.
-            for bg in gp:
-                graph = bg.PlotGraph()
-                graph = graph.translation((pos_m + bg.B/2., 0), True)
-                pos_m += bg.B
-                list_graph.append(graph)
-            list_graph = vm.wires.Contour2D(list_graph)
-    #        list_graph = list_graph.Translation((pos, 0), True)
-            f,a = list_graph.MPLPlot(color='b',arrow= True)
+    #     for gp in self.graph:
+    #         list_graph = []
+    #         pos_m = -self.B/2.
+    #         for bg in gp:
+    #             graph = bg.PlotGraph()
+    #             graph = graph.translation((pos_m + bg.B/2., 0), True)
+    #             pos_m += bg.B
+    #             list_graph.append(graph)
+    #         list_graph = vm.wires.Contour2D(list_graph)
+    # #        list_graph = list_graph.Translation((pos, 0), True)
+    #         f,a = list_graph.MPLPlot(color='b',arrow= True)
 
     def update(self, axial_positions, internal_diameters, external_diameters, length):
         # TODO Why axial position is not in init?
@@ -2595,10 +2807,10 @@ class BearingCombination(DessiaObject):
         if self.connection_be.right:
             Dd = Dd -ep
         be = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D(-B/2., sign*D/2.), vm.Point2D(-B/2., sign*Dg/2.),
-                           vm.Point2D(-B/2. - ep, sign*Dg/2.), vm.Point2D(-B/2. - ep, sign*De/2.),
-                           vm.Point2D(B/2. + ep, sign*De/2.), vm.Point2D(B/2. + ep, sign*Dd/2.),
-                           vm.Point2D(B/2., sign*Dd/2.), vm.Point2D(B/2., sign*D/2.),
-                           vm.Point2D(-B/2., sign*D/2.)], {})
+                                                       vm.Point2D(-B/2. - ep, sign*Dg/2.), vm.Point2D(-B/2. - ep, sign*De/2.),
+                                                       vm.Point2D(B/2. + ep, sign*De/2.), vm.Point2D(B/2. + ep, sign*Dd/2.),
+                                                       vm.Point2D(B/2., sign*Dd/2.), vm.Point2D(B/2., sign*D/2.),
+                                                       vm.Point2D(-B/2., sign*D/2.)], {})
         return vm.wires.Contour2D(be.primitives)
 
     def internal_bearing(self, sign=1):
@@ -2613,64 +2825,67 @@ class BearingCombination(DessiaObject):
         if self.connection_bi.right:
             dd = dd + ep
         bi = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D(-B/2., sign*d/2.), vm.Point2D(-B/2., sign*dg/2.),
-                           vm.Point2D(-B/2. - ep, sign*dg/2.), vm.Point2D(-B/2. - ep, sign*di/2.),
-                           vm.Point2D(B/2. + ep, sign*di/2.), vm.Point2D(B/2. + ep, sign*dd/2.),
-                           vm.Point2D(B/2., sign*dd/2.), vm.Point2D(B/2., sign*d/2.),
-                           vm.Point2D(-B/2., sign*d/2.)], {})
+                                                       vm.Point2D(-B/2. - ep, sign*dg/2.), vm.Point2D(-B/2. - ep, sign*di/2.),
+                                                       vm.Point2D(B/2. + ep, sign*di/2.), vm.Point2D(B/2. + ep, sign*dd/2.),
+                                                       vm.Point2D(B/2., sign*dd/2.), vm.Point2D(B/2., sign*d/2.),
+                                                       vm.Point2D(-B/2., sign*d/2.)], {})
         return vm.wires.Contour2D(bi.primitives)
 
     def bearing_box(self, sign=1):
-       
+
         box = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D(self.axial_positions, sign*self.internal_diameters/2.),
-                      vm.Point2D(self.axial_positions, sign*self.external_diameters/2.),
-                      vm.Point2D(self.axial_positions + self.length, sign*self.external_diameters/2.),
-                      vm.Point2D(self.axial_positions + self.length, sign*self.internal_diameters/2.),
-                      vm.Point2D(self.axial_positions, sign*self.internal_diameters/2.)], {})
+                                                        vm.Point2D(self.axial_positions, sign*self.external_diameters/2.),
+                                                        vm.Point2D(self.axial_positions + self.length, sign*self.external_diameters/2.),
+                                                        vm.Point2D(self.axial_positions + self.length, sign*self.internal_diameters/2.),
+                                                        vm.Point2D(self.axial_positions, sign*self.internal_diameters/2.)], {})
         return vm.wires.Contour2D(box.primitives)
 
-    def plot_data(self, pos=0, box=False, typ=None, bearing_combination_result=None, quote=False, constructor=True):
+    def plot_data(self, pos=0, pos_y=0, box=False, typ=None, bearing_combination_result=None, quote=False, constructor=True):
 
         export_data = []
 
         if box:
-            box_sup = self.bearing_box(1).translation(vm.Vector2D(pos, 0), True)
+            box_sup = self.bearing_box(1).translation(vm.Vector2D(pos, pos_y), True)
             export_data.append(box_sup.plot_data())
-            box_inf = self.bearing_box(-1).translation(vm.Vector2D(pos, 0), True)
+            box_inf = self.bearing_box(-1).translation(vm.Vector2D(pos, pos_y), True)
             export_data.append(box_inf.plot_data())
 
 
-        be_sup = self.external_bearing(sign = 1).translation(vm.Vector2D(pos, 0), True)
+        be_sup = self.external_bearing(sign=1).translation(vm.Vector2D(pos, pos_y), True)
         export_data.append(be_sup.plot_data())
-        be_inf = self.external_bearing(sign = -1).translation(vm.Vector2D(pos, 0), True)
+        be_inf = self.external_bearing(sign=-1).translation(vm.Vector2D(pos, pos_y), True)
         export_data.append(be_inf.plot_data())
-        bi_sup = self.internal_bearing(sign = 1).translation(vm.Vector2D(pos, 0), True)
+        bi_sup = self.internal_bearing(sign=1).translation(vm.Vector2D(pos, pos_y), True)
         export_data.append(bi_sup.plot_data())
-        bi_inf = self.internal_bearing(sign = -1).translation(vm.Vector2D(pos, 0), True)
+        bi_inf = self.internal_bearing(sign=-1).translation(vm.Vector2D(pos, pos_y), True)
         export_data.append(bi_inf.plot_data())
-        
-         
+
+
         pos_m = -self.B/2.
-        
+
         for bg, di in zip(self.bearings, self.directions):
-            cont = bg.plot_data(pos = pos_m + bg.B/2. + pos)
+            try:
+                cont = bg.plot_data(pos=pos_m + bg.B/2. + pos, pos_y=pos_y, direction=di)
+            except TypeError:
+                cont = bg.plot_data(pos=pos_m + bg.B/2. + pos, pos_y=pos_y)
             pos_m += bg.B
-            export_data.extend(cont.primitives)
+            export_data.extend(cont[0].primitives)
 
         if typ == 'Load':
             pos_m = -self.B/2.
             for bg_ref, bg_simu in zip(self.bearings, bearing_combination_result):
-                export_data.extend(bg_simu.PlotDataLoad(pos = pos + pos_m + bg_ref.B/2., d = bg_ref.d, D = bg_ref.D,
-                            B = bg_ref.B, d1 = bg_ref.d1, D1 = bg_ref.D1))
+                export_data.extend(bg_simu.PlotDataLoad(pos=pos + pos_m + bg_ref.B/2., d=bg_ref.d, D=bg_ref.D,
+                                                        B=bg_ref.B, d1=bg_ref.d1, D1=bg_ref.D1))
                 pos_m += bg_ref.B
 
-       
-        return plot_data.PrimitiveGroup(export_data)
+
+        return [plot_data.PrimitiveGroup(export_data)]
 
     def plot_contour2D(self, pos=0, a=None, box=True, typ='Graph'):
-        be_sup = self.external_bearing(sign = 1)
-        be_inf = self.external_bearing(sign = -1)
-        bi_sup = self.internal_bearing(sign = 1)
-        bi_inf = self.internal_bearing(sign = -1)
+        be_sup = self.external_bearing(sign=1)
+        be_inf = self.external_bearing(sign=-1)
+        bi_sup = self.internal_bearing(sign=1)
+        bi_inf = self.internal_bearing(sign=-1)
         contour = [be_sup, be_inf, bi_sup, bi_inf]
         linkage_area = vm.wires.Contour2D(contour)
         linkage_area = linkage_area.translation(vm.Vector2D(pos, 0), True)
@@ -2678,7 +2893,7 @@ class BearingCombination(DessiaObject):
         contour = []
         pos_m = -self.B/2.
         for bg, di in zip(self.bearings, self.directions):
-            cont = bg.plot_contour(direction = di)
+            cont = bg.plot_contour(direction=di)
             cont = cont.translation(vm.Vector2D(pos_m + bg.B/2., 0), True)
             pos_m += bg.B
             contour.append(cont)
@@ -2704,12 +2919,13 @@ class BearingCombination(DessiaObject):
             bodies.append(bor)
 
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
-                         imposed_displacements)
+                                                imposed_displacements)
         result = sm.Solve(500)
         result.Plot(intensity_factor=1e-5)
 
     def elementary_axial_load(self, ground, shaft, pos, radial_load, bearing_result, axial_load=None):
-        nb_bg_radial = sum([1 if (p is True) else 0 for p in self.radial_load_linkage])
+        nb_bg_radial = sum([1 if p  else 0 for p in self.radial_load_linkage])
+
         component = []
         nonlinear_linkages = []
         axial_bearings = []
@@ -2721,13 +2937,15 @@ class BearingCombination(DessiaObject):
 
         global_axial_load = 0
 
+
+
         for num_bg, (bg, bg_result) in enumerate(zip(self.bearings, bearing_result)):
             component_item = []
             component_item.append(unidimensional.Body(posx, bg.d/2., name='Inner ring{}'.format(num_bg)))
             component_item.append(unidimensional.Body(posx, bg.D/2., name='Outer ring{}'.format(num_bg)))
             bir = component_item[0]
             bor = component_item[1]
-           
+
             if bg.taking_loads == 'both':
                 pos1 = bir.initial_position
                 pos2 = bor.initial_position
@@ -2735,7 +2953,7 @@ class BearingCombination(DessiaObject):
                 link2 = unidimensional.CompressionSpring(bor, bir, k1, -j1, 'bearing {}'.format(num_bg))
                 nonlinear_linkages.append(link1)
                 nonlinear_linkages.append(link2)
-              
+
                 axial_bearings.append([link1, link2])
 #            elif bg.taking_loads == 'free':
 #                link1 = unidimensional.CompressionSpring(bir, bor, 10, -j1, 'bearing {}'.format(num_bg))
@@ -2744,44 +2962,46 @@ class BearingCombination(DessiaObject):
 ##                nonlinear_linkages.append(link2)
 #                axial_bearings.append([link1])
             elif bg.generate_axial_load:
+
                 Fp = radial_load/nb_bg_radial*math.tan(bg.alpha)
                 if self.directions[num_bg] == -1:
                     global_axial_load += Fp
                     link = unidimensional.CompressionSpring(bor, bir, k1, -j1, 'bearing {}'.format(num_bg))
-                   
+
                     nonlinear_linkages.append(link)
-                   
-                    
+
+
                     axial_bearings.append([link])
-                    loads.append(unidimensional.Load(bor, -Fp))
-                    loads.append(unidimensional.Load(bir, Fp))
+
+                    loads.append(unidimensional.Load(bor, Fp))
+                    loads.append(unidimensional.Load(bir, -Fp))
                 elif self.directions[num_bg] == 1:
                     global_axial_load += -Fp
                     link = unidimensional.CompressionSpring(bir, bor, k1, -j1, 'bearing {}'.format(num_bg))
-                    
+
                     nonlinear_linkages.append(link)
-                    
-                    
+
                     axial_bearings.append([link])
-                    loads.append(unidimensional.Load(bor, Fp))
-                    loads.append(unidimensional.Load(bir, -Fp))
+                    loads.append(unidimensional.Load(bor, -Fp))
+                    loads.append(unidimensional.Load(bir, Fp))
             elif bg.taking_loads != 'free':
                 if self.directions[num_bg] == -1:
                     link = unidimensional.CompressionSpring(bor, bir, k1, -j1, 'bearing {}'.format(num_bg))
                     nonlinear_linkages.append(link)
-                    
+
                     axial_bearings.append([link])
                 elif self.directions[num_bg] == 1:
-                    
+
                     link = unidimensional.CompressionSpring(bir, bor, k1, -j1, 'bearing {}'.format(num_bg))
                     nonlinear_linkages.append(link)
-                    
+
                     axial_bearings.append([link])
-            
-            
-            check_radial_linkage = self.radial_load_linkage[num_bg]
-            if check_radial_linkage:
-                bg_result.radial_load.append(radial_load/nb_bg_radial)
+
+
+            # check_radial_linkage = self.radial_load_linkage[num_bg]
+            # if check_radial_linkage:
+            #     if nb_bg_radial:
+            #         bg_result.radial_load.append(radial_load/nb_bg_radial)
             component.append(component_item)
             posx += bg.B
 
@@ -2801,21 +3021,26 @@ class BearingCombination(DessiaObject):
                 nonlinear_linkages.append(unidimensional.UnilateralContact(bg1[0], bg2[0], pos2 - pos1, name='Inner rings'))
                 nonlinear_linkages.append(unidimensional.UnilateralContact(bg1[1], bg2[1], pos2 - pos1, name='Outer rings'))
         if self.connection_be.left:
+
             bor = component[0][1]
-            
+
             nonlinear_linkages.append(unidimensional.UnilateralContact(ground, bor, 0.0001, name='Outer rings'))
         if self.connection_be.right:
+
             bor = component[-1][1]
-           
+
             nonlinear_linkages.append(unidimensional.UnilateralContact(bor, ground, 0.0001, name='Outer rings'))
         if self.connection_bi.left:
+
             bir = component[0][0]
-           
+
             nonlinear_linkages.append(unidimensional.UnilateralContact(shaft, bir, 0.0001, name='Inner rings'))
         if self.connection_bi.right:
+
             bir = component[-1][0]
-            
+
             nonlinear_linkages.append(unidimensional.UnilateralContact(bir, shaft, 0.0001, name='Inner rings'))
+
         return component, nonlinear_linkages, loads, axial_bearings, check_axial_load
 
     @classmethod
@@ -2823,42 +3048,52 @@ class BearingCombination(DessiaObject):
         sum_L10_inv = 0
         for L10 in L10s:
             sum_L10_inv += (1/L10)**1.5
-        if sum_L10_inv==0:
+        if sum_L10_inv == 0:
             return 0
         return sum_L10_inv**(-1/1.5)
 
-    def base_life_time(self, bearing_combination_simulation_result):
-        
+    def base_life_time(self, bearing_combination_simulation_result, S=0.9):
+
         for bearing_result in bearing_combination_simulation_result.bearing_simulation_results:
             bearing_result.radial_load = []
             bearing_result.axial_load = []
 
         nb_bg_radial = sum([1 if (p is True) else 0 for p in self.radial_load_linkage])
         result_bgs = bearing_combination_simulation_result.bearing_simulation_results
-        
+
         for radial_load, axial_load in zip(bearing_combination_simulation_result.radial_loads,
-                               bearing_combination_simulation_result.axial_loads):
+                                           bearing_combination_simulation_result.axial_loads):
 
             if (not self.behavior_link.free) and (abs(axial_load) >= 1e-4):
-                
-                
+
+
                 check_axial_load = self.axial_load(axial_load, radial_load, bearing_combination_simulation_result)
+
                 if check_axial_load == False:
                     return False
             else:
+
                 for num_bg, bearing_result in enumerate(bearing_combination_simulation_result.bearing_simulation_results):
                     check_radial_linkage = self.radial_load_linkage[num_bg]
+
                     if check_radial_linkage:
                         bearing_result.radial_load.append(radial_load/nb_bg_radial)
                     bearing_result.axial_load.append(0)
+
 
         time = bearing_combination_simulation_result.operating_times
         speed = bearing_combination_simulation_result.speeds
 
         for bg, bg_result in zip(self.bearings,
                                  bearing_combination_simulation_result.bearing_simulation_results):
-            L10 = bg.base_life_time(Fr = bg_result.radial_load, Fa = bg_result.axial_load,
-                            N = speed, t = time, Cr = bg.Cr)
+            try:
+                L10 = bg.adjusted_life_time(Fr=bg_result.radial_load, Fa=bg_result.axial_load,
+                                            N=speed, t=time, Cr=bg.Cr, S=S)
+            except FloatingPointError:
+                L10 = False
+
+            except BearingL10Error:
+                L10 = False
             if (str(L10) != 'nan') and (L10 != False):
                 bg_result.L10 = L10
             else:
@@ -2893,41 +3128,32 @@ class BearingCombination(DessiaObject):
 
         component, nonlinear_linkages_iter, loads_iter, axial_bearings, check_axial_load \
             = self.elementary_axial_load(ground, shaft, 0, radial_load, result_bgs, axial_load)
-            
-        
-        
+
+
+
         loads = loads + loads_iter
-       
+
         for bir, bor in component:
             bodies.append(bir)
             bodies.append(bor)
-            
-      
-        
+
+
+
         nonlinear_linkages.extend(nonlinear_linkages_iter)
-        # print(12569)
-        
-        
-        # for bodie in bodies:
-        #     print(bodie.name)
-        # for nonlinear_linkage in nonlinear_linkages:
-            
-        #     print(nonlinear_linkage.name)
-        # for load in loads:
-        #     print(load.value)
-        # for imposed_displacement in imposed_displacements:  
-        #     print(imposed_displacement.value)
+
+
+
         sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
-                         imposed_displacements)
-        
-        
-       
-        
+                                                imposed_displacements)
+
+
+
+
         if check_axial_load:
             try:
-                result_sm = sm.Solve(500)
+                result_sm = sm.Solve(10)
     #            bearing_combination_simulation_result.axial_load_model = result_sm
-    
+
                 for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_bearings, component)):
                     for link in axial_linkage:
                         if link in result_sm.activated_nonlinear_linkages:
@@ -2936,13 +3162,13 @@ class BearingCombination(DessiaObject):
                 return True
             except unidimensional.ModelConvergenceError:
                 print('Convergence Error')
-                
+
                 return False
                 pass
             except IndexError:
-                
+
                 print('Convergence Error')
-                
+
                 return False
                 pass
         else:
@@ -2957,16 +3183,16 @@ class BearingCombination(DessiaObject):
         :param box: draw the box parameter of the bearing assembly
         :param typ: define the aditionnal draw (default is None), 'Graph' draw the graph connection between bearing, 'Load' define the load
         """
-        
-        plot_data.plot_canvas(self.plot_data())
+
+        plot_data.plot_canvas(self.plot_data()[0])
         # linkage_area, assembly_bg = self.plot_contour2D(pos, a, box, typ)
         # edge_style=plot_data.EdgeStyle(color_stroke=plot_data.colors.GREEN)
         # list_plot_data=[]
         # list_plot_data.append(linkage_area.plot_data(edge_style = edge_style))
-       
-        
+
+
         # edge_style=plot_data.EdgeStyle(color_stroke=plot_data.colors.BLACK)
-        
+
         # list_plot_data.append(assembly_bg.plot_data(edge_style = edge_style))
 
         # if typ == 'Graph':
@@ -2982,7 +3208,7 @@ class BearingCombination(DessiaObject):
         #     list_graph = list_graph.translation(vm.Vector2D(pos, 0), True)
         #     edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE)
         #     list_plot_data.append(list_graph.plot_data(edge_style = edge_style))
-        
+
 
         # elif typ == 'Load':
         #     pos_m = -self.B/2.
@@ -3007,25 +3233,37 @@ class BearingCombination(DessiaObject):
         #     contour_box = vm.wires.Contour2D(cont_box)
         #     contour_box = contour_box.translation(vm.Vector2D(pos, 0), True)
         #     contour_box.MPLPlot(a, color='r')
-        
 
 
 
-    def volume_model(self, center = vm.Point3D(0,0,0), axis = vm.Vector3D(1,0,0)):
+
+    def volume_model(self, center=vm.Point3D(0, 0, 0), axis=vm.Vector3D(1, 0, 0)):
         groups = []
 #        position = self.axial_positions
-        center_bearing = center+0.5*(self.bearings[0].B -self.B)*axis
-        for bearing in self.bearings:
-            groups.extend(bearing.volmdlr_primitives(center=center_bearing))
+        center_bearing = center+0.5*(self.bearings[0].B - self.B)*axis
+        for bearing, di in zip(self.bearings, self.directions):
+            try:
+
+                groups.extend(bearing.volmdlr_primitives(center=center_bearing, direction=di))
+            except TypeError:
+                groups.extend(bearing.volmdlr_primitives(center=center_bearing))
             center_bearing += bearing.B*axis
-            
-        
-        model=vm.core.VolumeModel(groups, self.name)
+
+
+        model = vm.core.VolumeModel(groups, self.name)
         return model
-    
+
     def volmdlr_volume_model(self):
         model = self.volume_model()
         return model
+
+    def to_markdown(self):
+        infos = ''
+        for i, bearing in enumerate(self.bearings):
+            infos += 'Bearing ' + str(i) + '\n\n'
+            infos += bearing.to_markdown()
+
+        return infos
 
 #    def Dict(self, subobjects_id={}, stringify_keys=True):
 #        """
@@ -3051,7 +3289,7 @@ class BearingCombination(DessiaObject):
 #        if stringify_keys:
 #            return StringifyDictKeys(d)
 #        return d
-#            
+#
 #    @classmethod
 #    def dict_to_object(cls, d):
 #        bearings = []
@@ -3073,14 +3311,14 @@ class BearingAssembly(DessiaObject):
     _non_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, bearing_combinations:List[BearingCombination], 
-                 pre_load:float=0, 
-                 axial_positions:List[float]=None, 
-                 internal_diameters:List[float]=None, axial_pos:List[float]=None,
-                 external_diameters:List[float]=None, length:float=None,
-                 overall_length:float=None, mass:float=None,
-                 cost:float=None,
-                 name:str=''):
+    def __init__(self, bearing_combinations: List[BearingCombination],
+                 pre_load: float = 0,
+                 axial_positions: List[float] = None,
+                 internal_diameters: List[float] = None, axial_pos: List[float] = None,
+                 external_diameters: List[float] = None, length: float = None,
+                 overall_length: float = None, mass: float = None,
+                 cost: float = None,
+                 name: str = ''):
 
         self.bearing_combinations = bearing_combinations
         self.cr_equ = self.cr_equ()
@@ -3106,11 +3344,11 @@ class BearingAssembly(DessiaObject):
                 self.overall_length += axial_positions[1] - axial_positions[0]
         else:
             self.overall_length = overall_length
-            
+
         self.number_bearing = sum([bc.number_bearing for bc in self.bearing_combinations])
         self.number_bearing_first_bc = self.bearing_combinations[0].number_bearing
         self.number_bearing_second_bc = self.bearing_combinations[1].number_bearing
-        
+
         DessiaObject.__init__(self, name=name)
 
 #    def __eq__(self, other_eb):
@@ -3161,7 +3399,7 @@ class BearingAssembly(DessiaObject):
             poly2d = self.shaft()
             mass += poly2d.area()
         return mass
-    
+
     @property
     def cost(self):
         cost = 0
@@ -3176,13 +3414,13 @@ class BearingAssembly(DessiaObject):
         B2 = self.bearing_combinations[1].B
         pos_mid = (self.axial_positions[0] + self.axial_positions[1])/2.
         shaft = primitives2d.ClosedRoundedLineSegments2D([vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, -d1/2.),
-                      vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, d1/2.),
-                      vm.Point2D(pos_mid, d1/2.),
-                      vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, d2/2.),
-                      vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, -d2/2.),
-                      vm.Point2D(pos_mid, -d2/2.)
-                      ],
-                                                 {}, adapt_radius=False)
+                                                          vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, d1/2.),
+                                                          vm.Point2D(pos_mid, d1/2.),
+                                                          vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, d2/2.),
+                                                          vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, -d2/2.),
+                                                          vm.Point2D(pos_mid, -d2/2.)
+                                                          ],
+                                                         {}, adapt_radius=False)
         # shaft = vm.Polygon2D([vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.)),
         #               vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, d1/2.)),
         #               vm.Point2D((pos_mid, d1/2.)),
@@ -3193,13 +3431,13 @@ class BearingAssembly(DessiaObject):
         #               vm.Point2D((pos_mid, -d1/2.)),
         #               vm.Point2D((self.axial_positions[0] - B1/2. - 5e-3, -d1/2.))])
         return vm.wires.Contour2D(shaft.primitives)
-    
-    def cad_shaft(self, center = vm.O3D, axis = vm.X3D):
-        # TODO: mutualization of this in parent class?
-        axis.Normalize()
 
-        y = axis.RandomUnitNormalVector()
-        z = axis.Cross(y)
+    def cad_shaft(self, center=vm.O3D, axis=vm.X3D):
+        # TODO: mutualization of this in parent class?
+        axis.normalize()
+
+        y = axis.random_unit_normal_vector()
+        z = axis.cross(y)
 
         #Internal Ring
         d1 = self.bearing_combinations[0].d
@@ -3214,8 +3452,8 @@ class BearingAssembly(DessiaObject):
             p5 = vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, d2/2.)
             p6 = vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, 0)
             shaft = primitives2d.OpenedRoundedLineSegments2D([p6, p5, p3, p2, p1],
-                                                     {},
-                                                      adapt_radius=True)
+                                                             {},
+                                                             adapt_radius=True)
         else:
             p1 = vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, 0)
             p2 = vm.Point2D(self.axial_positions[0] - B1/2. - 5e-3, d1/2.)
@@ -3224,35 +3462,34 @@ class BearingAssembly(DessiaObject):
             p5 = vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, d2/2.)
             p6 = vm.Point2D(self.axial_positions[1] + B2/2. + 5e-3, 0)
             shaft = primitives2d.OpenedRoundedLineSegments2D([p6, p5, p4, p3, p2, p1],
-                                                     {},
-                                                      adapt_radius=True)
-        l1 = vm.edges.LineSegment2D(p1,p6)
+                                                             {},
+                                                             adapt_radius=True)
+        l1 = vm.edges.LineSegment2D(p1, p6)
         shaft_cont = vm.wires.Contour2D(shaft.primitives + [l1])
-        
-        irc = primitives3d.RevolvedProfile(center, axis, z, shaft_cont, center,
-                                         axis, angle=2*math.pi, color=[204/255, 12/255, 12/255], name='Shaft')
-        
+
+        irc = primitives3d.RevolvedProfile(center, axis, z, shaft_cont, center, axis, angle=2*math.pi, color=[204/255, 12/255, 12/255], name='Shaft')
+
         return [irc]
 
     def plot_data(self, box=True, typ=None, constructor=False):
 
         shaft = self.shaft()
-        contour_shaft = vm.wires.Contour2D(shaft.primitives)
-        export_data = [contour_shaft.plot_data()]
+        # contour_shaft = vm.wires.Contour2D(shaft.primitives)
+        export_data = [shaft.plot_data()]
 
 
         for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
-            export_data.extend(assembly_bg.plot_data(pos, box, quote = False, constructor = constructor).primitives)
-        return plot_data.PrimitiveGroup(export_data)
+            export_data.extend(assembly_bg.plot_data(pos, box, quote=False, constructor=constructor)[0].primitives)
+        return [plot_data.PrimitiveGroup(primitives=export_data)]
 
-    def plot(self, box=True, typ=None, ind_load_case=0):
+    # def plot(self, box=True, typ=None, ind_load_case=0):
 
-        shaft = self.shaft()
-        # contour_shaft = vm.Contour2D([shaft])
-        f, a = shaft.MPLPlot()
+    #     shaft = self.shaft()
+    #     # contour_shaft = vm.Contour2D([shaft])
+    #     f, a = shaft.MPLPlot()
 
-        for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
-            assembly_bg.plot(pos, a, box, typ, ind_load_case)
+    #     for assembly_bg, pos in zip(self.bearing_combinations, self.axial_positions):
+    #         assembly_bg.plot(pos, a, box, typ, ind_load_case)
 
     def graph(self):
         for li_bg in self.bearing_combinations:
@@ -3288,17 +3525,22 @@ class BearingAssembly(DessiaObject):
         shaft1 = genmechanics.Part('shaft1')
         p1 = npy.array([pos1, 0, 0])
         p2 = npy.array([pos2, 0, 0])
-        bearing1 = linkages.FrictionlessBallLinkage(ground,shaft1,p1,[0,0,0],'bearing1')
-        bearing2 = linkages.FrictionlessLinearAnnularLinkage(ground,shaft1,p2,[0,0,0],'bearing2')
+        bearing1 = linkages.FrictionlessBallLinkage(ground, shaft1, p1, [0, 0, 0], 'bearing1')
+        bearing2 = linkages.FrictionlessLinearAnnularLinkage(ground, shaft1, p2, [0, 0, 0], 'bearing2')
 
-        bearing_combination_results= []
+        bearing_combination_results = []
+
+
         for ind_load_case, load_cases in enumerate(loads):
             load1 = []
-            for pos, ld, tq in load_cases:
-                load1.append(gm_loads.KnownLoad(shaft1, pos, [0,0,0], ld, tq, 'input'))
-            load2 = gm_loads.SimpleUnknownLoad(shaft1, [(pos1 + pos2)/2,0,0], [0,0,0], [], [0], 'output torque')
-            imposed_speeds = [(bearing1, 0, 100)]
 
+            for pos, ld, tq in load_cases:
+
+                load1.append(gm_loads.KnownLoad(shaft1, pos, [0, 0, 0], ld, tq, 'input'))
+            load2 = gm_loads.SimpleUnknownLoad(shaft1, [(pos1 + pos2)/2, 0, 0], [0, 0, 0], [], [0], 'output torque')
+
+            imposed_speeds = [(bearing1, 0, 100)]
+        
             mech = genmechanics.Mechanism([bearing1, bearing2], ground, imposed_speeds, load1, [load2])
 
             axial_load = 0
@@ -3306,14 +3548,14 @@ class BearingAssembly(DessiaObject):
                 axial_load += ld[0]
             bearing_combination_result = []
             for bg in [bearing1, bearing2]:
-                tensor = mech.GlobalLinkageForces(bg,1)
+                tensor = mech.GlobalLinkageForces(bg, 1)
                 fr = (tensor[1]**2 + tensor[2]**2)**(0.5)
                 bearing_combination_result.append(fr)
             bearing_combination_result.append(axial_load)
             bearing_combination_results.append(bearing_combination_result)
         return bearing_combination_results
 
-    def shaft_load(self, positions, bearing_assembly_simulation_result):
+    def shaft_load(self, positions, bearing_assembly_simulation_result, fr_bearings = None, verbose=False):
 
         result_bcs = bearing_assembly_simulation_result.bearing_combination_simulation_results
         result_bgs = [bg.bearing_simulation_results for bg in result_bcs]
@@ -3326,61 +3568,97 @@ class BearingAssembly(DessiaObject):
 
         loads = bearing_assembly_simulation_result.loads
         (pos1, pos2) = positions
-        ground = genmechanics.Part('ground')
-        shaft1 = genmechanics.Part('shaft1')
-        p1 = npy.array([pos1, 0, 0])
-        p2 = npy.array([pos2, 0, 0])
-        bearing1 = linkages.FrictionlessBallLinkage(ground,shaft1,p1,[0,0,0],'bearing1')
-        bearing2 = linkages.FrictionlessLinearAnnularLinkage(ground,shaft1,p2,[0,0,0],'bearing2')
-
+        if not fr_bearings:
+            ground = genmechanics.Part('ground')
+            shaft1 = genmechanics.Part('shaft1')
+            p1 = npy.array([pos1, 0, 0])
+            p2 = npy.array([pos2, 0, 0])
+            bearing1 = linkages.FrictionlessBallLinkage(ground, shaft1, p1, [0, 0, 0], 'bearing1')
+            bearing2 = linkages.FrictionlessLinearAnnularLinkage(ground, shaft1, p2, [0, 0, 0], 'bearing2')
+    
         for ind_load_case, load_cases in enumerate(loads):
-            load1 = []
-            for pos, ld, tq in load_cases:
-                load1.append(gm_loads.KnownLoad(shaft1, pos, [0,0,0], ld, tq, 'input'))
-            load2 = gm_loads.SimpleUnknownLoad(shaft1, [(pos1 + pos2)/2,0,0], [0,0,0], [], [0], 'output torque')
-            imposed_speeds = [(bearing1, 0, 100)]
-
-            mech = genmechanics.Mechanism([bearing1, bearing2], ground, imposed_speeds, load1, [load2])
-
             axial_load = 0
             for pos, ld, tq in load_cases:
                 axial_load += ld[0]
-            for li_bg, bg, bearing_combination_result in zip(self.bearing_combinations,
-                                                                  [bearing1, bearing2],
-                                                                  result_bcs):
-                tensor = mech.GlobalLinkageForces(bg,1)
-                fr = (tensor[1]**2 + tensor[2]**2)**(0.5)
-                bearing_combination_result.radial_loads.append(fr)
-            bearing_assembly_simulation_result=self.axial_load(positions, axial_load, bearing_assembly_simulation_result)
-        
-           
+            if not fr_bearings:
+                load1 = []
+                for pos, ld, tq in load_cases:
+                    load1.append(gm_loads.KnownLoad(shaft1, pos, [0, 0, 0], ld, tq, 'input'))
+                load2 = gm_loads.SimpleUnknownLoad(shaft1, [(pos1 + pos2)/2, 0, 0], [0, 0, 0], [], [0], 'output torque')
+                imposed_speeds = [(bearing1, 0, 100)]
+    
+                mech = genmechanics.Mechanism([bearing1, bearing2], ground, imposed_speeds, load1, [load2])
+
+               
+                for li_bg, bg, bearing_combination_result in zip(self.bearing_combinations,
+                                                                 [bearing1, bearing2],
+                                                                 result_bcs):
+                    tensor = mech.LocalLinkageForces(bg, 1)
+                    fr = (tensor[1]**2 + tensor[2]**2)**(0.5)
+                    bearing_combination_result.radial_loads.append(fr)
                     
+            else:
+    
+                for indice_bearing, bearing_combination_result in enumerate(result_bcs):
+
+                    fr = fr_bearings[ind_load_case][indice_bearing]
+                    bearing_combination_result.radial_loads.append(fr)
+                    
+            for num_linkage, (bearing_combination, load_bearing_combination_result) in enumerate(zip(self.bearing_combinations,
+                                                                                                     result_bcs)):
+                radial_load = load_bearing_combination_result.radial_loads[-1]
+                bearing_result = result_bgs[num_linkage]
+                nb_bg_radial = sum([1 if p  else 0 for p in bearing_combination.radial_load_linkage])
+                for num_bg, (bg, bg_result) in enumerate(zip(bearing_combination.bearings, bearing_result)):
+                    
+                    check_radial_linkage = bearing_combination.radial_load_linkage[num_bg]
+                    if check_radial_linkage:
+                        if nb_bg_radial:
+                            bg_result.radial_load.append(radial_load/nb_bg_radial)
+
+            
+            bearing_assembly_simulation_result = self.axial_load(positions, axial_load, bearing_assembly_simulation_result)
+
+
+
         try:
-            self.base_life_time(bearing_assembly_simulation_result)
+
+            
+            self.base_life_time(bearing_assembly_simulation_result, verbose)
         except BearingL10Error:
             raise BearingL10Error()
 
     @classmethod
     def estimate_base_life_time(cls, L10s):
         sum_L10_inv = 0
+
+
         for L10 in L10s:
             sum_L10_inv += (1/L10)**1.5
+        if sum_L10_inv == 0:
+
+            return 0
         return sum_L10_inv**(-1/1.5)
 
-    def base_life_time(self, bearing_assembly_simulation_result):
+    def base_life_time(self, bearing_assembly_simulation_result, verbose=False):
 
         result_bcs = bearing_assembly_simulation_result.bearing_combination_simulation_results
         result_bgs = [bg.bearing_simulation_results for bg in result_bcs]
-      
+       
         for bearing_combination, bearing_result in zip(self.bearing_combinations, result_bgs):
+           
             for bg, bg_result in zip(bearing_combination.bearings, bearing_result):
-                
+           
                 time = bearing_assembly_simulation_result.operating_times
                 speed = bearing_assembly_simulation_result.speeds
                 try:
-                    
-                    L10 = bg.base_life_time(Fr = bg_result.radial_load, Fa = bg_result.axial_load,
-                                    N = speed, t = time, Cr = bg.Cr)
+                    # print(2879797)
+                    # print(bearing_combination.bearings[0])
+
+                    L10 = bg.base_life_time(Fr=bg_result.radial_load, Fa=bg_result.axial_load,
+                                            N=speed, t=time, Cr=bg.Cr, verbose=verbose)
+
+
 #                if (str(L10) != 'nan') and (L10 != False):
                     bg_result.L10 = L10
                 except BearingL10Error:
@@ -3388,14 +3666,18 @@ class BearingAssembly(DessiaObject):
 
         sum_L10_inv = 0
         valid_L10 = True
+        L10_min = 1000000000
         for bearing_result in result_bgs:
             for bg_result in bearing_result:
 #                if bg_result.L10 != False:
-                sum_L10_inv += (1/bg_result.L10)**1.5
-#                else:
-#                    valid_L10 = False
+                if bg_result.L10 < L10_min:
+                    L10_min = bg_result.L10
+                if (bg_result.L10 is not False) and (bg_result.L10 != 0):
+                    sum_L10_inv += (1/bg_result.L10)**1.5
+                else:
+                    valid_L10 = False
 
-        bearing_assembly_simulation_result.L10 = sum_L10_inv**(-1/1.5)
+        bearing_assembly_simulation_result.L10 = L10_min
 
     def axial_load(self, positions, axial_load, bearing_assembly_simulation_result):
         result_bcs = bearing_assembly_simulation_result.bearing_combination_simulation_results
@@ -3413,58 +3695,118 @@ class BearingAssembly(DessiaObject):
         bodies = [ground, shaft]
         nonlinear_linkages = []
         components = []
-        for num_linkage, (bearing_combination, load_bearing_combination_result) in enumerate(zip(self.bearing_combinations,
-                                                      result_bcs)):
+        Fp = []
+        generate_axial_load = False
+        for bearing_combination in self.bearing_combinations:
+            for bearing in bearing_combination.bearings:
+                if bearing.generate_axial_load:
+                    generate_axial_load = True
 
-            pos = positions[num_linkage]
-            radial_load = load_bearing_combination_result.radial_loads[-1]
-            bearing_result = result_bgs[num_linkage]
-            component, nonlinear_linkages_iter, loads_iter, axial_bearings, __\
-                = bearing_combination.elementary_axial_load(ground, shaft, pos, \
-                                                          radial_load, bearing_result)
-            if (not bearing_combination.behavior_link.free) and (axial_load != 0):
-                bc_axial_bearings.append(axial_bearings)
-                loads = loads + loads_iter
+        if abs(axial_load) > 1e-8 or generate_axial_load:
+            for num_linkage, (bearing_combination, load_bearing_combination_result) in enumerate(zip(self.bearing_combinations,
+                                                                                                     result_bcs)):
+    
+                pos = positions[num_linkage]
+                radial_load = load_bearing_combination_result.radial_loads[-1]
+                bearing_result = result_bgs[num_linkage]
+    
+                component, nonlinear_linkages_iter, loads_iter, axial_bearings, __\
+                    = bearing_combination.elementary_axial_load(ground, shaft, pos, \
+                                                              radial_load, bearing_result)
+    
+                nb_bg_radial = sum([1 if p  else 0 for p in bearing_combination.radial_load_linkage])
+                Fp.append(radial_load/nb_bg_radial*math.tan(bearing_combination.bearings[0].alpha))
+                if (not bearing_combination.behavior_link.free) and (axial_load != 0):
+                    bc_axial_bearings.append(axial_bearings)
+                    loads = loads + loads_iter
+    
+                    components.append(component)
+                    for bir, bor in component:
+                        bodies.append(bir)
+                        bodies.append(bor)
+                    nonlinear_linkages.extend(nonlinear_linkages_iter)
+                else:
+                    bc_axial_bearings.append([])
+                    components.append([])
+    
+            sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
+                                                    imposed_displacements)
+    
+    
+    
+            try:
+                result_sm = sm.Solve(500)
+    
+    
+    #            bearing_assembly_simulation_result.axial_load_model = result_sm
+    
+                for num_bc, (axial_linkages, component) in enumerate(zip(bc_axial_bearings, components)):
+    
+                    if len(axial_linkages) == 0:
+                        for result_bg in result_bgs[num_bc]:
+                            result_bg.axial_load.append(0)
+                    for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_linkages, component)):
+                        link_axial_load = False
+                        for link in axial_linkage:
+    
+                            if link in result_sm.activated_nonlinear_linkages:
+                                positions = (result_sm.positions[bir], result_sm.positions[bor])
+                                # if len(Fp)==2:
+                                #     if axial_load<0:
+                                #         bearing_position_1=1
+                                #         bearing_position_2=0
+                                #     else:
+                                #         bearing_position_1=0
+                                #         bearing_position_2=1
+                                #     if abs(axial_load)+abs(Fp[bearing_position_1])>abs(Fp[bearing_position_2]):
+    
+                                #         result_bgs[num_bc][num_bg].axial_load.append(abs(axial_load)+abs(Fp[bearing_position_1]))
+                                #     else:
+                                #         result_bgs[num_bc-1][num_bg].axial_load.append(-abs(axial_load)+abs(Fp[bearing_position_2]))
+    
+                                # else:
+                                result_bgs[num_bc][num_bg].axial_load.append(link.Strains(positions))
+    
+    
+                                link_axial_load = True
+                                break
+                        if not link_axial_load:
+                                result_bgs[num_bc][num_bg].axial_load.append(0.0)
+    
+                return bearing_assembly_simulation_result
 
-                components.append(component)
-                for bir, bor in component:
-                    bodies.append(bir)
-                    bodies.append(bor)
-                nonlinear_linkages.extend(nonlinear_linkages_iter)
-            else:
-                bc_axial_bearings.append([])
-                components.append([])
-
-        sm = unidimensional.UnidimensionalModel(bodies, [], nonlinear_linkages, loads,
-                         imposed_displacements)
+            except unidimensional.ModelConvergenceError:
+                print('Convergence Error')
+    
+                pass
+        else:
         
-        
-        
-        try:
-            result_sm = sm.Solve(500)
-            
-            
-#            bearing_assembly_simulation_result.axial_load_model = result_sm
-            for num_bc, (axial_linkages, component) in enumerate(zip(bc_axial_bearings, components)):
-                
-                if len(axial_linkages) == 0:
-                    for result_bg in result_bgs[num_bc]:
-                        result_bg.axial_load.append(0)
-                for num_bg, (axial_linkage, (bir, bor)) in enumerate(zip(axial_linkages, component)):
+            for bc in result_bgs:
+                for bg in bc:
                     
-                    for link in axial_linkage:
-                        
-                        if link in result_sm.activated_nonlinear_linkages:
-                            positions = (result_sm.positions[bir], result_sm.positions[bor])
-                            result_bgs[num_bc][num_bg].axial_load.append(link.Strains(positions))
-                        else:
-                            result_bgs[num_bc][num_bg].axial_load.append(0.0)
+                    bg.axial_load.append(0.0)
+    
             return bearing_assembly_simulation_result
+    def volmdlr_primitives(self):
+        primitives = []
+        cad_shaft = self.cad_shaft()
+        primitives.extend(cad_shaft)
 
-        except unidimensional.ModelConvergenceError:
-            print('Convergence Error')
-            
-            pass
+        y_pos = 0
+        z_pos = 0
+
+        for assembly_bg, x_pos in zip(self.bearing_combinations, self.axial_positions):
+            center = vm.Point3D(x_pos, y_pos, z_pos)
+            primitives.extend(assembly_bg.volume_model(center=center).primitives)
+
+        return primitives
+
+    def volume_model(self):
+        groups = self.volmdlr_primitives()
+
+        model = vm.core.VolumeModel(groups)
+
+        return model
 
 
 class BearingSimulationResult(DessiaObject):
@@ -3473,9 +3815,9 @@ class BearingSimulationResult(DessiaObject):
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = True
-    
-    def __init__(self, axial_load:float=None, radial_load:float=None, 
-                 L10:float=None, name:str=''):
+
+    def __init__(self, axial_load: float = None, radial_load: float = None,
+                 L10: float = None, name: str = ''):
         if axial_load is None:
             self.axial_load = []
         else:
@@ -3496,11 +3838,11 @@ class BearingCombinationSimulationResult(DessiaObject):
     _non_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, bearing_simulation_results:List[BearingSimulationResult],
-                 axial_loads:List[float]=None, radial_loads:List[float]=None,
-                 speeds:List[float]=None, operating_times:List[float]=None, 
-                 max_axial_load:float=None, max_radial_load:float=None,
-                 name:str=''):
+    def __init__(self, bearing_simulation_results: List[BearingSimulationResult],
+                 axial_loads: List[float] = None, radial_loads: List[float] = None,
+                 speeds: List[float] = None, operating_times: List[float] = None,
+                 max_axial_load: float = None, max_radial_load: float = None,
+                 name: str = ''):
         if axial_loads is None:
             self.axial_loads = []
         else:
@@ -3517,16 +3859,16 @@ class BearingCombinationSimulationResult(DessiaObject):
             self.operating_times = operating_times
 #        if axial_load_model is not None:
 #            self.axial_load_model = axial_load_model
-            
+
         DessiaObject.__init__(self, name=name)
-        
+
     @property
     def max_axial_load(self):
         max_axial_load = 0
         for bearing_simulation_result in self.bearing_simulation_results:
             max_axial_load = max(max_axial_load, max(bearing_simulation_result.axial_load))
         return max_axial_load
-    
+
     @property
     def max_radial_load(self):
         max_radial_load = 0
@@ -3544,11 +3886,11 @@ class BearingAssemblySimulationResult(DessiaObject):
     _non_hash_attributes = ['name']
     _generic_eq = True
 
-    def __init__(self, bearing_combination_simulation_results:List[BearingCombinationSimulationResult],
-                 loads:List[float], speeds, operating_times,
-                 bearing_combination_first:BearingCombinationSimulationResult=None,
-                 bearing_combination_second:BearingCombinationSimulationResult=None,
-                 L10:float=None, name:str=''):
+    def __init__(self, bearing_combination_simulation_results: List[BearingCombinationSimulationResult],
+                 loads: List[float], speeds, operating_times,
+                 bearing_combination_first: BearingCombinationSimulationResult = None,
+                 bearing_combination_second: BearingCombinationSimulationResult = None,
+                 L10: float = None, name: str = ''):
         self.loads = loads
         self.speeds = speeds
         self.operating_times = operating_times
@@ -3557,7 +3899,7 @@ class BearingAssemblySimulationResult(DessiaObject):
         self.bearing_combination_simulation_results = bearing_combination_simulation_results
         self.bearing_combination_first = self.bearing_combination_simulation_results[0]
         self.bearing_combination_second = self.bearing_combination_simulation_results[1]
-        
+
         DessiaObject.__init__(self, name=name)
 
 
@@ -3569,19 +3911,33 @@ class BearingAssemblySimulation(DessiaObject):
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = True
-    
-    def __init__(self, bearing_assembly:BearingAssembly,
-                 bearing_assembly_simulation_result:BearingAssemblySimulationResult,
-                 name:str=''):
+
+    def __init__(self, bearing_assembly: BearingAssembly,
+                 bearing_assembly_simulation_result: BearingAssemblySimulationResult,
+                 name: str = ''):
         self.bearing_assembly = bearing_assembly
         self.bearing_assembly_simulation_result = bearing_assembly_simulation_result
-        
+
         DessiaObject.__init__(self, name=name)
-        
+
+        self.overall_length = self.bearing_assembly.overall_length
+        self.mass = self.bearing_assembly.mass
+        self.cost = self.bearing_assembly.cost
+        self.number_bearing = self.bearing_assembly.number_bearing
+        self.number_bearing_first_bc = self.bearing_assembly.number_bearing_first_bc
+        self.number_bearing_second_bc = self.bearing_assembly.number_bearing_second_bc
+        self.first_max_axial_load = self.bearing_assembly_simulation_result.bearing_combination_first.max_axial_load
+        self.first_max_radial_load = self.bearing_assembly_simulation_result.bearing_combination_first.max_radial_load
+        self.second_max_axial_load = self.bearing_assembly_simulation_result.bearing_combination_second.max_axial_load
+        self.second_max_radial_load = self.bearing_assembly_simulation_result.bearing_combination_second.max_radial_load
+
     def volmdlr_volume_model(self):
         model = self.bearing_assembly.volume_model()
         return model
-    
+    def volmdlr_primitives(self):
+        volmdlr_primitives = self.bearing_assembly.volmdlr_primitives()
+        return volmdlr_primitives
+
     def plot_data(self, box=True, typ=None, constructor=False):
         plot_data = self.bearing_assembly.plot_data()
         return plot_data
@@ -3594,19 +3950,27 @@ class BearingCombinationSimulation(DessiaObject):
     _non_eq_attributes = ['name']
     _non_hash_attributes = ['name']
     _generic_eq = True
-    
-    def __init__(self, bearing_combination:BearingCombination,
-                 bearing_combination_simulation_result:BearingCombinationSimulationResult,
-                 name:str=''):
+
+    def __init__(self, bearing_combination: BearingCombination,
+                 bearing_combination_simulation_result: BearingCombinationSimulationResult,
+                 name: str = ''):
         self.bearing_combination = bearing_combination
         self.bearing_combination_simulation_result = bearing_combination_simulation_result
-        
+
         DessiaObject.__init__(self, name=name)
-        
+
+        self.mass = self.bearing_combination.mass
+        self.cost = self.bearing_combination.cost
+        self.number_bearing = self.bearing_combination.number_bearing
+        self.max_axial_load = self.bearing_combination_simulation_result.max_axial_load
+        self.max_radial_load = self.bearing_combination_simulation_result.max_radial_load
+
+
+
     def volmdlr_volume_model(self):
         model = self.bearing_combination.volume_model()
         return model
-    
+
     def plot_data(self, box=True, typ=None, constructor=False):
         plot_data = self.bearing_combination.plot_data(box=box)
         return plot_data

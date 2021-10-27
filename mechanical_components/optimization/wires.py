@@ -18,15 +18,10 @@ try:
 except (ModuleNotFoundError, ImportError) as e:
     _open_source = True
 
-from  mechanical_components.optimization.common import RoutingOptimizer
+from mechanical_components.optimization.common import RoutingOptimizer
 
 
-class WiringOptimizer(protected_module.WiringOptimizer if not _open_source else RoutingOptimizer):
-    def __init__(self, waypoints, routes):
-        super().__init__(waypoints, routes)
-
-
-            
-            
-            
-        
+class WiringOptimizer(protected_module.WiringOptimizer if not _open_source
+                      else RoutingOptimizer):
+    def __init__(self, routes):
+        super().__init__(routes)
